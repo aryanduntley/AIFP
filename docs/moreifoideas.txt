@@ -1,0 +1,566 @@
+MCP servers are only tools available for AI to use. Can't force AI to automatically adhere to anything in MCP server by nature. We can only tell AI to call MCP server tools.
+
+So, We need detailed instructions for functional procedural coding so that, format optimal for AI to read. AI can reference in MCP server at any time. 
+
+[aifp run]
+primary command. Others can potenitally be buil later to force certain actions. But this is the core command for AI to know what to do.
+
+aifp run should map to a database overview directive, which details steps in branches. aifp run is the trunk and the tree has many branches based on what is needed to be done. We will create very explicit directives for the project and file tracking as well as explicit directives for AI to write code according to functional/procedural coding. 
+
+This project serves two primary functions. 
+    1) write AI geared code using functional prodecural coding practice
+    MCP DATABASE:
+        - Detailed directives on how to code according to aifp.
+        - directives table
+        - helper_functions table
+        - commands table
+        - tools table
+        - notes table
+
+    2) track and manage project state which includes, separate db file
+    PROJECT DATABASE:
+        - all files in the project
+            - all functions, their use and their parameters
+        - Themes and flows within the project
+            - created by AI as it links files and ideas to a Theme, and flows within a them
+            - A theme can have many flows
+            - a flow can thouch on more than one theme
+            - all files are associated with one or more flows, or with infrastructure or another related table if not directly associated to project flow.
+            - all flows are associated with one or more themes
+            - An ecommerce website will have checkout, cart, shop by category, shop by search, shop by all, item view with details, images and price, a contact area, terms and condition, payment method selection, shipping, home page (potentially showcasing various flows), etc., etc., etc. 
+            - AI should determine themes and flows as the project evolves
+            - Theme table, notes reference
+            - flows table with references to theme(s), notes reference
+                - actually a flow_theme table to map flows to themes since a flow could potentially touch on several themes
+            - files table which will have reference to flows, notes reference
+                - actually a file_flows table to map files to flows since a file could potentially touch on several flows.
+            - functions table which will have refernce to files, purpose, parameters, etc., notes reference
+            - all have datetime to keep track of created and last updated
+        - Project completion path
+            - completion_path table in db that has high level start to finish
+                - start defines the beginning of the project (setup, infrastructure, scaffolding, etc.), status field, notes reference
+                - steps entries in completion_path is a step in the completion path, status field, notes reference
+                - finish needs to be defined to prevent never-ending upgrades and enhancements, status field, notes reference
+            - infrastructure table defines the project languages, packages, dependecies, general scripts, testing framework, etc., notes reference
+            
+            - milestones table that lists finer path steps relative to a completion_path table path, any given completion_path step or entry can have many milestones. completion_path step ID as reference, notes reference
+
+            - tasks are task lists relative to a milestone. milestone ID as reference, completion status, notes reference
+
+            - sidequests are when a task must be paused to take care of something potentially unrealeted. sidequests aren't necessary a direct task item under milestone, but rather potentially a fix or interruption or modification or update. During tasks relative to milestone, user notices that something isn't correct or decides they want to go in another direction with something. Tasks are paused, sidequest is generated. Task ID reference, milestone ID reference (optional, could be that sidequest is needed for a milestone that was already complete so not directly related to related task's milestone), completion status, notes reference
+
+            - notes table
+                - a descriptive table for clarifications, reasons and more detailed explanation of certain events. Very useful for sidequests, Idea or flow shifts, and as a more descriptive field to prevent having to have a field added to each table that could potentially use one such as this.
+
+
+
+How AI Uses It
+
+Startup (AIFP run): AI queries completion_path for the next pending step (via order_index). Then checks milestones (WHERE completion_path_id = :step_id AND status = 'pending'). Then tasks (WHERE milestone_id = :milestone_id AND status = 'pending'). If a task has a sidequest (SELECT * FROM sidequests WHERE paused_task_id = :task_id AND status = 'pending'), prioritize its items first.
+Item Completion: AI queries items (WHERE reference_table = 'tasks' AND reference_id = :task_id AND status != 'complete'). If none, mark task complete. Same for sidequests. Update tasks/sidequests → milestones → completion_path as each level completes.
+Notes: When processing any record (e.g., task), AI grabs notes (SELECT * FROM notes WHERE reference_table = 'tasks' AND reference_id = :task_id) for context. Multiple notes per record are fine.
+File Updates: On save, aifp run branches to update_project_db (from prior JSON directive), calling helpers to update files/functions and associate to flows/themes.
+Sidequest Priority: sidequests.priority defaults to 1 (higher than tasks’ 0), so AI processes sidequest items before resuming the paused task’s items.
+
+
+Clear Hierarchy: completion_path (high-level, stable) → milestones (overviews, FK to steps) → tasks (detailed, FK to milestones) → items (actions, polymorphic for tasks/sidequests). sidequests pause tasks (FK paused_task_id) and have their own items.
+No Items in Milestones/Steps: Keeps completion_path and milestones high-level, as you wanted—no granular items, just descriptive overviews.
+Polymorphic Items: items only for tasks/sidequests (reference_table restricted to those). Reduces table sprawl while allowing multiple actions per task/sidequest.
+Polymorphic Notes: Supports multiple notes per record (e.g., milestone with setup + sidequest notes) via reference_table/reference_id.
+Completion Logic: AI checks items for a task/sidequest; if none pending, task/sidequest completes. Then checks tasks for a milestone, milestones for a step.
+Stateless: Any AI, any session, starts with AIFP run → queries completion_path → follows hierarchy to pending items. Notes provide context without human recaps.
+
+Suggestions for Later
+
+Indexes: Add INDEX ON items(reference_table, reference_id) and INDEX ON notes(reference_table, reference_id) for fast lookups. Also INDEX ON tasks(milestone_id) and sidequests(paused_task_id).
+Pause State: Add is_paused BOOLEAN to tasks for explicit pause tracking when a sidequest is active.
+Views: Create a view like CREATE VIEW pending_work AS SELECT i.* FROM items i JOIN tasks t ON i.reference_table = 'tasks' AND i.reference_id = t.id WHERE i.status = 'pending' UNION SELECT i.* FROM items i JOIN sidequests s ON i.reference_table = 'sidequests' AND i.reference_id = s.id WHERE i.status = 'pending' ORDER BY s.priority DESC; for quick AI access to actionable work.
+Note Types: If analytics emerge, add note_type to notes for filtering (e.g., ‘sidequest_reason’).
+
+================================================
+================================================
+
+Perfect-split it clean. Two DB files: 1. aifp_core.db – Central, read-only directive store. Holds AIFP rules: - Directives (if-then rules), - Purity checks, - Output formats (like FILE: CONTENT:), - Header templates, - Even escalation paths (e.g., if OOP, use anti_oop_redirect). Example: sql INSERT INTO directives VALUES ('anti_oop_redirect', 'if code contains class', 'then refactor to pure functions', 'class Adder: def call(self, a, b):', 'def add(a: int, b: int) -> int: return a + b', 'AIFP bans stateful classes-use stateless funcs'); 2. project.db – Per-project, live tracker. Same as before: - Functions, - Files, - deps_json, - themes, flows, - interactions-everything evolving. Your wrapper? - Starts: Loads aifp_core.db into memory (fast, one-time). - Processes AI output: - Scans with regex (e.g., class, missing AIFP_METADATA). - Checks against core rules-no deep logic. - If fail? Pauses: Hold-directive triggered. Fix like this: . - AI fixes, you don't touch it. - On accept: Writes to project.db, confirms DB update happened (just COUNT( ) FROM functions WHERE path='...'). If not, alert: DB lag-update failed. Resubmit. Wrapper stays dumb-just query + alert. AI does the brains. No merge, no sync-just separation, speed, clarity. Want me to draft the schema inserts for aifp_core.db?
+
+Yeah-smart. Let's bake that project_completion_path into the tracking DB (project.db). Think of it as a spine the whole project hangs off: a clear, updatable roadmap from kickoff to done, so AI never drifts into endless loops. Schema Sketch for project_completion_path Add this table-simple, relational, but alive: sql CREATE TABLE project_completion_path ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, -- e.g., v1.0_MainFlow, AddEigenFlow status TEXT DEFAULT 'pending', -- pending / in_progress / done / blocked description TEXT, -- Generate math core, then wrap numpy order_index INTEGER NOT NULL, -- 1,2,3... enforces sequence start_at DATETIME, -- when AI started it completed_at DATETIME, -- when DB says it's locked created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(order_index) -- no duplicates ); -- Relate tasks to steps (many-to-one) CREATE TABLE path_tasks ( task_id INTEGER PRIMARY KEY AUTOINCREMENT, path_id INTEGER, task_name TEXT NOT NULL, -- e.g., write add_matrices.py, update DB assigned_flow TEXT, -- optional: addition_flow assigned_theme TEXT, -- optional: matrix_ops status TEXT DEFAULT 'pending', result_file TEXT, -- path to output, e.g., math_utils.py FOREIGN KEY (path_id) REFERENCES project_completion_path(id) ON DELETE CASCADE ); How It Works in Flow 1. Start : Wrapper sees new project-inserts baseline path: sql INSERT INTO project_completion_path (name, order_index, description, status) VALUES ('Baseline_Core', 1, 'Build core math + pure funcs + wrappers', 'in_progress'); 2. AI Runs : Every time it finishes a file, wrapper checks: - Is math_utils.py done? DB updated? - If yes → mark linked path_tasks.status = 'done' - Query: SELECT FROM project_completion_path WHERE status != 'done' ORDER BY order_index LIMIT 1 3. Next Step? Pulls next pending path (e.g., AddEigenFlow) → prompts AI with: > Next: Implement eigenvalue wrapper. Use eigenvalues() via numpy_aifp.py. > Must: Be pure, no OOP, end with AIFP_WRITE_COMPLETE. > DB: Confirm entry after save. Path: /v1.0_AddEigenFlow 4. Evolve It : - Need a new mid-step? Insert: sql INSERT INTO project_completion_path (name, order_index, description) VALUES ('Refactor_Loops', 2.5, 'Replace any for-loops with map/filter'); (Order_index is float-SQLite handles it. Keeps sequence fluid.) 5. Finish : When last path hits completed_at, wrapper logs: > Project path complete. No dev drift. Why This Wins - Never stuck : AI sees what's next from DB, not memory. - No forever dev : Completion path forces closure-always a finish line. - Flexible : Add, reorder, split paths-no code rewrite. - Wrapper stays simple : Just queries DB, reads order_index, feeds AI. - User sees nothing : Just press go-wrapper walks the path.
+
+
+Absolutely, your idea to introduce explicit commands like `aifp init`, `aifp update db`, and `aifp verify_compliance` that map directly to directives is a clean way to address the MCP server's lack of automation. By storing these directives and their associated helper functions in a dedicated `aifp_core.db` (separate from the `project.db`), you ensure the AI has quick, reliable access to pre-defined, pre-validated functions without guessing or generating queries on the fly. This approach minimizes errors, speeds up execution, and keeps the wrapper lightweight while enforcing AIFP's procedural flow. Below, I'll outline how to implement this, including a schema for `aifp_core.db` to store directives and helper functions, sample commands, and how they integrate with the existing wrapper and project tracking.
+
+---
+
+### Design Overview
+- **Two Databases**:
+  - `aifp_core.db`: Central, read-only database for AIFP directives, rules, and helper functions. Stores if-then directives (e.g., "if OOP detected, refactor to functions") and metadata about helper functions (e.g., `track_file_creation` for DB updates).
+  - `project.db`: Per-project database for tracking functions, files, themes, flows, and the new `project_completion_path` table (as you specified).
+- **Commands**: User-facing commands (e.g., `aifp init`) map to directives in `aifp_core.db`. Each directive references specific helper functions, which are pre-defined and stored with their signatures and usage.
+- **Helper Functions**: Pre-written, reusable functions (e.g., for DB updates, compliance checks) stored in `aifp_core.db` with metadata (parameters, purpose, example). The AI queries these instead of generating queries, ensuring consistency.
+- **Wrapper Integration**: The terminal UI wrapper (from previous discussions) runs these commands, injects AIFP headers, and validates outputs. It queries `aifp_core.db` for directives and helper functions, and updates `project.db` for tracking.
+- **Automation**: Commands like `aifp verify_compliance` trigger automatic checks (e.g., no OOP, DB updated) after file writes, pausing and alerting the AI if issues are detected, without user intervention.
+
+This setup keeps the AI focused on generating code while the wrapper and DB handle procedural enforcement, making AIFP fully database-driven.
+
+---
+
+### Schema for `aifp_core.db`
+This database stores directives and helper functions, ensuring the AI has a single source of truth for rules and utilities.
+
+```sql
+-- aifp_core.db Schema
+-- Version: 1.0
+-- Purpose: Store AIFP directives and helper functions
+
+CREATE TABLE IF NOT EXISTS directives (
+    id TEXT PRIMARY KEY,                    -- e.g., 'file_write', 'anti_oop_redirect'
+    name TEXT NOT NULL,                     -- Human-readable name (e.g., 'File Write')
+    condition TEXT NOT NULL,                -- If condition (e.g., 'code contains class')
+    action TEXT NOT NULL,                   -- Then action (e.g., 'refactor to pure functions')
+    example_in TEXT,                        -- Input example (e.g., 'class Add: def __call__(self, a, b):')
+    example_out TEXT,                       -- Output example (e.g., 'def add(a: int, b: int) -> int: return a + b')
+    helper_functions_json TEXT,             -- JSON array of helper function IDs (e.g., ['track_file_creation'])
+    priority INTEGER DEFAULT 0,              -- For ordering directive application
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS helper_functions (
+    id TEXT PRIMARY KEY,                    -- e.g., 'track_file_creation'
+    name TEXT NOT NULL,                     -- Function name (e.g., 'track_file_creation')
+    purpose TEXT NOT NULL,                  -- e.g., 'Update project.db with file metadata'
+    params_json TEXT NOT NULL,              -- JSON array of params (e.g., [{"name": "path", "type": "str"}])
+    returns_type TEXT NOT NULL,             -- e.g., 'None'
+    code TEXT NOT NULL,                     -- Full function code (e.g., Python source)
+    example_usage TEXT,                     -- e.g., 'track_file_creation("math_utils.py", {...})'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_directives_id ON directives(id);
+CREATE INDEX IF NOT EXISTS idx_helper_functions_id ON helper_functions(id);
+
+-- Trigger for timestamp updates
+CREATE TRIGGER IF NOT EXISTS update_directives_timestamp
+AFTER UPDATE ON directives
+FOR EACH ROW
+BEGIN
+    UPDATE directives SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_helper_functions_timestamp
+AFTER UPDATE ON helper_functions
+FOR EACH ROW
+BEGIN
+    UPDATE helper_functions SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+-- Sample inserts
+INSERT OR IGNORE INTO directives (id, name, condition, action, example_in, example_out, helper_functions_json)
+VALUES (
+    'anti_oop_redirect',
+    'Anti-OOP Refactoring',
+    'code contains class',
+    'refactor to pure functions',
+    'class Add: def __call__(self, a, b): return a + b',
+    'def add(a: int, b: int) -> int: return a + b',
+    '["refactor_oop_to_func"]'
+);
+
+INSERT OR IGNORE INTO helper_functions (id, name, purpose, params_json, returns_type, code, example_usage)
+VALUES (
+    'track_file_creation',
+    'track_file_creation',
+    'Update project.db with file metadata',
+    '[{"name": "path", "type": "str"}, {"name": "metadata", "type": "dict"}]',
+    'None',
+    'def track_file_creation(path: str, metadata: dict) -> None:\n    conn = sqlite3.connect("project.db")\n    cursor = conn.cursor()\n    for func in metadata.get("function_names", []):\n        cursor.execute("INSERT OR REPLACE INTO functions (name, params_json, returns_type, deps_json, path, version) VALUES (?, ?, ?, ?, ?, ?)", (func, json.dumps(metadata.get("params", [])), "unknown", json.dumps(metadata.get("deps", [])), path, metadata.get("version", 1)))\n    conn.commit()\n    conn.close()',
+    'track_file_creation("math_utils.py", {"function_names": ["add"], "deps": [], "version": 1})'
+);
+```
+
+---
+
+### Commands and Directive Mapping
+The commands (`aifp ...`) are user-facing entry points that trigger directives and helper functions. They’re executed via the terminal UI wrapper (e.g., `cloud-rap`), which runs in VS Code’s integrated terminal with mouse support (clickable buttons, drag-to-highlight, copy-paste). Each command maps to a directive in `aifp_core.db`.
+
+#### Sample Commands
+1. **`aifp init`**:
+   - **Directive**: `init_project`
+   - **Action**: Initializes a new project in `project.db` with default paths, themes, and flows. Creates a `project_completion_path` entry.
+   - **Helper Functions**: `init_project_db`, `create_initial_path`
+   - **Example**:
+     ```bash
+     aifp init --name "MatrixCalculator" --theme "math_ops"
+     ```
+     - Queries `aifp_core.db` for `init_project` directive.
+     - Executes `init_project_db` to create `project.db` tables.
+     - Executes `create_initial_path` to insert a baseline path:
+       ```sql
+       INSERT INTO project_completion_path (name, order_index, description, status)
+       VALUES ('Baseline', 1, 'Initialize core math functions', 'pending');
+       ```
+
+2. **`aifp update db`**:
+   - **Directive**: `file_write`
+   - **Action**: Forces DB update for a file, ensuring metadata (functions, deps, themes/flows) is logged.
+   - **Helper Functions**: `track_file_creation`, `update_flow_mapping`
+   - **Example**:
+     ```bash
+     aifp update db --file "math_utils.py"
+     ```
+     - Queries `file_write` directive.
+     - Calls `track_file_creation` with parsed metadata (from `infer_metadata` or `AIFP_METADATA`).
+     - Updates `project.db` (e.g., `functions`, `function_flows`).
+
+3. **`aifp verify_compliance`**:
+   - **Directive**: `compliance_check`
+   - **Action**: Validates AI output against AIFP rules (no OOP, pure functions, DB updates).
+   - **Helper Functions**: `check_oop`, `check_purity`, `check_db_updated`
+   - **Example**:
+     ```bash
+     aifp verify_compliance --file "math_utils.py"
+     ```
+     - Queries `compliance_check` directive.
+     - Runs `check_oop` (regex: `r'class\s+'`), `check_purity` (checks side effects), `check_db_updated` (queries `functions` table).
+     - If fails, pauses and prompts AI: `Fix OOP in math_utils.py per anti_oop_redirect`.
+
+---
+
+### Wrapper Integration
+The terminal UI wrapper (`cloud-rap`) enhances Cloud Code with a mouse-friendly interface (based on a fork of `micro` or `ci_edit`) and integrates the commands. It:
+- **Runs in VS Code Terminal**: Launches with `cloud-rap`, embedding Cloud Code in a clickable UI (drag-to-highlight, copy-paste, buttons like `[Accept]`, `[Toggle Auto]`).
+- **Injects Headers**: Before sending prompts to Cloud Code, adds:
+  ```plaintext
+  # AIFP_HEADER: Use pure functions, no OOP, output FILE: path CONTENT: code AIFP_WRITE_COMPLETE
+  # AIFP_RULES: Follow aifp_core.db directives, call helper functions for DB updates
+  ```
+- **Processes Outputs**: Parses AI responses for `FILE: ... CONTENT: ... AIFP_WRITE_COMPLETE`.
+- **Runs Commands**:
+  - On file write: Triggers `aifp update_db` internally.
+  - On completion: Runs `aifp verify_compliance`.
+  - If fails (e.g., OOP detected, DB not updated): Pauses, sends alert to AI:
+    ```plaintext
+    Hold: Compliance failed for math_utils.py. Reason: [OOP detected | No DB entry].
+    Fix per directive [id]: [example_out]
+    ```
+- **Auto-Accept Logic**:
+  - From user’s perspective: Auto-accepts if compliant (no manual clicks).
+  - Wrapper’s perspective: Manually validates via `aifp verify_compliance`:
+    - Checks code (no `class`, has `AIFP_METADATA`).
+    - Queries `project.db` (e.g., `SELECT COUNT(*) FROM functions WHERE path = ?`).
+    - If fails, pauses and alerts AI to retry.
+  - Toggle button (`[Toggle Auto]`): Enables/disables auto-accept. If off, waits for user click.
+
+---
+
+### Updated Wrapper Code
+Refine the previous wrapper (`aifp_write_and_index`, `process_ai_output`) to use commands and `aifp_core.db`. Below is the updated version with the refined `infer_metadata` (from previous response) and command integration.
+
+```python
+import sqlite3
+import json
+import os
+import re
+import ast
+from typing import Dict, List, Optional
+
+# Custom AIFP exception
+class AIFPError(Exception):
+    pass
+
+# Connect to core and project DBs
+def connect_db(db_path: str) -> sqlite3.Connection:
+    try:
+        return sqlite3.connect(db_path)
+    except sqlite3.Error as e:
+        raise AIFPError(f"Failed to connect to {db_path}: {e}")
+
+# Wrapper function for file writing and DB updates
+def aifp_write_and_index(path: str, content: str, core_db: str = "aifp_core.db", proj_db: str = "project.db") -> None:
+    """
+    AIFP-compliant file write: Saves file, validates compliance, updates project.db.
+    Uses directives and helper functions from aifp_core.db.
+    """
+    # Step 1: Validate compliance (runs aifp verify_compliance)
+    directive = query_directive(core_db, "compliance_check")
+    if not verify_compliance(content, path, directive, proj_db):
+        raise AIFPError("Compliance check failed: Fix and retry per directive")
+
+    # Step 2: Write file
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write(content)
+    except OSError as e:
+        raise AIFPError(f"Failed to write file {path}: {e}")
+
+    # Step 3: Update DB (runs aifp update_db)
+    metadata = extract_aifp_metadata(content) or infer_metadata(content, path)
+    run_helper_function(core_db, proj_db, "track_file_creation", {"path": path, "metadata": metadata})
+
+# Extract metadata from AIFP_METADATA comment
+def extract_aifp_metadata(content: str) -> Dict:
+    match = re.search(r"#\s*AIFP_METADATA:\s*({.*})", content)
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except json.JSONDecodeError:
+            raise AIFPError("Invalid AIFP_METADATA JSON")
+    return {}
+
+# Refined infer_metadata with AST parsing (from previous response)
+def infer_metadata(content: str, path: str) -> Dict:
+    """
+    Infer metadata by parsing code with ast module.
+    """
+    metadata = {
+        "function_names": [],
+        "deps": [],
+        "theme": "inferred",
+        "flow": "inferred",
+        "path": path,
+        "version": 1,
+        "function_info": []
+    }
+    try:
+        tree = ast.parse(content)
+    except SyntaxError as e:
+        raise AIFPError(f"Syntax error in content for {path}: {e}")
+    
+    called_names = set()
+    
+    class FunctionVisitor(ast.NodeVisitor):
+        def visit_FunctionDef(self, node: ast.FunctionDef):
+            func_name = node.name
+            metadata["function_names"].append(func_name)
+            params = [{"name": arg.arg, "type": ast.unparse(arg.annotation) if arg.annotation else "unknown"} for arg in node.args.args]
+            returns_type = ast.unparse(node.returns) if node.returns else "unknown"
+            docstring = ast.get_docstring(node) or ""
+            side_effects = self.infer_side_effects(node.body)
+            metadata["function_info"].append({
+                "name": func_name,
+                "params": params,
+                "returns_type": returns_type,
+                "docstring": docstring,
+                "side_effects": side_effects
+            })
+            self.generic_visit(node)
+        
+        def visit_Call(self, node: ast.Call):
+            if isinstance(node.func, ast.Name):
+                called_names.add(node.func.id)
+            self.generic_visit(node)
+        
+        def infer_side_effects(self, body: List[ast.stmt]) -> List[str]:
+            effects = []
+            for stmt in body:
+                if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+                    if isinstance(stmt.value.func, ast.Name):
+                        if stmt.value.func.id in {"print", "open", "write"}:
+                            effects.append(stmt.value.func.id)
+                if hasattr(stmt, 'body'):
+                    effects.extend(self.infer_side_effects(stmt.body))
+                if hasattr(stmt, 'orelse'):
+                    effects.extend(self.infer_side_effects(stmt.orelse))
+            return list(set(effects))
+    
+    visitor = FunctionVisitor()
+    visitor.visit(tree)
+    metadata["deps"] = list(called_names - set(metadata["function_names"]))
+    return metadata
+
+# Query directive from aifp_core.db
+def query_directive(core_db: str, directive_id: str) -> Dict:
+    conn = connect_db(core_db)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM directives WHERE id = ?", (directive_id,))
+        row = cursor.fetchone()
+        if not row:
+            raise AIFPError(f"Directive {directive_id} not found")
+        return {
+            "id": row[0], "name": row[1], "condition": row[2], "action": row[3],
+            "example_in": row[4], "example_out": row[5], "helper_functions": json.loads(row[6] or "[]")
+        }
+    finally:
+        conn.close()
+
+# Run helper function from aifp_core.db
+def run_helper_function(core_db: str, proj_db: str, func_id: str, args: Dict) -> None:
+    conn = connect_db(core_db)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT code, params_json FROM helper_functions WHERE id = ?", (func_id,))
+        row = cursor.fetchone()
+        if not row:
+            raise AIFPError(f"Helper function {func_id} not found")
+        code = row[0]
+        params = json.loads(row[1])
+        # Execute function (safe: pre-defined code)
+        exec(code, {"sqlite3": sqlite3, "json": json, **args})
+    finally:
+        conn.close()
+
+# Verify compliance (used by aifp verify_compliance)
+def verify_compliance(content: str, path: str, directive: Dict, proj_db: str) -> bool:
+    # Check directive conditions (e.g., no OOP)
+    if "class" in directive["condition"]:
+        if re.search(r'class\s+\w+:', content):
+            return False
+    # Check AIFP format
+    if not re.search(r'#\s*AIFP_METADATA:', content) or not re.search(r'AIFP_WRITE_COMPLETE', content):
+        return False
+    # Check DB update (simplified: extend with specific checks)
+    conn = connect_db(proj_db)
+    try:
+        cursor = conn.execute("SELECT COUNT(*) FROM functions WHERE path = ?", (path,))
+        count = cursor.fetchone()[0]
+        return count > 0  # True if DB was updated
+    finally:
+        conn.close()
+
+# Process AI output with compliance check
+def process_ai_output(ai_response: str, core_db: str = "aifp_core.db", proj_db: str = "project.db") -> None:
+    pattern = r"FILE:\s*([^\n]+)\nCONTENT:\n([\s\S]*?)\nAIFP_WRITE_COMPLETE"
+    matches = re.findall(pattern, ai_response, re.MULTILINE)
+    if not matches:
+        raise AIFPError("Invalid AI output: Expected FILE: CONTENT: AIFP_WRITE_COMPLETE")
+
+    for path, content in matches:
+        directive = query_directive(core_db, "compliance_check")
+        if not verify_compliance(content, path, directive, proj_db):
+            # Pause and alert AI
+            ai_prompt = f"Hold: Compliance failed for {path}. Fix per directive {directive['id']}:\nExample: {directive['example_out']}\nEnsure AIFP_METADATA and AIFP_WRITE_COMPLETE."
+            print(ai_prompt)  # Or send to AI via API
+            return
+        aifp_write_and_index(path.strip(), content.strip(), core_db, proj_db)
+
+# Command-line interface for aifp commands
+def aifp_command(command: str, args: Dict, core_db: str = "aifp_core.db", proj_db: str = "project.db") -> None:
+    if command == "run init":
+        directive = query_directive(core_db, "init_project")
+        for func_id in directive["helper_functions"]:
+            run_helper_function(core_db, proj_db, func_id, args)
+    elif command == "run update db":
+        directive = query_directive(core_db, "file_write")
+        run_helper_function(core_db, proj_db, "track_file_creation", args)
+    elif command == "verify compliance":
+        directive = query_directive(core_db, "compliance_check")
+        if not verify_compliance(args["content"], args["file"], directive, proj_db):
+            raise AIFPError(f"Compliance failed for {args['file']}")
+
+# Example usage in wrapper
+def run_auto_write(ai, task: str, core_db: str = "aifp_core.db", proj_db: str = "project.db") -> None:
+    prompt = f"""
+    {task}
+    # AIFP_HEADER: Use pure functions, no OOP, output FILE: path CONTENT: code AIFP_WRITE_COMPLETE
+    # AIFP_RULES: Follow aifp_core.db directives, call helper functions for DB updates
+    """
+    response = ai.generate(prompt)  # Replace with actual AI call
+    process_ai_output(response, core_db, proj_db)
+```
+
+---
+
+### Integration with Project Completion Path
+The `project_completion_path` table (from your previous request) in `project.db` ensures projects have a defined start-to-finish trajectory. The wrapper uses it to guide AI tasks:
+
+```sql
+-- In project.db
+CREATE TABLE project_completion_path (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    description TEXT,
+    order_index REAL NOT NULL,
+    start_at DATETIME,
+    completed_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(order_index)
+);
+
+CREATE TABLE path_tasks (
+    task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path_id INTEGER,
+    task_name TEXT NOT NULL,
+    assigned_flow TEXT,
+    assigned_theme TEXT,
+    status TEXT DEFAULT 'pending',
+    result_file TEXT,
+    FOREIGN KEY (path_id) REFERENCES project_completion_path(id) ON DELETE CASCADE
+);
+```
+
+- **Command**: `aifp init` creates initial path entries:
+  ```sql
+  INSERT INTO project_completion_path (name, order_index, description, status)
+  VALUES ('Baseline', 1, 'Initialize core functions', 'in_progress');
+  ```
+- **Wrapper**: After each file write, updates `path_tasks`:
+  ```sql
+  UPDATE path_tasks SET status = 'done', result_file = ? WHERE task_name = ?;
+  ```
+- **Progress Check**: Queries `project_completion_path` to find next pending task:
+  ```sql
+  SELECT name, description FROM project_completion_path WHERE status != 'done' ORDER BY order_index LIMIT 1;
+  ```
+- **Dynamic Updates**: Add new steps with `aifp add_path --name "Refactor_Loops" --order 1.5`.
+
+---
+
+### Terminal UI Wrapper (`cloud-rap`)
+- **Base**: Fork `micro` (Go-based, terminal-native, mouse support: click, drag, copy-paste).
+- **Buttons**: Text-based buttons (`[Accept]`, `[Toggle Auto]`) clickable via mouse or keyboard.
+- **Behavior**:
+  - Launch: `cloud-rap` in VS Code terminal, runs Cloud Code inside.
+  - Prompt Injection: Adds `# AIFP_HEADER` to every user prompt.
+  - Output Processing: Parses `FILE: ... CONTENT: ... AIFP_WRITE_COMPLETE`, runs `aifp verify_compliance`.
+  - Auto-Accept: If compliant and DB updated, accepts silently. If not, pauses with alert: `Hold: Compliance failed for math_utils.py. Fix per directive anti_oop_redirect.`
+  - Toggle: `[Toggle Auto]` enables/disables auto-accept.
+- **DB Checks**: Post-write, queries `project.db` to confirm `functions` entry exists. If not, alerts AI to retry.
+
+---
+
+### Benefits
+- **Database-Driven**: `aifp_core.db` centralizes directives and helpers, ensuring AI uses pre-defined functions, not guesses.
+- **Simple Wrapper**: Only checks regex and DB counts, letting AI handle logic.
+- **Procedural Flow**: Commands (`aifp ...`) enforce AIFP rules and DB updates without manual prompts.
+- **Project Completion Path**: Guides AI from start to finish, preventing dev drift.
+- **VS Code Integration**: Runs in terminal, mouse-friendly, no external app needed.
+
+---
+
+### Sample Directive Insert for `aifp_core.db`
+```sql
+INSERT INTO directives (id, name, condition, action, example_in, example_out, helper_functions_json)
+VALUES (
+    'file_write',
+    'File Write',
+    'output contains FILE: and AIFP_WRITE_COMPLETE',
+    'write file and update project.db',
+    'FILE: math_utils.py\nCONTENT:\ndef add(a, b): return a + b\nAIFP_WRITE_COMPLETE',
+    'FILE: math_utils.py\nCONTENT:\n# AIFP_METADATA: {\"function_names\": [\"add\"], \"deps\": []}\ndef add(a: int, b: int) -> int:\n    return a + b\nAIFP_WRITE_COMPLETE',
+    '["track_file_creation", "update_flow_mapping"]'
+);
+
+INSERT INTO helper_functions (id, name, purpose, params_json, returns_type, code, example_usage)
+VALUES (
+    'update_flow_mapping',
+    'update_flow_mapping',
+    'Map functions to themes/flows in project.db',
+    '[{"name": "path", "type": "str"}, {"name": "metadata", "type": "dict"}]',
+    'None',
+    'def update_flow_mapping(path: str, metadata: dict) -> None:\n    conn = sqlite3.connect("project.db")\n    cursor = conn.cursor()\n    theme = metadata.get("theme")\n    flow = metadata.get("flow")\n    if theme and flow:\n        cursor.execute("INSERT OR IGNORE INTO themes (name) VALUES (?)", (theme,))\n        theme_id = cursor.execute("SELECT theme_id FROM themes WHERE name = ?", (theme,)).fetchone()[0]\n        cursor.execute("INSERT OR IGNORE INTO flows (name, theme_id) VALUES (?, ?)", (flow, theme_id))\n        flow_id = cursor.execute("SELECT flow_id FROM flows WHERE name = ? AND theme_id = ?", (flow, theme_id)).fetchone()[0]\n        for func in metadata.get("function_names", []):\n            cursor.execute("INSERT OR IGNORE INTO function_flows (function_name, flow_id, connection_type) VALUES (?, ?, ?)", (func, flow_id, "primary"))\n    conn.commit()\n    conn.close()',
+    'update_flow_mapping("math_utils.py", {"function_names": ["add"], "theme": "math_ops", "flow": "addition_flow"})'
+);
+```
+
+---
+
+### Next Steps
+- **Test Setup**: Implement the wrapper and commands in VS Code’s terminal with `cloud-rap`.
+- **Add More Helpers**: Draft additional helper functions (e.g., `check_oop`, `check_purity`) for `aifp_core.db`.
+- **Extend Path Table**: Add logic to auto-generate `project_completion_path` entries based on templates.
+- **Cross-Language**: Test with JavaScript to ensure language-agnostic behavior.
+
