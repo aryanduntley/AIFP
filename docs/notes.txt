@@ -1,0 +1,12 @@
+{
+    "trunk": "init_check",
+    "branches": [
+        {"if": "file_modified", "then": "update_project_db", "details": {"parse_files": true, "associate_flows": true}},
+        {"if": "coding_needed", "then": "apply_fp_style", "details": {"wrap_oop": true}},
+        {"fallback": "log_note", "details": {"reference_table": "items", "type": "clarification"}}
+    ],
+    "error_handling": {
+        "on_failure": "CALL helper_log_error(:step, :error_message)",
+        "retry": "max 2 attempts"
+    }
+}

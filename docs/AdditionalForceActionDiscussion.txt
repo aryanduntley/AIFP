@@ -564,3 +564,364 @@ VALUES (
 - **Extend Path Table**: Add logic to auto-generate `project_completion_path` entries based on templates.
 - **Cross-Language**: Test with JavaScript to ensure language-agnostic behavior.
 
+===
+AI Behavior with Single aifp run
+The AI processes aifp run [task] as follows:
+
+Parse Input: Extracts keywords (e.g., “create” → file creation, “verify” → compliance check).
+Match Directive: Queries aifp_core.db:
+sqlSELECT * FROM directives WHERE condition LIKE ? OR name LIKE ?;
+
+Uses task keywords (e.g., %create% → file_write).
+
+Execute Directive:
+
+Loads directive’s action and helper_functions.
+Runs helpers (e.g., track_file_creation for DB updates).
+
+Generate Output: Produces FILE: ... CONTENT: ... AIFP_WRITE_COMPLETE with # AIFP_METADATA and project context.
+Validate:
+
+Checks for no class, has # AIFP_METADATA, AIFP_WRITE_COMPLETE.
+Verifies DB update: SELECT COUNT(*) FROM files WHERE path = ?.
+If fails, alerts user with retry instructions.
+
+Update DB: Executes helper functions to update project.db (files, functions, tasks).
+
+Sample Interaction
+User Input (VS Code terminal):
+bashaifp run Initialize project MatrixCalculator with purpose 'Pure functional matrix math library' and goals '["Fast computation", "No OOP"]' --project_id 1
+AI Response:
+plaintextProject initialized in project.db:
+- project: MatrixCalculator (id=1, purpose: Pure functional matrix math library, goals: ["Fast computation", "No OOP"])
+- completion_path: Setup (order_index=1, project_id=1)
+Run next: aifp run Create math_utils.py with add function --project_id 1 --task_id 1
+User Input:
+bashaifp run Create math_utils.py with add function --project_id 1 --task_id 1
+AI Output:
+plaintextFILE: math_utils.py
+CONTENT:
+# AIFP_METADATA: {"function_names": ["add"], "deps": [], "theme": "math_ops", "flow": "addition_flow", "version": 1, "task_id": 1}
+# Project Purpose: Pure functional matrix math library
+def add(a: int, b: int) -> int:
+    """Pure: Adds two integers."""
+    return a + b
+
+AIFP_WRITE_COMPLETE
+Run next: aifp run Verify compliance and update DB for math_utils.py --project_id 1 --task_id 1
+User Input:
+bashaifp run Verify compliance and update DB for math_utils.py --project_id 1 --task_id 1
+AI Output:
+plaintextCompliance check for math_utils.py:
+- No OOP: Pass
+- AIFP_METADATA present: Pass
+- AIFP_WRITE_COMPLETE: Pass
+project.db updated:
+- files: math_utils.py (project_id=1)
+- functions: add (file_id=1)
+- file_flows: Linked to addition_flow
+- tasks: task_id=1 marked done
+Next task: aifp run [Query completion_path for next task] --project_id 1
+If Compliance Fails:
+plaintextCompliance failed for math_utils.py. Issue: Missing AIFP_METADATA.
+Fix per directive file_write:
+Example: # AIFP_METADATA: {"function_names": ["add"], "deps": [], "theme": "math_ops", "flow": "addition_flow", "version": 1, "task_id": 1}
+Retry: aifp run Create math_utils.py with add function --project_id 1 --task_id 1
+
+Integration with project and completion_path
+
+Project Context:
+
+AI queries project before generating output:
+sqlSELECT purpose, goals_json FROM project WHERE id = ?;
+
+Includes in output: # Purpose: Pure functional matrix math library.
+
+Completion Path:
+
+Guides task selection:
+sqlSELECT name, description FROM completion_path WHERE status != 'complete' AND project_id = ? ORDER BY order_index LIMIT 1;
+
+Updates tasks on completion:
+sqlUPDATE tasks SET status = 'done', result_file = ? WHERE id = ?;
+
+Evolution:
+
+New project version:
+sqlINSERT INTO project (name, purpose, goals_json, version) VALUES ('MatrixCalculator', 'Extend to graph algorithms', '["Graph traversal", "No OOP"]', 2);
+
+Updated aifp_core.db Helper Function
+Add a check_oop helper to support compliance checks:
+sqlINSERT INTO helper_functions (id, name, purpose, params_json, returns_type, code, example_usage)
+VALUES (
+    'check_oop',
+    'check_oop',
+    'Check if code contains OOP patterns (e.g., class definitions)',
+    '[{"name": "content", "type": "str"}]',
+    'bool',
+    'def check_oop(content: str) -> bool:\n    import re\n    return not bool(re.search(r"class\\s+\\w+:", content))',
+    'check_oop("def add(a, b): return a + b")  # Returns True'
+);
+
+Benefits
+
+Single Command: aifp run [task] simplifies user interaction, dynamically mapping to directives.
+Database-Driven: aifp_core.db ensures consistent rules, project.db tracks progress and intent.
+Manual Control: Users drive workflow, AI handles compliance and DB updates.
+Project Alignment: project table anchors purpose/goals, completion_path prevents dev drift.
+Simple Checks: Regex and DB queries, with AI fixing issues on retry.
+
+
+===============
+
+Yes, having an associated .md file for every directive or directive flow in the AIFP system would be highly useful. Here's my reasoning, followed by suggestions on updating the schema you provided to incorporate this and other refinements. I'll explain step by step, drawing on the database-driven approach you've outlined, to ensure AIFP remains robust, AI-focused, and flexible.
+Why .md Files for Directives Are Useful
+Directives in AIFP are essentially if-then rules or workflows that guide AI behavior (e.g., "if OOP detected, then refactor to pure functions"). While JSON-based workflows in the directives table are efficient for quick execution and database querying, they are concise and machine-oriented by design. An associated .md file adds a layer of human-readable, verbose context that complements the JSON, making the system more adaptable and maintainable. Key benefits:
+
+Enhanced Context for Edge Cases: JSON workflows are great for standard paths, but AIFP involves dynamic, evolving projects where AI might encounter ambiguity (e.g., a subtle OOP pattern in a wrapped library or an unexpected project pivot). The .md can provide:
+
+Purpose and Rationale: Explain why the directive exists (e.g., "This directive enforces purity to reduce AI tracking overhead in large projects").
+Examples and Guidance: Detailed if-then scenarios, including roadblocks (e.g., "If mutable state is unavoidable, refer to user for approval and log in notes table").
+AI Decision-Making Aids: Tips for thinking through issues, like "Evaluate confidence_score < 0.5? Escalate to user or cross-reference notes table".
+
+
+AI Escalation Mechanism: As you noted, directives must always allow AI to refer to the user for guidance. The .md can explicitly outline escalation protocols (e.g., "If JSON workflow doesn't resolve, prompt user: 'Clarify: Should we pivot flow X?'"). This aligns with AIFP's goal of thoroughness—AI can query the .md for nuanced advice without guessing, reducing failures.
+Human Maintainability: Developers or users can edit .md files easily (e.g., add new roadblocks like "Handle language-specific quirks in Python vs. JS"). This keeps AIFP evolvable without altering the DB schema or JSON workflows, which remain optimized for speed.
+Integration with Database-Driven System: Store the .md path in the directives table (see schema updates below). AI can load the .md on-demand for deeper context, while defaulting to JSON for routine tasks. This is efficient—DB queries are fast, and .md files are only read when needed (e.g., confidence low or edge case).
+Roadblock Mitigation: To build AIFP thoroughly, as you suggested, .md files can include sections on common issues:
+
+Potential Roadblocks: "If task conflicts with project goals in project table, pause and query user."
+Guidance for AI: "Think step-by-step: Check completion_path status, validate against helper_functions, escalate if blocked."
+This makes AIFP resilient, with AI proactively handling problems rather than failing silently.
+
+
+
+In summary, .md files turn directives into a hybrid system: JSON for execution, Markdown for explanation. This is especially useful for AIFP's AI-centric nature, where directives need to be both machine-efficient and human-intuitive. Without them, directives risk being too rigid; with them, AIFP gains depth without sacrificing performance.
+
+
+Refined AIFP System Design
+
+Single Command: aifp run [task] (e.g., aifp run Hey, I want to create a project...). The AI parses the input to identify intent (e.g., "create project" → init_project directive).
+Tools as Pointers: In the MCP server, tools (Python-based) are minimal—each tool (e.g., aifp_run_tool.py) simply instructs the AI to query the corresponding directive in aifp_core.db. For example:
+
+Tool aifp_run_tool.py → aifp_run directive.
+Tool update_db_tool.py → update_db directive.
+
+
+Directives:
+
+aifp_run directive: Master index listing all directives (e.g., init_project, file_write, update_db) with a JSON workflow and linked .md file (directives/aifp_run.md) for context.
+Other directives (e.g., init_project, update_db) handle specific actions, each with JSON workflows, .md files for edge cases, and roadblocks_json for error handling.
+
+
+Databases:
+
+aifp_core.db: Stores directives, helper functions, tools, and notes. The aifp_run directive is the entry point, mapping user intents to specific directives.
+project.db: Tracks project state (project, files, functions, completion_path, etc.).
+
+
+AI Behavior:
+
+Sees aifp run, invokes aifp_run_tool.py, which points to the aifp_run directive.
+Parses user input (e.g., "create a project") to match a directive (e.g., init_project).
+Queries aifp_core.db for the directive’s JSON workflow and executes steps (e.g., create project.db, scaffold .aifp-project folder).
+If ambiguous or blocked, checks .md file for guidance or prompts user (e.g., "Please provide project name").
+Outputs in FILE: ... CONTENT: ... AIFP_WRITE_COMPLETE format for file-related tasks.
+Updates project.db using helper functions (e.g., track_file_creation).
+
+
+Error Handling: Directives include roadblocks_json and .md files with guidance for AI to think through issues (e.g., "If no project name, prompt user"). User referral is always an option.
+
+
+Sample Interaction
+User Input (VS Code terminal):
+bashaifp run Hey, I want to create a project which will be a math library. I want it to have fast computation. Can you help with that?
+AI Response:
+plaintextMatched directive: aifp_run (parsing intent: create project)
+Sub-directive: init_project
+Please provide a project name (e.g., MatrixCalculator).
+User Input:
+bashaifp run Create project named MatrixCalculator
+AI Response:
+plaintextMatched directive: init_project
+Project initialized in project.db:
+- project: MatrixCalculator (id=1, purpose: Pure functional matrix math library, goals: ["Fast computation", "No OOP"])
+- completion_path: Setup (order_index=1, project_id=1)
+Scaffolded: .aifp-project folder
+Run next: aifp run Create math_utils.py with add function --task_id 1
+User Input:
+bashaifp run Create math_utils.py with add function --task_id 1
+AI Response:
+plaintextMatched directive: file_write
+FILE: math_utils.py
+CONTENT:
+# AIFP_METADATA: {"function_names": ["add"], "deps": [], "theme": "math_ops", "flow": "addition_flow", "version": 1, "task_id": 1}
+# Project Purpose: Pure functional matrix math library
+def add(a: int, b: int) -> int:
+    """Pure: Adds two integers."""
+    return a + b
+
+AIFP_WRITE_COMPLETE
+Run next: aifp run Verify compliance and update DB for math_utils.py --task_id 1
+User Input:
+bashaifp run Verify compliance and update DB for math_utils.py --task_id 1
+AI Response:
+plaintextMatched directive: compliance_check
+Compliance check for math_utils.py:
+- No OOP: Pass (via check_oop helper)
+- AIFP_METADATA present: Pass
+- AIFP_WRITE_COMPLETE: Pass
+Matched directive: update_db
+project.db updated:
+- files: math_utils.py (project_id=1)
+- functions: add (file_id=1)
+- file_flows: Linked to addition_flow
+- tasks: task_id=1 marked done
+Next task: aifp run [next from completion_path]
+If Compliance Fails:
+plaintextMatched directive: compliance_check
+Compliance failed for math_utils.py. Issue: OOP detected (class Add).
+Fix per directive anti_oop_redirect (directives/anti_oop_redirect.md):
+Example: def add(a: int, b: int) -> int: return a + b
+Retry: aifp run Create math_utils.py with add function --task_id 1
+
+Tool Implementation
+Each tool is a minimal Python script in the MCP server that points to a directive:
+aifp_run_tool.py:
+pythondef aifp_run_tool(task: str) -> str:
+    return "Refer to directive: aifp_run"
+init_project_tool.py:
+pythondef init_project_tool(name: str, purpose: str, goals_json: str) -> str:
+    return "Refer to directive: init_project"
+This ensures MCP’s tool-based restriction is met, but execution is driven by directives, not tools.
+
+Benefits
+
+User-Friendly: Natural input (aifp run Hey, I want...) works without MCP knowledge.
+Directive-Driven: aifp_run directive maps intents to actions, with .md for context.
+Tools as Pointers: Minimal Python scripts satisfy MCP, pointing to aifp_core.db.
+Robust Error Handling: roadblocks_json and .md files guide AI through issues.
+Project Alignment: project table anchors intent, completion_path ensures completion.
+
+Understood—your points on avoiding unnecessary logging and extra AI interaction rounds are spot on. Logging every tool call would indeed bloat the DB and create lag without enough payoff, especially in long sessions. Similarly, pre-matching intent with a helper would add costly back-and-forth, and since the MCP server integrates with existing software (like Cline or Cloud Code), we can't reliably intercept user input before it hits the AI. The focus should stay on AI's natural strengths for intent detection and reasoning, with minimal overhead to keep token costs low and flows efficient. I'll refine the tools/directives link and intent/path identification process accordingly, dropping logging and helper-based matching, while emphasizing AI-driven if-then within directives. This keeps AIFP lightweight, database-driven, and true to your goal: let AI think freely but enforce guidelines through structure.
+Refined Tools/Directives Link
+Since tools are MCP's entry point but we want directives to drive logic, keep tools as minimal pointers without logging. To avoid "wasted rounds," tools can include a brief AI instruction in their response (e.g., "Refer to directive X and proceed"), but the system prompt (embedded in the MCP setup) will train the AI to immediately query the DB and apply the directive after seeing the tool call. No extra user interaction—AI handles it in one pass.
+
+Refinement: Tools remain Python pointers, but their code returns a JSON response that the AI parses (e.g., {"directive_id": "file_write", "action_hint": "Generate FILE: format and update DB"}). The AI's system prompt reinforces: "After tool call, query aifp_core.db for the directive and execute its workflow."
+
+Rationale: This eliminates lag—no DB write for logging, no extra rounds. AI responds as usual but follows guidelines seamlessly.
+Schema Change: None needed—drop any logging fields. Tools table remains as-is.
+Tool Code Example (for file_write_tool.py):
+pythondef file_write_tool(task: str) -> str:
+    return json.dumps({"directive_id": "file_write", "action_hint": "Generate structured output and ensure DB update per workflow"})
+
+AI Handling: AI sees the JSON, queries the directive, and proceeds. If stray (e.g., no DB update), the directive's error_handling prompts user.
+
+
+
+This keeps tools minimal while ensuring directives enforce coding/project guidelines without added cost.
+Refined Intent Detection and Path Identification
+Rely fully on AI for intent detection, as you said—it's superior and avoids static code heaviness. Refine the aifp_run directive to include a "parse_intent" branch with AI guidance (e.g., "Think step-by-step: Extract keywords, match to directive index, if ambiguous prompt user"). For path identification in task_decomposition, AI references completion_path naturally during decomposition, without helpers.
+
+Refinement 1: AI-Led Intent Matching in aifp_run:
+
+Update aifp_run workflow to start with an AI-thinking step: "Parse intent using natural language—match to directive index. If low confidence, prompt user for clarification."
+Rationale: AI handles complex inputs better (e.g., "Hey, I want a math library with fast computation" → init_project + update goals). No tool/helper rounds—happens in AI's response.
+Updated aifp_run Workflow JSON:
+json{
+    "trunk": "parse_intent",
+    "branches": [
+        {"if": "code_related", "then": "fp_code_gen", "details": {"check_library_wrapper": true, "enforce_fp_rules": true}},
+        {"if": "db_tracking_update", "then": "update_db", "details": {"parse_files": true, "associate_flows": true}},
+        {"if": "not_aifp", "then": "respond_normal", "details": {"log_note_optional": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Is this code-related or DB update?"}}
+    ],
+    "error_handling": {"on_failure": "prompt user for guidance"}
+}
+
+
+
+Refinement 2: Enhanced task_decomposition for Path Identification:
+
+Integrate completion_path reference directly in the workflow: "Think: Review open tasks in project.db, identify relation, update if needed."
+Add boundaries for new task vs subtask: "New task if independent/pivots project (update project.version); subtask if supports open task (priority high, pause parent)."
+For interruptions: "If subtask active, notify user: 'Subtask [name] in progress—complete, discard, or resume?' Update status."
+Rationale: AI's if-then thinking handles this naturally, without extra tools. Aligns with your goal—AI decomposes creatively but enforces guidelines (e.g., align to roadmap, DB update).
+Updated task_decomposition Workflow JSON:
+json{
+    "trunk": "review_open_tasks",
+    "branches": [
+        {"if": "related_to_open_task", "then": "update_if_needed", "details": {"check_alignment": true}},
+        {"if": "new_task_needed", "then": "create_new_task", "details": {"link_to_completion_path": true, "update_project_version": true}},
+        {"if": "subtask_needed", "then": "create_subtask", "details": {"priority": "high", "pause_parent": true}},
+        {"if": "interruption", "then": "handle_subtask_priority", "details": {"notify_user": true, "options": "complete/discard/resume"}},
+        {"fallback": "prompt_user", "details": {"clarify": "Is this a new task or subtask?"}}
+    ],
+    "error_handling": {"on_failure": "prompt user for clarification"}
+}
+
+
+
+
+These refinements keep AIFP efficient—no wasted rounds, minimal code—and let AI think freely while forcing guidelines through directive structures. The system remains user-friendly for natural inputs.
+
+Example Interaction
+User: aifp run Create a math library with fast computation.
+AI:
+textMatched directive: aifp_run (intent: create project)
+Sub-directive: init_project
+Please provide a project name (e.g., MatrixCalculator).
+User: aifp run Set name to MatrixCalculator with purpose 'Pure functional math library' and goals '["Fast computation", "No OOP"]'.
+AI:
+textMatched directive: init_project
+Project initialized in project.db:
+- project: MatrixCalculator (id=1, purpose: Pure functional math library, goals: ["Fast computation", "No OOP"])
+- completion_path: Setup (order_index=1, project_id=1)
+Scaffolded: .aifp-project folder
+Run next: aifp run Create math_utils.py with add function --task_id 1
+User: aifp run Create math_utils.py with add function --task_id 1
+AI:
+textMatched directive: task_decomposition (related to open task)
+Sub-directive: create_subtask
+Created subtask: Write add function (subtasks table, parent_task_id=1, priority=high)
+Sub-directive: file_write
+FILE: math_utils.py
+CONTENT:
+# AIFP_METADATA: {"function_names": ["add"], "deps": [], "theme": "math_ops", "flow": "addition_flow", "version": 1, "subtask_id": 1}
+# Project Purpose: Pure functional math library
+def add(a: int, b: int) -> int:
+    """Pure: Adds two integers."""
+    return a + b
+
+AIFP_WRITE_COMPLETE
+Run next: aifp run Verify compliance and update DB --subtask_id 1
+User (Interruption): aifp run Explore NumPy for matrix addition --task_id 2
+AI:
+textMatched directive: task_decomposition
+Subtask 'Write add function' in progress (subtask_id=1). Complete, discard, or resume before starting sidequest?
+User: aifp run Complete subtask and start sidequest.
+AI:
+textMatched directive: task_decomposition
+Subtask completed: subtasks.status='done' for subtask_id=1
+Created sidequest: Explore NumPy (sidequests table, project_id=1, priority=low)
+Sub-directive: file_write
+FILE: numpy_exploration.py
+CONTENT:
+# AIFP_METADATA: {"function_names": ["add_with_numpy"], "deps": ["numpy"], "theme": "math_ops", "flow": "exploratory_flow", "version": 1, "sidequest_id": 1}
+# Project Purpose: Pure functional math library
+import numpy as np
+def add_with_numpy(a: list, b: list) -> list:
+    """Wraps NumPy for matrix addition."""
+    return np.add(a, b).tolist()
+
+AIFP_WRITE_COMPLETE
+Run next: aifp run Verify compliance and update DB --sidequest_id 1
+Benefits of the Subtasks Table
+
+Clear Organization: Subtasks are distinct from tasks and sidequests, stored in their own table, making decomposition explicit and aligned with items as low-level actions.
+Priority Handling: Subtasks default to high priority, pausing parent tasks, as per your input. Sidequests default to low priority, preserving roadmap focus.
+AI Efficiency: AI queries subtasks for in-progress work, ensuring focus on critical breakdowns. Sidequests remain exploratory, linked to project not tasks.
+Schema Alignment: Fits with items as the generic action unit, while subtasks are task-specific, avoiding redundancy.
+Cost-Effective: No extra DB writes or interaction rounds, keeping token costs low.
+
+This schema update and directive refinement integrate seamlessly with your AIFP system, enhancing clarity without complexity
