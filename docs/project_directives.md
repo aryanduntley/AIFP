@@ -2,10 +2,6 @@ AIFP Project Directives
 
 These directives manage project tracking, task decomposition, and user interactions, ensuring alignment with the project roadmap and updating relevant project.db tables.
 
-
-
-
-
 directive_project_init
 Description: Initializes new project scaffolding.
 Flow: Create project.db with schema. Insert into project, completion_path, milestones, tasks. Scaffold .aifp-project folder.

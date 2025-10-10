@@ -246,3 +246,167 @@ AI:
 textMatched directive: task_decomposition
 Subtask 'add function' in progress for task_id 1. Complete, discard, or resume before starting new task?
 These updates refine your system without changing its core, making it leaner and more aligned with your goal. Want to draft another directive (e.g., fp_code_gen) or test this with a sample session?
+
+
+====================
+
+You’re right: we haven’t yet defined a table named directives_interactions.
+However, since we’re now modeling directive-to-directive relationships, cross-dependencies, and escalation hierarchies, it makes perfect sense to add one.
+This table’s purpose is to normalize directive relationships so the MCP can:
+Quickly resolve what each directive can trigger or depend on
+Support dynamic traversal (e.g., find all sub-directives under a given one)
+Enable visualization (e.g., building a graph or call tree of directives)
+Validate against cycles or invalid cross-level calls
+Let’s design it properly.
+
+🧠 Concept
+Each relationship (edge) connects:
+A source directive (the caller / parent)
+A target directive (the callee / dependency / escalation)
+A relationship type (what kind of link this is)
+This makes the system flexible enough to represent:
+Triggers (project_file_write ➜ project_update_db)
+Escalations (project_task_decomposition ⤴ project_compliance_check)
+Cross-links (project_compliance_check ↔ fp_purity)
+Dependencies (project_update_db depends on data from project_file_write)
+
+Example Data
+id	source_directive	target_directive	relation_type	description
+1	project_init	project_task_decomposition	triggers	Initialization step spawns task setup.
+2	project_file_write	project_update_db	triggers	After file write, update DB metadata.
+3	project_task_decomposition	project_compliance_check	escalates_to	Complex decisions delegated upward.
+4	project_compliance_check	fp_purity	fp_reference	Calls FP directive to verify purity.
+5	project_error_handling	project_user_referral	triggers	Fallback to user prompt on failure.
+6	project_update_db	project_dependency_sync	triggers	DB sync step triggered post-update.
+⚙️ Use Cases for MCP
+Use Case	Example Query
+Find all sub-directives triggered by a directive	SELECT target_directive_id FROM directives_interactions WHERE source_directive_id = ? AND relation_type = 'triggers';
+Trace escalation path upward	SELECT target_directive_id FROM directives_interactions WHERE source_directive_id = ? AND relation_type = 'escalates_to';
+List all FP dependencies	SELECT target_directive_id FROM directives_interactions WHERE source_directive_id = ? AND relation_type = 'fp_reference';
+Validate level transitions	Use a JOIN with directives.level to ensure no downward recursion (e.g., level 4 ➜ level 1).
+Visualize call graph	Export edges as adjacency list for graphviz or internal visualization tools.
+
+🧠 What a “machine-parsable” version means
+The current directive interaction matrix you saw in Markdown (project_directive_matrix.md) is written for humans — readable, visual, hierarchical, and annotated.
+
+A machine-parsable version is the same logical data, but encoded in structured JSON (or optionally CSV/SQL), so your MCP server or AI agent can directly query it, populate tables like directives_interactions, and perform reasoning like:
+“Which directives does project_task_decomposition trigger?”
+“Which directives escalate upward?”
+“Which FP directives are referenced by compliance checks?”
+“What are all valid paths from project_init to project_archive?”
+
+🧱 JSON Structure (Recommended)
+Each object represents one directive, and includes:
+The directive’s own metadata
+Lists of relationships (triggers, depends_on, escalates_to, etc.)
+Optional fp_links and notes
+
+🧩 Example (Excerpt)
+[
+  {
+    "name": "project_init",
+    "level": 1,
+    "triggers": ["project_task_decomposition", "project_add_path"],
+    "depends_on": ["aifp_run"],
+    "escalates_to": [],
+    "cross_links": [],
+    "fp_links": [],
+    "notes": "Entry point for new project creation."
+  },
+  {
+    "name": "project_task_decomposition",
+    "level": 2,
+    "triggers": ["project_add_path", "project_error_handling"],
+    "depends_on": ["project_init"],
+    "escalates_to": ["project_compliance_check"],
+    "cross_links": ["project_add_path"],
+    "fp_links": [],
+    "notes": "Breaks user goals into structured roadmap units."
+  },
+  {
+    "name": "project_file_write",
+    "level": 3,
+    "triggers": ["project_update_db", "project_theme_flow_mapping"],
+    "depends_on": ["project_add_path"],
+    "escalates_to": [],
+    "cross_links": [],
+    "fp_links": ["fp_purity", "fp_side_effect_detection"],
+    "notes": "Bridges code generation and project.db synchronization."
+  },
+  {
+    "name": "project_compliance_check",
+    "level": 4,
+    "triggers": ["project_completion_check", "project_metrics"],
+    "depends_on": ["project_update_db"],
+    "escalates_to": ["project_error_handling"],
+    "cross_links": [],
+    "fp_links": ["fp_purity", "fp_no_oop"],
+    "notes": "Ensures AIFP and FP compliance."
+  },
+  {
+    "name": "project_error_handling",
+    "level": 4,
+    "triggers": ["project_user_referral"],
+    "depends_on": ["project_compliance_check", "project_integrity_check"],
+    "escalates_to": [],
+    "cross_links": [],
+    "fp_links": [],
+    "notes": "Handles directive-level errors, logs to notes table."
+  }
+]
+
+⚙️ How the MCP Can Use It
+When ingesting directives:
+Parse this JSON file.
+For each directive, insert a record into directives.
+For each array key (triggers, depends_on, etc.), insert relationship rows into directives_interactions.
+Optionally, validate level transitions (e.g., Level 3 can escalate only to Level 4).
+When reasoning or visualizing:
+Treat this JSON as an adjacency list or graph.
+It can be transformed to a Graphviz .dot file, or queried directly by name.
+
+🧾 Equivalent SQL Mapping (optional)
+You could also express the same relationships directly as table inserts:
+
+INSERT INTO directives_interactions (source_directive_id, target_directive_id, relation_type, description)
+VALUES
+((SELECT id FROM directives WHERE name='project_init'),
+ (SELECT id FROM directives WHERE name='project_task_decomposition'),
+ 'triggers', 'Initialization triggers task decomposition'),
+((SELECT id FROM directives WHERE name='project_compliance_check'),
+ (SELECT id FROM directives WHERE name='fp_purity'),
+ 'fp_reference', 'Ensures functional purity compliance');
+
+🔍 Summary
+Format	Purpose	Ideal Consumer
+Markdown Matrix	Human-readable hierarchy	Developers, documentation
+Machine-Parsable JSON	Structured graph for queries	MCP, AI reasoning, visualizations
+SQL Inserts	DB ingestion (one-time or seed data)	Database initialization
+
+✅ In short, the machine-parsable version is your directive relationship graph in JSON, directly convertible into the directives_interactions table or any graph reasoning layer.
+
+
+
+Key Features
+Capability	Description
+Multi-file support	Uses FP_DIRECTIVE_FILES and PROJECT_DIRECTIVE_FILES arrays, easily extendable later
+Schema self-healing	Creates missing tables automatically
+Smart update logic	Uses ON CONFLICT(name) to upsert
+Relationship linking	Auto-populates directives_interactions from project_directive_graph.json
+Audit logging	Writes full summary to logs/sync_report.json
+Dry-run safety	Set DRY_RUN=True to simulate import
+Hash-based diffing (light)	Quickly detects directive changes for update reporting
+🧩 Example Output
+🔄 Starting AIFP Directive Sync...
+📘 Loaded 30 entries from directives-fp-core.json
+📘 Loaded 30 entries from directives-fp-aux.json
+📘 Loaded 21 entries from directives-project.json
+📊 Linking relationships from project_directive_graph.json
+✅ Added: 2
+🔁 Updated: 79
+🔗 Relationships added: 215
+📄 Sync report saved to logs/sync_report.json
+
+
+This gives you a stable foundation:
+Your directives live as JSON (editable, version-controlled), and this Python script ensures your database is always in sync — automatically updating categories, relationships, and FP links.

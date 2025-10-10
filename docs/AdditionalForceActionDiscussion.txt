@@ -925,3 +925,140 @@ Schema Alignment: Fits with items as the generic action unit, while subtasks are
 Cost-Effective: No extra DB writes or interaction rounds, keeping token costs low.
 
 This schema update and directive refinement integrate seamlessly with your AIFP system, enhancing clarity without complexity
+
+
+Current Design Confirmations
+Aspect	Design Rule	Status
+Directive Storage	Single JSON blob per directive stored in aifp_core.db (workflow column). No separate compressed/detailed JSON layers.	✅ Confirmed
+Escalation	.md file exists for human/AI guidance escalation only, not as executable logic.	✅ Confirmed
+Directive Separation	type = 'fp' (for coding rules) and type = 'project' (for management and roadmap).	✅ Confirmed
+DB Rights	FP side (MCP) = read-only; Project side (AI local .aifp DB) = read/write.	✅ Confirmed
+Cross-linking	Project directives can trigger FP directives (e.g., compliance check → fp_purity), but FP directives never modify project state directly.	✅ Confirmed
+Helper Functions	Routine queries stored as functions in helper_functions table within MCP. AI may compose custom queries as needed.	✅ Confirmed
+🧭 The Hierarchical “Level” Question
+
+You asked:
+
+Should we add a number to the database for hierarchical reference (following directive type="project" from level=0 to level=4)?
+
+Yes — but only for project directives, and not as a rigid dependency tree.
+It’s best treated as a semantic hierarchy indicator rather than execution order.
+That way, AI or the MCP can reason about directive scope without forcing sequential logic.
+
+🎯 Why Add level
+
+Adding a numeric level improves:
+
+Reasoning clarity: The AI can infer how "broad" or "narrow" a directive is.
+
+Query simplicity: Example → SELECT name FROM directives WHERE type='project' AND level<=2 gives high-level operational directives.
+
+Roadmap visualization: Later, a UI or CLI could render directive hierarchies cleanly.
+
+🪜 Proposed level Scale
+Level	Meaning	Example Directives	Scope
+0	Root orchestrator	aifp_run	Entry point; intent parsing, directive routing
+1	Project system management	project_init, project_evolution	High-level project setup, versioning
+2	Task orchestration	project_task_decomposition, project_add_path	Managing milestones, tasks, sidequests
+3	File & DB operations	project_file_write, project_update_db	Execution of code-related project actions
+4	Validation & recovery	project_compliance_check, project_error_handling, project_completion_check	Verifying, correcting, finalizing
+
+FP directives do not use level numbering, since their hierarchy is logical, not procedural.
+However, you can use a category field ('purity', 'immutability', 'ownership', 'side_effects', etc.) for classification within type='fp'.
+
+🧱 Schema Update for directives Table (MCP side)
+ALTER TABLE directives
+ADD COLUMN type TEXT NOT NULL DEFAULT 'project';   -- 'fp' or 'project'
+
+ALTER TABLE directives
+ADD COLUMN level INTEGER DEFAULT NULL;             -- 0-4 for project directives only
+
+
+Optionally add a validation trigger:
+
+CREATE TRIGGER enforce_level_on_project
+BEFORE INSERT ON directives
+FOR EACH ROW
+WHEN NEW.type = 'fp' AND NEW.level IS NOT NULL
+BEGIN
+  SELECT RAISE(ABORT, 'FP directives cannot have a level value');
+END;
+
+🔍 Example Entries
+id	name	type	level	description
+1	aifp_run	project	0	Master entry point
+2	project_init	project	1	Initialize project and DB
+3	project_task_decomposition	project	2	Manage task hierarchies
+4	project_file_write	project	3	Generate files and update DB
+5	project_compliance_check	project	4	Verify code and progress
+6	fp_purity	fp	NULL	Enforce pure functions
+7	fp_no_oop	fp	NULL	Ban OOP structures
+8	fp_side_effects_flag	fp	NULL	Detect and isolate side effects
+🧩 AI Usage Pattern
+When AI receives a command:
+Root → aifp_run (level 0)
+Intent → selects sub-directive (type='project', next level logically higher)
+Execution → directive workflow JSON
+Escalation → .md if ambiguity
+Cross-call → triggers FP directive(s) if compliance needed
+FP directives run read-only, returning a compliance status
+UPDATE project.functions.side_effects_json accordingly
+🧠 Implementation Benefits
+AI can reason hierarchically without recursion or static ordering.
+MCP can generate quick dependency maps:
+SELECT name, level FROM directives WHERE type='project' ORDER BY level;
+Debugging/tracking directives becomes cleaner.
+It’s future-proof for extended directive ecosystems (like type='infra' later).
+⚙️ Optional Enhancement — parent_directive Field
+If you ever need explicit links between directives (for tracing flows), you can add:
+ALTER TABLE directives ADD COLUMN parent_directive TEXT REFERENCES directives(name);
+
+Example:
+name	parent_directive
+project_file_write	project_task_decomposition
+project_compliance_check	project_file_write
+This lets you model flows (run → decompose → write → check) while still reasoning freely.
+🧩 Final Recommendation
+✅ Yes, add a numeric level field (0–4) for project directives.
+Use it as a semantic hierarchy reference, not an enforced call order.
+Leave FP directives unnumbered but categorized by domain.
+If you like, I can now:
+Update your schemaExampleMCP.txt definition with the type and level fields (and optional parent_directive).
+Then show how a fully populated directives table would look (rows for all project + FP directives).
+
+
+Example Entries
+
+Categories:
+
+INSERT INTO categories (name, description) VALUES
+('purity', 'Enforces pure functions with no hidden state or side effects'),
+('immutability', 'Ensures immutable data handling'),
+('ownership', 'Tracks data ownership and borrowing'),
+('side_effects', 'Detects and isolates side effects'),
+('init', 'Handles project creation and setup'),
+('task_management', 'Manages project tasks and decomposition'),
+('validation', 'Ensures compliance and correctness');
+
+
+Linking FP directives:
+
+INSERT INTO directive_categories (directive_id, category_id)
+SELECT d.id, c.id FROM directives d, categories c
+WHERE d.name = 'fp_purity' AND c.name = 'purity';
+
+
+Linking Project directives:
+
+INSERT INTO directive_categories (directive_id, category_id)
+SELECT d.id, c.id FROM directives d, categories c
+WHERE d.name = 'project_compliance_check' AND c.name = 'validation';
+
+
+Directive Type	Expected Count	Description
+Core FP Directives	10–20	Fundamental rules (purity, no OOP, immutability)
+Language-Agnostic FP Patterns	30–40	Control flow, recursion, pattern matching, data transformations
+Safety / Validation Directives	10–15	Type safety, concurrency, ownership
+Meta-Directives	10–20	FP introspection, dependency tracking, compliance templates
+Library Wrapping Directives	10–20	Handle interop and legacy adaptation
+Experimental Extensions	open-ended	Could cover domain-specific FP patterns later (e.g., stream, graph, reactive flows)

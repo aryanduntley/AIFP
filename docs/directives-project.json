@@ -1,0 +1,546 @@
+[
+  {
+    "name": "project_init",
+    "type": "project",
+    "level": 1,
+    "category": {
+      "name": "initialization",
+      "description": "Handles creation and setup of new AIFP projects."
+    },
+    "description": "Initializes a new project by scaffolding the .aifp-project folder, creating project.db, and inserting the base roadmap.",
+    "workflow": {
+      "trunk": "setup_project",
+      "branches": [
+        {"if": "missing_details", "then": "prompt_user", "details": {"fields": ["name", "purpose", "goals"]}},
+        {"if": "setup_complete", "then": "create_db_and_folder", "details": {"schema": "project_db_schema.sql"}},
+        {"fallback": "prompt_user", "details": {"clarify": "Provide missing project details"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "db_creation_failed", "resolution": "Check file permissions or re-run as admin"},
+      {"issue": "schema_missing", "resolution": "Verify schema file in /schemas/"}
+    ],
+    "intent_keywords_json": ["create project", "initialize", "start project"],
+    "confidence_threshold": 0.8,
+    "notes": "Top-level setup directive; establishes project identity and database scaffolding."
+  },
+  {
+    "name": "project_task_decomposition",
+    "type": "project",
+    "level": 2,
+    "category": {
+      "name": "task_management",
+      "description": "Manages decomposition of user goals into AIFP-aligned tasks, subtasks, and sidequests."
+    },
+    "description": "Breaks complex user instructions into trackable tasks, subtasks, and sidequests in project.db, maintaining roadmap alignment.",
+    "workflow": {
+      "trunk": "review_open_tasks",
+      "branches": [
+        {"if": "related_to_open_task", "then": "update_if_needed", "details": {"check_alignment": true}},
+        {"if": "new_task_needed", "then": "create_new_task", "details": {"link_to_completion_path": true, "update_project_version": true}},
+        {"if": "subtask_needed", "then": "create_subtask", "details": {"table": "subtasks", "priority": "high", "pause_parent_task": true}},
+        {"if": "sidequest_needed", "then": "create_sidequest", "details": {"table": "sidequests", "priority": "low", "link_to_project": true}},
+        {"if": "interruption_detected", "then": "handle_subtask_priority", "details": {"notify_user": true, "options": "complete/discard/resume"}},
+        {"fallback": "prompt_user", "details": {"clarify": "Is this a new task, subtask, or sidequest?"}},
+        {"parallel": ["execute_code_gen", "update_db"], "details": {"if_code_and_db": true}}
+      ],
+      "error_handling": {"on_failure": "prompt_user", "retry": "max 2 attempts"}
+    },
+    "roadblocks_json": [
+      {"issue": "task vs subtask vs sidequest ambiguity", "resolution": "Prompt user for clarification, log in notes"},
+      {"issue": "no matching open task", "resolution": "Create new task or sidequest, align to completion_path"}
+    ],
+    "intent_keywords_json": ["decompose task", "break down", "plan steps", "explore"],
+    "confidence_threshold": 0.5,
+    "notes": "Guides project structure expansion and roadmap alignment through database updates."
+  },
+  {
+    "name": "project_add_path",
+    "type": "project",
+    "level": 2,
+    "category": {
+      "name": "task_management",
+      "description": "Handles roadmap and completion_path modifications."
+    },
+    "description": "Creates or updates completion_path, milestones, and tasks in project.db to maintain project roadmap continuity.",
+    "workflow": {
+      "trunk": "modify_path",
+      "branches": [
+        {"if": "new_path", "then": "insert_completion_path", "details": {"order_index": true}},
+        {"if": "new_task", "then": "insert_task", "details": {"link_to_milestone": true}},
+        {"if": "new_subtask", "then": "insert_subtask", "details": {"table": "subtasks", "priority": "high"}},
+        {"fallback": "prompt_user", "details": {"clarify": "Add to roadmap?"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "path_misaligned", "resolution": "Prompt user for roadmap alignment"},
+      {"issue": "duplicate_entry", "resolution": "Verify milestone/task uniqueness"}
+    ],
+    "intent_keywords_json": ["add path", "update roadmap", "milestone"],
+    "confidence_threshold": 0.6,
+    "notes": "Maintains structural coherence of project paths and milestones."
+  },
+  {
+    "name": "project_file_write",
+    "type": "project",
+    "level": 3,
+    "category": {
+      "name": "file_operations",
+      "description": "Handles file generation and metadata updates."
+    },
+    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly.",
+    "workflow": {
+      "trunk": "generate_file",
+      "branches": [
+        {"if": "code_compliant", "then": "write_file", "details": {"metadata": true, "update_db": true}},
+        {"if": "non_compliant", "then": "fp_compliance_check", "details": {"escalate_to_fp_directives": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Fix compliance before write?"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "missing_metadata", "resolution": "Add AIFP_METADATA, prompt user"},
+      {"issue": "fp_violation", "resolution": "Trigger fp_compliance_check"}
+    ],
+    "intent_keywords_json": ["create file", "write code", "generate file"],
+    "confidence_threshold": 0.7,
+    "notes": "Core file generation directive; bridges code creation and database synchronization."
+  },
+  {
+    "name": "project_update_db",
+    "type": "project",
+    "level": 3,
+    "category": {
+      "name": "file_operations",
+      "description": "Synchronizes generated code metadata with the project database."
+    },
+    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking.",
+    "workflow": {
+      "trunk": "parse_content",
+      "branches": [
+        {"if": "new_file", "then": "update_files_table", "details": {"checksum": true}},
+        {"if": "new_function", "then": "update_functions_table", "details": {"deps_json": true}},
+        {"if": "task_related", "then": "update_items_subtasks", "details": {"link_to_completion_path": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Update DB for what component?"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "missing_metadata", "resolution": "Parse again or prompt user for function metadata"},
+      {"issue": "checksum_mismatch", "resolution": "Recalculate and resync file entry"}
+    ],
+    "intent_keywords_json": ["update db", "track file", "metadata"],
+    "confidence_threshold": 0.6,
+    "notes": "Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle."
+  },
+  {
+    "name": "project_compliance_check",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "compliance",
+      "description": "Verifies AIFP rule adherence and functional progress."
+    },
+    "description": "Runs FP compliance directives to ensure code purity, no OOP, and structural correctness. Also verifies project completion alignment via project.db.",
+    "workflow": {
+      "trunk": "run_checks",
+      "branches": [
+        {"if": "compliance_passed", "then": "proceed", "details": {"update_db": true}},
+        {"if": "compliance_failed", "then": "alert_user", "details": {"escalate_to_fp_directives": ["fp_purity", "fp_no_oop"]}},
+        {"fallback": "prompt_user", "details": {"clarify": "Resolve compliance issue manually?"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "compliance_failure", "resolution": "Refer to FP directives and retry"},
+      {"issue": "fp_violation", "resolution": "Run linked fp_* directives automatically"}
+    ],
+    "intent_keywords_json": ["verify", "check compliance", "validate code"],
+    "confidence_threshold": 0.7,
+    "notes": "Validates project state and functional integrity before database updates or completion marking."
+  },
+  {
+    "name": "project_completion_check",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "compliance",
+      "description": "Evaluates roadmap progress and completion readiness."
+    },
+    "description": "Checks completion_path, milestones, and tasks for status updates. Marks completion milestones when conditions are met and logs alignment notes.",
+    "workflow": {
+      "trunk": "check_progress",
+      "branches": [
+        {"if": "criteria_met", "then": "mark_done", "details": {"update_status": true}},
+        {"if": "drift_detected", "then": "alert_user", "details": {"log_note": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Adjust roadmap or tasks?"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "roadmap_drift", "resolution": "Prompt user to realign completion_path"},
+      {"issue": "incomplete_tasks", "resolution": "Auto-mark pending subtasks or prompt user"}
+    ],
+    "intent_keywords_json": ["progress", "check completion", "roadmap"],
+    "confidence_threshold": 0.6,
+    "notes": "Monitors roadmap alignment, marks progress milestones, and prevents premature completion marking."
+  },
+  {
+    "name": "project_error_handling",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "error_handling",
+      "description": "Handles directive failures, logging, and escalation to user."
+    },
+    "description": "Monitors directive execution for known or unknown failures, applies stored roadblock resolutions, and logs issues to the notes table for transparency.",
+    "workflow": {
+      "trunk": "check_roadblocks",
+      "branches": [
+        {"if": "known_issue", "then": "apply_resolution", "details": {"log_note": true}},
+        {"if": "unknown_issue", "then": "prompt_user", "details": {"escalate_to_md": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Resolve error manually?"}}
+      ],
+      "error_handling": {"on_failure": "log_and_halt"}
+    },
+    "roadblocks_json": [
+      {"issue": "generic_error", "resolution": "Prompt user and record in notes"},
+      {"issue": "workflow_failure", "resolution": "Escalate to associated .md file for guidance"}
+    ],
+    "intent_keywords_json": ["error", "failure", "roadblock", "issue"],
+    "confidence_threshold": 0.5,
+    "notes": "Provides universal error recovery handling for all project-level directives. Integrates with the notes table for traceability."
+  },
+  {
+    "name": "project_evolution",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "evolution_tracking",
+      "description": "Tracks changes to project idea, goals, and purpose."
+    },
+    "description": "Handles versioning and pivot tracking for evolving project goals. Logs changes in notes and updates roadmap and completion paths accordingly.",
+    "workflow": {
+      "trunk": "update_project",
+      "branches": [
+        {"if": "pivot_detected", "then": "increment_version", "details": {"update_goals": true}},
+        {"if": "path_affected", "then": "update_completion_path", "details": {"log_note": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Confirm pivot or adjust roadmap?"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "pivot_ambiguity", "resolution": "Prompt user for new purpose and goals"},
+      {"issue": "version_conflict", "resolution": "Reconcile project version and completion_path entries"}
+    ],
+    "intent_keywords_json": ["pivot", "evolve", "update goals", "project change"],
+    "confidence_threshold": 0.6,
+    "notes": "Captures and logs project pivots for transparency in long-running projects. Updates project.version and completion paths."
+  },
+  {
+    "name": "project_user_referral",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "error_handling",
+      "description": "Delegates unresolved issues back to the user."
+    },
+    "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review.",
+    "workflow": {
+      "trunk": "check_confidence",
+      "branches": [
+        {"if": "low_confidence", "then": "prompt_user", "details": {"log_note": true}},
+        {"if": "workflow_failure", "then": "escalate_to_md", "details": {"prompt_user": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Resolve or confirm intended action?"}}
+      ],
+      "error_handling": {"on_failure": "log_and_halt"}
+    },
+    "roadblocks_json": [
+      {"issue": "unresolved_issue", "resolution": "Prompt user and record clarification in notes"},
+      {"issue": "low_confidence_path", "resolution": "Escalate to user confirmation"}
+    ],
+    "intent_keywords_json": ["clarify", "user input", "confirmation", "resolve"],
+    "confidence_threshold": 0.5,
+    "notes": "Standard fallback directive for AI–user collaboration. Ensures ambiguous operations always route through human confirmation."
+  },
+  {
+    "name": "project_theme_flow_mapping",
+    "type": "project",
+    "level": 3,
+    "category": {
+      "name": "theme_mapping",
+      "description": "Links generated code elements to project themes and flows."
+    },
+    "description": "Infers or assigns flow and theme groupings based on file metadata, updating linking tables for file_flows and flow_themes within project.db.",
+    "workflow": {
+      "trunk": "infer_metadata",
+      "branches": [
+        {"if": "metadata_present", "then": "update_flow_themes", "details": {"confidence_score": true}},
+        {"if": "no_metadata", "then": "prompt_user", "details": {"assign_default": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Assign theme and flow manually?"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "ambiguous_mapping", "resolution": "Prompt user to specify theme or flow"},
+      {"issue": "missing_metadata", "resolution": "Parse file for AIFP_METADATA or prompt user"}
+    ],
+    "intent_keywords_json": ["theme", "flow", "grouping", "categorize"],
+    "confidence_threshold": 0.5,
+    "notes": "Maintains thematic and procedural grouping across project files. Supports roadmap visualization and organization."
+  },
+  {
+    "name": "project_metrics",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "metrics",
+      "description": "Tracks quantitative and qualitative project progress metrics."
+    },
+    "description": "Calculates project completion percentage, directive success rates, and task distribution to inform AI reasoning and user summaries.",
+    "workflow": {
+      "trunk": "gather_metrics",
+      "branches": [
+        {"if": "completion_path_available", "then": "compute_progress", "details": {"aggregate": true}},
+        {"if": "function_table_updated", "then": "calculate_compliance_score", "details": {"fp_links": true}},
+        {"fallback": "log_metrics_to_notes"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "missing_task_data", "resolution": "Requery project.db and retry"},
+      {"issue": "stale_metrics", "resolution": "Recalculate from base tables"}
+    ],
+    "intent_keywords_json": ["progress", "metrics", "statistics"],
+    "confidence_threshold": 0.7,
+    "notes": "Provides periodic project health reports for both AI and user reference. Logged in notes for transparency."
+  },
+  {
+    "name": "project_performance_summary",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "metrics",
+      "description": "Generates a summary of recent directive and workflow performance."
+    },
+    "description": "Summarizes recent directive outcomes, including successes, retries, and failures, and stores summaries in notes for audit.",
+    "workflow": {
+      "trunk": "summarize_recent_runs",
+      "branches": [
+        {"if": "error_logs_present", "then": "analyze_failures"},
+        {"if": "recent_successes", "then": "record_success_rate"},
+        {"fallback": "write_summary_to_notes"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "missing_logs", "resolution": "Query notes table for directive references"}
+    ],
+    "intent_keywords_json": ["summary", "audit", "performance"],
+    "confidence_threshold": 0.6,
+    "notes": "Keeps a rolling summary of directive performance for reliability tracking."
+  },
+  {
+    "name": "project_dependency_sync",
+    "type": "project",
+    "level": 3,
+    "category": {
+      "name": "dependency_management",
+      "description": "Reconciles mismatched dependencies between code and project.db."
+    },
+    "description": "Compares functions and flows in files against database records, resolving missing or outdated dependencies.",
+    "workflow": {
+      "trunk": "compare_db_and_files",
+      "branches": [
+        {"if": "missing_function_in_db", "then": "insert_function_entry"},
+        {"if": "db_function_stale", "then": "update_dependency_entry"},
+        {"if": "unlinked_file", "then": "link_to_flow"},
+        {"fallback": "log_sync_status"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "unresolved_dependency", "resolution": "Prompt user to confirm update direction"}
+    ],
+    "intent_keywords_json": ["dependency", "sync", "link"],
+    "confidence_threshold": 0.7,
+    "notes": "Maintains consistency between the physical codebase and project metadata."
+  },
+  {
+    "name": "project_integrity_check",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "dependency_management",
+      "description": "Performs integrity verification on project.db."
+    },
+    "description": "Runs validation queries to detect orphaned records, missing links, and checksum mismatches within project.db.",
+    "workflow": {
+      "trunk": "run_integrity_queries",
+      "branches": [
+        {"if": "missing_foreign_key", "then": "repair_link"},
+        {"if": "checksum_error", "then": "recalculate_file_checksum"},
+        {"fallback": "log_integrity_status"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "data_misalignment", "resolution": "Auto-correct links where safe"}
+    ],
+    "intent_keywords_json": ["integrity", "verify database", "consistency"],
+    "confidence_threshold": 0.8,
+    "notes": "Ensures internal DB consistency, preventing corruption during iterative project growth."
+  },
+  {
+    "name": "project_auto_resume",
+    "type": "project",
+    "level": 3,
+    "category": {
+      "name": "recovery_automation",
+      "description": "Automatically resumes interrupted tasks or workflows."
+    },
+    "description": "Detects unfinished tasks or subtasks from project.db and resumes execution at the appropriate directive entry point.",
+    "workflow": {
+      "trunk": "detect_incomplete_tasks",
+      "branches": [
+        {"if": "task_paused", "then": "resume_from_checkpoint"},
+        {"if": "sidequest_paused", "then": "prompt_resume"},
+        {"fallback": "mark_as_resolved"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "resume_conflict", "resolution": "Prompt user to choose branch or discard task"}
+    ],
+    "intent_keywords_json": ["resume", "continue", "checkpoint"],
+    "confidence_threshold": 0.7,
+    "notes": "Restores workflow continuity between user sessions or interruptions."
+  },
+  {
+    "name": "project_backup_restore",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "recovery_automation",
+      "description": "Manages project database and file backups."
+    },
+    "description": "Creates periodic backups of project.db and associated files, and restores them on demand or after failure detection.",
+    "workflow": {
+      "trunk": "perform_backup",
+      "branches": [
+        {"if": "scheduled_backup_time", "then": "execute_backup"},
+        {"if": "restore_requested", "then": "load_backup"},
+        {"fallback": "log_backup_status"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "backup_failure", "resolution": "Prompt user to retry or restore manually"}
+    ],
+    "intent_keywords_json": ["backup", "restore", "recovery"],
+    "confidence_threshold": 0.6,
+    "notes": "Protects project state from corruption or user error. Integrates with integrity check for recovery decisions."
+  },
+  {
+    "name": "project_archive",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "archival_refactor",
+      "description": "Archives completed projects for long-term storage."
+    },
+    "description": "Packages the final project.db, all files, and completion reports into an archive format and marks project status as 'archived'.",
+    "workflow": {
+      "trunk": "prepare_archive",
+      "branches": [
+        {"if": "project_completed", "then": "compress_and_store"},
+        {"if": "incomplete_milestones", "then": "prompt_user_to_finalize"},
+        {"fallback": "log_archive_status"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "archive_incomplete", "resolution": "Prompt user for approval before packaging"}
+    ],
+    "intent_keywords_json": ["archive", "package", "finalize"],
+    "confidence_threshold": 0.8,
+    "notes": "Preserves completed project versions and prepares exportable deliverables."
+  },
+  {
+    "name": "project_refactor_path",
+    "type": "project",
+    "level": 3,
+    "category": {
+      "name": "archival_refactor",
+      "description": "Refactors roadmap paths and milestones."
+    },
+    "description": "Allows restructuring of completion_path sequences for clarity, merging or reordering tasks while maintaining linkage integrity.",
+    "workflow": {
+      "trunk": "analyze_completion_path",
+      "branches": [
+        {"if": "duplicate_milestone", "then": "merge_entries"},
+        {"if": "order_misaligned", "then": "reorder_path"},
+        {"fallback": "log_changes"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "path_conflict", "resolution": "Prompt user for reorder approval"}
+    ],
+    "intent_keywords_json": ["refactor path", "reorder roadmap"],
+    "confidence_threshold": 0.7,
+    "notes": "Provides roadmap reorganization utilities for evolving projects."
+  },
+  {
+    "name": "project_dependency_map",
+    "type": "project",
+    "level": 3,
+    "category": {
+      "name": "dependency_management",
+      "description": "Generates visual dependency maps across project entities."
+    },
+    "description": "Queries relationships between files, functions, flows, and tasks to produce a dependency graph for reasoning or visualization.",
+    "workflow": {
+      "trunk": "generate_dependency_graph",
+      "branches": [
+        {"if": "linked_entities_found", "then": "store_dependency_map"},
+        {"fallback": "log_dependency_status"}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "missing_links", "resolution": "Rebuild function-to-task relationships"}
+    ],
+    "intent_keywords_json": ["dependency map", "graph", "visualize"],
+    "confidence_threshold": 0.7,
+    "notes": "Improves transparency and traceability across project elements for AIFP reasoning."
+  },
+  {
+    "name": "project_auto_summary",
+    "type": "project",
+    "level": 4,
+    "category": {
+      "name": "metrics",
+      "description": "Automatically summarizes project status and context."
+    },
+    "description": "Generates a human-readable summary of project purpose, progress, and open tasks, stored in notes or output to the terminal.",
+    "workflow": {
+      "trunk": "summarize_project_state",
+      "branches": [
+        {"if": "active_tasks_found", "then": "summarize_by_path"},
+        {"if": "completed_milestones", "then": "log_completion_summary"},
+        {"fallback": "prompt_user", "details": {"clarify": "Include additional context?"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "summary_generation_failed", "resolution": "Retry summary or prompt user for context"}
+    ],
+    "intent_keywords_json": ["summary", "status", "report"],
+    "confidence_threshold": 0.7,
+    "notes": "Provides quick, automated overviews of project state for both AI and user consumption."
+  }
+]
+
