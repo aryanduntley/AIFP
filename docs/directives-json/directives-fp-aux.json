@@ -1,0 +1,1436 @@
+[
+  {
+    "name": "fp_optionals",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "error_handling",
+      "description": "Replaces null checks with declarative Option/Maybe patterns."
+    },
+    "description": "Encourages use of optional return wrappers (Option, Maybe) instead of nulls or exceptions.",
+    "md_file_path": "directives/fp_optionals.md",
+    "workflow": {
+      "trunk": "scan_for_null_usage",
+      "branches": [
+        {
+          "if": "null_detected",
+          "then": "wrap_in_optional"
+        },
+        {
+          "if": "throw_instead_of_optional",
+          "then": "convert_to_option_pattern"
+        },
+        {
+          "fallback": "mark_compliant"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "null_return",
+        "resolution": "Replace with Option type"
+      },
+      {
+        "issue": "implicit_null_check",
+        "resolution": "Convert to declarative option pattern"
+      }
+    ],
+    "intent_keywords_json": [
+      "optional",
+      "maybe",
+      "null safety"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Promotes predictable handling of missing data across all functional flows."
+  },
+  {
+    "name": "fp_result_types",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "error_handling",
+      "description": "Implements declarative result handling for success/failure."
+    },
+    "description": "Uses Result/Either patterns instead of exceptions for error propagation.",
+    "md_file_path": "directives/fp_result_types.md",
+    "workflow": {
+      "trunk": "analyze_exceptions",
+      "branches": [
+        {
+          "if": "throw_statement_found",
+          "then": "replace_with_result_type"
+        },
+        {
+          "if": "exception_catch_block",
+          "then": "wrap_in_result_pattern"
+        },
+        {
+          "fallback": "mark_as_functional"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "throw_usage",
+        "resolution": "Replace with Result return"
+      },
+      {
+        "issue": "nested_try_catch",
+        "resolution": "Flatten using functional error chain"
+      }
+    ],
+    "intent_keywords_json": [
+      "result",
+      "either",
+      "functional error handling"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Introduces predictable, composable error propagation structures."
+  },
+  {
+    "name": "fp_try_monad",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "error_handling",
+      "description": "Wraps potentially failing operations in Try monads."
+    },
+    "description": "Encourages safe evaluation of code that may fail, returning Try(success|failure) instead of throwing.",
+    "md_file_path": "directives/fp_try_monad.md",
+    "workflow": {
+      "trunk": "identify_risky_calls",
+      "branches": [
+        {
+          "if": "unchecked_operation",
+          "then": "wrap_in_try_monad"
+        },
+        {
+          "if": "explicit_throw",
+          "then": "replace_with_try"
+        },
+        {
+          "fallback": "mark_safe"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "unwrapped_error_prone_call",
+        "resolution": "Wrap with Try"
+      },
+      {
+        "issue": "unhandled_exception",
+        "resolution": "Convert to Try monad"
+      }
+    ],
+    "intent_keywords_json": [
+      "try",
+      "monad",
+      "error recovery"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Core functional error management; replaces exceptions with composable Try monads."
+  },
+  {
+    "name": "fp_error_pipeline",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "error_handling",
+      "description": "Creates chained pipelines for sequential error handling."
+    },
+    "description": "Allows chaining of function results that may fail using map/flatMap or similar monadic combinators.",
+    "md_file_path": "directives/fp_error_pipeline.md",
+    "workflow": {
+      "trunk": "scan_function_chains",
+      "branches": [
+        {
+          "if": "mixed_success_error_flows",
+          "then": "standardize_to_error_pipeline"
+        },
+        {
+          "if": "try_catch_chain",
+          "then": "convert_to_flatmap"
+        },
+        {
+          "fallback": "mark_compliant"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "manual_error_handling",
+        "resolution": "Replace with declarative pipeline"
+      }
+    ],
+    "intent_keywords_json": [
+      "error pipeline",
+      "flatmap",
+      "chained handling"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Streamlines multi-step error handling using FP monadic combinators."
+  },
+  {
+    "name": "fp_null_elimination",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "error_handling",
+      "description": "Eliminates use of null or undefined as values."
+    },
+    "description": "Detects and replaces null/undefined with safe functional constructs like Option or Result.",
+    "md_file_path": "directives/fp_null_elimination.md",
+    "workflow": {
+      "trunk": "scan_literals",
+      "branches": [
+        {
+          "if": "null_or_undefined_found",
+          "then": "replace_with_safe_construct"
+        },
+        {
+          "fallback": "mark_compliant"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "null_literal",
+        "resolution": "Replace with Option"
+      },
+      {
+        "issue": "undefined_reference",
+        "resolution": "Return Result.failure"
+      }
+    ],
+    "intent_keywords_json": [
+      "null elimination",
+      "undefined safety"
+    ],
+    "confidence_threshold": 0.6,
+    "notes": "Core null-safety enforcement directive; complements fp_optionals."
+  },
+  {
+    "name": "fp_list_operations",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "data_structures",
+      "description": "Enforces use of map/filter/reduce instead of loops."
+    },
+    "description": "Refactors imperative loops into declarative list transformations using map/filter/reduce.",
+    "md_file_path": "directives/fp_list_operations.md",
+    "workflow": {
+      "trunk": "analyze_loops",
+      "branches": [
+        {
+          "if": "for_loop_found",
+          "then": "convert_to_map_or_reduce"
+        },
+        {
+          "if": "mutation_inside_loop",
+          "then": "refactor_to_pure_transformation"
+        },
+        {
+          "fallback": "mark_as_functional"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "imperative_loop",
+        "resolution": "Replace with map/filter/reduce"
+      }
+    ],
+    "intent_keywords_json": [
+      "map",
+      "reduce",
+      "filter"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Encourages functional collection processing patterns."
+  },
+  {
+    "name": "fp_map_reduce",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "data_structures",
+      "description": "Promotes use of reduce for aggregation logic."
+    },
+    "description": "Standardizes use of reduce for aggregations instead of mutable accumulators.",
+    "md_file_path": "directives/fp_map_reduce.md",
+    "workflow": {
+      "trunk": "scan_for_aggregations",
+      "branches": [
+        {
+          "if": "mutable_accumulator",
+          "then": "convert_to_reduce"
+        },
+        {
+          "fallback": "mark_as_optimized"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "mutable_accumulator",
+        "resolution": "Use pure reduce instead"
+      }
+    ],
+    "intent_keywords_json": [
+      "reduce",
+      "aggregate",
+      "fold"
+    ],
+    "confidence_threshold": 0.6,
+    "notes": "Encourages pure aggregation using reducers; eliminates shared mutable accumulators."
+  },
+  {
+    "name": "fp_lazy_evaluation",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "data_structures",
+      "description": "Introduces lazy sequences for performance."
+    },
+    "description": "Transforms eager list processing into lazy evaluated sequences where supported.",
+    "md_file_path": "directives/fp_lazy_evaluation.md",
+    "workflow": {
+      "trunk": "detect_eager_collections",
+      "branches": [
+        {
+          "if": "large_list_processing",
+          "then": "replace_with_lazy_sequence"
+        },
+        {
+          "if": "composable_sequence_detected",
+          "then": "mark_as_optimized"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "eager_evaluation",
+        "resolution": "Switch to lazy sequence or generator"
+      }
+    ],
+    "intent_keywords_json": [
+      "lazy",
+      "stream",
+      "generator"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Improves performance and composability via lazy evaluation semantics."
+  },
+  {
+    "name": "fp_data_filtering",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "data_structures",
+      "description": "Promotes use of filter and pure predicates for selection."
+    },
+    "description": "Replaces imperative data filtering with declarative filter expressions using pure predicates.",
+    "md_file_path": "directives/fp_data_filtering.md",
+    "workflow": {
+      "trunk": "scan_filter_logic",
+      "branches": [
+        {
+          "if": "inline_filtering",
+          "then": "extract_to_filter_function"
+        },
+        {
+          "fallback": "mark_as_functional"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "mixed_filter_logic",
+        "resolution": "Use pure predicate filter"
+      }
+    ],
+    "intent_keywords_json": [
+      "filter",
+      "predicate",
+      "selection"
+    ],
+    "confidence_threshold": 0.6,
+    "notes": "Ensures all filtering logic is expressed as composable pure functions."
+  },
+  {
+    "name": "fp_pattern_unpacking",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "data_structures",
+      "description": "Uses pattern destructuring for data extraction."
+    },
+    "description": "Encourages declarative unpacking of tuples, lists, or objects instead of index-based access.",
+    "md_file_path": "directives/fp_pattern_unpacking.md",
+    "workflow": {
+      "trunk": "analyze_data_access",
+      "branches": [
+        {
+          "if": "index_access",
+          "then": "convert_to_destructuring"
+        },
+        {
+          "if": "pattern_compatible",
+          "then": "mark_as_compliant"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "imperative_access",
+        "resolution": "Refactor to destructuring pattern"
+      }
+    ],
+    "intent_keywords_json": [
+      "pattern",
+      "destructure",
+      "tuple unpack"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Improves readability and reduces indexing errors in data access."
+  },
+  {
+    "name": "fp_metadata_annotation",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "meta_reflection",
+      "description": "Adds machine-readable metadata to generated functions."
+    },
+    "description": "Inserts structured metadata comments (# AIFP_METADATA) for functions, recording names, dependencies, and flow context.",
+    "md_file_path": "directives/fp_metadata_annotation.md",
+    "workflow": {
+      "trunk": "generate_metadata_block",
+      "branches": [
+        {
+          "if": "function_missing_metadata",
+          "then": "insert_metadata_comment"
+        },
+        {
+          "if": "metadata_outdated",
+          "then": "refresh_from_db"
+        },
+        {
+          "fallback": "mark_compliant"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "missing_metadata",
+        "resolution": "Insert AIFP_METADATA header"
+      },
+      {
+        "issue": "mismatched_metadata",
+        "resolution": "Regenerate from DB context"
+      }
+    ],
+    "intent_keywords_json": [
+      "metadata",
+      "annotation",
+      "function info"
+    ],
+    "confidence_threshold": 0.8,
+    "notes": "Guarantees traceability and alignment between code and project.db."
+  },
+  {
+    "name": "fp_symbol_map_validation",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "meta_reflection",
+      "description": "Validates symbol tables and exported identifiers."
+    },
+    "description": "Checks that all exported names are pure and registered in the project’s symbol map.",
+    "md_file_path": "directives/fp_symbol_map_validation.md",
+    "workflow": {
+      "trunk": "scan_exports",
+      "branches": [
+        {
+          "if": "unregistered_symbol",
+          "then": "add_to_symbol_map"
+        },
+        {
+          "if": "impure_export",
+          "then": "refactor_or_block"
+        },
+        {
+          "fallback": "mark_valid"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "missing_export",
+        "resolution": "Add to symbol map"
+      },
+      {
+        "issue": "impure_export",
+        "resolution": "Refactor to pure"
+      }
+    ],
+    "intent_keywords_json": [
+      "symbol map",
+      "export validation"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Keeps exported identifiers consistent with MCP introspection."
+  },
+  {
+    "name": "fp_reflection_block",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "meta_reflection",
+      "description": "Blocks use of reflection and runtime eval."
+    },
+    "description": "Scans for reflection, dynamic eval, or code generation and prohibits them to preserve predictability.",
+    "md_file_path": "directives/fp_reflection_block.md",
+    "workflow": {
+      "trunk": "scan_for_reflection",
+      "branches": [
+        {
+          "if": "eval_call_found",
+          "then": "raise_violation"
+        },
+        {
+          "if": "reflection_api_used",
+          "then": "prompt_user_to_remove"
+        },
+        {
+          "fallback": "mark_safe"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "eval_or_reflect",
+        "resolution": "Refactor to static logic"
+      }
+    ],
+    "intent_keywords_json": [
+      "reflection",
+      "eval",
+      "dynamic code"
+    ],
+    "confidence_threshold": 0.9,
+    "notes": "Prevents dynamic code execution violating AIFP determinism."
+  },
+  {
+    "name": "fp_docstring_enforcement",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "meta_reflection",
+      "description": "Ensures every function has a clear purpose docstring."
+    },
+    "description": "Requires a concise docstring describing inputs, outputs, and FP purity level.",
+    "md_file_path": "directives/fp_docstring_enforcement.md",
+    "workflow": {
+      "trunk": "verify_docstrings",
+      "branches": [
+        {
+          "if": "missing_docstring",
+          "then": "generate_from_context"
+        },
+        {
+          "if": "outdated_docstring",
+          "then": "refresh_summary"
+        },
+        {
+          "fallback": "mark_documented"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "no_doc",
+        "resolution": "Insert docstring template"
+      },
+      {
+        "issue": "inaccurate_doc",
+        "resolution": "Regenerate automatically"
+      }
+    ],
+    "intent_keywords_json": [
+      "docstring",
+      "documentation",
+      "function purpose"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Improves AI reasoning by embedding intent and purity metadata."
+  },
+  {
+    "name": "fp_function_indexing",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "meta_reflection",
+      "description": "Indexes functions for faster lookup in the project DB."
+    },
+    "description": "Assigns unique identifiers to each function for rapid query and dependency tracing.",
+    "md_file_path": "directives/fp_function_indexing.md",
+    "workflow": {
+      "trunk": "assign_function_ids",
+      "branches": [
+        {
+          "if": "function_not_indexed",
+          "then": "add_index_entry"
+        },
+        {
+          "if": "duplicate_index",
+          "then": "regenerate_id"
+        },
+        {
+          "fallback": "mark_indexed"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "duplicate_id",
+        "resolution": "Regenerate unique function identifier"
+      }
+    ],
+    "intent_keywords_json": [
+      "index",
+      "function id",
+      "identifier"
+    ],
+    "confidence_threshold": 0.8,
+    "notes": "Supports MCP cross-reference queries and function lookups."
+  },
+  {
+    "name": "fp_language_standardization",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "language_adaptation",
+      "description": "Standardizes FP terminology across languages."
+    },
+    "description": "Normalizes function naming and syntax differences (e.g., map vs collect) for multi-language consistency.",
+    "md_file_path": "directives/fp_language_standardization.md",
+    "workflow": {
+      "trunk": "normalize_identifiers",
+      "branches": [
+        {
+          "if": "alias_detected",
+          "then": "replace_with_standard_name"
+        },
+        {
+          "if": "syntax_variant",
+          "then": "apply_language_adapter"
+        },
+        {
+          "fallback": "mark_standardized"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "nonstandard_alias",
+        "resolution": "Replace with AIFP-standard function name"
+      }
+    ],
+    "intent_keywords_json": [
+      "standardize",
+      "normalize",
+      "cross language"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Maintains consistent functional vocabulary across supported languages."
+  },
+  {
+    "name": "fp_keyword_alignment",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "language_adaptation",
+      "description": "Aligns reserved keyword differences across target languages."
+    },
+    "description": "Ensures reserved keywords or naming collisions are adapted safely during translation or generation.",
+    "md_file_path": "directives/fp_keyword_alignment.md",
+    "workflow": {
+      "trunk": "detect_keyword_conflicts",
+      "branches": [
+        {
+          "if": "keyword_conflict",
+          "then": "rename_identifier"
+        },
+        {
+          "if": "reserved_name",
+          "then": "apply_safe_prefix"
+        },
+        {
+          "fallback": "mark_safe"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "reserved_keyword",
+        "resolution": "Prefix or rename variable"
+      },
+      {
+        "issue": "naming_conflict",
+        "resolution": "Apply consistent aliasing"
+      }
+    ],
+    "intent_keywords_json": [
+      "keyword",
+      "rename",
+      "alias"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Prevents syntax conflicts during multi-language AIFP translations."
+  },
+  {
+    "name": "fp_cross_language_wrappers",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "language_adaptation",
+      "description": "Creates unified FP wrappers for cross-language interoperability."
+    },
+    "description": "Automatically generates pure wrapper functions around language-specific libraries for consistent AIFP compliance.",
+    "md_file_path": "directives/fp_cross_language_wrappers.md",
+    "workflow": {
+      "trunk": "detect_foreign_imports",
+      "branches": [
+        {
+          "if": "nonstandard_library",
+          "then": "generate_cross_language_wrapper"
+        },
+        {
+          "if": "known_fp_library",
+          "then": "validate_compatibility"
+        },
+        {
+          "fallback": "mark_as_supported"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "foreign_library_detected",
+        "resolution": "Generate wrapper module"
+      }
+    ],
+    "intent_keywords_json": [
+      "cross language",
+      "wrapper",
+      "interop"
+    ],
+    "confidence_threshold": 0.8,
+    "notes": "Maintains FP compliance across mixed-language projects."
+  },
+  {
+    "name": "fp_syntax_normalization",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "language_adaptation",
+      "description": "Normalizes syntactic constructs across supported languages."
+    },
+    "description": "Abstracts language-specific syntax differences into a uniform AIFP-friendly form.",
+    "md_file_path": "directives/fp_syntax_normalization.md",
+    "workflow": {
+      "trunk": "analyze_syntax_tree",
+      "branches": [
+        {
+          "if": "language_variant_detected",
+          "then": "apply_normalization"
+        },
+        {
+          "fallback": "mark_normalized"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "syntax_variant",
+        "resolution": "Normalize AST representation"
+      }
+    ],
+    "intent_keywords_json": [
+      "syntax",
+      "normalize",
+      "parse tree"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Allows directives to operate uniformly across multiple languages."
+  },
+  {
+    "name": "fp_encoding_consistency",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "language_adaptation",
+      "description": "Ensures text and file encoding consistency across languages."
+    },
+    "description": "Verifies UTF-8 encoding and consistent newline and indentation styles across generated code.",
+    "md_file_path": "directives/fp_encoding_consistency.md",
+    "workflow": {
+      "trunk": "check_file_encoding",
+      "branches": [
+        {
+          "if": "non_utf8_encoding",
+          "then": "convert_to_utf8"
+        },
+        {
+          "if": "inconsistent_line_endings",
+          "then": "normalize_newlines"
+        },
+        {
+          "fallback": "mark_consistent"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "encoding_mismatch",
+        "resolution": "Convert to UTF-8"
+      },
+      {
+        "issue": "format_inconsistency",
+        "resolution": "Normalize formatting"
+      }
+    ],
+    "intent_keywords_json": [
+      "encoding",
+      "utf8",
+      "format consistency"
+    ],
+    "confidence_threshold": 0.6,
+    "notes": "Guarantees all generated files share uniform encoding and style."
+  },
+  {
+    "name": "fp_memoization",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Introduces memoization for deterministic pure functions."
+    },
+    "description": "Adds caching of pure function results to improve performance without altering behavior.",
+    "md_file_path": "directives/fp_memoization.md",
+    "workflow": {
+      "trunk": "detect_pure_functions",
+      "branches": [
+        {
+          "if": "expensive_repeated_calls",
+          "then": "apply_memoization"
+        },
+        {
+          "if": "stateful_function",
+          "then": "skip_cache"
+        },
+        {
+          "fallback": "mark_as_optimized"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "mutable_cache",
+        "resolution": "Use pure immutable cache structure"
+      }
+    ],
+    "intent_keywords_json": [
+      "memoize",
+      "cache",
+      "performance"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Applies caching selectively to pure deterministic functions only."
+  },
+  {
+    "name": "fp_lazy_computation",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Defers computation until results are needed."
+    },
+    "description": "Transforms eager calculations into lazy or deferred evaluations for efficiency.",
+    "md_file_path": "directives/fp_lazy_computation.md",
+    "workflow": {
+      "trunk": "analyze_computation_order",
+      "branches": [
+        {
+          "if": "eager_evaluation_detected",
+          "then": "wrap_in_lazy_thunk"
+        },
+        {
+          "if": "chained_computation",
+          "then": "defer_to_final_use"
+        },
+        {
+          "fallback": "mark_as_lazy"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "eager_execution",
+        "resolution": "Wrap in deferred lambda"
+      }
+    ],
+    "intent_keywords_json": [
+      "lazy",
+      "defer",
+      "on demand"
+    ],
+    "confidence_threshold": 0.6,
+    "notes": "Improves performance for heavy or chained computations."
+  },
+  {
+    "name": "fp_parallel_evaluation",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Evaluates independent expressions concurrently."
+    },
+    "description": "Automatically executes independent pure expressions in parallel to improve throughput.",
+    "md_file_path": "directives/fp_parallel_evaluation.md",
+    "workflow": {
+      "trunk": "detect_independent_expressions",
+      "branches": [
+        {
+          "if": "parallel_safe",
+          "then": "execute_in_parallel"
+        },
+        {
+          "if": "shared_resource_detected",
+          "then": "serialize_execution"
+        },
+        {
+          "fallback": "mark_as_parallel_safe"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "shared_resource",
+        "resolution": "Mark as nonparallel"
+      }
+    ],
+    "intent_keywords_json": [
+      "parallel",
+      "multi thread",
+      "async evaluation"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Speeds up pure code by evaluating independent expressions concurrently."
+  },
+  {
+    "name": "fp_function_inlining",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Inlines small functions for reduced overhead."
+    },
+    "description": "Identifies trivial or single-call functions and inlines them into callers when beneficial.",
+    "md_file_path": "directives/fp_function_inlining.md",
+    "workflow": {
+      "trunk": "analyze_call_graph",
+      "branches": [
+        {
+          "if": "tiny_function",
+          "then": "inline_into_caller"
+        },
+        {
+          "if": "repeated_call",
+          "then": "consider_inlining"
+        },
+        {
+          "fallback": "mark_as_optimized"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "function_too_large",
+        "resolution": "Skip inlining"
+      },
+      {
+        "issue": "recursive_call",
+        "resolution": "Avoid inline to maintain clarity"
+      }
+    ],
+    "intent_keywords_json": [
+      "inline",
+      "optimization",
+      "reduce call"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Inlines small pure functions to reduce call overhead without altering behavior."
+  },
+  {
+    "name": "fp_dead_code_elimination",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Removes unreachable or unused functions."
+    },
+    "description": "Scans dependency graph and eliminates dead or unreachable code paths safely.",
+    "md_file_path": "directives/fp_dead_code_elimination.md",
+    "workflow": {
+      "trunk": "analyze_dependencies",
+      "branches": [
+        {
+          "if": "unused_function",
+          "then": "mark_for_removal"
+        },
+        {
+          "if": "unreachable_branch",
+          "then": "delete_branch"
+        },
+        {
+          "fallback": "mark_as_clean"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "accidental_removal_risk",
+        "resolution": "Require confirmation"
+      }
+    ],
+    "intent_keywords_json": [
+      "dead code",
+      "unused",
+      "cleanup"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Keeps project codebase lean and clean while maintaining referential integrity."
+  },
+  {
+    "name": "fp_constant_folding",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Precomputes constant expressions at compile-time."
+    },
+    "description": "Simplifies constant expressions and evaluates literals during generation to reduce runtime overhead.",
+    "md_file_path": "directives/fp_constant_folding.md",
+    "workflow": {
+      "trunk": "detect_constant_expressions",
+      "branches": [
+        {
+          "if": "pure_constant_expression",
+          "then": "evaluate_and_replace"
+        },
+        {
+          "fallback": "mark_as_optimized"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "dynamic_constant",
+        "resolution": "Leave unevaluated"
+      }
+    ],
+    "intent_keywords_json": [
+      "constant folding",
+      "compile time evaluate"
+    ],
+    "confidence_threshold": 0.6,
+    "notes": "Performs safe pre-evaluation of constant expressions during code generation."
+  },
+  {
+    "name": "fp_purity_caching_analysis",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Determines safe caching boundaries for pure functions."
+    },
+    "description": "Analyzes dependencies to ensure cached results don't cross purity or state boundaries.",
+    "md_file_path": "directives/fp_purity_caching_analysis.md",
+    "workflow": {
+      "trunk": "analyze_cache_candidates",
+      "branches": [
+        {
+          "if": "shared_state_dependency",
+          "then": "reject_cache"
+        },
+        {
+          "if": "pure_function",
+          "then": "mark_cacheable"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "shared_state",
+        "resolution": "Disable cache"
+      }
+    ],
+    "intent_keywords_json": [
+      "cache safety",
+      "pure caching"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Prevents unsafe caching that could compromise purity guarantees."
+  },
+  {
+    "name": "fp_cost_analysis",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Estimates computational complexity for AI reasoning."
+    },
+    "description": "Analyzes functions to estimate time and space complexity for internal optimization heuristics.",
+    "md_file_path": "directives/fp_cost_analysis.md",
+    "workflow": {
+      "trunk": "analyze_function_complexity",
+      "branches": [
+        {
+          "if": "nested_loop_detected",
+          "then": "estimate_complexity"
+        },
+        {
+          "if": "recursive_call",
+          "then": "apply_cost_heuristic"
+        },
+        {
+          "fallback": "mark_as_analyzed"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "indeterminate_complexity",
+        "resolution": "Use heuristic estimation"
+      }
+    ],
+    "intent_keywords_json": [
+      "complexity",
+      "performance",
+      "cost"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Feeds function cost metadata into MCP reasoning for smarter decomposition."
+  },
+  {
+    "name": "fp_evaluation_order_control",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Controls evaluation order for deterministic results."
+    },
+    "description": "Ensures consistent left-to-right or specified evaluation order to avoid non-determinism.",
+    "md_file_path": "directives/fp_evaluation_order_control.md",
+    "workflow": {
+      "trunk": "check_evaluation_sequence",
+      "branches": [
+        {
+          "if": "non_deterministic_order",
+          "then": "reorder_for_consistency"
+        },
+        {
+          "fallback": "mark_as_deterministic"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "order_variation",
+        "resolution": "Enforce deterministic sequence"
+      }
+    ],
+    "intent_keywords_json": [
+      "evaluation order",
+      "determinism"
+    ],
+    "confidence_threshold": 0.8,
+    "notes": "Guarantees identical output given identical inputs, even in parallel contexts."
+  },
+  {
+    "name": "fp_ai_reasoning_trace",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "optimization",
+      "description": "Records reasoning context for AI interpretability."
+    },
+    "description": "Inserts trace comments linking function behavior to directive reasoning for debugging and explainability.",
+    "md_file_path": "directives/fp_ai_reasoning_trace.md",
+    "workflow": {
+      "trunk": "insert_trace_annotations",
+      "branches": [
+        {
+          "if": "missing_trace",
+          "then": "add_reasoning_comment"
+        },
+        {
+          "if": "outdated_trace",
+          "then": "refresh_context"
+        },
+        {
+          "fallback": "mark_as_traced"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "trace_missing",
+        "resolution": "Insert AI reasoning trace"
+      }
+    ],
+    "intent_keywords_json": [
+      "trace",
+      "explainability",
+      "reasoning context"
+    ],
+    "confidence_threshold": 0.8,
+    "notes": "Enhances transparency between AIFP reasoning and generated output for debugging."
+  },
+  {
+    "name": "fp_recursion_enforcement",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "control_flow",
+      "description": "Enforces tail recursion for loops to avoid stack overflows."
+    },
+    "description": "Detects loops or recursion and refactors them to tail-recursive form for stack safety and FP compliance.",
+    "md_file_path": "directives/fp_recursion_enforcement.md",
+    "workflow": {
+      "trunk": "detect_loops_or_recursion",
+      "branches": [
+        {
+          "if": "imperative_loop_detected",
+          "then": "convert_to_tail_recursion"
+        },
+        {
+          "if": "non_tail_recursion_detected",
+          "then": "refactor_to_tail_form"
+        },
+        {
+          "if": "already_tail_recursive",
+          "then": "mark_compliant"
+        },
+        {
+          "if": "low_confidence",
+          "then": "prompt_user",
+          "details": {
+            "clarify": "Recursion pattern unclear"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "log_note": true
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "deep_recursion_risk",
+        "resolution": "Refactor to tail recursion or iterative with accumulator"
+      },
+      {
+        "issue": "complex_loop_structure",
+        "resolution": "Break into smaller recursive functions"
+      },
+      {
+        "issue": "language_mismatch",
+        "resolution": "Escalate to fp_language_standardization"
+      }
+    ],
+    "intent_keywords_json": [
+      "tail recursion",
+      "loop elimination",
+      "recursion",
+      "stack safety"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Ensures recursion efficiency and prevents stack overflows in AI-generated code. Links to project_update_db to track recursion depth in interactions table."
+  },
+  {
+    "name": "fp_monadic_composition",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "composition",
+      "description": "Composes functions monadically for error handling and data flow."
+    },
+    "description": "Chains functions using monadic bind/map operations for composable error handling with Result/Option types.",
+    "md_file_path": "directives/fp_monadic_composition.md",
+    "workflow": {
+      "trunk": "analyze_function_composition",
+      "branches": [
+        {
+          "if": "error_handling_chain_detected",
+          "then": "apply_monadic_composition"
+        },
+        {
+          "if": "nested_option_result",
+          "then": "flatten_with_bind"
+        },
+        {
+          "if": "already_monadic",
+          "then": "mark_compliant"
+        },
+        {
+          "if": "low_confidence",
+          "then": "prompt_user",
+          "details": {
+            "clarify": "Monadic pattern unclear"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "log_note": true
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "mixed_monad_types",
+        "resolution": "Standardize to single monad type (Result or Option)"
+      },
+      {
+        "issue": "imperative_error_handling",
+        "resolution": "Refactor to monadic pipeline with fp_error_pipeline"
+      },
+      {
+        "issue": "language_mismatch",
+        "resolution": "Escalate to fp_language_standardization"
+      }
+    ],
+    "intent_keywords_json": [
+      "monad",
+      "bind",
+      "flatmap",
+      "composition",
+      "error chaining"
+    ],
+    "confidence_threshold": 0.7,
+    "notes": "Improves composability and error handling clarity. Links to project_update_db to store monadic dependencies in interactions table."
+  }
+]

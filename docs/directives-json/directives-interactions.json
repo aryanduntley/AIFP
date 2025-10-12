@@ -1,0 +1,370 @@
+[
+  {
+    "source": "aifp_run",
+    "target": "project_init",
+    "relation_type": "triggers",
+    "description": "aifp_run triggers project_init when user requests project initialization",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "aifp_run",
+    "target": "project_task_decomposition",
+    "relation_type": "triggers",
+    "description": "aifp_run triggers project_task_decomposition for task management requests",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "aifp_run",
+    "target": "project_file_write",
+    "relation_type": "triggers",
+    "description": "aifp_run triggers project_file_write for code generation requests",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_init",
+    "target": "project_task_decomposition",
+    "relation_type": "triggers",
+    "description": "project_init triggers project_task_decomposition after project setup",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_init",
+    "target": "project_add_path",
+    "relation_type": "triggers",
+    "description": "project_init triggers project_add_path to create initial roadmap",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_add_path",
+    "relation_type": "triggers",
+    "description": "project_task_decomposition triggers project_add_path when creating milestones",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_error_handling",
+    "relation_type": "escalates_to",
+    "description": "project_task_decomposition escalates to project_error_handling on workflow failures",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_compliance_check",
+    "relation_type": "escalates_to",
+    "description": "project_task_decomposition escalates to project_compliance_check for validation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_add_path",
+    "relation_type": "cross_link",
+    "description": "project_task_decomposition cross-links with project_add_path for roadmap updates",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_add_path",
+    "target": "project_file_write",
+    "relation_type": "triggers",
+    "description": "project_add_path triggers project_file_write after roadmap setup",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_add_path",
+    "target": "project_completion_check",
+    "relation_type": "triggers",
+    "description": "project_add_path triggers project_completion_check to validate path status",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "project_update_db",
+    "relation_type": "triggers",
+    "description": "project_file_write triggers project_update_db after file creation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "project_theme_flow_mapping",
+    "relation_type": "triggers",
+    "description": "project_file_write triggers project_theme_flow_mapping for categorization",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "fp_purity",
+    "relation_type": "fp_reference",
+    "description": "project_file_write calls fp_purity to validate function purity",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "fp_side_effect_detection",
+    "relation_type": "fp_reference",
+    "description": "project_file_write calls fp_side_effect_detection to isolate side effects",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_update_db",
+    "target": "project_dependency_sync",
+    "relation_type": "triggers",
+    "description": "project_update_db triggers project_dependency_sync for consistency checks",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_update_db",
+    "target": "project_compliance_check",
+    "relation_type": "escalates_to",
+    "description": "project_update_db escalates to project_compliance_check for validation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_update_db",
+    "target": "fp_dependency_tracking",
+    "relation_type": "fp_reference",
+    "description": "project_update_db calls fp_dependency_tracking to map function dependencies",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_theme_flow_mapping",
+    "target": "project_metrics",
+    "relation_type": "triggers",
+    "description": "project_theme_flow_mapping triggers project_metrics after categorization",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_theme_flow_mapping",
+    "target": "project_metrics",
+    "relation_type": "cross_link",
+    "description": "project_theme_flow_mapping cross-links with project_metrics for theme-based reporting",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_theme_flow_mapping",
+    "target": "fp_chaining",
+    "relation_type": "fp_reference",
+    "description": "project_theme_flow_mapping references fp_chaining for flow analysis",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_dependency_sync",
+    "target": "project_integrity_check",
+    "relation_type": "triggers",
+    "description": "project_dependency_sync triggers project_integrity_check after sync",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_dependency_sync",
+    "target": "project_metrics",
+    "relation_type": "triggers",
+    "description": "project_dependency_sync triggers project_metrics for dependency reporting",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_dependency_sync",
+    "target": "project_update_db",
+    "relation_type": "cross_link",
+    "description": "project_dependency_sync cross-links with project_update_db for bidirectional sync",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "project_completion_check",
+    "relation_type": "triggers",
+    "description": "project_compliance_check triggers project_completion_check after validation passes",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "project_metrics",
+    "relation_type": "triggers",
+    "description": "project_compliance_check triggers project_metrics for compliance reporting",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "project_error_handling",
+    "relation_type": "escalates_to",
+    "description": "project_compliance_check escalates to project_error_handling on failures",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "fp_purity",
+    "relation_type": "fp_reference",
+    "description": "project_compliance_check calls fp_purity for purity validation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "fp_no_oop",
+    "relation_type": "fp_reference",
+    "description": "project_compliance_check calls fp_no_oop for OOP detection",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "fp_side_effect_detection",
+    "relation_type": "fp_reference",
+    "description": "project_compliance_check calls fp_side_effect_detection for side effect validation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_completion_check",
+    "target": "project_metrics",
+    "relation_type": "triggers",
+    "description": "project_completion_check triggers project_metrics for progress calculation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_completion_check",
+    "target": "project_auto_summary",
+    "relation_type": "triggers",
+    "description": "project_completion_check triggers project_auto_summary for status reports",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_error_handling",
+    "target": "project_user_referral",
+    "relation_type": "triggers",
+    "description": "project_error_handling triggers project_user_referral for unresolved issues",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_evolution",
+    "target": "project_add_path",
+    "relation_type": "triggers",
+    "description": "project_evolution triggers project_add_path when project goals change",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_evolution",
+    "target": "project_metrics",
+    "relation_type": "triggers",
+    "description": "project_evolution triggers project_metrics after pivot",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_integrity_check",
+    "target": "project_backup_restore",
+    "relation_type": "triggers",
+    "description": "project_integrity_check triggers project_backup_restore on corruption detection",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_integrity_check",
+    "target": "project_error_handling",
+    "relation_type": "escalates_to",
+    "description": "project_integrity_check escalates to project_error_handling on data misalignment",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_auto_resume",
+    "target": "project_task_decomposition",
+    "relation_type": "triggers",
+    "description": "project_auto_resume triggers project_task_decomposition to resume paused tasks",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_auto_resume",
+    "target": "project_file_write",
+    "relation_type": "triggers",
+    "description": "project_auto_resume triggers project_file_write to resume code generation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_refactor_path",
+    "target": "project_add_path",
+    "relation_type": "escalates_to",
+    "description": "project_refactor_path escalates to project_add_path for roadmap restructuring",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_archive",
+    "target": "project_completion_check",
+    "relation_type": "depends_on",
+    "description": "project_archive depends on project_completion_check to verify completion",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_archive",
+    "target": "project_metrics",
+    "relation_type": "depends_on",
+    "description": "project_archive depends on project_metrics for final reports",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_metrics",
+    "target": "project_performance_summary",
+    "relation_type": "triggers",
+    "description": "project_metrics triggers project_performance_summary for detailed analysis",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_metrics",
+    "target": "project_auto_summary",
+    "relation_type": "triggers",
+    "description": "project_metrics triggers project_auto_summary for user-facing reports",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_performance_summary",
+    "target": "project_auto_summary",
+    "relation_type": "triggers",
+    "description": "project_performance_summary triggers project_auto_summary for consolidated reporting",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_dependency_map",
+    "target": "project_integrity_check",
+    "relation_type": "cross_link",
+    "description": "project_dependency_map cross-links with project_integrity_check for validation",
+    "weight": 1,
+    "active": true
+  }
+]

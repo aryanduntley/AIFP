@@ -1,13 +1,49 @@
 [
   {
+    "name": "aifp_run",
+    "type": "project",
+    "level": 0,
+    "parent_directive": null,
+    "category": {
+      "name": "orchestration",
+      "description": "Master command router and intent parser for all AIFP workflows."
+    },
+    "description": "Root entry point for AIFP system. Parses natural language commands, detects intent, routes to appropriate directives, and orchestrates cross-directive workflows.",
+    "md_file_path": "directives/aifp_run.md",
+    "workflow": {
+      "trunk": "parse_intent",
+      "branches": [
+        {"if": "init_keywords_detected", "then": "route_to_project_init", "details": {"keywords": ["init", "initialize", "setup", "new project", "start"]}},
+        {"if": "task_keywords_detected", "then": "route_to_project_task_decomposition", "details": {"keywords": ["decompose", "break down", "plan", "task", "create tasks"]}},
+        {"if": "file_write_keywords_detected", "then": "route_to_project_file_write", "details": {"keywords": ["write", "create file", "generate", "code"]}},
+        {"if": "compliance_keywords_detected", "then": "route_to_project_compliance_check", "details": {"keywords": ["check", "verify", "validate", "compliance"]}},
+        {"if": "completion_keywords_detected", "then": "route_to_project_completion_check", "details": {"keywords": ["progress", "completion", "status", "roadmap"]}},
+        {"if": "fp_keywords_detected", "then": "route_to_fp_directive", "details": {"keywords": ["pure", "purity", "side effects", "immutable", "functional"]}},
+        {"if": "low_confidence", "then": "prompt_user", "details": {"clarify": "Command intent unclear - please specify directive or action"}},
+        {"fallback": "prompt_user", "details": {"clarify": "Unable to determine intent. Please rephrase or specify directive name.", "log_note": true}}
+      ],
+      "error_handling": {"on_failure": "prompt_user", "retry": "max 2 attempts"}
+    },
+    "roadblocks_json": [
+      {"issue": "ambiguous_intent", "resolution": "Prompt user for clarification and log to notes"},
+      {"issue": "multiple_directive_matches", "resolution": "Present options to user and confirm selection"},
+      {"issue": "no_directive_match", "resolution": "Log intent keywords and escalate to user"}
+    ],
+    "intent_keywords_json": ["run", "execute", "aifp", "start", "command"],
+    "confidence_threshold": 0.7,
+    "notes": "Master orchestrator directive. All user commands flow through this entry point. Routes to Level 1+ directives based on intent detection."
+  },
+  {
     "name": "project_init",
     "type": "project",
     "level": 1,
+    "parent_directive": "aifp_run",
     "category": {
       "name": "initialization",
       "description": "Handles creation and setup of new AIFP projects."
     },
     "description": "Initializes a new project by scaffolding the .aifp-project folder, creating project.db, and inserting the base roadmap.",
+    "md_file_path": "directives/project_init.md",
     "workflow": {
       "trunk": "setup_project",
       "branches": [
@@ -29,11 +65,13 @@
     "name": "project_task_decomposition",
     "type": "project",
     "level": 2,
+    "parent_directive": "aifp_run",
     "category": {
       "name": "task_management",
       "description": "Manages decomposition of user goals into AIFP-aligned tasks, subtasks, and sidequests."
     },
     "description": "Breaks complex user instructions into trackable tasks, subtasks, and sidequests in project.db, maintaining roadmap alignment.",
+    "md_file_path": "directives/project_task_decomposition.md",
     "workflow": {
       "trunk": "review_open_tasks",
       "branches": [
@@ -59,11 +97,13 @@
     "name": "project_add_path",
     "type": "project",
     "level": 2,
+    "parent_directive": "project_task_decomposition",
     "category": {
       "name": "task_management",
       "description": "Handles roadmap and completion_path modifications."
     },
     "description": "Creates or updates completion_path, milestones, and tasks in project.db to maintain project roadmap continuity.",
+    "md_file_path": "directives/project_add_path.md",
     "workflow": {
       "trunk": "modify_path",
       "branches": [
@@ -86,11 +126,13 @@
     "name": "project_file_write",
     "type": "project",
     "level": 3,
+    "parent_directive": "project_add_path",
     "category": {
       "name": "file_operations",
       "description": "Handles file generation and metadata updates."
     },
     "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly.",
+    "md_file_path": "directives/project_file_write.md",
     "workflow": {
       "trunk": "generate_file",
       "branches": [
@@ -112,11 +154,13 @@
     "name": "project_update_db",
     "type": "project",
     "level": 3,
+    "parent_directive": "project_file_write",
     "category": {
       "name": "file_operations",
       "description": "Synchronizes generated code metadata with the project database."
     },
     "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking.",
+    "md_file_path": "directives/project_update_db.md",
     "workflow": {
       "trunk": "parse_content",
       "branches": [
@@ -139,11 +183,13 @@
     "name": "project_compliance_check",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_update_db",
     "category": {
       "name": "compliance",
       "description": "Verifies AIFP rule adherence and functional progress."
     },
     "description": "Runs FP compliance directives to ensure code purity, no OOP, and structural correctness. Also verifies project completion alignment via project.db.",
+    "md_file_path": "directives/project_compliance_check.md",
     "workflow": {
       "trunk": "run_checks",
       "branches": [
@@ -165,11 +211,13 @@
     "name": "project_completion_check",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_compliance_check",
     "category": {
       "name": "compliance",
       "description": "Evaluates roadmap progress and completion readiness."
     },
     "description": "Checks completion_path, milestones, and tasks for status updates. Marks completion milestones when conditions are met and logs alignment notes.",
+    "md_file_path": "directives/project_completion_check.md",
     "workflow": {
       "trunk": "check_progress",
       "branches": [
@@ -191,11 +239,13 @@
     "name": "project_error_handling",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_compliance_check",
     "category": {
       "name": "error_handling",
       "description": "Handles directive failures, logging, and escalation to user."
     },
     "description": "Monitors directive execution for known or unknown failures, applies stored roadblock resolutions, and logs issues to the notes table for transparency.",
+    "md_file_path": "directives/project_error_handling.md",
     "workflow": {
       "trunk": "check_roadblocks",
       "branches": [
@@ -217,11 +267,13 @@
     "name": "project_evolution",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_completion_check",
     "category": {
       "name": "evolution_tracking",
       "description": "Tracks changes to project idea, goals, and purpose."
     },
     "description": "Handles versioning and pivot tracking for evolving project goals. Logs changes in notes and updates roadmap and completion paths accordingly.",
+    "md_file_path": "directives/project_evolution.md",
     "workflow": {
       "trunk": "update_project",
       "branches": [
@@ -243,11 +295,13 @@
     "name": "project_user_referral",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_error_handling",
     "category": {
       "name": "error_handling",
       "description": "Delegates unresolved issues back to the user."
     },
     "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review.",
+    "md_file_path": "directives/project_user_referral.md",
     "workflow": {
       "trunk": "check_confidence",
       "branches": [
@@ -269,11 +323,13 @@
     "name": "project_theme_flow_mapping",
     "type": "project",
     "level": 3,
+    "parent_directive": "project_file_write",
     "category": {
       "name": "theme_mapping",
       "description": "Links generated code elements to project themes and flows."
     },
     "description": "Infers or assigns flow and theme groupings based on file metadata, updating linking tables for file_flows and flow_themes within project.db.",
+    "md_file_path": "directives/project_theme_flow_mapping.md",
     "workflow": {
       "trunk": "infer_metadata",
       "branches": [
@@ -295,11 +351,13 @@
     "name": "project_metrics",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_completion_check",
     "category": {
       "name": "metrics",
       "description": "Tracks quantitative and qualitative project progress metrics."
     },
     "description": "Calculates project completion percentage, directive success rates, and task distribution to inform AI reasoning and user summaries.",
+    "md_file_path": "directives/project_metrics.md",
     "workflow": {
       "trunk": "gather_metrics",
       "branches": [
@@ -321,11 +379,13 @@
     "name": "project_performance_summary",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_metrics",
     "category": {
       "name": "metrics",
       "description": "Generates a summary of recent directive and workflow performance."
     },
     "description": "Summarizes recent directive outcomes, including successes, retries, and failures, and stores summaries in notes for audit.",
+    "md_file_path": "directives/project_performance_summary.md",
     "workflow": {
       "trunk": "summarize_recent_runs",
       "branches": [
@@ -346,11 +406,13 @@
     "name": "project_dependency_sync",
     "type": "project",
     "level": 3,
+    "parent_directive": "project_update_db",
     "category": {
       "name": "dependency_management",
       "description": "Reconciles mismatched dependencies between code and project.db."
     },
     "description": "Compares functions and flows in files against database records, resolving missing or outdated dependencies.",
+    "md_file_path": "directives/project_dependency_sync.md",
     "workflow": {
       "trunk": "compare_db_and_files",
       "branches": [
@@ -372,11 +434,13 @@
     "name": "project_integrity_check",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_dependency_sync",
     "category": {
       "name": "dependency_management",
       "description": "Performs integrity verification on project.db."
     },
     "description": "Runs validation queries to detect orphaned records, missing links, and checksum mismatches within project.db.",
+    "md_file_path": "directives/project_integrity_check.md",
     "workflow": {
       "trunk": "run_integrity_queries",
       "branches": [
@@ -397,11 +461,13 @@
     "name": "project_auto_resume",
     "type": "project",
     "level": 3,
+    "parent_directive": "aifp_run",
     "category": {
       "name": "recovery_automation",
       "description": "Automatically resumes interrupted tasks or workflows."
     },
     "description": "Detects unfinished tasks or subtasks from project.db and resumes execution at the appropriate directive entry point.",
+    "md_file_path": "directives/project_auto_resume.md",
     "workflow": {
       "trunk": "detect_incomplete_tasks",
       "branches": [
@@ -422,11 +488,13 @@
     "name": "project_backup_restore",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_integrity_check",
     "category": {
       "name": "recovery_automation",
       "description": "Manages project database and file backups."
     },
     "description": "Creates periodic backups of project.db and associated files, and restores them on demand or after failure detection.",
+    "md_file_path": "directives/project_backup_restore.md",
     "workflow": {
       "trunk": "perform_backup",
       "branches": [
@@ -447,11 +515,13 @@
     "name": "project_archive",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_completion_check",
     "category": {
       "name": "archival_refactor",
       "description": "Archives completed projects for long-term storage."
     },
     "description": "Packages the final project.db, all files, and completion reports into an archive format and marks project status as 'archived'.",
+    "md_file_path": "directives/project_archive.md",
     "workflow": {
       "trunk": "prepare_archive",
       "branches": [
@@ -472,11 +542,13 @@
     "name": "project_refactor_path",
     "type": "project",
     "level": 3,
+    "parent_directive": "project_evolution",
     "category": {
       "name": "archival_refactor",
       "description": "Refactors roadmap paths and milestones."
     },
     "description": "Allows restructuring of completion_path sequences for clarity, merging or reordering tasks while maintaining linkage integrity.",
+    "md_file_path": "directives/project_refactor_path.md",
     "workflow": {
       "trunk": "analyze_completion_path",
       "branches": [
@@ -497,11 +569,13 @@
     "name": "project_dependency_map",
     "type": "project",
     "level": 3,
+    "parent_directive": "project_dependency_sync",
     "category": {
       "name": "dependency_management",
       "description": "Generates visual dependency maps across project entities."
     },
     "description": "Queries relationships between files, functions, flows, and tasks to produce a dependency graph for reasoning or visualization.",
+    "md_file_path": "directives/project_dependency_map.md",
     "workflow": {
       "trunk": "generate_dependency_graph",
       "branches": [
@@ -521,11 +595,13 @@
     "name": "project_auto_summary",
     "type": "project",
     "level": 4,
+    "parent_directive": "project_metrics",
     "category": {
       "name": "metrics",
       "description": "Automatically summarizes project status and context."
     },
     "description": "Generates a human-readable summary of project purpose, progress, and open tasks, stored in notes or output to the terminal.",
+    "md_file_path": "directives/project_auto_summary.md",
     "workflow": {
       "trunk": "summarize_project_state",
       "branches": [
