@@ -10,3 +10,10 @@
         "retry": "max 2 attempts"
     }
 }
+
+
+we'll make a directives file for each db table.
+need directives file for git related tracking, evolve to multi-user/multi-ai tracking with pull requests, etc.
+must have directives regarding versioning and proper use of notes and items tables
+
+"Add cross-links between FP and Project directives" from docs/suggestions-directives.txt pending. discuss.

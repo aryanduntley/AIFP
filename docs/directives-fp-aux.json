@@ -722,6 +722,62 @@
     "intent_keywords_json": ["trace", "explainability", "reasoning context"],
     "confidence_threshold": 0.8,
     "notes": "Enhances transparency between AIFP reasoning and generated output for debugging."
+  },
+  {
+    "name": "fp_recursion_enforcement",
+    "type": "fp",
+    "category": {
+      "name": "control_flow",
+      "description": "Enforces tail recursion for loops to avoid stack overflows."
+    },
+    "description": "Detects loops or recursion and refactors them to tail-recursive form for stack safety and FP compliance.",
+    "workflow": {
+      "trunk": "detect_loops_or_recursion",
+      "branches": [
+        {"if": "imperative_loop_detected", "then": "convert_to_tail_recursion"},
+        {"if": "non_tail_recursion_detected", "then": "refactor_to_tail_form"},
+        {"if": "already_tail_recursive", "then": "mark_compliant"},
+        {"if": "low_confidence", "then": "prompt_user", "details": {"clarify": "Recursion pattern unclear"}},
+        {"fallback": "prompt_user", "details": {"log_note": true}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "deep_recursion_risk", "resolution": "Refactor to tail recursion or iterative with accumulator"},
+      {"issue": "complex_loop_structure", "resolution": "Break into smaller recursive functions"},
+      {"issue": "language_mismatch", "resolution": "Escalate to fp_language_standardization"}
+    ],
+    "intent_keywords_json": ["tail recursion", "loop elimination", "recursion", "stack safety"],
+    "confidence_threshold": 0.7,
+    "notes": "Ensures recursion efficiency and prevents stack overflows in AI-generated code. Links to project_update_db to track recursion depth in interactions table."
+  },
+  {
+    "name": "fp_monadic_composition",
+    "type": "fp",
+    "category": {
+      "name": "composition",
+      "description": "Composes functions monadically for error handling and data flow."
+    },
+    "description": "Chains functions using monadic bind/map operations for composable error handling with Result/Option types.",
+    "workflow": {
+      "trunk": "analyze_function_composition",
+      "branches": [
+        {"if": "error_handling_chain_detected", "then": "apply_monadic_composition"},
+        {"if": "nested_option_result", "then": "flatten_with_bind"},
+        {"if": "already_monadic", "then": "mark_compliant"},
+        {"if": "low_confidence", "then": "prompt_user", "details": {"clarify": "Monadic pattern unclear"}},
+        {"fallback": "prompt_user", "details": {"log_note": true}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "mixed_monad_types", "resolution": "Standardize to single monad type (Result or Option)"},
+      {"issue": "imperative_error_handling", "resolution": "Refactor to monadic pipeline with fp_error_pipeline"},
+      {"issue": "language_mismatch", "resolution": "Escalate to fp_language_standardization"}
+    ],
+    "intent_keywords_json": ["monad", "bind", "flatmap", "composition", "error chaining"],
+    "confidence_threshold": 0.7,
+    "notes": "Improves composability and error handling clarity. Links to project_update_db to store monadic dependencies in interactions table."
   }
 ]
 

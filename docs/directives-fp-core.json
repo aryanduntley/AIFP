@@ -13,17 +13,21 @@
         {"if": "mutation_detected", "then": "refactor_to_pure", "details": {"explicit_params": true}},
         {"if": "external_state_access", "then": "isolate_side_effects"},
         {"if": "pure", "then": "mark_compliant"},
-        {"fallback": "prompt_user", "details": {"clarify": "Function purity uncertain—refactor or confirm purity?"}}
+        {"if": "refactored", "then": "update_functions_table", "details": {"side_effects_json": "none", "purity_level": "pure"}},
+        {"if": "low_confidence", "then": "prompt_user", "details": {"clarify": "Function purity uncertain"}},
+        {"fallback": "prompt_user", "details": {"clarify": "Function purity uncertain—refactor or confirm purity?", "log_note": true}}
       ],
       "error_handling": {"on_failure": "prompt_user"}
     },
     "roadblocks_json": [
       {"issue": "stateful_function", "resolution": "Isolate state outside of function scope"},
-      {"issue": "hidden_mutation", "resolution": "Refactor to pure function"}
+      {"issue": "hidden_mutation", "resolution": "Refactor to pure function"},
+      {"issue": "language_mismatch", "resolution": "Escalate to fp_language_standardization"},
+      {"issue": "external_dependency", "resolution": "Pass as explicit parameter or isolate with fp_wrapper_generation"}
     ],
     "intent_keywords_json": ["pure", "no side effects", "deterministic"],
     "confidence_threshold": 0.7,
-    "notes": "Central FP rule; applies to all code generation and compliance checks."
+    "notes": "Central FP rule; applies to all code generation and compliance checks. Links to project_compliance_check."
   },
   {
     "name": "fp_state_elimination",
@@ -63,17 +67,21 @@
       "branches": [
         {"if": "io_operations_found", "then": "wrap_in_effect_function"},
         {"if": "logging_detected", "then": "redirect_to_logger_function"},
+        {"if": "side_effects_isolated", "then": "update_side_effects_json", "details": {"link_to_project_update_db": true}},
+        {"if": "low_confidence", "then": "prompt_user", "details": {"clarify": "Side effect detection uncertain"}},
         {"fallback": "mark_as_pure_if_none_found"}
       ],
       "error_handling": {"on_failure": "prompt_user"}
     },
     "roadblocks_json": [
       {"issue": "untracked_side_effect", "resolution": "Use effect wrapper"},
-      {"issue": "logging_in_function", "resolution": "Route through functional logger"}
+      {"issue": "logging_in_function", "resolution": "Route through functional logger"},
+      {"issue": "hidden_io", "resolution": "Escalate to fp_io_isolation"},
+      {"issue": "language_specific_io", "resolution": "Use fp_cross_language_wrappers"}
     ],
     "intent_keywords_json": ["side effects", "io", "mutation"],
     "confidence_threshold": 0.7,
-    "notes": "Supports isolation of side effects for safe functional behavior."
+    "notes": "Supports isolation of side effects for safe functional behavior. Links to project_update_db and project_compliance_check."
   },
   {
     "name": "fp_immutability",

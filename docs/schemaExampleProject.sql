@@ -35,7 +35,7 @@ CREATE TABLE functions (
     parameters JSON,                        -- e.g., '["param1: str", "param2: int"]'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (file_id) REFERENCES files(id)
+    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
 -- Types Table: For algebraic data types (directive_fp_adt)
@@ -44,10 +44,12 @@ CREATE TABLE types (
     name TEXT NOT NULL UNIQUE,
     definition_json TEXT NOT NULL, -- JSON schema for ADT (e.g., {"type": "enum", "variants": ["A", "B"]})
     description TEXT,
+    linked_function_id INTEGER,                -- Optional: ADT associated with specific function
     project_id INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES project(id)
+    FOREIGN KEY (project_id) REFERENCES project(id),
+    FOREIGN KEY (linked_function_id) REFERENCES functions(id) ON DELETE SET NULL
 );
 
 -- Interactions Table: For function dependencies and chaining (directive_fp_dependency_tracking, directive_fp_chaining)
@@ -59,8 +61,8 @@ CREATE TABLE interactions (
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (source_function_id) REFERENCES functions(id),
-    FOREIGN KEY (target_function_id) REFERENCES functions(id)
+    FOREIGN KEY (source_function_id) REFERENCES functions(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_function_id) REFERENCES functions(id) ON DELETE CASCADE
 );
 
 -- Themes Table: AI-generated groupings
@@ -94,16 +96,16 @@ CREATE TABLE flow_themes (
     flow_id INTEGER,
     theme_id INTEGER,
     PRIMARY KEY (flow_id, theme_id),
-    FOREIGN KEY (flow_id) REFERENCES flows(id),
-    FOREIGN KEY (theme_id) REFERENCES themes(id)
+    FOREIGN KEY (flow_id) REFERENCES flows(id) ON DELETE CASCADE,
+    FOREIGN KEY (theme_id) REFERENCES themes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE file_flows (
     file_id INTEGER,
     flow_id INTEGER,
     PRIMARY KEY (file_id, flow_id),
-    FOREIGN KEY (file_id) REFERENCES files(id),
-    FOREIGN KEY (flow_id) REFERENCES flows(id)
+    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE,
+    FOREIGN KEY (flow_id) REFERENCES flows(id) ON DELETE CASCADE
 );
 
 -- Infrastructure Table: Project setup
@@ -140,7 +142,7 @@ CREATE TABLE milestones (
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (completion_path_id) REFERENCES completion_path(id)
+    FOREIGN KEY (completion_path_id) REFERENCES completion_path(id) ON DELETE CASCADE
 );
 
 -- Tasks Table: Detailed breakdowns under milestones
@@ -153,10 +155,10 @@ CREATE TABLE tasks (
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (milestone_id) REFERENCES milestones(id)
+    FOREIGN KEY (milestone_id) REFERENCES milestones(id) ON DELETE CASCADE
 );
 
--- Subtasks Table: Potential breakdown of tasks 
+-- Subtasks Table: Potential breakdown of tasks
 CREATE TABLE subtasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     parent_task_id INTEGER NOT NULL,
@@ -166,20 +168,22 @@ CREATE TABLE subtasks (
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (parent_task_id) REFERENCES tasks(id)
+    FOREIGN KEY (parent_task_id) REFERENCES tasks(id) ON DELETE CASCADE
 );
 
 -- Sidequests Table: Priority deviations that pause tasks
 CREATE TABLE sidequests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     paused_task_id INTEGER NOT NULL,
+    paused_subtask_id INTEGER,                 -- Optional: for finer-grained interruption tracking
     name TEXT NOT NULL,
     status TEXT DEFAULT 'pending',
     priority TEXT DEFAULT 'low', -- Sidequests default to low priority
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (paused_task_id) REFERENCES tasks(id)
+    FOREIGN KEY (paused_task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (paused_subtask_id) REFERENCES subtasks(id) ON DELETE SET NULL
 );
 
 -- Items Table: Lowest-level actions for tasks/sidequests
@@ -213,7 +217,30 @@ BEGIN
     UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
+-- Triggers for items table cleanup (polymorphic orphan prevention)
+CREATE TRIGGER IF NOT EXISTS delete_task_items
+AFTER DELETE ON tasks
+FOR EACH ROW
+BEGIN
+    DELETE FROM items WHERE reference_table='tasks' AND reference_id=OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS delete_subtask_items
+AFTER DELETE ON subtasks
+FOR EACH ROW
+BEGIN
+    DELETE FROM items WHERE reference_table='subtasks' AND reference_id=OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS delete_sidequest_items
+AFTER DELETE ON sidequests
+FOR EACH ROW
+BEGIN
+    DELETE FROM items WHERE reference_table='sidequests' AND reference_id=OLD.id;
+END;
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_files_path ON files(path);
 CREATE INDEX IF NOT EXISTS idx_functions_file_id ON functions(file_id);
 CREATE INDEX IF NOT EXISTS idx_completion_path_project_id ON completion_path(project_id);
+CREATE INDEX IF NOT EXISTS idx_items_reference ON items(reference_table, reference_id);

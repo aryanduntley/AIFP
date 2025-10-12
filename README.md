@@ -1,300 +1,480 @@
-# 🤓 AIFP MCP Server
+# AIFP: AI Functional Procedural Programming
 
-## Introduction to AIFP
-
-**AIFP (AI Functional Procedural)** is a **language-agnostic programming paradigm** optimized for AI-generated and AI-maintained code.
-It defines strict but flexible rules to make code **machine-efficient**, **predictable**, and **queryable**, while keeping projects **finite and traceable**.
-
-### ✫️ Core Principles
-
-| Principle                    | Description                                                                                                 |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Functional–Procedural**    | Use **pure functions** and **explicit sequencing** — no classes, no hidden state, no mutation by default.   |
-| **AI-Readable Code**         | Flat, deterministic code is easier for AI to reason about and extend.                                       |
-| **Database-Indexed Logic**   | Every function, file, and relationship is tracked in SQLite for instant AI access — no reparsing.           |
-| **Dynamic Library Wrappers** | Bridges legacy OOP libraries into pure functional flows automatically.                                      |
-| **Roadmap-Driven Projects**  | Each project follows a **completion path** — a defined set of steps preventing infinite development cycles. |
-
-### 🧬 Why AIFP Exists
-
-AI struggles with:
-
-* OOP structures designed for humans, not machines.
-* Context loss between coding sessions.
-* Endless project drift without defined completion goals.
-
-AIFP solves this by merging **functional procedural code** with **project-level AI management**, all guided by **immutable directives** stored in the MCP.
+> **A language-agnostic programming paradigm designed for AI-generated and AI-maintained codebases**
 
 ---
 
-## 🖥️ MCP Server Overview
+## Table of Contents
 
-The **MCP (AI Project Management)** server is the *governing layer* of AIFP.
-It provides a **read-only core database** (`aifp_core.db`) that defines how AI must operate — and a **per-project database** (`project.db`) that AI manages dynamically.
-
-### 🧱 Two-Sided Architecture
-
-| Side                            | Role       | Description                                                                                             |
-| ------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------- |
-| **MCP Side (`aifp_core.db`)**   | Read-only  | Defines all directives, helpers, and tools. These are immutable and serve as AIFP’s rulebook.           |
-| **Project Side (`project.db`)** | Read/Write | Created by the AI per project. Tracks files, functions, roadmap progress, and context for continuation. |
-
----
-
-## ⚙️ MCP Side Structure (`aifp_core.db`)
-
-| Component            | Purpose                                                                                                                          |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **Directives**       | JSON-based “if-then” workflows guiding AI behavior. Each directive has an optional `.md` file for human-readable escalation.     |
-| **Categories**       | Grouping layer for directives (e.g., FP categories like *purity*, *immutability*; Project categories like *init*, *validation*). |
-| **Helper Functions** | Pre-written Python utilities (e.g., `track_file_creation`, `init_project_db`) that AI calls to interact with databases safely.   |
-| **Tools**            | Lightweight Python entry points (e.g., `aifp_run_tool.py`) that map directly to directives.                                      |
-| **Notes**            | Persistent log for directive clarifications or system escalations.                                                               |
-
-### Example Directives
-
-| Directive                        | Type      | Description                                                                     |
-| -------------------------------- | --------- | ------------------------------------------------------------------------------- |
-| **`aifp_run`**                   | `project` | Root directive. Parses user intent and routes to the proper workflow.           |
-| **`project_init`**               | `project` | Creates new projects and initializes `project.db`.                              |
-| **`project_task_decomposition`** | `project` | Breaks down complex goals into tasks, subtasks, and sidequests.                 |
-| **`project_file_write`**         | `project` | Handles code generation (outputs `FILE: ... CONTENT: ... AIFP_WRITE_COMPLETE`). |
-| **`fp_purity`**                  | `fp`      | Ensures all generated code consists of pure functions.                          |
-| **`fp_no_oop`**                  | `fp`      | Detects and refactors OOP constructs into functional equivalents.               |
-| **`fp_side_effects_flag`**       | `fp`      | Flags or isolates side effects (I/O, mutation).                                 |
+- [What is AIFP?](#what-is-aifp)
+- [Core Principles](#core-principles)
+- [Architecture Overview](#architecture-overview)
+- [Two-Database System](#two-database-system)
+- [How It Works](#how-it-works)
+- [Getting Started](#getting-started)
+- [Directives System](#directives-system)
+- [Project Lifecycle](#project-lifecycle)
+- [Example Workflow](#example-workflow)
+- [Documentation](#documentation)
+- [Design Philosophy](#design-philosophy)
+- [License](#license)
 
 ---
 
-## 📂 Project Side Structure (`project.db`)
+## What is AIFP?
 
-Each AIFP project maintains its own database — a lightweight, persistent “state brain.”
+**AIFP (AI Functional Procedural)** is a programming paradigm that combines:
 
-| Table                                                  | Purpose                                                                 |
-| ------------------------------------------------------ | ----------------------------------------------------------------------- |
-| **project**                                            | Stores project metadata (name, purpose, goals, version).                |
-| **files**                                              | Tracks file paths, checksums, and languages.                            |
-| **functions**                                          | Stores function metadata (name, parameters, docstrings, dependencies).  |
-| **themes / flows**                                     | AI-generated groupings for logical and procedural organization.         |
-| **completion_path**                                    | Defines project roadmap — the ordered path from start to completion.    |
-| **milestones / tasks / subtasks / sidequests / items** | Multi-tiered task tracking system.                                      |
-| **notes**                                              | Logs clarifications, pivots, or user feedback tied to project entities. |
+- **Pure functional programming** principles (referential transparency, immutability, composability)
+- **Procedural execution** patterns (explicit sequencing, no hidden state)
+- **Database-driven project management** (persistent state, instant context retrieval)
+- **Directive-based AI guidance** (deterministic workflows, automated compliance)
 
-The AI updates `project.db` automatically after every relevant directive execution.
+### Why AIFP?
+
+Traditional programming paradigms were designed for humans. AIFP is optimized for **AI-human collaboration**:
+
+| Challenge | Traditional Approach | AIFP Solution |
+|-----------|---------------------|---------------|
+| **Context Loss** | AI forgets between sessions | Database-driven persistent state |
+| **OOP Complexity** | Classes, inheritance, polymorphism | Pure functions, explicit data structures |
+| **Infinite Development** | Projects never "complete" | Finite completion paths with milestones |
+| **Code Reasoning** | Parse source code repeatedly | Pre-indexed functions, dependencies, interactions |
+| **Inconsistent Standards** | Style guides, linters, reviews | Immutable directives enforcing compliance |
 
 ---
 
-## 🔁 How It Works — The AIFP Run Cycle
+## Core Principles
 
-### 1. **User Command**
+### 1. Functional-Procedural Hybrid
 
-```bash
-aifp run [task]
+```python
+# ✅ AIFP-Compliant
+def calculate_total(items: List[Item]) -> float:
+    """Pure function: deterministic, no side effects"""
+    return reduce(lambda acc, item: acc + item.price, items, 0.0)
+
+# ❌ Not AIFP-Compliant
+class Calculator:
+    def __init__(self):
+        self.total = 0  # Hidden state
+
+    def add_item(self, item):
+        self.total += item.price  # Mutation
 ```
 
-Examples:
+### 2. Database-Indexed Logic
 
-* `aifp run Create math_utils.py with add function`
-* `aifp run Hey, I want to start a project for a math library.`
-* `aifp run Verify compliance for math_utils.py`
-
-### 2. **Intent Parsing**
-
-AI queries the MCP:
+Every function, file, and dependency is tracked in SQLite:
 
 ```sql
-SELECT * FROM directives WHERE name='aifp_run';
+-- Instant access to project structure
+SELECT f.name, f.purpose, f.purity_level
+FROM functions f
+JOIN files fi ON f.file_id = fi.id
+WHERE fi.path = 'src/calculator.py';
 ```
 
-It then matches the user’s request to an intent branch (e.g., *create project* → `init_project`).
+### 3. AI-Readable Code
 
-### 3. **Directive Execution**
+- **Flat structure**: No deep inheritance hierarchies
+- **Explicit dependencies**: All parameters passed explicitly
+- **Pure functions**: Same inputs → same outputs
+- **Metadata annotations**: Machine-readable function headers
 
-AI follows the workflow JSON for the matched directive:
-
-* Prompt for missing data.
-* Generate or update files.
-* Run FP compliance checks.
-* Update project DB via helper functions.
-
-### 4. **Structured Output**
-
-AI outputs deterministic file structures:
+### 4. Finite Completion Paths
 
 ```
-FILE: math_utils.py
-CONTENT:
-# AIFP_METADATA: {"function_names": ["add"], "deps": [], "theme": "math_ops", "flow": "addition_flow", "version": 1, "task_id": 1}
-# Project Purpose: Pure functional matrix math library
-def add(a: int, b: int) -> int:
-    """Pure: Adds two integers."""
-    return a + b
-AIFP_WRITE_COMPLETE
+Project: MatrixCalculator
+├── Completion Path (3 stages)
+│   ├── 1. Setup (completed)
+│   ├── 2. Core Development (in progress)
+│   │   ├── Milestone: Matrix Operations
+│   │   │   ├── Task: Implement multiply
+│   │   │   ├── Task: Implement transpose
+│   │   │   └── Task: Add validation
+│   │   └── Milestone: Vector Operations
+│   └── 3. Finalization (pending)
 ```
 
-### 5. **Validation and Update**
+### 5. Language-Agnostic
 
-AI checks compliance (no OOP, metadata present, DB updated).
-If compliant → updates `files`, `functions`, and marks `task_id` as complete.
+AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directives adapt to language-specific syntax while maintaining universal standards.
 
-If not → AI alerts:
+---
+
+## Architecture Overview
 
 ```
-Compliance failed for math_utils.py.
-Issue: OOP detected (class Add).
-Fix per directive: fp_no_oop.
-Retry: aifp run Create math_utils.py with add function
+┌─────────────────────────────────────────────────────┐
+│            AI Assistant (Claude, GPT-4, etc.)        │
+│  - Receives natural language commands                │
+│  - Calls MCP tools                                   │
+│  - Generates FP-compliant code                       │
+└────────────────────┬────────────────────────────────┘
+                     │ MCP Protocol
+┌────────────────────▼────────────────────────────────┐
+│                 MCP Server                           │
+│  - Routes commands via aifp_run                      │
+│  - Executes directives (FP + Project)                │
+│  - Manages database connections                      │
+│  - Provides helper functions                         │
+└───┬──────────────────────────────────────────────┬──┘
+    │                                              │
+┌───▼──────────────────┐            ┌─────────────▼──────────┐
+│   aifp_core.db       │            │   project.db           │
+│   (Global, Read-Only)│            │   (Per-Project, Mutable)│
+│                      │            │                        │
+│ - 60+ FP directives  │            │ - Project metadata     │
+│ - 21 Project direcs  │            │ - Files & functions    │
+│ - Helper definitions │            │ - Task hierarchy       │
+│ - Code templates     │            │ - Themes & flows       │
+│ - Standards & rules  │            │ - Completion roadmap   │
+└──────────────────────┘            └────────────────────────┘
 ```
 
 ---
 
-## ⚙️ Command Flow Summary
+## Two-Database System
+
+### aifp_core.db (Global, Read-Only)
+
+**Location**: `~/.aifp/aifp_core.db`
+
+**Purpose**: Immutable knowledge base containing all AIFP standards, directives, and helper definitions.
+
+**Key Tables**:
+- `directives`: All FP and project directives (workflows, keywords, thresholds)
+- `helper_functions`: Database, file, Git, and FP utilities
+- `tool_schemas`: MCP tool input/output definitions
+- `standards`: Code examples (good vs. bad patterns)
+- `templates`: Boilerplate code (ADTs, Result types, etc.)
+
+### project.db (Per-Project, Mutable)
+
+**Location**: `<project-root>/.aifp-project/project.db`
+
+**Purpose**: Persistent state for a single AIFP project.
+
+**Key Tables**:
+- `project`: High-level metadata (name, purpose, goals, status)
+- `files`, `functions`, `interactions`: Code structure tracking
+- `themes`, `flows`: Organizational groupings
+- `completion_path`, `milestones`, `tasks`: Roadmap and progress
+- `notes`: AI memory and clarifications
+
+---
+
+## How It Works
+
+### 1. Command Flow
+
+```bash
+aifp run "Initialize project for calculator"
+```
+
+**Processing**:
+1. MCP server receives command
+2. Queries `aifp_core.db` for intent keywords → matches `project_init`
+3. Loads `project_init` directive workflow
+4. Executes workflow steps:
+   - Creates `.aifp-project/` directory
+   - Initializes `project.db` with schema
+   - Inserts project metadata
+   - Sets up completion path
+5. Returns structured result to AI assistant
+
+### 2. Directive Execution
+
+Directives follow a **trunk → branches → fallback** pattern:
+
+```json
+{
+  "trunk": "analyze_function",
+  "branches": [
+    {"if": "pure_function", "then": "mark_compliant"},
+    {"if": "mutation_detected", "then": "refactor_to_pure"},
+    {"if": "low_confidence", "then": "prompt_user"},
+    {"fallback": "prompt_user"}
+  ]
+}
+```
+
+### 3. Cross-Directive Calls
+
+Project directives call FP directives for compliance:
+
+```
+project_file_write
+  ├─ Calls fp_purity (validates function purity)
+  ├─ Calls fp_immutability (checks for mutations)
+  ├─ Calls fp_side_effect_detection (isolates I/O)
+  └─ If all pass: writes file + updates database
+```
+
+---
+
+## Getting Started
+
+### Installation
+
+```bash
+# Install AIFP MCP server (global)
+pip install aifp-mcp-server
+
+# Initialize AIFP system
+aifp init --global
+
+# This creates:
+# ~/.aifp/mcp-server/
+# ~/.aifp/aifp_core.db
+# ~/.aifp/config.json
+```
+
+### Project Initialization
+
+```bash
+cd /path/to/your/project
+aifp init
+
+# This creates:
+# .aifp-project/
+# .aifp-project/project.db
+# .aifp-project/config.json
+```
+
+### Configure AI Assistant
+
+Add to Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "aifp": {
+      "command": "aifp",
+      "args": ["serve", "--stdio"],
+      "env": {
+        "AIFP_CONFIG_PATH": "~/.aifp/config.json"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Directives System
+
+### FP Directives (60+)
+
+Enforce functional programming standards:
+
+| Category | Directives | Purpose |
+|----------|------------|---------|
+| **Purity** | `fp_purity`, `fp_state_elimination`, `fp_side_effect_detection` | Eliminate hidden state and side effects |
+| **Composition** | `fp_monadic_composition`, `fp_function_composition`, `fp_pipelines` | Enable function composition |
+| **Error Handling** | `fp_optionals`, `fp_result_types`, `fp_try_monad` | Replace exceptions with Result/Option types |
+| **OOP Elimination** | `fp_class_elimination`, `fp_inheritance_block`, `fp_wrapper_generation` | Convert OOP to FP patterns |
+| **Optimization** | `fp_memoization`, `fp_lazy_evaluation`, `fp_parallel_evaluation` | Optimize without breaking purity |
+
+### Project Directives (21)
+
+Manage project lifecycle:
+
+| Level | Directives | Purpose |
+|-------|------------|---------|
+| **Level 0** | `project_init`, `project_run` | Root orchestration |
+| **Level 1** | `project_task_decomposition`, `project_themes_flows_init` | High-level coordination |
+| **Level 2** | `project_file_write`, `project_update_db`, `project_task_update` | Operational execution |
+| **Level 3** | `project_compliance_check`, `project_evolution` | State management |
+| **Level 4** | `project_completion_check`, `project_archival` | Validation & completion |
+
+---
+
+## Project Lifecycle
 
 ```mermaid
 graph TD
-A[aifp run] --> B[Parse intent via aifp_core.db]
-B --> C[Match Directive: aifp_run]
-C --> D[Sub-directive: init_project | file_write | update_db | compliance_check]
-D --> E[Execute Workflow (helpers, prompts, parallel ops)]
-E --> F[Generate Output or Update project.db]
-F --> G[Validate via FP Directives (e.g., fp_purity)]
-G --> H[Log or Escalate via Notes if Needed]
+    A[project_init] --> B[project_themes_flows_init]
+    B --> C[project_task_decomposition]
+    C --> D[project_file_write]
+    D --> E[FP Compliance Checks]
+    E --> F[project_update_db]
+    F --> G[project_task_update]
+    G --> H{All Tasks Done?}
+    H -->|No| D
+    H -->|Yes| I[project_completion_check]
+    I --> J[project_archival]
 ```
 
 ---
 
-## 🤓 Example Interaction
+## Example Workflow
 
-**User:**
-
-> aifp run Hey, I want to create a project for a math library with fast computation.
-
-**AI:**
+### Create Project
 
 ```
-Matched directive: aifp_run (intent: create project)
-Sub-directive: init_project
-Please provide a project name (e.g., MatrixCalculator).
+User: "Initialize AIFP for my matrix calculator"
+
+AI → aifp_run("Initialize AIFP for my matrix calculator")
+    → project_init directive
+    → Creates .aifp-project/project.db
+    → Inserts project metadata
+    → Sets up completion path
+
+AI: ✅ Project initialized: MatrixCalculator
+    Next: Define themes and create first task
 ```
 
-**User:**
-
-> aifp run Set name to MatrixCalculator with purpose 'Pure functional matrix math library' and goals '["Fast computation", "No OOP"]'
-
-**AI:**
+### Write Function
 
 ```
-Project initialized successfully:
-- project: MatrixCalculator
-- purpose: Pure functional matrix math library
-- goals: ["Fast computation", "No OOP"]
-- completion_path: Setup (order_index=1)
-Scaffolded: .aifp-project/
-Next: aifp run Create math_utils.py with add function --task_id 1
+User: "Write multiply_matrices function"
+
+AI → aifp_run("Write multiply_matrices function")
+    → project_file_write directive
+        → Calls fp_purity (validates purity)
+        → Calls fp_immutability (checks mutations)
+        → Writes src/matrix.py
+        → Updates files, functions, interactions tables
+
+AI: ✅ Function written: multiply_matrices
+    File: src/matrix.py
+    Purity: ✓ Pure
+    Dependencies: validate_dimensions
 ```
 
-**Next Step:**
-
-> aifp run Create math_utils.py with add function --task_id 1
-
-**AI Output:**
+### Check Compliance
 
 ```
-FILE: math_utils.py
-CONTENT:
-# AIFP_METADATA: {"function_names": ["add"], "deps": [], "theme": "math_ops", "flow": "addition_flow", "version": 1, "task_id": 1}
-# Project Purpose: Pure functional matrix math library
-def add(a: int, b: int) -> int:
-    """Pure: Adds two integers."""
-    return a + b
-AIFP_WRITE_COMPLETE
+User: "Check project compliance"
+
+AI → aifp_run("Check project compliance")
+    → project_compliance_check directive
+    → Queries all functions from project.db
+    → Runs FP directives on each
+    → Generates report
+
+AI: 📊 Compliance Report:
+    Total functions: 12
+    Compliant: 10
+    Violations: 2
+      - calculate_discount (uses global config)
+      - process_order (hidden mutation)
 ```
 
 ---
 
-## 🧬 Future Extensions
+## Documentation
 
-* **Directive Analytics:** Visualize directive usage and escalation patterns.
-* **IDE Integration:** VS Code extension for interactive task management.
-* **Advanced Error Handling:** Expand `roadblocks_json` for detailed automated recovery.
+### Comprehensive Blueprints
 
----
+- **[Project Directives Blueprint](docs/project_directives_blueprint.md)** - Project lifecycle management
+- **[FP Directives Blueprint](docs/fp_directives_blueprint.md)** - Functional programming enforcement
+- **[MCP Blueprint](docs/mcp_blueprint.md)** - MCP server architecture and tools
+- **[Project DB Blueprint](docs/project_db_blueprint.md)** - project.db schema and queries
+- **[MCP DB Blueprint](docs/mcp_db_blueprint.md)** - aifp_core.db schema and population
+- **[Interactions Blueprint](docs/interactions_blueprint.md)** - Cross-component interactions
+- **[Git Blueprint](docs/git_blueprint.md)** - Git integration and external change detection
 
-## 📘 Design Philosophy
+### Schema Files
 
-> **Immutable rules, evolving projects.**
+- **[schemaExampleProject.sql](docs/schemaExampleProject.sql)** - Complete project.db schema
+- **[schemaExampleMCP.sql](docs/schemaExampleMCP.sql)** - Complete aifp_core.db schema
 
-* The MCP (`aifp_core.db`) is **read-only** — the rulebook.
-* The Project (`project.db`) is **read/write** — the playground.
-* Directives define the boundaries; AI operates freely within them.
+### Directive Definitions
 
-This architecture ensures consistent behavior across sessions and AIs — every AIFP project follows the same logic, structure, and reasoning flow.
-
----
-
-## 📄 References
-
-* **Core DB:** [`aifp_core.db`](./aifp_core.db)
-* **Project Template:** `.aifp-project/project.db`
-* **Directive Definitions:** `/directives/*.md`
-* **Schema Files:** `/schemas/schemaExampleMCP.txt`, `/schemas/schemaExampleProject.txt`
+- **[FP Core Directives](docs/directives-fp-core.json)** - Core FP directives (20)
+- **[FP Aux Directives](docs/directives-fp-aux.json)** - Auxiliary FP directives (40+)
+- **[Project Directives](docs/directives-project.json)** - All project directives (21)
 
 ---
 
-### ⚖️ License
+## Design Philosophy
 
-MIT — Open standard for AI-optimized programming.
+### Immutable Rules, Evolving Projects
+
+- **`aifp_core.db`** is the **rulebook** (read-only, global, version-controlled)
+- **`project.db`** is the **playground** (read-write, per-project, dynamic)
+- **Directives** define the boundaries; AI operates freely within them
+
+### Database-Driven Context
+
+Traditional AI assistants lack persistent memory. AIFP solves this:
+
+```sql
+-- AI remembers everything across sessions
+SELECT f.name, f.purpose, f.dependencies_json
+FROM functions f
+WHERE f.theme = 'authentication';
+```
+
+No source code reparsing required. Instant context retrieval.
+
+### Finite by Design
+
+Every AIFP project has a **completion path**:
+
+```
+Setup → Core Development → Testing → Documentation → Finalization
+```
+
+Once `project_completion_check` passes, the project is **done**. No endless feature creep.
 
 ---
 
-## ✅ Summary
+## Roadmap
 
-**AIFP MCP Server** transforms AI from a “code generator” into a **structured project collaborator**.
-It combines pure functional programming, declarative project management, and rule-driven reasoning — creating a consistent, scalable ecosystem for AI-native development.
+### Current (v1.0)
 
-🧩 Technical Addendum — AIFP MCP Schema v1.3
+- ✅ Core directive system (60+ FP, 21 Project)
+- ✅ Two-database architecture
+- ✅ MCP server with command routing
+- ✅ Git integration (auto-init, external change detection)
+- ✅ Complete documentation and blueprints
 
-Highlights
+### Planned (v1.1+)
 
-Directive Categories — Directives are now grouped under named categories (e.g., purity, task_management, error_handling) for easier querying and reasoning.
+- [ ] MCP server implementation (Python)
+- [ ] Directive sync script (`populate_core_db.py`)
+- [ ] VS Code extension for task management
+- [ ] Directive visualization and analytics
+- [ ] Cross-language wrapper generation
+- [ ] AI reasoning trace visualization
 
-Directive Interactions — The MCP now models directive relationships in a dedicated directives_interactions table, allowing dependency tracing, validation, and visualization.
+---
 
-Notes Table — Expanded for structured reasoning logs and post-run audits.
+## Contributing
 
-Sync Manager Script — scripts/sync_directives.py automates JSON-to-DB synchronization, ensuring the MCP database always matches directive definitions.
+AIFP is an **open standard** for AI-optimized programming. Contributions welcome:
 
-Integrity Validation — The sync process runs built-in validation, checking for missing parents, invalid references, and FP rule violations.
+1. **New FP directives** - Language-specific or advanced patterns
+2. **Helper functions** - Database, file, Git, or FP utilities
+3. **Templates** - ADT boilerplate, error handling patterns
+4. **Documentation** - Examples, tutorials, case studies
 
-Schema Version 1.3 — Current canonical structure; future MCP releases will maintain backward compatibility.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-📊 Schema Overview
-Table	Purpose
-directives	Defines all FP and project directives (core logic)
-categories	Defines reusable classification tags
-directive_categories	Many-to-many link between directives and categories
-directives_interactions	Defines graph-like relationships between directives
-helper_functions	Reusable database utility scripts
-tools	MCP tools mapped to directives
-notes	Reasoning log and audit trail
-⚙️ Directive Sync Workflow
-Edit or add directive JSON files in /directives/.
-Run python scripts/sync_directives.py.
+---
 
-The script:
-Loads FP and Project JSON definitions.
-Upserts entries into directives, categories, and linking tables.
-Imports relationships from project_directive_graph.json.
-Validates schema integrity.
-Output written to logs/sync_report.json.
+## License
 
-🧩 Validation Checks Performed
-FP directives cannot have level values.
-All parent directives must exist.
-All relationships must resolve to valid directives.
-Duplicate category links are removed.
-Notes table must exist (and may optionally hold MCP reasoning).
+MIT License - See [LICENSE](LICENSE) for details.
 
-🧾 Version History
-Version	Summary	Date
-1.2	Introduced MCP concept and base directives.	—
-1.3	Added directive categories, relationships, helper/tools schema, and automated sync/validation.	✅ Current
+---
+
+## Summary
+
+**AIFP transforms AI from a "code generator" into a structured project collaborator.**
+
+It combines:
+- **Pure functional programming** for deterministic, composable code
+- **Database-driven state** for persistent AI memory
+- **Directive-based workflows** for consistent, automated compliance
+- **Finite completion paths** for goal-oriented development
+
+The result: AI-maintained codebases that are **predictable, traceable, and maintainable** across sessions, teams, and even different AI assistants.
+
+---
+
+**Built for the age of AI-native development.**
