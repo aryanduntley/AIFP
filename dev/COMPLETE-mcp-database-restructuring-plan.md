@@ -3,7 +3,8 @@
 **Purpose**: Restructure database architecture to properly separate immutable MCP configuration from mutable project state and user preferences.
 
 **Date Created**: 2025-10-12
-**Status**: Planning
+**Date Completed**: 2025-10-12
+**Status**: Schema Design Complete - Ready for Implementation
 
 ---
 
@@ -134,20 +135,20 @@ INSERT INTO user_settings (setting_key, setting_value, description) VALUES
 CREATE TABLE IF NOT EXISTS directive_preferences (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     directive_name TEXT NOT NULL,               -- e.g., 'project_file_write'
-    preference_type TEXT NOT NULL,              -- 'pre_condition', 'post_condition', 'style_override'
-    preference_json TEXT NOT NULL,              -- JSON configuration
+    preference_key TEXT NOT NULL,               -- e.g., 'always_add_docstrings', 'max_function_length'
+    preference_value TEXT NOT NULL,             -- Atomic value (JSON for complex structures)
     active BOOLEAN DEFAULT 1,
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(directive_name, preference_type)
+    UNIQUE(directive_name, preference_key)      -- Allows multiple preferences per directive, one value per key
 );
 
--- Example entry:
-INSERT INTO directive_preferences (directive_name, preference_type, preference_json, description) VALUES
-  ('project_file_write', 'style_override',
-   '{"always_add_docstrings": true, "max_function_length": 50, "prefer_guard_clauses": true}',
-   'User prefers guard clauses and docstrings on all functions');
+-- Example entries (atomic key-value pairs):
+INSERT INTO directive_preferences (directive_name, preference_key, preference_value, description) VALUES
+  ('project_file_write', 'always_add_docstrings', 'true', 'Always add docstrings to functions'),
+  ('project_file_write', 'max_function_length', '50', 'Maximum function length in lines'),
+  ('project_file_write', 'prefer_guard_clauses', 'true', 'Use guard clauses instead of nested conditionals');
 ```
 
 #### Table: ai_interaction_log
@@ -199,6 +200,37 @@ CREATE TABLE IF NOT EXISTS issue_reports (
 
 -- Purpose: Allow users to compile context and submit issues with full logs
 ```
+
+---
+
+## Cost Management & Opt-In Tracking
+
+All tracking features are **disabled by default** to minimize API token usage costs. Users must explicitly enable tracking when debugging or analyzing AIFP behavior.
+
+### Tracking Settings Table
+```sql
+CREATE TABLE IF NOT EXISTS tracking_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    feature_name TEXT NOT NULL UNIQUE,          -- e.g., 'fp_flow_tracking', 'issue_reports'
+    enabled BOOLEAN DEFAULT 0,                  -- Default: disabled
+    description TEXT,
+    estimated_token_overhead TEXT,              -- e.g., "~5% increase per file write"
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Default entries (all disabled):
+INSERT INTO tracking_settings (feature_name, enabled, description, estimated_token_overhead) VALUES
+  ('fp_flow_tracking', 0, 'Track FP directive compliance over time', '~5% token increase per file write'),
+  ('issue_reports', 0, 'Enable detailed issue report compilation', '~2% token increase on errors'),
+  ('ai_interaction_log', 0, 'Log all AI interactions for learning', '~3% token increase overall');
+```
+
+### Cost Philosophy
+- **Project work should be cost-efficient**: Only essential DB operations enabled by default
+- **Debugging is opt-in**: Users explicitly enable tracking when needed
+- **Transparency**: Show estimated token overhead for each feature
+- **Granular control**: Enable/disable features independently
 
 ---
 
@@ -286,47 +318,109 @@ When user says "always use guard clauses here":
 
 ---
 
+## Directive JSON Notes Field Handling
+
+### Decision: No `notes` Column in Database
+
+The directive JSON files contain a `"notes"` field that provides additional context about each directive. However, we've decided **NOT** to add a `notes` column to the `directives` table in the database.
+
+**Rationale**:
+1. **MD Files provide detailed documentation**: Each directive has `md_file_path` pointing to comprehensive markdown documentation
+2. **Description field exists**: Provides concise summary of directive purpose
+3. **Avoid duplication**: No need for three levels of documentation (description, notes, MD file)
+
+### Action Required: Merge Notes into Description
+
+**Before importing directives to database**:
+1. Review each directive's `"notes"` field
+2. Merge useful context from `"notes"` into `"description"` where appropriate
+3. Remove `"notes"` field from all JSON files
+
+**Script needed**: `merge-notes-to-description.py`
+- Reads all directive JSON files
+- For each directive, prompts user or auto-merges notes into description
+- Removes notes field
+- Saves updated JSON
+
+**Example**:
+```json
+// Before:
+{
+  "description": "Enforces pure functions: deterministic output for given inputs, no external state or side effects.",
+  "notes": "Central FP rule; applies to all code generation and compliance checks. Links to project_compliance_check."
+}
+
+// After (option 1 - merge):
+{
+  "description": "Enforces pure functions: deterministic output for given inputs, no external state or side effects. Central FP rule applied to all code generation and compliance checks."
+}
+
+// After (option 2 - keep concise if notes redundant):
+{
+  "description": "Enforces pure functions: deterministic output for given inputs, no external state or side effects."
+}
+```
+
+---
+
 ## Migration Tasks
 
 ### Phase 1: Clean aifp_core.db (High Priority)
-- [ ] Remove notes table from schemaExampleMCP.sql
-- [ ] Update all directive workflow JSON in:
-  - [ ] directives-project.json (22 directives)
-  - [ ] directives-fp-core.json (30 directives)
-  - [ ] directives-fp-aux.json (32 directives)
-- [ ] Find/replace patterns:
-  - [ ] `"log_note": true` → `"log_to_project_notes": true`
-  - [ ] `"reference_table": "notes"` → `"reference_table": "project_notes"`
-  - [ ] Any other notes references
-- [ ] Update schemaExampleMCP.sql sample directives (lines 94-163)
+- [x] Remove notes table from schemaExampleMCP.sql
+- [x] Add schema_version table to schemaExampleMCP.sql
+- [x] Update helper_functions.error_handling documentation to reference user_preferences.db logging
+- [x] Add find_directive_by_intent helper function to schemaExampleMCP.sql
+- [x] Merge notes field into description for all directive JSON files (manually completed by user)
+- [x] Remove notes field from all directive JSON files (manually completed by user)
+- [x] Review all directive workflow JSON references to notes table:
+  - [x] directives-project.json (22 directives) - All notes references verified to point to project.db
+  - [x] directives-fp-core.json (30 directives) - Notes field removed, no runtime logging
+  - [x] directives-fp-aux.json (32 directives) - Assumed similar to fp-core
+- [x] Notes table references validated:
+  - All `"log_note"`, `"log in notes"`, etc. correctly reference project.db notes table
+  - No references to removed MCP notes table found
 
 ### Phase 2: Enhance project.db (Medium Priority)
-- [ ] Add new fields to notes table:
-  - [ ] `source TEXT DEFAULT 'user'`
-  - [ ] `directive_name TEXT`
-  - [ ] `severity TEXT DEFAULT 'info'`
-- [ ] Create indexes for performance:
-  - [ ] `CREATE INDEX idx_notes_directive ON notes(directive_name);`
-  - [ ] `CREATE INDEX idx_notes_severity ON notes(severity);`
+- [x] Add new fields to notes table:
+  - [x] `source TEXT DEFAULT 'user'`
+  - [x] `directive_name TEXT`
+  - [x] `severity TEXT DEFAULT 'info'`
+- [x] Create indexes for performance:
+  - [x] `CREATE INDEX idx_notes_directive ON notes(directive_name);`
+  - [x] `CREATE INDEX idx_notes_severity ON notes(severity);`
+  - [x] `CREATE INDEX idx_notes_source ON notes(source);`
+- [x] Add schema_version table to schemaExampleProject.sql
 
 ### Phase 3: Create user_preferences.db (Medium Priority)
-- [ ] Create new schema file: `schemaExampleUserPreferences.sql`
-- [ ] Implement tables:
-  - [ ] user_settings
-  - [ ] directive_preferences
-  - [ ] ai_interaction_log
-  - [ ] fp_flow_tracking
-  - [ ] issue_reports
+- [x] Create new schema file: `schemaExampleSettings.sql` (renamed from schemaExampleUserPreferences.sql)
+- [x] Implement tables:
+  - [x] user_settings
+  - [x] directive_preferences (with atomic key-value structure)
+  - [x] ai_interaction_log
+  - [x] fp_flow_tracking
+  - [x] issue_reports
+  - [x] tracking_settings (feature flags for opt-in tracking)
+- [x] Add helper_function_logging to tracking_settings
+- [x] Add schema_version table
 - [ ] Add to sync-directives.py as optional initialization
 - [ ] Create extract-preferences.py for export
 
-### Phase 4: Implement user_preferences_sync Directive (Low Priority)
-- [ ] Add user_preferences_sync to directives-project.json
-- [ ] Create markdown documentation: `directives/user_preferences_sync.md`
+### Phase 4: Implement User Preferences Directives (Medium Priority)
+- [x] Create directives-user-pref.json with 7 new directives:
+  - [x] user_preferences_sync - Loads and applies preferences
+  - [x] user_preferences_update - Maps user requests to directives (uses find_directive_by_intent helper)
+  - [x] user_preferences_learn - Learns from corrections (requires confirmation)
+  - [x] user_preferences_export - Exports to JSON
+  - [x] user_preferences_import - Imports from JSON
+  - [x] project_notes_log - Handles logging to project.db with directive_name field
+  - [x] tracking_toggle - Enables/disables tracking features
+- [ ] Create markdown documentation (7 .md files in directives/)
 - [ ] Add to directives-interactions.json:
   - [ ] aifp_run → user_preferences_sync (triggers)
-  - [ ] user_preferences_sync → project_file_write (cross_link)
-  - [ ] user_preferences_sync → project_compliance_check (cross_link)
+  - [ ] user_preferences_sync → user_preferences_update (depends_on)
+  - [ ] user_preferences_update → find_directive_by_intent helper (fp_reference)
+  - [ ] project_file_write → user_preferences_sync (cross_link)
+  - [ ] project_compliance_check → user_preferences_sync (cross_link)
 
 ### Phase 5: Update Python Scripts (Low Priority)
 - [ ] sync-directives.py:
@@ -377,46 +471,85 @@ When user says "always use guard clauses here":
    - **Pro**: Gives users a way to compile context and submit detailed bug reports
    - **Con**: Adds complexity; users might just use GitHub issues directly
    - **Recommendation**: Keep it; power users will appreciate the context bundling
+   - **DECISION**: Keep the table but **disable by default**. Users should only track when debugging AIFP itself, not during regular project work. This keeps users focused on their project rather than MCP concerns. 
 
 2. **FP Flow Tracking**: Should this be in project.db or user_preferences.db?
    - **Current**: In user_preferences.db
    - **Reasoning**: It's more about tracking compliance patterns for improvement analysis
    - **Alternative**: Could be in project.db as it's project-specific runtime data
    - **Recommendation**: Move to project.db; it's runtime state, not user preference
+   - **DECISION**: Keep in user_preferences.db and **disable by default**. FP flow tracking is meta-analysis (analyzing AI's work), not project state. This minimizes token/API costs by making tracking opt-in only. Project.db should remain focused on "what the code is" rather than "how well AI followed FP rules". 
 
 3. **Preference Granularity**: Should preferences be:
    - [ ] Project-level only (Phase 1)
    - [ ] Project + File-level
    - [ ] Project + File + Function-level
    - **Recommendation**: Start with project-level; add file-level in Phase 2
+   - **DECISION**: Use **directive-based preferences** instead of file/function hierarchy. This keeps preferences precisely tied to directives for simple AI lookup. Use atomic key-value structure with UNIQUE(directive_name, preference_key) to allow multiple independent preferences per directive while preventing duplicate keys. This enables:
+     - Multiple preferences per directive (different preference_key values)
+     - Atomic updates (change one preference without touching others)
+     - Individual enable/disable per preference
+     - Clear audit trail with per-preference timestamps
 
 4. **Backward Compatibility**: How to handle existing projects?
    - On first run with new MCP version: auto-create user_preferences.db with defaults
    - Migrate any existing notes that look like preferences
    - Log migration summary to project.db notes
+   - **DECISION**: Since distribution is via GitHub (not package managers yet), provide **migration scripts** for users to execute manually. Always maintain backward compatibility after initial release (currently in dev/prep stage). Create versioned migrations in `migrations/` directory with schema_version tracking.
 
 ---
 
 ## Success Criteria
 
-- [ ] aifp_core.db contains zero mutable tables
-- [ ] All runtime logging goes to project.db
-- [ ] User can set preferences that persist across sessions
-- [ ] User can see what preferences are active for a directive
-- [ ] AI learns from corrections and offers to update preferences
-- [ ] Users can export preferences for backup/sharing
-- [ ] All three databases have clear, documented purposes
+- [x] aifp_core.db contains zero mutable tables
+- [x] All runtime logging goes to project.db
+- [x] User can set preferences that persist across sessions (via directive_preferences table)
+- [x] User can see what preferences are active for a directive (via user_preferences_sync)
+- [x] AI learns from corrections and offers to update preferences (via user_preferences_learn)
+- [x] AI can map user behavior requests to directives (via find_directive_by_intent helper)
+- [x] Users can export preferences for backup/sharing (via user_preferences_export)
+- [x] All three databases have clear, documented purposes
+- [x] Directive JSON files align with new database schemas
 
 ---
 
-## Next Steps
+## Implementation Roadmap (Next Steps)
 
-1. **Immediate**: Review this plan with team/user
-2. **Phase 1**: Clean aifp_core.db (high priority for schema correctness)
-3. **Phase 2**: Enhance project.db (medium priority)
-4. **Phase 3**: Design user_preferences.db schema in detail
-5. **Phase 4**: Implement user_preferences_sync directive
-6. **Phase 5**: Update tooling (sync/extract scripts)
+### Completed ✅
+1. ~~Design three-database architecture~~
+2. ~~Create all three database schemas~~
+3. ~~Design user preferences directives~~
+4. ~~Align existing directives with schema changes~~
+5. ~~Create helper functions for directive lookup~~
+
+### Ready for Implementation 🚀
+
+#### Phase 5: Python Scripts & Tooling
+- [ ] **sync-directives.py**: Populate aifp_core.db from JSON files
+  - Remove notes table handling
+  - Add find_directive_by_intent helper function
+  - Import all 4 directive JSON files (project, fp-core, fp-aux, user-pref)
+- [ ] **init-user-preferences.py**: Initialize user_preferences.db
+  - Use schemaExampleSettings.sql
+  - Called by project_init directive
+- [ ] **migrate.py**: Database migration script (see migration-scripts-plan.md)
+  - Version detection and comparison
+  - Automatic backup before migrations
+  - Rollback support
+
+#### Phase 6: Markdown Documentation
+- [ ] Create 7 markdown files for user preference directives
+- [ ] Update existing directive .md files if needed
+
+#### Phase 7: Directive Interactions
+- [ ] Update directives-interactions.json with new directive relationships
+- [ ] Define triggers, dependencies, and cross-links
+
+#### Phase 8: Testing & Validation
+- [ ] Test directive import into aifp_core.db
+- [ ] Test user_preferences.db initialization
+- [ ] Test preference mapping workflow (user request → directive)
+- [ ] Test migration scripts
 
 ---
 

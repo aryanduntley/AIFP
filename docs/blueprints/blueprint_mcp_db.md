@@ -18,49 +18,131 @@ The `aifp_core.db` database is a **read-only, global database** that stores all 
 
 ### Directives Table
 
-**Purpose**: Store all AIFP directives (FP + Project)
+**Purpose**: Store all AIFP directives (FP + Project + User Preference)
 
 ```sql
 CREATE TABLE directives (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,              -- e.g., 'fp_purity', 'project_init'
-    type TEXT NOT NULL,                     -- 'fp' or 'project'
-    level INTEGER,                          -- Project directives: 0-4; FP: NULL
-    category_name TEXT NOT NULL,
-    category_description TEXT,
-    description TEXT NOT NULL,
-    workflow_json TEXT NOT NULL,            -- JSON: trunk, branches, fallback
-    roadblocks_json TEXT,                   -- JSON array of issue/resolution pairs
-    intent_keywords_json TEXT NOT NULL,     -- JSON array of keywords
-    confidence_threshold REAL DEFAULT 0.7,
-    notes TEXT,
-    related_fp_directives TEXT,             -- JSON array of related FP directive names
-    related_project_directives TEXT,        -- JSON array of related project directive names
-    compressed_form TEXT,                   -- Minimal 50-100 char representation
-    markdown_path TEXT,                     -- Path to detailed .md file (if exists)
+    name TEXT NOT NULL UNIQUE,                      -- e.g., 'aifp_run', 'init_project'
+    type TEXT NOT NULL,                             -- 'fp', 'project', or 'user_pref'
+    level INTEGER DEFAULT NULL,                     -- 0–4 for 'project' directives only
+    parent_directive TEXT REFERENCES directives(name), -- Optional link for hierarchy
+    description TEXT,
+    workflow JSON NOT NULL,                         -- JSON with trunk/branches/error_handling
+    md_file_path TEXT,                              -- e.g., 'directives/aifp_run.md'
+    roadblocks_json TEXT,                           -- JSON array of issues/resolutions
+    intent_keywords_json TEXT,                      -- Optional keywords for intent detection
+    confidence_threshold REAL DEFAULT 0.5,           -- 0–1 threshold for matching/escalation
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_directives_name ON directives(name);
 CREATE INDEX idx_directives_type ON directives(type);
-CREATE INDEX idx_directives_category ON directives(category_name);
 ```
 
 **Example Row**:
 ```sql
-INSERT INTO directives (name, type, level, category_name, description, workflow_json, intent_keywords_json, compressed_form)
+INSERT INTO directives (name, type, level, parent_directive, description, workflow, intent_keywords_json, confidence_threshold)
 VALUES (
-    'fp_purity',
-    'fp',
-    NULL,
-    'purity',
-    'Enforces pure functions: deterministic output for given inputs, no external state or side effects',
-    '{"trunk": "analyze_function", "branches": [...]}',
-    '["pure", "no side effects", "deterministic"]',
-    'Enforce pure functions: same input → same output, no state'
+    'user_preferences_update',
+    'user_pref',
+    1,
+    'user_preferences_sync',
+    'Handles explicit user requests to modify behavior preferences. Uses find_directive_by_intent helper to map requests to directives.',
+    '{"trunk": "parse_preference_request", "branches": [...]}',
+    '["set preference", "change behavior", "always do"]',
+    0.6
 );
 ```
+
+**Directive Types**:
+- `fp`: Functional programming enforcement directives
+- `project`: Project lifecycle management directives
+- `user_pref`: User preference and customization directives
+
+---
+
+### Categories Table
+
+**Purpose**: Categorize directives into logical groupings
+
+```sql
+CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,                       -- e.g., 'purity', 'immutability', 'task_management'
+    description TEXT,                                -- Optional human-readable explanation
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Example Categories**:
+```sql
+INSERT INTO categories (name, description) VALUES
+  ('purity', 'Pure function enforcement and state elimination'),
+  ('immutability', 'Data immutability and mutation prevention'),
+  ('user_customization', 'User-specific AI behavior preferences'),
+  ('task_management', 'Project task decomposition and tracking'),
+  ('logging', 'Runtime logging and note-taking');
+```
+
+---
+
+### Directive Categories (Junction Table)
+
+**Purpose**: Link directives to categories (many-to-many)
+
+```sql
+CREATE TABLE IF NOT EXISTS directive_categories (
+    directive_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    PRIMARY KEY (directive_id, category_id),
+    FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
+```
+
+**Usage**: One directive can belong to multiple categories
+
+---
+
+### Directives Interactions Table
+
+**Purpose**: Track relationships and dependencies between directives
+
+```sql
+CREATE TABLE IF NOT EXISTS directives_interactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_directive_id INTEGER NOT NULL,
+    target_directive_id INTEGER NOT NULL,
+    relation_type TEXT NOT NULL CHECK (relation_type IN (
+        'triggers',        -- source calls or activates target
+        'depends_on',      -- source relies on data or state from target
+        'escalates_to',    -- source delegates upward to target for resolution
+        'cross_link',      -- bidirectional or contextual connection
+        'fp_reference'     -- source calls or enforces an FP directive
+    )),
+    weight INTEGER DEFAULT 1,
+    description TEXT,
+    active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (source_directive_id) REFERENCES directives(id),
+    FOREIGN KEY (target_directive_id) REFERENCES directives(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_interactions_source ON directives_interactions (source_directive_id);
+CREATE INDEX IF NOT EXISTS idx_interactions_target ON directives_interactions (target_directive_id);
+CREATE INDEX IF NOT EXISTS idx_interactions_relation_type ON directives_interactions (relation_type);
+```
+
+**Relation Types**:
+- `triggers`: Source directive activates target directive
+- `depends_on`: Source relies on target's data or state
+- `escalates_to`: Source delegates to higher-level target
+- `cross_link`: Bidirectional or contextual relationship
+- `fp_reference`: Source calls FP directive for compliance check
 
 ---
 
@@ -84,7 +166,7 @@ CREATE TABLE helper_functions (
 CREATE INDEX idx_helper_functions_category ON helper_functions(category);
 ```
 
-**Example Row**:
+**Example Rows**:
 ```sql
 INSERT INTO helper_functions (name, category, description, parameters_json, return_type, implementation_hint)
 VALUES (
@@ -95,6 +177,32 @@ VALUES (
     'List[dict]',
     'SELECT * FROM functions WHERE file_id = ?'
 );
+
+INSERT INTO helper_functions (name, category, description, parameters_json, return_type, implementation_hint)
+VALUES (
+    'find_directive_by_intent',
+    'database',
+    'Searches directives table by name, description, and intent_keywords_json to map user preference requests to specific directives. Returns list of matching directives with confidence scores sorted by relevance.',
+    '{"user_request": {"type": "string", "required": true}, "confidence_threshold": {"type": "float", "required": false, "default": 0.5}}',
+    'List[dict]',
+    'SELECT id, name, description FROM directives WHERE type IN (''project'', ''fp'') AND (name LIKE ? OR description LIKE ? OR intent_keywords_json LIKE ?) ORDER BY confidence_score DESC'
+);
+```
+
+---
+
+### Schema Version Table
+
+**Purpose**: Track schema version for migration management
+
+```sql
+CREATE TABLE IF NOT EXISTS schema_version (
+    id INTEGER PRIMARY KEY CHECK (id = 1),      -- Only one row allowed
+    version TEXT NOT NULL,                      -- e.g., '1.0'
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO schema_version (id, version) VALUES (1, '1.0');
 ```
 
 ---
@@ -542,13 +650,16 @@ def route_command(self, command: str) -> Directive:
 The `aifp_core.db` database provides:
 
 - **Immutable knowledge base** for all AIFP directives and standards
+- **Directive storage** for FP, project, and user preference directives (88+ total)
+- **Category system** for organizing directives into logical groupings
+- **Directive interactions** tracking for cross-directive relationships
 - **Intent detection** via keyword matching and weighted scoring
-- **Helper function schemas** for MCP server utilities
+- **Helper function schemas** including `find_directive_by_intent` for preference mapping
 - **Tool schemas** for MCP tool definitions
 - **Code templates** for generating FP-compliant boilerplate
 - **Roadblock resolutions** for common issues
 - **Configuration defaults** for AIFP system behavior
 - **Read-only enforcement** to prevent corruption
-- **Version tracking** for update management
+- **Schema version tracking** for migration management
 
-It acts as the **brain** of the MCP server, storing all knowledge needed to execute directives, route commands, and enforce AIFP standards across all projects.
+It acts as the **brain** of the MCP server, storing all knowledge needed to execute directives, route commands, enforce AIFP standards, and support user customization across all projects.

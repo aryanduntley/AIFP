@@ -366,5 +366,93 @@
     "description": "project_dependency_map cross-links with project_integrity_check for validation",
     "weight": 1,
     "active": true
+  },
+  {
+    "source": "aifp_run",
+    "target": "user_preferences_sync",
+    "relation_type": "triggers",
+    "description": "aifp_run triggers user_preferences_sync before executing any project directive",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "aifp_run",
+    "target": "user_preferences_update",
+    "relation_type": "triggers",
+    "description": "aifp_run triggers user_preferences_update when user explicitly requests behavior change",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_preferences_sync",
+    "target": "project_file_write",
+    "relation_type": "cross_link",
+    "description": "user_preferences_sync loads preferences before project_file_write execution",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_preferences_sync",
+    "target": "project_compliance_check",
+    "relation_type": "cross_link",
+    "description": "user_preferences_sync loads preferences before project_compliance_check execution",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_preferences_update",
+    "target": "user_preferences_sync",
+    "relation_type": "depends_on",
+    "description": "user_preferences_update depends on user_preferences_sync to initialize database",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_preferences_learn",
+    "target": "user_preferences_update",
+    "relation_type": "triggers",
+    "description": "user_preferences_learn triggers user_preferences_update after confirming learned preference",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "project_notes_log",
+    "relation_type": "triggers",
+    "description": "project_file_write triggers project_notes_log for clarifications and decisions",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_notes_log",
+    "relation_type": "triggers",
+    "description": "project_task_decomposition triggers project_notes_log for ambiguity clarifications",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_preferences_export",
+    "target": "user_preferences_sync",
+    "relation_type": "depends_on",
+    "description": "user_preferences_export depends on user_preferences_sync to access preferences database",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_preferences_import",
+    "target": "user_preferences_sync",
+    "relation_type": "depends_on",
+    "description": "user_preferences_import depends on user_preferences_sync to initialize database",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "tracking_toggle",
+    "target": "user_preferences_sync",
+    "relation_type": "depends_on",
+    "description": "tracking_toggle depends on user_preferences_sync to access tracking_settings table",
+    "weight": 1,
+    "active": true
   }
 ]

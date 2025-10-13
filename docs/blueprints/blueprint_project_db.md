@@ -399,7 +399,7 @@ CREATE INDEX idx_items_reference ON items(reference_table, reference_id);
 
 ### Notes Table
 
-**Purpose**: AI-written clarifications, decisions, and context
+**Purpose**: AI-written clarifications, decisions, and context with optional directive tracking
 
 ```sql
 CREATE TABLE notes (
@@ -408,11 +408,17 @@ CREATE TABLE notes (
     note_type TEXT NOT NULL,                -- 'clarification', 'pivot', 'research', 'roadblock'
     reference_table TEXT,                   -- 'items', 'files', 'tasks', 'project', etc.
     reference_id INTEGER,
+    source TEXT DEFAULT 'user',             -- 'user', 'ai', 'directive' (who created this note)
+    directive_name TEXT,                    -- Optional: directive context if note relates to directive execution
+    severity TEXT DEFAULT 'info',           -- 'info', 'warning', 'error'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_notes_reference ON notes(reference_table, reference_id);
+CREATE INDEX IF NOT EXISTS idx_notes_directive ON notes(directive_name);
+CREATE INDEX IF NOT EXISTS idx_notes_severity ON notes(severity);
+CREATE INDEX IF NOT EXISTS idx_notes_source ON notes(source);
 ```
 
 **Note Types**:
@@ -421,24 +427,48 @@ CREATE INDEX idx_notes_reference ON notes(reference_table, reference_id);
 - `research`: AI documented findings
 - `roadblock`: Issue requiring future resolution
 
+**Enhanced Fields** (for traceability, not logging):
+- `source`: Who created the note (`user`, `ai`, or `directive`)
+- `directive_name`: Optional directive context (only when note relates to directive execution)
+- `severity`: Importance level (`info`, `warning`, `error`)
+
 **Usage**:
-- Written by nearly all directives for future AI context
+- Written by directives for AI memory and future context
 - Queried during session boot to restore context
 - Critical for maintaining AI "memory" across sessions
+- `directive_name` provides traceability when a directive writes a clarification or decision
+- **NOT for logging**: Logging goes to user_preferences.db (opt-in only)
+- Managed by `project_notes_log` directive for important clarifications/decisions only
+
+**When to Use `directive_name` Field**:
+- ✅ **Use**: When directive writes a clarification about its decision
+  - Example: `project_file_write` writes "FP compliance check required refactoring function X to eliminate mutation"
+  - `directive_name = 'project_file_write'`
+- ✅ **Use**: When directive needs to record reasoning for future reference
+  - Example: `project_task_decomposition` writes "User request ambiguous - created subtask for clarification"
+  - `directive_name = 'project_task_decomposition'`
+- ❌ **Don't use**: For generic user notes or unrelated entries
+  - Example: User manually adds note "Remember to refactor this later"
+  - `directive_name = NULL`
+- ❌ **Don't use**: For verbose logging or debugging (use user_preferences.db tracking instead)
 
 **Examples**:
 ```sql
 -- User clarification
-INSERT INTO notes (content, note_type, reference_table, reference_id)
-VALUES ('User confirmed: Use pure Python, no NumPy', 'clarification', 'project', 1);
+INSERT INTO notes (content, note_type, reference_table, reference_id, source)
+VALUES ('User confirmed: Use pure Python, no NumPy', 'clarification', 'project', 1, 'user');
 
 -- Project pivot
-INSERT INTO notes (content, note_type, reference_table, reference_id)
-VALUES ('Pivoting from CLI tool to web API', 'pivot', 'project', 1);
+INSERT INTO notes (content, note_type, reference_table, reference_id, source, severity)
+VALUES ('Pivoting from CLI tool to web API', 'pivot', 'project', 1, 'ai', 'warning');
+
+-- Directive clarification note (important decision recorded for future AI context)
+INSERT INTO notes (content, note_type, source, directive_name, severity)
+VALUES ('FP compliance check required refactoring function X to eliminate mutation', 'clarification', 'directive', 'project_file_write', 'info');
 
 -- Roadblock
-INSERT INTO notes (content, note_type, reference_table, reference_id)
-VALUES ('Cannot write to /protected/ - needs elevated permissions', 'roadblock', 'files', 5);
+INSERT INTO notes (content, note_type, reference_table, reference_id, source, severity)
+VALUES ('Cannot write to /protected/ - needs elevated permissions', 'roadblock', 'files', 5, 'directive', 'error');
 ```
 
 ---

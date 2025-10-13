@@ -205,6 +205,9 @@ CREATE TABLE notes (
     note_type TEXT NOT NULL,               -- e.g., 'clarification', 'pivot', 'research'
     reference_table TEXT,                   -- e.g., 'items', 'files', 'completion_path'
     reference_id INTEGER,
+    source TEXT DEFAULT 'user',             -- 'user', 'ai', 'directive' (who created this note)
+    directive_name TEXT,                    -- Optional: directive context if note relates to directive execution
+    severity TEXT DEFAULT 'info',           -- 'info', 'warning', 'error'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -244,3 +247,18 @@ CREATE INDEX IF NOT EXISTS idx_files_path ON files(path);
 CREATE INDEX IF NOT EXISTS idx_functions_file_id ON functions(file_id);
 CREATE INDEX IF NOT EXISTS idx_completion_path_project_id ON completion_path(project_id);
 CREATE INDEX IF NOT EXISTS idx_items_reference ON items(reference_table, reference_id);
+CREATE INDEX IF NOT EXISTS idx_notes_directive ON notes(directive_name);
+CREATE INDEX IF NOT EXISTS idx_notes_severity ON notes(severity);
+CREATE INDEX IF NOT EXISTS idx_notes_source ON notes(source);
+
+-- ===============================================================
+-- Schema Version Tracking
+-- ===============================================================
+
+CREATE TABLE IF NOT EXISTS schema_version (
+    id INTEGER PRIMARY KEY CHECK (id = 1),      -- Only one row allowed
+    version TEXT NOT NULL,                      -- e.g., '1.0'
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO schema_version (id, version) VALUES (1, '1.0');

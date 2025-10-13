@@ -8,7 +8,7 @@
       "name": "orchestration",
       "description": "Master command router and intent parser for all AIFP workflows."
     },
-    "description": "Root entry point for AIFP system. Parses natural language commands, detects intent, routes to appropriate directives, and orchestrates cross-directive workflows.",
+    "description": "Root entry point for AIFP system. Parses natural language commands, detects intent, routes to appropriate directives, and orchestrates cross-directive workflows. Master orchestrator directive. All user commands flow through this entry point. Routes to Level 1+ directives based on intent detection.",
     "md_file_path": "directives/aifp_run.md",
     "workflow": {
       "trunk": "parse_intent",
@@ -30,8 +30,7 @@
       {"issue": "no_directive_match", "resolution": "Log intent keywords and escalate to user"}
     ],
     "intent_keywords_json": ["run", "execute", "aifp", "start", "command"],
-    "confidence_threshold": 0.7,
-    "notes": "Master orchestrator directive. All user commands flow through this entry point. Routes to Level 1+ directives based on intent detection."
+    "confidence_threshold": 0.7
   },
   {
     "name": "project_init",
@@ -42,7 +41,7 @@
       "name": "initialization",
       "description": "Handles creation and setup of new AIFP projects."
     },
-    "description": "Initializes a new project by scaffolding the .aifp-project folder, creating project.db, and inserting the base roadmap.",
+    "description": "Initializes a new project by scaffolding the .aifp-project folder, creating project.db, and inserting the base roadmap. Top-level setup directive; establishes project identity and database scaffolding.",
     "md_file_path": "directives/project_init.md",
     "workflow": {
       "trunk": "setup_project",
@@ -58,8 +57,7 @@
       {"issue": "schema_missing", "resolution": "Verify schema file in /schemas/"}
     ],
     "intent_keywords_json": ["create project", "initialize", "start project"],
-    "confidence_threshold": 0.8,
-    "notes": "Top-level setup directive; establishes project identity and database scaffolding."
+    "confidence_threshold": 0.8
   },
   {
     "name": "project_task_decomposition",
@@ -70,7 +68,7 @@
       "name": "task_management",
       "description": "Manages decomposition of user goals into AIFP-aligned tasks, subtasks, and sidequests."
     },
-    "description": "Breaks complex user instructions into trackable tasks, subtasks, and sidequests in project.db, maintaining roadmap alignment.",
+    "description": "Breaks complex user instructions into trackable tasks, subtasks, and sidequests in project.db, maintaining roadmap alignment. Guides project structure expansion and roadmap alignment through database updates.",
     "md_file_path": "directives/project_task_decomposition.md",
     "workflow": {
       "trunk": "review_open_tasks",
@@ -90,8 +88,7 @@
       {"issue": "no matching open task", "resolution": "Create new task or sidequest, align to completion_path"}
     ],
     "intent_keywords_json": ["decompose task", "break down", "plan steps", "explore"],
-    "confidence_threshold": 0.5,
-    "notes": "Guides project structure expansion and roadmap alignment through database updates."
+    "confidence_threshold": 0.5
   },
   {
     "name": "project_add_path",
@@ -102,7 +99,7 @@
       "name": "task_management",
       "description": "Handles roadmap and completion_path modifications."
     },
-    "description": "Creates or updates completion_path, milestones, and tasks in project.db to maintain project roadmap continuity.",
+    "description": "Creates or updates completion_path, milestones, and tasks in project.db to maintain project roadmap continuity. Maintains structural coherence of project paths and milestones.",
     "md_file_path": "directives/project_add_path.md",
     "workflow": {
       "trunk": "modify_path",
@@ -119,8 +116,7 @@
       {"issue": "duplicate_entry", "resolution": "Verify milestone/task uniqueness"}
     ],
     "intent_keywords_json": ["add path", "update roadmap", "milestone"],
-    "confidence_threshold": 0.6,
-    "notes": "Maintains structural coherence of project paths and milestones."
+    "confidence_threshold": 0.6
   },
   {
     "name": "project_file_write",
@@ -131,7 +127,7 @@
       "name": "file_operations",
       "description": "Handles file generation and metadata updates."
     },
-    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly.",
+    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly. Core file generation directive; bridges code creation and database synchronization.",
     "md_file_path": "directives/project_file_write.md",
     "workflow": {
       "trunk": "generate_file",
@@ -147,8 +143,7 @@
       {"issue": "fp_violation", "resolution": "Trigger fp_compliance_check"}
     ],
     "intent_keywords_json": ["create file", "write code", "generate file"],
-    "confidence_threshold": 0.7,
-    "notes": "Core file generation directive; bridges code creation and database synchronization."
+    "confidence_threshold": 0.7
   },
   {
     "name": "project_update_db",
@@ -159,7 +154,7 @@
       "name": "file_operations",
       "description": "Synchronizes generated code metadata with the project database."
     },
-    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking.",
+    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking. Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle.",
     "md_file_path": "directives/project_update_db.md",
     "workflow": {
       "trunk": "parse_content",
@@ -176,8 +171,7 @@
       {"issue": "checksum_mismatch", "resolution": "Recalculate and resync file entry"}
     ],
     "intent_keywords_json": ["update db", "track file", "metadata"],
-    "confidence_threshold": 0.6,
-    "notes": "Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle."
+    "confidence_threshold": 0.6
   },
   {
     "name": "project_compliance_check",
@@ -188,7 +182,7 @@
       "name": "compliance",
       "description": "Verifies AIFP rule adherence and functional progress."
     },
-    "description": "Runs FP compliance directives to ensure code purity, no OOP, and structural correctness. Also verifies project completion alignment via project.db.",
+    "description": "Runs FP compliance directives to ensure code purity, no OOP, and structural correctness. Also verifies project completion alignment via project.db. Validates project state and functional integrity before database updates or completion marking.",
     "md_file_path": "directives/project_compliance_check.md",
     "workflow": {
       "trunk": "run_checks",
@@ -204,8 +198,7 @@
       {"issue": "fp_violation", "resolution": "Run linked fp_* directives automatically"}
     ],
     "intent_keywords_json": ["verify", "check compliance", "validate code"],
-    "confidence_threshold": 0.7,
-    "notes": "Validates project state and functional integrity before database updates or completion marking."
+    "confidence_threshold": 0.7
   },
   {
     "name": "project_completion_check",
@@ -216,7 +209,7 @@
       "name": "compliance",
       "description": "Evaluates roadmap progress and completion readiness."
     },
-    "description": "Checks completion_path, milestones, and tasks for status updates. Marks completion milestones when conditions are met and logs alignment notes.",
+    "description": "Checks completion_path, milestones, and tasks for status updates. Marks completion milestones when conditions are met and logs alignment notes. Monitors roadmap alignment, marks progress milestones, and prevents premature completion marking.",
     "md_file_path": "directives/project_completion_check.md",
     "workflow": {
       "trunk": "check_progress",
@@ -232,8 +225,7 @@
       {"issue": "incomplete_tasks", "resolution": "Auto-mark pending subtasks or prompt user"}
     ],
     "intent_keywords_json": ["progress", "check completion", "roadmap"],
-    "confidence_threshold": 0.6,
-    "notes": "Monitors roadmap alignment, marks progress milestones, and prevents premature completion marking."
+    "confidence_threshold": 0.6
   },
   {
     "name": "project_error_handling",
@@ -244,7 +236,7 @@
       "name": "error_handling",
       "description": "Handles directive failures, logging, and escalation to user."
     },
-    "description": "Monitors directive execution for known or unknown failures, applies stored roadblock resolutions, and logs issues to the notes table for transparency.",
+    "description": "Monitors directive execution for known or unknown failures, applies stored roadblock resolutions, and logs issues to the notes table for transparency. Provides universal error recovery handling for all project-level directives. Integrates with the notes table for traceability.",
     "md_file_path": "directives/project_error_handling.md",
     "workflow": {
       "trunk": "check_roadblocks",
@@ -260,8 +252,7 @@
       {"issue": "workflow_failure", "resolution": "Escalate to associated .md file for guidance"}
     ],
     "intent_keywords_json": ["error", "failure", "roadblock", "issue"],
-    "confidence_threshold": 0.5,
-    "notes": "Provides universal error recovery handling for all project-level directives. Integrates with the notes table for traceability."
+    "confidence_threshold": 0.5
   },
   {
     "name": "project_evolution",
@@ -272,7 +263,7 @@
       "name": "evolution_tracking",
       "description": "Tracks changes to project idea, goals, and purpose."
     },
-    "description": "Handles versioning and pivot tracking for evolving project goals. Logs changes in notes and updates roadmap and completion paths accordingly.",
+    "description": "Handles versioning and pivot tracking for evolving project goals. Logs changes in notes and updates roadmap and completion paths accordingly. Captures and logs project pivots for transparency in long-running projects. Updates project.version and completion paths.",
     "md_file_path": "directives/project_evolution.md",
     "workflow": {
       "trunk": "update_project",
@@ -288,8 +279,7 @@
       {"issue": "version_conflict", "resolution": "Reconcile project version and completion_path entries"}
     ],
     "intent_keywords_json": ["pivot", "evolve", "update goals", "project change"],
-    "confidence_threshold": 0.6,
-    "notes": "Captures and logs project pivots for transparency in long-running projects. Updates project.version and completion paths."
+    "confidence_threshold": 0.6
   },
   {
     "name": "project_user_referral",
@@ -300,7 +290,7 @@
       "name": "error_handling",
       "description": "Delegates unresolved issues back to the user."
     },
-    "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review.",
+    "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review. Standard fallback directive for AI–user collaboration. Ensures ambiguous operations always route through human confirmation.",
     "md_file_path": "directives/project_user_referral.md",
     "workflow": {
       "trunk": "check_confidence",
@@ -316,8 +306,7 @@
       {"issue": "low_confidence_path", "resolution": "Escalate to user confirmation"}
     ],
     "intent_keywords_json": ["clarify", "user input", "confirmation", "resolve"],
-    "confidence_threshold": 0.5,
-    "notes": "Standard fallback directive for AI–user collaboration. Ensures ambiguous operations always route through human confirmation."
+    "confidence_threshold": 0.5
   },
   {
     "name": "project_theme_flow_mapping",
@@ -328,7 +317,7 @@
       "name": "theme_mapping",
       "description": "Links generated code elements to project themes and flows."
     },
-    "description": "Infers or assigns flow and theme groupings based on file metadata, updating linking tables for file_flows and flow_themes within project.db.",
+    "description": "Infers or assigns flow and theme groupings based on file metadata, updating linking tables for file_flows and flow_themes within project.db. Maintains thematic and procedural grouping across project files. Supports roadmap visualization and organization.",
     "md_file_path": "directives/project_theme_flow_mapping.md",
     "workflow": {
       "trunk": "infer_metadata",
@@ -344,8 +333,7 @@
       {"issue": "missing_metadata", "resolution": "Parse file for AIFP_METADATA or prompt user"}
     ],
     "intent_keywords_json": ["theme", "flow", "grouping", "categorize"],
-    "confidence_threshold": 0.5,
-    "notes": "Maintains thematic and procedural grouping across project files. Supports roadmap visualization and organization."
+    "confidence_threshold": 0.5
   },
   {
     "name": "project_metrics",
@@ -356,7 +344,7 @@
       "name": "metrics",
       "description": "Tracks quantitative and qualitative project progress metrics."
     },
-    "description": "Calculates project completion percentage, directive success rates, and task distribution to inform AI reasoning and user summaries.",
+    "description": "Calculates project completion percentage, directive success rates, and task distribution to inform AI reasoning and user summaries. Provides periodic project health reports for both AI and user reference. Logged in notes for transparency.",
     "md_file_path": "directives/project_metrics.md",
     "workflow": {
       "trunk": "gather_metrics",
@@ -372,8 +360,7 @@
       {"issue": "stale_metrics", "resolution": "Recalculate from base tables"}
     ],
     "intent_keywords_json": ["progress", "metrics", "statistics"],
-    "confidence_threshold": 0.7,
-    "notes": "Provides periodic project health reports for both AI and user reference. Logged in notes for transparency."
+    "confidence_threshold": 0.7
   },
   {
     "name": "project_performance_summary",
@@ -384,7 +371,7 @@
       "name": "metrics",
       "description": "Generates a summary of recent directive and workflow performance."
     },
-    "description": "Summarizes recent directive outcomes, including successes, retries, and failures, and stores summaries in notes for audit.",
+    "description": "Summarizes recent directive outcomes, including successes, retries, and failures, and stores summaries in notes for audit. Keeps a rolling summary of directive performance for reliability tracking.",
     "md_file_path": "directives/project_performance_summary.md",
     "workflow": {
       "trunk": "summarize_recent_runs",
@@ -399,8 +386,7 @@
       {"issue": "missing_logs", "resolution": "Query notes table for directive references"}
     ],
     "intent_keywords_json": ["summary", "audit", "performance"],
-    "confidence_threshold": 0.6,
-    "notes": "Keeps a rolling summary of directive performance for reliability tracking."
+    "confidence_threshold": 0.6
   },
   {
     "name": "project_dependency_sync",
@@ -411,7 +397,7 @@
       "name": "dependency_management",
       "description": "Reconciles mismatched dependencies between code and project.db."
     },
-    "description": "Compares functions and flows in files against database records, resolving missing or outdated dependencies.",
+    "description": "Compares functions and flows in files against database records, resolving missing or outdated dependencies. Maintains consistency between the physical codebase and project metadata.",
     "md_file_path": "directives/project_dependency_sync.md",
     "workflow": {
       "trunk": "compare_db_and_files",
@@ -427,8 +413,7 @@
       {"issue": "unresolved_dependency", "resolution": "Prompt user to confirm update direction"}
     ],
     "intent_keywords_json": ["dependency", "sync", "link"],
-    "confidence_threshold": 0.7,
-    "notes": "Maintains consistency between the physical codebase and project metadata."
+    "confidence_threshold": 0.7
   },
   {
     "name": "project_integrity_check",
@@ -439,7 +424,7 @@
       "name": "dependency_management",
       "description": "Performs integrity verification on project.db."
     },
-    "description": "Runs validation queries to detect orphaned records, missing links, and checksum mismatches within project.db.",
+    "description": "Runs validation queries to detect orphaned records, missing links, and checksum mismatches within project.db. Ensures internal DB consistency, preventing corruption during iterative project growth.",
     "md_file_path": "directives/project_integrity_check.md",
     "workflow": {
       "trunk": "run_integrity_queries",
@@ -454,8 +439,7 @@
       {"issue": "data_misalignment", "resolution": "Auto-correct links where safe"}
     ],
     "intent_keywords_json": ["integrity", "verify database", "consistency"],
-    "confidence_threshold": 0.8,
-    "notes": "Ensures internal DB consistency, preventing corruption during iterative project growth."
+    "confidence_threshold": 0.8
   },
   {
     "name": "project_auto_resume",
@@ -466,7 +450,7 @@
       "name": "recovery_automation",
       "description": "Automatically resumes interrupted tasks or workflows."
     },
-    "description": "Detects unfinished tasks or subtasks from project.db and resumes execution at the appropriate directive entry point.",
+    "description": "Detects unfinished tasks or subtasks from project.db and resumes execution at the appropriate directive entry point. Restores workflow continuity between user sessions or interruptions.",
     "md_file_path": "directives/project_auto_resume.md",
     "workflow": {
       "trunk": "detect_incomplete_tasks",
@@ -481,8 +465,7 @@
       {"issue": "resume_conflict", "resolution": "Prompt user to choose branch or discard task"}
     ],
     "intent_keywords_json": ["resume", "continue", "checkpoint"],
-    "confidence_threshold": 0.7,
-    "notes": "Restores workflow continuity between user sessions or interruptions."
+    "confidence_threshold": 0.7
   },
   {
     "name": "project_backup_restore",
@@ -493,7 +476,7 @@
       "name": "recovery_automation",
       "description": "Manages project database and file backups."
     },
-    "description": "Creates periodic backups of project.db and associated files, and restores them on demand or after failure detection.",
+    "description": "Creates periodic backups of project.db and associated files, and restores them on demand or after failure detection. Protects project state from corruption or user error. Integrates with integrity check for recovery decisions.",
     "md_file_path": "directives/project_backup_restore.md",
     "workflow": {
       "trunk": "perform_backup",
@@ -508,8 +491,7 @@
       {"issue": "backup_failure", "resolution": "Prompt user to retry or restore manually"}
     ],
     "intent_keywords_json": ["backup", "restore", "recovery"],
-    "confidence_threshold": 0.6,
-    "notes": "Protects project state from corruption or user error. Integrates with integrity check for recovery decisions."
+    "confidence_threshold": 0.6
   },
   {
     "name": "project_archive",
@@ -520,7 +502,7 @@
       "name": "archival_refactor",
       "description": "Archives completed projects for long-term storage."
     },
-    "description": "Packages the final project.db, all files, and completion reports into an archive format and marks project status as 'archived'.",
+    "description": "Packages the final project.db, all files, and completion reports into an archive format and marks project status as 'archived'. Preserves completed project versions and prepares exportable deliverables.",
     "md_file_path": "directives/project_archive.md",
     "workflow": {
       "trunk": "prepare_archive",
@@ -535,8 +517,7 @@
       {"issue": "archive_incomplete", "resolution": "Prompt user for approval before packaging"}
     ],
     "intent_keywords_json": ["archive", "package", "finalize"],
-    "confidence_threshold": 0.8,
-    "notes": "Preserves completed project versions and prepares exportable deliverables."
+    "confidence_threshold": 0.8
   },
   {
     "name": "project_refactor_path",
@@ -547,7 +528,7 @@
       "name": "archival_refactor",
       "description": "Refactors roadmap paths and milestones."
     },
-    "description": "Allows restructuring of completion_path sequences for clarity, merging or reordering tasks while maintaining linkage integrity.",
+    "description": "Allows restructuring of completion_path sequences for clarity, merging or reordering tasks while maintaining linkage integrity. Provides roadmap reorganization utilities for evolving projects.",
     "md_file_path": "directives/project_refactor_path.md",
     "workflow": {
       "trunk": "analyze_completion_path",
@@ -562,8 +543,7 @@
       {"issue": "path_conflict", "resolution": "Prompt user for reorder approval"}
     ],
     "intent_keywords_json": ["refactor path", "reorder roadmap"],
-    "confidence_threshold": 0.7,
-    "notes": "Provides roadmap reorganization utilities for evolving projects."
+    "confidence_threshold": 0.7
   },
   {
     "name": "project_dependency_map",
@@ -574,7 +554,7 @@
       "name": "dependency_management",
       "description": "Generates visual dependency maps across project entities."
     },
-    "description": "Queries relationships between files, functions, flows, and tasks to produce a dependency graph for reasoning or visualization.",
+    "description": "Queries relationships between files, functions, flows, and tasks to produce a dependency graph for reasoning or visualization. Improves transparency and traceability across project elements for AIFP reasoning.",
     "md_file_path": "directives/project_dependency_map.md",
     "workflow": {
       "trunk": "generate_dependency_graph",
@@ -588,8 +568,7 @@
       {"issue": "missing_links", "resolution": "Rebuild function-to-task relationships"}
     ],
     "intent_keywords_json": ["dependency map", "graph", "visualize"],
-    "confidence_threshold": 0.7,
-    "notes": "Improves transparency and traceability across project elements for AIFP reasoning."
+    "confidence_threshold": 0.7
   },
   {
     "name": "project_auto_summary",
@@ -600,7 +579,7 @@
       "name": "metrics",
       "description": "Automatically summarizes project status and context."
     },
-    "description": "Generates a human-readable summary of project purpose, progress, and open tasks, stored in notes or output to the terminal.",
+    "description": "Generates a human-readable summary of project purpose, progress, and open tasks, stored in notes or output to the terminal. Provides quick, automated overviews of project state for both AI and user consumption.",
     "md_file_path": "directives/project_auto_summary.md",
     "workflow": {
       "trunk": "summarize_project_state",
@@ -615,8 +594,7 @@
       {"issue": "summary_generation_failed", "resolution": "Retry summary or prompt user for context"}
     ],
     "intent_keywords_json": ["summary", "status", "report"],
-    "confidence_threshold": 0.7,
-    "notes": "Provides quick, automated overviews of project state for both AI and user consumption."
+    "confidence_threshold": 0.7
   }
 ]
 

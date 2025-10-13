@@ -8,7 +8,7 @@ This document describes how **directives, databases, and the MCP server interact
 
 ## System Components
 
-### Three-Layer Architecture
+### Three-Database Architecture
 
 ```
 ┌─────────────────────────────────────────┐
@@ -21,28 +21,27 @@ This document describes how **directives, databases, and the MCP server interact
 │           MCP Server                     │
 │  - Routes commands to directives        │
 │  - Executes directive workflows         │
-│  - Manages database connections         │
+│  - Manages three database connections   │
 │  - Calls helper functions               │
-└────────┬────────────────────────────────┘
-         │
-         ├──────────────────────┬─────────┐
-         │                      │         │
-┌────────▼────────┐  ┌─────────▼──────┐  │
-│  aifp_core.db   │  │  project.db    │  │
-│  (Read-Only)    │  │  (Mutable)     │  │
-│                 │  │                │  │
-│  - Directives   │  │  - Project     │  │
-│  - Helpers      │  │    state       │  │
-│  - Standards    │  │  - Code        │  │
-│  - Templates    │  │    tracking    │  │
-└─────────────────┘  └────────────────┘  │
-                                         │
-                     ┌───────────────────▼────┐
-                     │  Git Repository        │
-                     │  - Source code         │
-                     │  - Version control     │
-                     │  - Branch management   │
-                     └────────────────────────┘
+└─────┬─────────────────┬─────────────┬───┘
+      │                 │             │
+┌─────▼──────────┐ ┌────▼──────────┐ ┌▼─────────────────┐
+│ aifp_core.db   │ │ project.db    │ │ user_prefs.db    │
+│ (Read-Only)    │ │ (Mutable)     │ │ (Mutable)        │
+│                │ │               │ │                  │
+│ - Directives   │ │ - Project     │ │ - Directive      │
+│ - Helpers      │ │   state       │ │   preferences    │
+│ - Standards    │ │ - Code        │ │ - User settings  │
+│ - Templates    │ │   tracking    │ │ - AI learning    │
+│ - Categories   │ │ - Notes       │ │ - Tracking (opt) │
+└────────────────┘ └───────────────┘ └──────────────────┘
+                          │
+                ┌─────────▼────────────┐
+                │  Git Repository      │
+                │  - Source code       │
+                │  - Version control   │
+                │  - Branch management │
+                └──────────────────────┘
 ```
 
 ---
@@ -449,16 +448,19 @@ project_update_db
 
 ## Configuration Interactions
 
-### MCP Server Uses Both Databases
+### MCP Server Uses Three Databases
 
 ```python
 class MCPServer:
     def __init__(self):
-        # Read-only connection to core database
+        # Read-only connection to core database (global)
         self.core_db = sqlite3.connect("~/.aifp/aifp_core.db?mode=ro", uri=True)
 
-        # Mutable connection to project database (per-project)
+        # Mutable connections to project databases (per-project)
         self.project_db_connections = {}  # Keyed by project_root
+
+        # Mutable connections to user preferences databases (per-project)
+        self.user_prefs_db_connections = {}  # Keyed by project_root
 
     def get_project_db(self, project_root: str):
         if project_root not in self.project_db_connections:
@@ -466,15 +468,31 @@ class MCPServer:
             self.project_db_connections[project_root] = sqlite3.connect(db_path)
         return self.project_db_connections[project_root]
 
+    def get_user_prefs_db(self, project_root: str):
+        if project_root not in self.user_prefs_db_connections:
+            db_path = f"{project_root}/.aifp-project/user_preferences.db"
+            # Initialize if doesn't exist
+            if not os.path.exists(db_path):
+                self.init_user_preferences_db(db_path)
+            self.user_prefs_db_connections[project_root] = sqlite3.connect(db_path)
+        return self.user_prefs_db_connections[project_root]
+
     def execute_directive(self, directive_name: str, context: dict):
         # Load directive from core DB
         directive = self.core_db.execute("""
             SELECT workflow_json FROM directives WHERE name = ?
         """, (directive_name,)).fetchone()[0]
 
-        # Execute with project DB context
+        # Get database connections
         project_db = self.get_project_db(context['project_root'])
-        return DirectiveExecutor(directive, project_db).execute(context)
+        user_prefs_db = self.get_user_prefs_db(context['project_root'])
+
+        # Sync user preferences before execution
+        preferences = self.sync_preferences(user_prefs_db, directive_name)
+        context['preferences'] = preferences
+
+        # Execute with all DB contexts
+        return DirectiveExecutor(directive, project_db, user_prefs_db).execute(context)
 ```
 
 ---
@@ -490,33 +508,40 @@ class MCPServer:
    ├─ Loads directive workflow
    └─ Initializes directive executor
 
-3. Directive Execution
-   ├─ Executes trunk step
+3. User Preferences Sync
+   ├─ Checks user_preferences.db exists (creates if not)
+   ├─ Loads directive-specific preferences
+   ├─ Applies preferences to directive context
+   └─ Checks tracking_settings for opt-in features
+
+4. Directive Execution
+   ├─ Executes trunk step with preferences applied
    ├─ Evaluates branches
    ├─ Calls other directives (cross-directive)
    ├─ Calls helper functions (database, file, git)
    └─ Updates project.db (transactional)
 
-4. Database Updates
-   ├─ project.db: Mutable project state
-   ├─ aifp_core.db: Read-only knowledge base
+5. Database Updates
+   ├─ aifp_core.db: Read-only knowledge base (never modified)
+   ├─ project.db: Mutable project state (code tracking, notes, tasks)
+   ├─ user_preferences.db: Mutable preferences (directive customization, opt-in tracking)
    └─ Cascading updates via triggers/logic
 
-5. Git Integration (Optional)
+6. Git Integration (Optional)
    ├─ Detects external code changes
    ├─ Creates/manages branches (future)
    └─ Syncs with project.db state
 
-6. Result Return
+7. Result Return
    ├─ Directive returns ExecutionResult
    ├─ MCP server formats response
    └─ AI assistant presents to user
 
-7. Error Handling
+8. Error Handling
    ├─ Graceful degradation
    ├─ User prompts for ambiguity
    ├─ Rollback on database failures
-   └─ Logging to notes table
+   └─ Important clarifications to project.db notes (not verbose logging)
 ```
 
 ---
@@ -525,7 +550,7 @@ class MCPServer:
 
 1. **Always pass context** between directive calls
 2. **Use transactions** for multi-table updates
-3. **Log to notes** for AI memory
+3. **Write to notes** for AI memory and important clarifications only (not verbose logging)
 4. **Validate before writing** (FP compliance checks)
 5. **Cascade updates** intelligently (milestones → completion_path)
 6. **Fail gracefully** with user prompts
@@ -533,5 +558,8 @@ class MCPServer:
 8. **Use roadblock resolutions** from aifp_core.db
 9. **Keep core DB read-only** (never mutate)
 10. **One project per project.db** (no shared state)
+11. **Sync preferences first** via user_preferences_sync before directive execution
+12. **Respect tracking settings** (check user_preferences.db before logging)
+13. **Logging goes to user_preferences.db** (opt-in), notes go to project.db (AI memory)
 
-This interaction model ensures **predictable, traceable, and recoverable** operations across the entire AIFP system.
+This interaction model ensures **predictable, traceable, customizable, and recoverable** operations across the entire AIFP system.

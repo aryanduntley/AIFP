@@ -9,7 +9,7 @@
 - [What is AIFP?](#what-is-aifp)
 - [Core Principles](#core-principles)
 - [Architecture Overview](#architecture-overview)
-- [Two-Database System](#two-database-system)
+- [Three-Database System](#three-database-system)
 - [How It Works](#how-it-works)
 - [Getting Started](#getting-started)
 - [Directives System](#directives-system)
@@ -116,26 +116,28 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 ┌────────────────────▼────────────────────────────────┐
 │                 MCP Server                           │
 │  - Routes commands via aifp_run                      │
-│  - Executes directives (FP + Project)                │
-│  - Manages database connections                      │
+│  - Executes directives (FP + Project + User Pref)    │
+│  - Manages three-database connections                │
 │  - Provides helper functions                         │
-└───┬──────────────────────────────────────────────┬──┘
-    │                                              │
-┌───▼──────────────────┐            ┌─────────────▼──────────┐
-│   aifp_core.db       │            │   project.db           │
-│   (Global, Read-Only)│            │   (Per-Project, Mutable)│
-│                      │            │                        │
-│ - 60+ FP directives  │            │ - Project metadata     │
-│ - 21 Project direcs  │            │ - Files & functions    │
-│ - Helper definitions │            │ - Task hierarchy       │
-│ - Code templates     │            │ - Themes & flows       │
-│ - Standards & rules  │            │ - Completion roadmap   │
-└──────────────────────┘            └────────────────────────┘
+└───┬────────────────────┬─────────────────────────┬──┘
+    │                    │                         │
+┌───▼──────────────┐ ┌───▼────────────────┐ ┌─────▼─────────────────┐
+│  aifp_core.db    │ │  project.db        │ │  user_preferences.db  │
+│  (Global,        │ │  (Per-Project,     │ │  (Per-Project,        │
+│   Read-Only)     │ │   Mutable)         │ │   Mutable)            │
+│                  │ │                    │ │                       │
+│ - 60+ FP directs │ │ - Project metadata │ │ - Directive prefs     │
+│ - 21 Project     │ │ - Files & funcs    │ │ - User settings       │
+│ - 7 User Pref    │ │ - Task hierarchy   │ │ - AI learning log     │
+│ - Helper defs    │ │ - Themes & flows   │ │ - Tracking features   │
+│ - Code templates │ │ - Completion path  │ │ - Issue reports       │
+│ - Standards      │ │ - Runtime notes    │ │ (All opt-in)          │
+└──────────────────┘ └────────────────────┘ └───────────────────────┘
 ```
 
 ---
 
-## Two-Database System
+## Three-Database System
 
 ### aifp_core.db (Global, Read-Only)
 
@@ -144,24 +146,55 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 **Purpose**: Immutable knowledge base containing all AIFP standards, directives, and helper definitions.
 
 **Key Tables**:
-- `directives`: All FP and project directives (workflows, keywords, thresholds)
+- `directives`: All FP, project, and user preference directives (workflows, keywords, thresholds)
 - `helper_functions`: Database, file, Git, and FP utilities
-- `tool_schemas`: MCP tool input/output definitions
-- `standards`: Code examples (good vs. bad patterns)
-- `templates`: Boilerplate code (ADTs, Result types, etc.)
+- `directives_interactions`: Cross-directive relationships and dependencies
+- `categories`: Directive groupings (purity, immutability, task management, etc.)
+- `tools`: MCP tool definitions
+
+**Read-Only Philosophy**: This database is version-controlled and immutable once deployed. AI reads from it but never modifies it.
 
 ### project.db (Per-Project, Mutable)
 
 **Location**: `<project-root>/.aifp-project/project.db`
 
-**Purpose**: Persistent state for a single AIFP project.
+**Purpose**: Persistent state for a single AIFP project. Tracks code structure, tasks, and runtime notes.
 
 **Key Tables**:
 - `project`: High-level metadata (name, purpose, goals, status)
 - `files`, `functions`, `interactions`: Code structure tracking
 - `themes`, `flows`: Organizational groupings
-- `completion_path`, `milestones`, `tasks`: Roadmap and progress
-- `notes`: AI memory and clarifications
+- `completion_path`, `milestones`, `tasks`, `subtasks`, `sidequests`: Hierarchical roadmap
+- `notes`: Runtime logging with optional directive context (source, severity, directive_name)
+- `types`: Algebraic data types (ADTs)
+- `infrastructure`: Project setup (language, packages, testing)
+
+**Enhanced Notes**: The `notes` table now includes `source` (user/ai/directive), `directive_name` (optional context), and `severity` (info/warning/error) for better traceability.
+
+### user_preferences.db (Per-Project, Mutable)
+
+**Location**: `<project-root>/.aifp-project/user_preferences.db`
+
+**Purpose**: User-specific AI behavior customizations and opt-in tracking features.
+
+**Key Tables**:
+- `directive_preferences`: Per-directive behavior overrides (atomic key-value structure)
+- `user_settings`: Project-wide AI behavior settings
+- `tracking_settings`: Feature flags for opt-in tracking (all disabled by default)
+- `ai_interaction_log`: User corrections and learning data (opt-in)
+- `fp_flow_tracking`: FP compliance history (opt-in)
+- `issue_reports`: Contextual bug reports (opt-in)
+
+**Cost Management Philosophy**: All tracking features disabled by default to minimize API token usage. Project work should be cost-efficient; debugging and analytics are opt-in.
+
+**User Customization Example**:
+```sql
+-- User says: "Always add docstrings"
+INSERT INTO directive_preferences (directive_name, preference_key, preference_value)
+VALUES ('project_file_write', 'always_add_docstrings', 'true');
+
+-- Next file write automatically includes docstrings
+```
 
 ---
 
@@ -289,6 +322,20 @@ Manage project lifecycle:
 | **Level 3** | `project_compliance_check`, `project_evolution` | State management |
 | **Level 4** | `project_completion_check`, `project_archival` | Validation & completion |
 
+### User Preference Directives (7)
+
+Manage AI behavior customization and learning:
+
+| Directive | Purpose |
+|-----------|---------|
+| **user_preferences_sync** | Loads preferences before directive execution |
+| **user_preferences_update** | Maps user requests to directives, updates preferences |
+| **user_preferences_learn** | Learns from user corrections (requires confirmation) |
+| **user_preferences_export** | Exports preferences to JSON for backup/sharing |
+| **user_preferences_import** | Imports preferences from JSON file |
+| **project_notes_log** | Handles logging to project.db with directive context |
+| **tracking_toggle** | Enables/disables tracking features with token cost warnings |
+
 ---
 
 ## Project Lifecycle
@@ -363,6 +410,45 @@ AI: 📊 Compliance Report:
       - process_order (hidden mutation)
 ```
 
+### Customize AI Behavior
+
+```
+User: "Always add docstrings to functions"
+
+AI → aifp_run("Always add docstrings to functions")
+    → user_preferences_update directive
+        → Calls find_directive_by_intent helper
+        → Searches directives by name/description/keywords
+        → Finds match: project_file_write
+        → Confirms with user: "Apply to file writing?"
+        → Updates user_preferences.db
+
+AI: ✅ Preference saved: project_file_write
+    Key: always_add_docstrings
+    Value: true
+
+    Next file write will include docstrings automatically.
+```
+
+### AI Learns from Corrections
+
+```
+User: "Actually, use guard clauses instead of nested if statements"
+
+AI → user_preferences_learn directive (detects correction)
+    → Logs interaction to ai_interaction_log
+    → Infers preference: prefer_guard_clauses = true
+    → Prompts user: "Should I remember this preference?"
+
+User: "Yes"
+
+AI: ✅ Preference learned: project_file_write
+    Key: prefer_guard_clauses
+    Value: true
+
+    I'll use guard clauses in future functions.
+```
+
 ---
 
 ## Documentation
@@ -379,14 +465,16 @@ AI: 📊 Compliance Report:
 
 ### Schema Files
 
-- **[schemaExampleProject.sql](docs/schemaExampleProject.sql)** - Complete project.db schema
-- **[schemaExampleMCP.sql](docs/schemaExampleMCP.sql)** - Complete aifp_core.db schema
+- **[schemaExampleMCP.sql](docs/db-schema/schemaExampleMCP.sql)** - Complete aifp_core.db schema
+- **[schemaExampleProject.sql](docs/db-schema/schemaExampleProject.sql)** - Complete project.db schema
+- **[schemaExampleSettings.sql](docs/db-schema/schemaExampleSettings.sql)** - Complete user_preferences.db schema
 
 ### Directive Definitions
 
-- **[FP Core Directives](docs/directives-fp-core.json)** - Core FP directives (20)
-- **[FP Aux Directives](docs/directives-fp-aux.json)** - Auxiliary FP directives (40+)
-- **[Project Directives](docs/directives-project.json)** - All project directives (21)
+- **[FP Core Directives](docs/directives-json/directives-fp-core.json)** - Core FP directives (30)
+- **[FP Aux Directives](docs/directives-json/directives-fp-aux.json)** - Auxiliary FP directives (30+)
+- **[Project Directives](docs/directives-json/directives-project.json)** - All project directives (22)
+- **[User Preference Directives](docs/directives-json/directives-user-pref.json)** - User customization directives (7)
 
 ---
 
@@ -395,7 +483,8 @@ AI: 📊 Compliance Report:
 ### Immutable Rules, Evolving Projects
 
 - **`aifp_core.db`** is the **rulebook** (read-only, global, version-controlled)
-- **`project.db`** is the **playground** (read-write, per-project, dynamic)
+- **`project.db`** is the **workspace** (read-write, per-project, runtime state)
+- **`user_preferences.db`** is the **customization layer** (read-write, per-project, AI behavior)
 - **Directives** define the boundaries; AI operates freely within them
 
 ### Database-Driven Context
@@ -427,16 +516,21 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ### Current (v1.0)
 
-- ✅ Core directive system (60+ FP, 21 Project)
-- ✅ Two-database architecture
-- ✅ MCP server with command routing
+- ✅ Core directive system (60+ FP, 22 Project, 7 User Preference)
+- ✅ Three-database architecture (aifp_core, project, user_preferences)
+- ✅ MCP server design with command routing
+- ✅ User preference system with directive mapping
 - ✅ Git integration (auto-init, external change detection)
 - ✅ Complete documentation and blueprints
+- ✅ Cost-conscious tracking (all features opt-in by default)
 
 ### Planned (v1.1+)
 
 - [ ] MCP server implementation (Python)
-- [ ] Directive sync script (`populate_core_db.py`)
+- [ ] Directive sync script (`sync-directives.py`)
+- [ ] Database migration scripts (`migrate.py`)
+- [ ] User preference initialization (`init-user-preferences.py`)
+- [ ] Helper function implementations (Python)
 - [ ] VS Code extension for task management
 - [ ] Directive visualization and analytics
 - [ ] Cross-language wrapper generation
@@ -465,15 +559,17 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## Summary
 
-**AIFP transforms AI from a "code generator" into a structured project collaborator.**
+**AIFP transforms AI from a "code generator" into a structured, customizable project collaborator.**
 
 It combines:
 - **Pure functional programming** for deterministic, composable code
-- **Database-driven state** for persistent AI memory
+- **Three-database architecture** for immutable rules, runtime state, and user customization
 - **Directive-based workflows** for consistent, automated compliance
+- **User preference learning** for AI that adapts to your coding style
 - **Finite completion paths** for goal-oriented development
+- **Cost-conscious design** with opt-in tracking features
 
-The result: AI-maintained codebases that are **predictable, traceable, and maintainable** across sessions, teams, and even different AI assistants.
+The result: AI-maintained codebases that are **predictable, traceable, customizable, and maintainable** across sessions, teams, and even different AI assistants.
 
 ---
 

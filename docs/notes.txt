@@ -1,3 +1,11 @@
+Read:
+README.md
+docs/db-schema/schemaExampleMCP.sql
+docs/db-schema/schemaExampleProject.sql
+docs/db-schema/schemaExampleSettings.sql
+
+The blueprints/context for the project are located in docs/blueprints and the directive json files are located in docs/directives-json. 
+
 {
     "trunk": "init_check",
     "branches": [
@@ -10,9 +18,10 @@
         "retry": "max 2 attempts"
     }
 }
-
+are we handling oop wrapping appropriately with our directives. Probably some example files.
 
 directives file for each db table?
+
 need directives file for git related tracking, evolve to multi-user/multi-ai tracking with pull requests, etc.
 must have directives regarding versioning and proper use of notes and items tables
 
@@ -23,95 +32,8 @@ docs/directiveNotes/*
 docs/initialStructuring/*
 Should we make an md file for each and every directive title? ie. (project_init, project_task_decomposition, fp_purity, aifp_run)
 
-need aifp run directive??? what is directive project graph for (listing directives? aifp_listed but no directive for it)
-docs/directiveNotes/directive_aifp_run.md
 
-{
-  "directive_name": "AIFP run",
-  "trigger": "on_task_start",
-  "description": "Master directive for AI coding workflow, enforcing AIFP standards, updating project database, and managing task progression.",
-  "workflow": [
-    {
-      "step": 1,
-      "action": "check_status",
-      "database_ref": "project_db",
-      "query": "SELECT task_id, parent_id, hierarchy_level, is_complete FROM completion_path WHERE is_complete = 0 ORDER BY hierarchy_level DESC, task_order ASC LIMIT 1",
-      "extract": ["current_task_id", "parent_id", "hierarchy_level"],
-      "context_query": "SELECT task_id, description, is_complete FROM completion_path WHERE parent_id = :parent_id AND is_complete = 1 ORDER BY task_order DESC LIMIT 3",
-      "purpose": "Get the current incomplete task and up to 3 prior completed tasks for context."
-    },
-    {
-      "step": 2,
-      "action": "apply_coding_style",
-      "rules": {
-        "style": "functional_procedural",
-        "constraints": [
-          "use_pure_functions",
-          "avoid_mutable_state",
-          "prefer_recursion_over_loops",
-          "wrap_oop_libraries"
-        ],
-        "oop_check": {
-          "table": "oop_libs",
-          "query": "SELECT library_name, wrapper_path FROM oop_libs WHERE library_name IN (:detected_libs)",
-          "if_found": "CALL helper_load_wrapper(:wrapper_path)",
-          "if_not_found": "CALL helper_generate_wrapper(:library_name, :language_guess)"
-        }
-      },
-      "purpose": "Enforce AIFP coding standards; wrap OOP libraries if detected."
-    },
-    {
-      "step": 3,
-      "action": "write_code",
-      "target": "current_task_id",
-      "output": "file_path",
-      "purpose": "Generate code for the current task following AIFP rules."
-    },
-    {
-      "step": 4,
-      "action": "update_file",
-      "trigger": "on_save",
-      "database_ref": "project_db",
-      "steps": [
-        {
-          "substep": 1,
-          "call": "helper_update_file(:file_path, :checksum)",
-          "table": "files",
-          "action": "INSERT OR UPDATE file_path, checksum, last_modified"
-        },
-        {
-          "substep": 2,
-          "call": "helper_guess_language(:file_path)",
-          "if_known": "CALL helper_parse_functions(:file_path, :language)",
-          "if_unknown": "INSERT INTO staging (file_path, raw_content, status) VALUES (:file_path, :content, 'unparsed')",
-          "table": "functions",
-          "action": "INSERT OR UPDATE function_name, params_json, file_id"
-        }
-      ],
-      "purpose": "Update project database with new/changed files and functions."
-    },
-    {
-      "step": 5,
-      "action": "log_completion",
-      "database_ref": "project_db",
-      "query": "UPDATE completion_path SET is_complete = 1, completed_at = CURRENT_TIMESTAMP WHERE task_id = :current_task_id",
-      "if_blocked": "SELECT task_id FROM completion_path WHERE parent_id = :parent_id AND is_complete = 0 ORDER BY task_order ASC LIMIT 1",
-      "purpose": "Mark task as complete or queue next task if blocked."
-    },
-    {
-      "step": 6,
-      "action": "update_ideas",
-      "database_ref": "project_db",
-      "query": "SELECT description, status FROM ideas WHERE status = 'active' ORDER BY created_at DESC LIMIT 5",
-      "if_changed": "INSERT INTO ideas (description, status, linked_task_id) VALUES (:new_idea, 'active', :current_task_id)",
-      "purpose": "Keep only the latest 5 active project ideas for context; log new ideas if provided."
-    }
-  ],
-  "error_handling": {
-    "on_failure": "CALL helper_log_error(:step, :error_message)",
-    "retry": "max 2 attempts",
-    "fallback": "queue raw SQL query for manual review"
-  },
-  "version": "1.0",
-  "created_at": "2025-10-05T09:15:00Z"
-}
+NEED DB import/export/migration py scripts
+
+find_directive_by_intent helper
+

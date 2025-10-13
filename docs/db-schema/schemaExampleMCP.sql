@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS helper_functions (
     file_path TEXT,                          -- e.g., 'helpers/init_project_db.py'
     parameters JSON,                         -- e.g., '["name", "purpose", "goals_json"]'
     purpose TEXT,
-    error_handling TEXT,                     -- e.g., 'Log to notes table and escalate to user'
+    error_handling TEXT,                     -- e.g., 'Prompt user; optionally log to user_preferences.db if helper_function_logging enabled'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -183,7 +183,16 @@ VALUES (
     'helpers/init_project_db.py',
     '["name", "purpose", "goals_json", "project_id"]',
     'Create project.db and initialize the project table with default schemas.',
-    'On failure, log to notes table and prompt user for manual setup.'
+    'On failure, prompt user for manual setup; optionally log to user_preferences.db if helper_function_logging enabled.'
+);
+
+INSERT INTO helper_functions (name, file_path, parameters, purpose, error_handling)
+VALUES (
+    'find_directive_by_intent',
+    'helpers/find_directive_by_intent.py',
+    '["user_request", "confidence_threshold"]',
+    'Searches directives table by name, description, and intent_keywords_json to map user preference requests to specific directives. Returns list of matching directives with confidence scores sorted by relevance.',
+    'On failure or no matches, prompt user to manually select directive from available options; optionally log to user_preferences.db if helper_function_logging enabled.'
 );
 
 -- ===============================================================
@@ -206,15 +215,13 @@ VALUES (
 );
 
 -- ===============================================================
--- Notes: Persistent reasoning and audit trail
+-- Schema Version Tracking
 -- ===============================================================
 
-CREATE TABLE IF NOT EXISTS notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    content TEXT NOT NULL,
-    reference_table TEXT,                    -- e.g., 'directives'
-    reference_id INTEGER,
-    ai_generated BOOLEAN DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE IF NOT EXISTS schema_version (
+    id INTEGER PRIMARY KEY CHECK (id = 1),      -- Only one row allowed
+    version TEXT NOT NULL,                      -- e.g., '1.0'
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO schema_version (id, version) VALUES (1, '1.0');
