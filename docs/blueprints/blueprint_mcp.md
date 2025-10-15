@@ -99,7 +99,7 @@ MCP Server
 ### Core Tools
 
 #### 1. `aifp_run`
-**Purpose**: Master command router - parses natural language intent and executes directives
+**Purpose**: Gateway and reminder that AIFP directives should be applied - does NOT execute directives itself
 
 **Input**:
 ```json
@@ -110,37 +110,42 @@ MCP Server
 ```
 
 **Process**:
-1. Parse intent using NLP and directive keywords
-2. Determine confidence score
-3. Route to appropriate directive(s)
-4. Execute directive workflow
-5. Return result to AI assistant
+1. Receives command from AI
+2. Returns guidance message to AI
+3. AI decides what to do next based on guidance
+
+**Output** (always the same simple response):
+```json
+{
+  "success": true,
+  "message": "AIFP MCP available",
+  "guidance": {
+    "directive_access": "Call get_all_directives() if you don't have them in memory. Call get_directive(name) for specific directive details.",
+    "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
+    "assumption": "Always assume AIFP applies unless user explicitly rejects it.",
+    "available_helpers": ["get_all_directives", "get_directive", "get_project_context", "get_project_status"]
+  }
+}
+```
+
+**AI Response Pattern**:
+1. AI receives guidance
+2. AI evaluates: Is this coding or project management?
+3. AI checks: Do I have directives in memory?
+   - No → Call `get_all_directives()`
+   - Yes → Apply appropriate directives
+4. AI executes according to directive workflows
+
+#### 2. `get_all_directives`
+**Purpose**: Retrieve all directives and self-assessment questions from `aifp_core.db`
+
+**Input**: None required
 
 **Output**:
 ```json
 {
   "success": true,
-  "directive_executed": "project_init",
-  "result": "Project initialized: MatrixCalculator",
-  "db_updates": ["project", "completion_path", "milestones"],
-  "next_steps": ["Define initial themes", "Create first task"]
-}
-```
-
-#### 2. `aifp_query_directives`
-**Purpose**: Search and retrieve directive information from `aifp_core.db`
-
-**Input**:
-```json
-{
-  "query_type": "by_keyword",
-  "keyword": "purity"
-}
-```
-
-**Output**:
-```json
-{
+  "directive_count": 89,
   "directives": [
     {
       "name": "fp_purity",
@@ -148,25 +153,122 @@ MCP Server
       "description": "Enforces pure functions...",
       "workflow": {...},
       "confidence_threshold": 0.7
+    },
+    // ... all ~89 directives
+  ],
+  "self_assessment_questions": [
+    "Is this coding or project management?",
+    "Do I have directives in memory?",
+    "Which directives apply (FP vs Project)?",
+    "Is action-reaction needed?"
+  ],
+  "action_reaction_model": {
+    "code_write": "FP directives → compliance check → project_file_write → DB update",
+    "file_edit": "FP validation → project_file_write → DB sync",
+    "discussion_decision": "Check for project decisions → update project.db if applicable"
+  }
+}
+```
+
+**When AI Calls This**:
+- First interaction with AIFP project (no directives in memory)
+- Lost directive context (e.g., after context compression)
+- Needs to refresh directive details
+
+#### 3. `get_directive`
+**Purpose**: Retrieve specific directive details from `aifp_core.db`
+
+**Input**:
+```json
+{
+  "name": "fp_purity"
+}
+```
+
+**Output**:
+```json
+{
+  "success": true,
+  "directive": {
+    "name": "fp_purity",
+    "type": "fp",
+    "description": "Enforces pure functions...",
+    "workflow": {...},
+    "roadblocks_json": [...],
+    "intent_keywords_json": [...],
+    "confidence_threshold": 0.7
+  }
+}
+```
+
+#### 4. `search_directives`
+**Purpose**: Search and filter directives by keyword, category, or type
+
+**Input**:
+```json
+{
+  "keyword": "purity",           // Optional: search in name, description, intent_keywords
+  "category": "purity",          // Optional: filter by category
+  "type": "fp"                   // Optional: filter by type (fp, project, user_pref)
+}
+```
+
+**Output**:
+```json
+{
+  "success": true,
+  "matches": [
+    {
+      "name": "fp_purity",
+      "type": "fp",
+      "category": "purity",
+      "description": "Enforces pure functions...",
+      "confidence_score": 0.95
+    },
+    {
+      "name": "fp_state_elimination",
+      "type": "fp",
+      "category": "purity",
+      "description": "Eliminates global state...",
+      "confidence_score": 0.82
     }
   ]
 }
 ```
 
-#### 3. `aifp_query_project`
-**Purpose**: Query project state from `project.db`
+**When AI Uses This**:
+- Looking for directives related to specific concept
+- Needs to find all directives in a category
+- Filtering by type (FP vs Project vs User Pref)
+
+#### 5. `query_mcp_db`
+**Purpose**: Execute read-only SQL query on `aifp_core.db` for advanced cases
 
 **Input**:
 ```json
 {
-  "query": "SELECT * FROM functions WHERE file_id = 5"
+  "sql": "SELECT name, type FROM directives WHERE confidence_threshold > 0.8"
 }
 ```
 
-**Output**: Query results as JSON
+**Output**:
+```json
+{
+  "success": true,
+  "rows": [
+    {"name": "fp_purity", "type": "fp"},
+    {"name": "project_init", "type": "project"}
+  ]
+}
+```
 
-#### 4. `aifp_get_context`
-**Purpose**: Retrieve full project context for AI assistant
+**Guidance**:
+- ✅ Use specific helpers (`get_all_directives`, `search_directives`) when possible
+- ✅ Use this for complex queries not covered by helpers
+- ⚠️ Read-only - no INSERT/UPDATE/DELETE allowed
+
+#### 6. `get_project_context`
+**Purpose**: Retrieve full project context from `project.db`
 
 **Input**:
 ```json
@@ -182,17 +284,195 @@ MCP Server
   "project": {
     "name": "MatrixCalculator",
     "purpose": "Pure functional matrix operations",
-    "status": "active"
+    "status": "active",
+    "version": 1
   },
   "themes": [...],
   "flows": [...],
   "tasks": [...],
-  "completion_progress": "35%"
+  "completion_progress": "35%",
+  "functions_count": 12,
+  "files_count": 5
 }
 ```
 
-#### 5. `aifp_update_db`
-**Purpose**: Update `project.db` with new data (wrapper for project_update_db directive)
+#### 7. `get_project_status`
+**Purpose**: Check if project is initialized and get current status
+
+**Input**:
+```json
+{
+  "project_root": "/path/to/project"
+}
+```
+
+**Output**:
+```json
+{
+  "initialized": true,
+  "project_db_exists": true,
+  "project": {
+    "name": "MatrixCalculator",
+    "status": "active",
+    "version": 1
+  }
+}
+```
+
+**Note**: Should be called before `project_init` to avoid re-initializing existing projects
+
+#### 8. `get_project_files`
+**Purpose**: Retrieve list of all files in project
+
+**Input**:
+```json
+{
+  "project_root": "/path/to/project",
+  "language": "python"  // Optional filter
+}
+```
+
+**Output**:
+```json
+{
+  "success": true,
+  "files": [
+    {
+      "id": 1,
+      "path": "src/matrix.py",
+      "language": "python",
+      "checksum": "abc123...",
+      "created_at": "2025-10-14T10:00:00Z"
+    }
+  ]
+}
+```
+
+#### 9. `get_project_functions`
+**Purpose**: Retrieve functions, optionally filtered by file
+
+**Input**:
+```json
+{
+  "project_root": "/path/to/project",
+  "file_id": 5  // Optional: filter by specific file
+}
+```
+
+**Output**:
+```json
+{
+  "success": true,
+  "functions": [
+    {
+      "id": 12,
+      "name": "multiply_matrices",
+      "file_id": 5,
+      "purpose": "Multiply two matrices",
+      "parameters": ["a: Matrix", "b: Matrix"]
+    }
+  ]
+}
+```
+
+#### 10. `get_project_tasks`
+**Purpose**: Retrieve tasks, milestones, and completion path info
+
+**Input**:
+```json
+{
+  "project_root": "/path/to/project",
+  "status": "pending"  // Optional: filter by status
+}
+```
+
+**Output**:
+```json
+{
+  "success": true,
+  "completion_path": [...],
+  "milestones": [...],
+  "tasks": [
+    {
+      "id": 3,
+      "name": "Implement matrix multiplication",
+      "status": "pending",
+      "milestone_id": 1
+    }
+  ]
+}
+```
+
+#### 11. `query_project_db`
+**Purpose**: Execute read-only SQL query on `project.db` for advanced cases
+
+**Input**:
+```json
+{
+  "project_root": "/path/to/project",
+  "sql": "SELECT f.name, fi.path FROM functions f JOIN files fi ON f.file_id = fi.id WHERE fi.language = 'python'"
+}
+```
+
+**Output**:
+```json
+{
+  "success": true,
+  "rows": [
+    {"name": "multiply_matrices", "path": "src/matrix.py"}
+  ]
+}
+```
+
+**Guidance**:
+- ✅ Use specific helpers (`get_project_files`, `get_project_functions`, `get_project_tasks`) when possible
+- ✅ Use this for complex queries not covered by helpers
+- ⚠️ Read-only - no INSERT/UPDATE/DELETE allowed
+- ❌ **All writes must go through directives** (e.g., `project_file_write` → auto DB update)
+
+---
+
+## Helper Function Philosophy
+
+### Read Operations (Safe)
+
+**MCP Database Helpers** (aifp_core.db - read-only):
+- `get_all_directives()` - Complete directive list
+- `get_directive(name)` - Specific directive
+- `search_directives(keyword, category, type)` - Filter directives
+- `query_mcp_db(sql)` - Advanced read queries
+
+**Project Database Helpers** (project.db - read-only):
+- `get_project_context(type)` - Structured overview
+- `get_project_status()` - Initialization check
+- `get_project_files(language)` - File list
+- `get_project_functions(file_id)` - Function list
+- `get_project_tasks(status)` - Task/milestone list
+- `query_project_db(sql)` - Advanced read queries
+
+### Write Operations (Directive-Only)
+
+⚠️ **CRITICAL**: Project database writes **ONLY** through directive workflows
+
+**Correct Flow**:
+```
+Code write → FP directives (purity, immutability) → project_file_write directive → Auto DB update
+Task creation → project_task_decomposition directive → Auto DB update
+Decision made → project_evolution directive → Auto DB update
+```
+
+**No Direct Write Helpers** - All writes validated through directives to ensure:
+- FP compliance
+- Data consistency
+- Directive workflow tracking
+- Cross-table integrity
+
+---
+
+#### 6. `aifp_git_status` (DEPRECATED - REMOVE)
+**Purpose**: Check Git status and detect code changes since last session
+
+**Note**: This tool may be replaced by Git-specific directives in future versions
 
 **Input**:
 ```json
@@ -224,33 +504,67 @@ MCP Server
 
 ## Command Routing
 
-### aifp run Logic
+## AIFP Gateway Pattern
 
-The `aifp run` command is the **universal entry point**:
+### `aifp_run` Logic
+
+The `aifp_run` command is a **gateway and reminder**, NOT an executor:
 
 ```python
 def aifp_run(command: str, project_root: str) -> dict:
-    # 1. Parse intent
-    intent = parse_intent(command)
+    """
+    Simple gateway that returns guidance to AI.
+    AI decides what to do based on guidance.
+    """
+    return {
+        "success": True,
+        "message": "AIFP MCP available",
+        "guidance": {
+            "directive_access": "Call get_all_directives() if needed. Call get_directive(name) for specific details.",
+            "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
+            "assumption": "Always assume AIFP applies unless user explicitly rejects it.",
+            "available_helpers": ["get_all_directives", "get_directive", "get_project_context", "get_project_status"]
+        }
+    }
+```
 
-    # 2. Match to directive
-    directive = match_directive(intent, confidence_threshold=0.7)
+### AI Decision Process
 
-    # 3. Check confidence
-    if directive.confidence < 0.7:
-        return prompt_user_for_clarification(intent)
+After receiving `aifp_run` guidance, AI follows this process:
 
-    # 4. Execute directive
-    result = execute_directive(directive, context={
-        "project_root": project_root,
-        "user_command": command
-    })
+```python
+# AI internal logic (not in MCP server)
+def ai_process_aifp_command(command: str):
+    # 1. Receive guidance from aifp_run
+    guidance = call_tool("aifp_run", {"command": command})
 
-    # 5. Update databases if needed
-    if result.requires_db_update:
-        update_project_db(result.db_changes)
+    # 2. Evaluate task type
+    is_coding = detect_coding_task(command)
+    is_project_management = detect_project_management_task(command)
 
-    return result
+    # 3. Check directive memory
+    if not has_directives_in_memory():
+        directives = call_tool("get_all_directives")
+        cache_in_memory(directives)
+
+    # 4. For coding tasks: Apply FP directives THEN project directives
+    if is_coding:
+        # Write code following FP directives
+        code = generate_code_with_fp_directives(command)
+
+        # Verify FP compliance
+        verify_fp_compliance(code)
+
+        # Apply project management directive
+        execute_project_file_write(code)
+
+    # 5. For project management: Apply project directives
+    elif is_project_management:
+        match_and_execute_project_directive(command)
+
+    # 6. For simple discussion: No directives needed
+    else:
+        respond_directly(command)
 ```
 
 ### Intent Detection

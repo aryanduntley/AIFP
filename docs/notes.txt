@@ -3,6 +3,8 @@ README.md
 docs/db-schema/schemaExampleMCP.sql
 docs/db-schema/schemaExampleProject.sql
 docs/db-schema/schemaExampleSettings.sql
+docs/blueprints/blueprint_system_prompt.md
+docs/blueprints/blueprint_system_prompt.md
 
 The blueprints/context for the project are located in docs/blueprints and the directive json files are located in docs/directives-json. 
 
@@ -36,4 +38,11 @@ Should we make an md file for each and every directive title? ie. (project_init,
 NEED DB import/export/migration py scripts
 
 find_directive_by_intent helper
+ensure helper functionsfor all directives that could use it; there are some that may not need helper functions and should be AI processing only
 
+
+Need system prompt for MCP to guide AI on using MCP for coding guidance and project management guidance (instead of just tools via API like most other MCP's). if AIFP MCP present, always assume and run aifp_run unless explicitly rejected "do not use aifp for this specific task".
+
+check on project init directives what they do and what they should do.
+check on project status directives and ensure they get current context appropriately.
+project status should be run before init, if no status available, must run init.

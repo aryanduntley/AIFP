@@ -6,31 +6,54 @@
     "parent_directive": null,
     "category": {
       "name": "orchestration",
-      "description": "Master command router and intent parser for all AIFP workflows."
+      "description": "Gateway and reminder for AIFP directive application."
     },
-    "description": "Root entry point for AIFP system. Parses natural language commands, detects intent, routes to appropriate directives, and orchestrates cross-directive workflows. Master orchestrator directive. All user commands flow through this entry point. Routes to Level 1+ directives based on intent detection.",
+    "description": "Gateway entry point for AIFP system. Returns guidance to AI assistant on when and how to use AIFP directives. Does NOT execute directives itself - AI receives guidance and decides next action based on task type (coding, project management, or simple discussion). Always assume AIFP applies unless user explicitly rejects.",
     "md_file_path": "directives/aifp_run.md",
     "workflow": {
-      "trunk": "parse_intent",
+      "trunk": "return_guidance",
       "branches": [
-        {"if": "init_keywords_detected", "then": "route_to_project_init", "details": {"keywords": ["init", "initialize", "setup", "new project", "start"]}},
-        {"if": "task_keywords_detected", "then": "route_to_project_task_decomposition", "details": {"keywords": ["decompose", "break down", "plan", "task", "create tasks"]}},
-        {"if": "file_write_keywords_detected", "then": "route_to_project_file_write", "details": {"keywords": ["write", "create file", "generate", "code"]}},
-        {"if": "compliance_keywords_detected", "then": "route_to_project_compliance_check", "details": {"keywords": ["check", "verify", "validate", "compliance"]}},
-        {"if": "completion_keywords_detected", "then": "route_to_project_completion_check", "details": {"keywords": ["progress", "completion", "status", "roadmap"]}},
-        {"if": "fp_keywords_detected", "then": "route_to_fp_directive", "details": {"keywords": ["pure", "purity", "side effects", "immutable", "functional"]}},
-        {"if": "low_confidence", "then": "prompt_user", "details": {"clarify": "Command intent unclear - please specify directive or action"}},
-        {"fallback": "prompt_user", "details": {"clarify": "Unable to determine intent. Please rephrase or specify directive name.", "log_note": true}}
+        {
+          "then": "return_simple_guidance_message",
+          "details": {
+            "message": "AIFP MCP available",
+            "guidance": {
+              "directive_access": "Call get_all_directives() if you don't have them in memory. Call get_directive(name) or search_directives(keyword, category, type) for specific details.",
+              "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
+              "assumption": "Always assume AIFP applies unless user explicitly rejects it with 'do not use aifp for this task'.",
+              "available_helpers": [
+                "get_all_directives",
+                "get_directive",
+                "search_directives",
+                "query_mcp_db",
+                "get_project_context",
+                "get_project_status",
+                "get_project_files",
+                "get_project_functions",
+                "get_project_tasks",
+                "query_project_db"
+              ]
+            },
+            "ai_decision_flow": [
+              "1. Evaluate: Is this coding or project management?",
+              "2. Check: Do I have directives in memory?",
+              "3. If no directives: Call get_all_directives()",
+              "4. If coding: Apply FP directives (how to code) + project directives (DB updates)",
+              "5. If project management: Apply project directives",
+              "6. If simple discussion: No directives needed unless decision impacts project"
+            ]
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user", "retry": "max 2 attempts"}
+      "error_handling": {"on_failure": "return_guidance_anyway"}
     },
     "roadblocks_json": [
-      {"issue": "ambiguous_intent", "resolution": "Prompt user for clarification and log to notes"},
-      {"issue": "multiple_directive_matches", "resolution": "Present options to user and confirm selection"},
-      {"issue": "no_directive_match", "resolution": "Log intent keywords and escalate to user"}
+      {"issue": "ai_bypasses_aifp", "resolution": "System prompt should enforce: 'If AIFP MCP present, always call aifp_run unless explicitly rejected'"},
+      {"issue": "ai_forgets_directives", "resolution": "AI should call get_all_directives() when directives not in memory"},
+      {"issue": "ai_unsure_when_to_use", "resolution": "Guidance clarifies: coding + project management = use directives"}
     ],
-    "intent_keywords_json": ["run", "execute", "aifp", "start", "command"],
-    "confidence_threshold": 0.7
+    "intent_keywords_json": ["run", "execute", "aifp", "start"],
+    "confidence_threshold": 1.0
   },
   {
     "name": "project_init",

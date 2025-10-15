@@ -200,24 +200,93 @@ VALUES ('project_file_write', 'always_add_docstrings', 'true');
 
 ## How It Works
 
-### 1. Command Flow
+### 1. AIFP MCP Gateway Pattern
+
+The `aifp_run` command serves as a **gateway and reminder**, not an executor. It tells the AI that AIFP directives should be applied.
+
+**Every `aifp_run` call returns**:
+```json
+{
+  "success": true,
+  "message": "AIFP MCP available",
+  "guidance": {
+    "directive_access": "Call get_all_directives() if needed. Call get_directive(name) for specific details.",
+    "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
+    "assumption": "Always assume AIFP applies unless user explicitly rejects it.",
+    "available_helpers": ["get_all_directives", "get_directive", "get_project_context", "get_project_status"]
+  }
+}
+```
+
+**AI Decision Flow**:
+1. User prefixes request with `aifp run` (or AI assumes it)
+2. AI calls `aifp_run` tool → receives guidance
+3. AI evaluates: Is this coding or project management?
+4. If yes: Check if directives are in memory
+   - No directives? → Call `get_all_directives()`
+   - Has directives? → Apply appropriate ones
+5. If no: Respond without directives
+
+### 2. Command Flow Example
 
 ```bash
 aifp run "Initialize project for calculator"
 ```
 
-**Processing**:
-1. MCP server receives command
-2. Queries `aifp_core.db` for intent keywords → matches `project_init`
-3. Loads `project_init` directive workflow
-4. Executes workflow steps:
+**AI Processing**:
+1. Calls `aifp_run` → receives guidance
+2. Evaluates: "Project initialization = project management action"
+3. Checks memory: "Do I have directives? No."
+4. Calls `get_all_directives()` → receives all ~89 directives
+5. Reviews directives: "This matches `project_init`"
+6. Checks prerequisites: "Should run `project_status` first?"
+7. Executes `project_init` directive workflow:
    - Creates `.aifp-project/` directory
    - Initializes `project.db` with schema
    - Inserts project metadata
    - Sets up completion path
-5. Returns structured result to AI assistant
+8. Returns result to user
 
-### 2. Directive Execution
+### 3. Self-Assessment Framework
+
+Before acting, AI performs self-assessment using questions provided with directives:
+
+**Core Questions**:
+1. **Is this coding or project management?**
+   - If coding: Apply FP directives for how to write code
+   - If project management: Apply project directives for actions/reactions
+
+2. **Do I have directives in memory?**
+   - No: Call `get_all_directives()`
+   - Yes: Proceed with cached directives
+
+3. **Which directives apply?**
+   - FP directives: Code structure, purity, immutability, composition
+   - Project directives: File writes, DB updates, task management, compliance
+
+4. **Action-reaction needed?**
+   - Code write → FP compliance → DB update
+   - File edit → FP validation → DB sync
+   - Discussion with decision → DB update
+
+**Example Flow (Coding Task)**:
+```
+User: "Write multiply_matrices function"
+AI thinks:
+  ✓ This is coding (FP directives apply)
+  ✓ This is project management (project_file_write applies)
+  ✓ I have directives in memory
+  ✓ Matches: fp_purity, fp_immutability, fp_no_oop, project_file_write
+  ✓ Action-reaction: code → FP check → DB update
+
+AI executes:
+  1. Write function following FP directives
+  2. Verify FP compliance (purity, immutability)
+  3. Apply project_file_write directive
+  4. Update project.db (files, functions, interactions)
+```
+
+### 4. Directive Execution
 
 Directives follow a **trunk → branches → fallback** pattern:
 
@@ -233,7 +302,7 @@ Directives follow a **trunk → branches → fallback** pattern:
 }
 ```
 
-### 3. Cross-Directive Calls
+### 5. Cross-Directive Calls
 
 Project directives call FP directives for compliance:
 
@@ -364,12 +433,20 @@ graph TD
 User: "Initialize AIFP for my matrix calculator"
 
 AI → aifp_run("Initialize AIFP for my matrix calculator")
-    → project_init directive
-    → Creates .aifp-project/project.db
-    → Inserts project metadata
-    → Sets up completion path
+    → Receives: AIFP guidance
+    → Evaluates: "Project management action"
+    → Checks: "No directives in memory"
+    → Calls: get_all_directives()
+    → Receives: ~89 directives + self-assessment questions
+    → Matches: project_init directive
+    → Checks: project_status first (no existing project)
+    → Executes: project_init workflow
+        → Creates .aifp-project/project.db
+        → Inserts project metadata
+        → Sets up completion path
 
 AI: ✅ Project initialized: MatrixCalculator
+    📋 AIFP directives loaded and ready
     Next: Define themes and create first task
 ```
 
@@ -379,15 +456,24 @@ AI: ✅ Project initialized: MatrixCalculator
 User: "Write multiply_matrices function"
 
 AI → aifp_run("Write multiply_matrices function")
-    → project_file_write directive
-        → Calls fp_purity (validates purity)
-        → Calls fp_immutability (checks mutations)
+    → Receives: AIFP guidance
+    → Evaluates: "Coding task + project management"
+    → Checks: "I have directives in memory"
+    → Identifies FP directives: fp_purity, fp_immutability, fp_no_oop
+    → Identifies project directive: project_file_write
+    → Writes function following FP directives
+    → Verifies: Pure? Yes. Immutable? Yes. No OOP? Yes.
+    → Executes: project_file_write workflow
         → Writes src/matrix.py
-        → Updates files, functions, interactions tables
+        → Updates project.db:
+           • files table (new entry)
+           • functions table (multiply_matrices)
+           • interactions table (dependencies)
 
 AI: ✅ Function written: multiply_matrices
-    File: src/matrix.py
-    Purity: ✓ Pure
+    File: src/matrix.py:15
+    FP Compliance: ✓ Pure, immutable, no OOP
+    DB Updated: ✓ files, functions, interactions
     Dependencies: validate_dimensions
 ```
 
