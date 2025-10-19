@@ -40,9 +40,45 @@ NEED DB import/export/migration py scripts
 find_directive_by_intent helper
 ensure helper functionsfor all directives that could use it; there are some that may not need helper functions and should be AI processing only
 
+project blueprint
+directives need an addition, ProjectBlueprint.md file creation. If init and first run, AI must discuss project with user and get details to create a ProjectBlueprint.md file, and to initialize the database with initial entries, including project infrastructure, flow, themes, project completion path, etc. ProjectBlueprint should be a high level overview of the entire project, explaining more the idea of the project, the goals and the blueprint for the project as a whole. This will be used for inital context whenever AI does not have context (new session). 
+
+aifp run causes aifp status.
+aifp status for existing project:
+find .aifp folder
+read ProjectBlueprint
+get db context entries like infrastructure, etc.
+then status tree for current project status. Find open sidequests. If open sidequests, get parent task or substask. Get all items related to parent task or subtask, get all items related to open sidequest. If no complete items in task or subtask, get previus task and last X items for that task. This provides historical contect for tasks, providing better context for continuation. Complete sidequest(s) as priority. If no sidequests, get current subtask (subtask take precedence over tasks), follow similar steps as sidequest, but one hierarchy higher now. If no open subtask, get current opent task. get all items for task. If none complete, get previous task and last X items of previous task for context. If some are complete, evaluate completed items and incomplete items. Order incomplete and inform user status has been obtained and ready for continuation of tasks. If ambiguity exists, describe to user ambiguity and ask to browse database for more context. If in auto-run and user does not want much interaction, browse database accordingly for more context (tasks, flows, notes, files and functions, etc.), browse file if needed as well. Once sufficient context is derived, continue finishing tasks.
+
+aifp status for new project; steps to obtain status and upon failure identifies new project and init needed:
+find .aifp folder.
+If not exists, check .git for .aifp folder
+if .git has .aifp folder, check .git .aifp/ProjectBlueprint.md
+    Then notify user of findings in .git, ask if to restore or begin a new aifp project
+if no .git .aifp/ProjectBlueprint.md this is a new project, ask user if they want to initialize a new .aifp project folder
+if .aifp folder
+read ProjectBlueprint
+if no ProjectBlueprint
+    check for database exists
+        If database, attempt to aifp status
+            if results empty, notify user that folder was created, but no project setup exists. Ask user if ready for init
+        if no database, notify user that project not initialized. Ask if they want to initialize project
+    if no database notify user that project not initialized. Ask if they want to initialize project
+if ProjectBluprint and read successful
+    check for database exists
+        follow same rules as above for no ProjectBlueprint
+
+whenever an idea is discussed and somethig project wide changes:
+aifp run causes aifp ?
+update ProjectBlueprint?
+update themes?
+update flows?
+update infrastruture?
 
 Need system prompt for MCP to guide AI on using MCP for coding guidance and project management guidance (instead of just tools via API like most other MCP's). if AIFP MCP present, always assume and run aifp_run unless explicitly rejected "do not use aifp for this specific task".
 
 check on project init directives what they do and what they should do.
 check on project status directives and ensure they get current context appropriately.
 project status should be run before init, if no status available, must run init.
+
+project status prompt?
