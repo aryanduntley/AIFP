@@ -10,6 +10,7 @@ CREATE TABLE project (
     goals_json TEXT NOT NULL,               -- JSON array, e.g., '["Fast computation", "No OOP"]'
     status TEXT DEFAULT 'active',           -- active, paused, completed, abandoned
     version INTEGER DEFAULT 1,              -- Tracks idea evolution
+    blueprint_checksum TEXT,                -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

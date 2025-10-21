@@ -8,7 +8,7 @@
       "name": "orchestration",
       "description": "Gateway and reminder for AIFP directive application."
     },
-    "description": "Gateway entry point for AIFP system. Returns guidance to AI assistant on when and how to use AIFP directives. Does NOT execute directives itself - AI receives guidance and decides next action based on task type (coding, project management, or simple discussion). Always assume AIFP applies unless user explicitly rejects.",
+    "description": "Gateway entry point for AIFP system. Returns guidance to AI assistant on when and how to use AIFP directives. Does NOT execute directives itself - AI receives guidance and decides next action based on task type (coding, project management, or simple discussion). Always assume AIFP applies unless user explicitly rejects. First action should be calling aifp_status to understand current project state.",
     "md_file_path": "directives/aifp_run.md",
     "workflow": {
       "trunk": "return_guidance",
@@ -21,6 +21,8 @@
               "directive_access": "Call get_all_directives() if you don't have them in memory. Call get_directive(name) or search_directives(keyword, category, type) for specific details.",
               "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
               "assumption": "Always assume AIFP applies unless user explicitly rejects it with 'do not use aifp for this task'.",
+              "first_action": "If user says 'continue', 'status', 'what's next', 'resume work', or starts session without clear context, call aifp_status first to understand project state.",
+              "status_triggers": ["continue", "status", "what's next", "resume", "resume work", "show status", "project status"],
               "available_helpers": [
                 "get_all_directives",
                 "get_directive",
@@ -35,12 +37,13 @@
               ]
             },
             "ai_decision_flow": [
-              "1. Evaluate: Is this coding or project management?",
-              "2. Check: Do I have directives in memory?",
-              "3. If no directives: Call get_all_directives()",
-              "4. If coding: Apply FP directives (how to code) + project directives (DB updates)",
-              "5. If project management: Apply project directives",
-              "6. If simple discussion: No directives needed unless decision impacts project"
+              "1. Check: Is this a status/continuation request? → Call aifp_status",
+              "2. Evaluate: Is this coding or project management?",
+              "3. Check: Do I have directives in memory?",
+              "4. If no directives: Call get_all_directives()",
+              "5. If coding: Apply FP directives (how to code) + project directives (DB updates)",
+              "6. If project management: Apply project directives",
+              "7. If simple discussion: No directives needed unless decision impacts project"
             ]
           }
         }
@@ -50,9 +53,10 @@
     "roadblocks_json": [
       {"issue": "ai_bypasses_aifp", "resolution": "System prompt should enforce: 'If AIFP MCP present, always call aifp_run unless explicitly rejected'"},
       {"issue": "ai_forgets_directives", "resolution": "AI should call get_all_directives() when directives not in memory"},
-      {"issue": "ai_unsure_when_to_use", "resolution": "Guidance clarifies: coding + project management = use directives"}
+      {"issue": "ai_unsure_when_to_use", "resolution": "Guidance clarifies: coding + project management = use directives"},
+      {"issue": "ai_starts_without_context", "resolution": "Call aifp_status first to understand project state and current focus"}
     ],
-    "intent_keywords_json": ["run", "execute", "aifp", "start"],
+    "intent_keywords_json": ["run", "execute", "aifp", "start", "continue", "status", "resume"],
     "confidence_threshold": 1.0
   },
   {
@@ -62,24 +66,36 @@
     "parent_directive": "aifp_run",
     "category": {
       "name": "initialization",
-      "description": "Handles creation and setup of new AIFP projects."
+      "description": "Handles creation and setup of new AIFP projects with ProjectBlueprint.md creation."
     },
-    "description": "Initializes a new project by scaffolding the .aifp-project folder, creating project.db, and inserting the base roadmap. Top-level setup directive; establishes project identity and database scaffolding.",
+    "description": "Initializes a new AIFP project by creating .aifp/ folder structure, generating ProjectBlueprint.md through interactive prompts, initializing project.db and user_preferences.db, and populating with initial infrastructure, themes, flows, and completion path. Checks for existing .aifp/ or .git/.aifp/ folders before initialization. Offers restoration from .git/.aifp/ backup if found.",
     "md_file_path": "directives/project_init.md",
     "workflow": {
-      "trunk": "setup_project",
+      "trunk": "check_existing_state",
       "branches": [
-        {"if": "missing_details", "then": "prompt_user", "details": {"fields": ["name", "purpose", "goals"]}},
-        {"if": "setup_complete", "then": "create_db_and_folder", "details": {"schema": "project_db_schema.sql"}},
-        {"fallback": "prompt_user", "details": {"clarify": "Provide missing project details"}}
+        {"if": "aifp_folder_exists", "then": "call_aifp_status", "details": {"message": ".aifp/ folder already exists"}},
+        {"if": "git_aifp_backup_exists", "then": "prompt_restore_or_new", "details": {"check_path": ".git/.aifp/ProjectBlueprint.md"}},
+        {"if": "restore_chosen", "then": "restore_from_git_backup", "details": {"copy_from": ".git/.aifp/", "copy_to": ".aifp/"}},
+        {"if": "new_project_chosen", "then": "interactive_blueprint_creation", "details": {"prompts": ["project_name", "purpose", "goals", "language", "build_tool", "fp_strictness_level"]}},
+        {"if": "blueprint_prompts_complete", "then": "create_project_structure", "details": {"create_folders": [".aifp/", ".aifp/backups/"]}},
+        {"if": "structure_created", "then": "generate_project_blueprint", "details": {"template": "ProjectBlueprint_template.md", "output": ".aifp/ProjectBlueprint.md"}},
+        {"if": "blueprint_generated", "then": "initialize_databases", "details": {"databases": ["project.db", "user_preferences.db"], "schemas": ["project_db_schema.sql", "user_preferences_schema.sql"]}},
+        {"if": "databases_initialized", "then": "populate_project_data", "details": {"tables": ["project", "infrastructure", "completion_path", "milestones"]}},
+        {"if": "project_data_populated", "then": "create_initial_completion_path", "details": {"stages": ["Setup", "Core Development", "Finalization"]}},
+        {"if": "completion_path_created", "then": "backup_blueprint", "details": {"backup_to": ".aifp/backups/ProjectBlueprint.md.backup"}},
+        {"if": "backup_complete", "then": "report_success", "details": {"show": ["project_name", "blueprint_path", "databases", "completion_stages"]}},
+        {"fallback": "prompt_user", "details": {"clarify": "Provide missing project details or choose restoration option"}}
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {"on_failure": "prompt_user", "retry": "max 2 attempts"}
     },
     "roadblocks_json": [
       {"issue": "db_creation_failed", "resolution": "Check file permissions or re-run as admin"},
-      {"issue": "schema_missing", "resolution": "Verify schema file in /schemas/"}
+      {"issue": "schema_missing", "resolution": "Verify schema file in /schemas/"},
+      {"issue": "aifp_folder_exists", "resolution": "Call aifp_status to show existing project state"},
+      {"issue": "blueprint_generation_failed", "resolution": "Use default template and prompt user for manual completion"},
+      {"issue": "git_backup_corrupted", "resolution": "Prompt user to start fresh or provide backup manually"}
     ],
-    "intent_keywords_json": ["create project", "initialize", "start project"],
+    "intent_keywords_json": ["create project", "initialize", "start project", "init project", "new project"],
     "confidence_threshold": 0.8
   },
   {
@@ -91,11 +107,13 @@
       "name": "task_management",
       "description": "Manages decomposition of user goals into AIFP-aligned tasks, subtasks, and sidequests."
     },
-    "description": "Breaks complex user instructions into trackable tasks, subtasks, and sidequests in project.db, maintaining roadmap alignment. Guides project structure expansion and roadmap alignment through database updates.",
+    "description": "Breaks complex user instructions into trackable tasks, subtasks, and sidequests in project.db, maintaining roadmap alignment. Calls aifp_status first to understand current project state and context before creating new tasks. Guides project structure expansion and roadmap alignment through database updates.",
     "md_file_path": "directives/project_task_decomposition.md",
     "workflow": {
-      "trunk": "review_open_tasks",
+      "trunk": "check_current_status_first",
       "branches": [
+        {"if": "task_decomposition_requested", "then": "call_aifp_status", "details": {"purpose": "Understand current context before creating new tasks", "brief": true}},
+        {"if": "status_obtained", "then": "review_open_tasks", "details": {"check_sidequests": true, "check_subtasks": true, "check_tasks": true}},
         {"if": "related_to_open_task", "then": "update_if_needed", "details": {"check_alignment": true}},
         {"if": "new_task_needed", "then": "create_new_task", "details": {"link_to_completion_path": true, "update_project_version": true}},
         {"if": "subtask_needed", "then": "create_subtask", "details": {"table": "subtasks", "priority": "high", "pause_parent_task": true}},
@@ -108,7 +126,8 @@
     },
     "roadblocks_json": [
       {"issue": "task vs subtask vs sidequest ambiguity", "resolution": "Prompt user for clarification, log in notes"},
-      {"issue": "no matching open task", "resolution": "Create new task or sidequest, align to completion_path"}
+      {"issue": "no matching open task", "resolution": "Create new task or sidequest, align to completion_path"},
+      {"issue": "status_unavailable", "resolution": "Continue with decomposition but warn user about potential context issues"}
     ],
     "intent_keywords_json": ["decompose task", "break down", "plan steps", "explore"],
     "confidence_threshold": 0.5
@@ -284,24 +303,33 @@
     "parent_directive": "project_completion_check",
     "category": {
       "name": "evolution_tracking",
-      "description": "Tracks changes to project idea, goals, and purpose."
+      "description": "Tracks changes to project idea, goals, purpose, and updates ProjectBlueprint.md accordingly."
     },
-    "description": "Handles versioning and pivot tracking for evolving project goals. Logs changes in notes and updates roadmap and completion paths accordingly. Captures and logs project pivots for transparency in long-running projects. Updates project.version and completion paths.",
+    "description": "Handles versioning and pivot tracking for evolving project goals. Updates ProjectBlueprint.md sections when project-wide changes occur (architecture, goals, themes, flows, infrastructure, completion path). Logs changes in notes and updates roadmap and completion paths accordingly. Captures and logs project pivots for transparency in long-running projects. Updates project.version and completion paths.",
     "md_file_path": "directives/project_evolution.md",
     "workflow": {
-      "trunk": "update_project",
+      "trunk": "detect_project_wide_change",
       "branches": [
-        {"if": "pivot_detected", "then": "increment_version", "details": {"update_goals": true}},
-        {"if": "path_affected", "then": "update_completion_path", "details": {"log_note": true}},
+        {"if": "architecture_change", "then": "update_blueprint_section_2", "details": {"section": "Technical Blueprint", "update_db": ["project.version", "infrastructure"], "increment_version": true, "backup_blueprint": true}},
+        {"if": "goals_change", "then": "update_blueprint_section_1", "details": {"section": "Project Overview", "update_db": ["project.goals_json", "project.version"], "increment_version": true, "backup_blueprint": true}},
+        {"if": "themes_or_flows_change", "then": "update_blueprint_section_3", "details": {"section": "Project Themes & Flows", "update_db": ["themes", "flows", "project.version"], "increment_version": true, "backup_blueprint": true}},
+        {"if": "completion_path_change", "then": "update_blueprint_section_4", "details": {"section": "Completion Path", "update_db": ["completion_path", "milestones", "project.version"], "increment_version": true, "backup_blueprint": true}},
+        {"if": "infrastructure_change", "then": "update_blueprint_section_2_infrastructure", "details": {"section": "Technical Blueprint - Key Infrastructure", "update_db": ["infrastructure", "project.version"], "increment_version": true, "backup_blueprint": true}},
+        {"if": "pivot_detected", "then": "increment_version", "details": {"update_goals": true, "update_blueprint_section_1": true}},
+        {"if": "path_affected", "then": "update_completion_path", "details": {"log_note": true, "update_blueprint_section_4": true}},
+        {"if": "blueprint_updated", "then": "add_evolution_history", "details": {"section": "Section 5: Evolution History", "log_change": true, "show_version": true}},
+        {"parallel": ["backup_blueprint_to_aifp_backups", "log_evolution_to_notes"], "details": {"backup_path": ".aifp/backups/", "note_type": "evolution", "source": "directive", "directive_name": "project_evolution"}},
         {"fallback": "prompt_user", "details": {"clarify": "Confirm pivot or adjust roadmap?"}}
       ],
       "error_handling": {"on_failure": "prompt_user"}
     },
     "roadblocks_json": [
       {"issue": "pivot_ambiguity", "resolution": "Prompt user for new purpose and goals"},
-      {"issue": "version_conflict", "resolution": "Reconcile project version and completion_path entries"}
+      {"issue": "version_conflict", "resolution": "Reconcile project version and completion_path entries"},
+      {"issue": "blueprint_missing", "resolution": "Generate new ProjectBlueprint.md from current database state"},
+      {"issue": "blueprint_update_failed", "resolution": "Backup current state and prompt user for manual update"}
     ],
-    "intent_keywords_json": ["pivot", "evolve", "update goals", "project change"],
+    "intent_keywords_json": ["pivot", "evolve", "update goals", "project change", "change architecture", "update infrastructure"],
     "confidence_threshold": 0.6
   },
   {
@@ -338,22 +366,26 @@
     "parent_directive": "project_file_write",
     "category": {
       "name": "theme_mapping",
-      "description": "Links generated code elements to project themes and flows."
+      "description": "Links generated code elements to project themes and flows, triggers ProjectBlueprint.md updates."
     },
-    "description": "Infers or assigns flow and theme groupings based on file metadata, updating linking tables for file_flows and flow_themes within project.db. Maintains thematic and procedural grouping across project files. Supports roadmap visualization and organization.",
+    "description": "Infers or assigns flow and theme groupings based on file metadata, updating linking tables for file_flows and flow_themes within project.db. Maintains thematic and procedural grouping across project files. Supports roadmap visualization and organization. Triggers project_evolution directive when themes or flows are added or modified to update ProjectBlueprint.md accordingly.",
     "md_file_path": "directives/project_theme_flow_mapping.md",
     "workflow": {
       "trunk": "infer_metadata",
       "branches": [
         {"if": "metadata_present", "then": "update_flow_themes", "details": {"confidence_score": true}},
         {"if": "no_metadata", "then": "prompt_user", "details": {"assign_default": true}},
+        {"if": "theme_or_flow_updated", "then": "call_project_evolution", "details": {"change_type": "themes_or_flows_change", "trigger_blueprint_update": true, "update_section": 3}},
+        {"if": "new_theme_created", "then": "call_project_evolution", "details": {"change_type": "themes_or_flows_change", "trigger_blueprint_update": true}},
+        {"if": "new_flow_created", "then": "call_project_evolution", "details": {"change_type": "themes_or_flows_change", "trigger_blueprint_update": true}},
         {"fallback": "prompt_user", "details": {"clarify": "Assign theme and flow manually?"}}
       ],
       "error_handling": {"on_failure": "prompt_user"}
     },
     "roadblocks_json": [
       {"issue": "ambiguous_mapping", "resolution": "Prompt user to specify theme or flow"},
-      {"issue": "missing_metadata", "resolution": "Parse file for AIFP_METADATA or prompt user"}
+      {"issue": "missing_metadata", "resolution": "Parse file for AIFP_METADATA or prompt user"},
+      {"issue": "blueprint_update_failed", "resolution": "Continue with DB update but log warning about blueprint sync"}
     ],
     "intent_keywords_json": ["theme", "flow", "grouping", "categorize"],
     "confidence_threshold": 0.5
@@ -617,6 +649,111 @@
       {"issue": "summary_generation_failed", "resolution": "Retry summary or prompt user for context"}
     ],
     "intent_keywords_json": ["summary", "status", "report"],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "aifp_status",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "aifp_run",
+    "category": {
+      "name": "status_management",
+      "description": "Retrieves comprehensive project status with context-aware task continuation support."
+    },
+    "description": "Retrieves comprehensive project status with historical context for task continuation. For existing projects: reads ProjectBlueprint.md, loads infrastructure, builds priority status tree (sidequests → subtasks → tasks), provides historical context from previous tasks, checks for ambiguities, and generates status report. For new projects: checks for .aifp/ folder, checks .git/.aifp/ backup, prompts for restoration or initialization.",
+    "md_file_path": "directives/aifp_status.md",
+    "workflow": {
+      "trunk": "determine_project_state",
+      "branches": [
+        {"if": "aifp_folder_exists", "then": "get_existing_project_status", "details": {"call_helper": "get_project_status"}},
+        {"if": "no_aifp_folder", "then": "check_git_aifp_backup", "details": {"check_path": ".git/.aifp/ProjectBlueprint.md"}},
+        {"if": "git_backup_found", "then": "prompt_restore_or_init", "details": {"options": ["restore", "init_new", "exit"]}},
+        {"if": "no_backups", "then": "prompt_init_new_project", "details": {"suggest_project_init": true}},
+        {"if": "existing_project", "then": "read_project_blueprint", "details": {"call_helper": "project_blueprint_read", "path": ".aifp/ProjectBlueprint.md"}},
+        {"if": "blueprint_read", "then": "load_infrastructure_context", "details": {"query": "SELECT type, value, description FROM infrastructure WHERE project_id = ?"}},
+        {"if": "infrastructure_loaded", "then": "build_priority_status_tree", "details": {"priority_order": ["sidequests", "subtasks", "tasks"], "context_limit": 10}},
+        {"if": "open_sidequests_found", "then": "get_sidequest_context", "details": {"get_parent_task": true, "get_all_items": true, "get_previous_task_if_no_completed": true, "previous_task_item_limit": 10}},
+        {"if": "no_sidequests_open_subtasks", "then": "get_subtask_context", "details": {"get_parent_task": true, "get_all_items": true, "get_previous_task_if_no_completed": true, "previous_task_item_limit": 10}},
+        {"if": "no_subtasks_open_tasks", "then": "get_task_context", "details": {"get_all_items": true, "evaluate_completed_vs_incomplete": true, "order_incomplete": true}},
+        {"if": "context_gathered", "then": "check_for_ambiguities", "details": {"query_notes": true, "filter_severity": ["warning", "error"], "filter_source": ["directive", "ai"], "limit": 5}},
+        {"if": "auto_run_mode", "then": "auto_browse_for_context", "details": {"browse_flows": true, "browse_functions": true, "browse_notes": true}},
+        {"if": "status_complete", "then": "generate_status_report", "details": {"sections": ["current_focus", "open_items", "recently_completed", "historical_context", "ambiguities", "next_actions"]}},
+        {"fallback": "prompt_user", "details": {"clarify": "Unable to determine project state"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "blueprint_missing", "resolution": "Attempt to load from database, generate new blueprint if needed"},
+      {"issue": "no_open_work_items", "resolution": "Report project as idle, suggest next milestone or task creation"},
+      {"issue": "database_empty", "resolution": "Inform user project initialized but no tasks created yet"},
+      {"issue": "ambiguity_detected", "resolution": "Present ambiguities to user and offer to browse DB for more context"}
+    ],
+    "intent_keywords_json": ["status", "continue", "resume", "what's next", "show status", "project status", "where were we"],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_blueprint_read",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "aifp_status",
+    "category": {
+      "name": "blueprint_management",
+      "description": "Standard helper for reading and parsing ProjectBlueprint.md."
+    },
+    "description": "Reads and parses ProjectBlueprint.md into structured data. Returns project metadata (name, version, status, goals), technical blueprint (language, runtime, architecture), themes, flows, and completion path. Falls back to database if blueprint file missing.",
+    "md_file_path": "directives/project_blueprint_read.md",
+    "workflow": {
+      "trunk": "read_blueprint_file",
+      "branches": [
+        {"if": "blueprint_exists", "then": "parse_markdown_sections", "details": {"sections": [1, 2, 3, 4, 5, 6, 7], "return_structured_data": true}},
+        {"if": "blueprint_missing", "then": "check_database_fallback", "details": {"query_project_table": true, "query_infrastructure": true, "query_themes": true, "query_flows": true}},
+        {"if": "database_fallback_success", "then": "return_db_data", "details": {"warn_user": "Blueprint missing, using database data"}},
+        {"if": "parse_complete", "then": "return_structured_data", "details": {"include_checksum": true, "compare_with_db": true, "db_checksum_field": "project.blueprint_checksum"}},
+        {"fallback": "prompt_user", "details": {"clarify": "Blueprint not found and database empty"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user"}
+    },
+    "roadblocks_json": [
+      {"issue": "blueprint_corrupted", "resolution": "Attempt to parse sections individually, use database fallback for missing sections"},
+      {"issue": "markdown_parse_error", "resolution": "Use database data and offer to regenerate blueprint"},
+      {"issue": "checksum_mismatch", "resolution": "Warn user about potential blueprint/DB desync"}
+    ],
+    "intent_keywords_json": ["read blueprint", "load blueprint", "parse blueprint"],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_blueprint_update",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "project_evolution",
+    "category": {
+      "name": "blueprint_management",
+      "description": "Standard helper for updating specific sections of ProjectBlueprint.md."
+    },
+    "description": "Updates specific section of ProjectBlueprint.md with new content. Backs up current blueprint before modification, replaces section content, optionally increments version and adds evolution history entry. Used by project_evolution and other directives when project-wide changes occur.",
+    "md_file_path": "directives/project_blueprint_update.md",
+    "workflow": {
+      "trunk": "validate_parameters",
+      "branches": [
+        {"if": "parameters_valid", "then": "read_current_blueprint", "details": {"call_helper": "project_blueprint_read"}},
+        {"if": "blueprint_read", "then": "backup_current_blueprint", "details": {"backup_to": ".aifp/backups/ProjectBlueprint.md.v{version}", "include_timestamp": true}},
+        {"if": "backup_complete", "then": "replace_section_content", "details": {"section_number": "from_params", "new_content": "from_params"}},
+        {"if": "increment_version_requested", "then": "update_version_and_date", "details": {"increment_project_version_in_db": true, "update_last_updated_date": true}},
+        {"if": "version_incremented", "then": "add_evolution_history_entry", "details": {"section": 5, "log_change": true, "show_version": true, "show_date": true}},
+        {"if": "section_replaced", "then": "write_updated_blueprint", "details": {"path": ".aifp/ProjectBlueprint.md"}},
+        {"if": "write_complete", "then": "update_blueprint_checksum", "details": {"update_checksum": true, "table": "project", "field": "blueprint_checksum"}},
+        {"if": "update_complete", "then": "return_success", "details": {"show_new_version": true}},
+        {"fallback": "prompt_user", "details": {"clarify": "Blueprint update failed"}}
+      ],
+      "error_handling": {"on_failure": "restore_from_backup", "prompt_user": true}
+    },
+    "roadblocks_json": [
+      {"issue": "section_not_found", "resolution": "Warn user and append new section to blueprint"},
+      {"issue": "backup_failed", "resolution": "Abort update and prompt user"},
+      {"issue": "write_failed", "resolution": "Restore from backup and prompt user"},
+      {"issue": "version_conflict", "resolution": "Prompt user to resolve version manually"}
+    ],
+    "intent_keywords_json": ["update blueprint", "modify blueprint", "change blueprint section"],
     "confidence_threshold": 0.7
   }
 ]

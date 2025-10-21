@@ -273,6 +273,50 @@ Before initializing a project, always:
 2. If already initialized → inform user, don't re-initialize
 3. If not initialized → proceed with `project_init`
 
+### 6. Status-First for Continuation Requests
+
+When user requests continuation or status with keywords like:
+- "continue"
+- "status"
+- "what's next"
+- "resume"
+- "where were we"
+- "show status"
+- Starting a new session without clear direction
+
+**Always call `aifp_status` directive first:**
+
+1. Call `aifp_status` directive
+2. AI receives:
+   - ProjectBlueprint.md context (project goals, architecture, themes)
+   - Current work focus (sidequest → subtask → task, with priority)
+   - Open items for current work
+   - Historical context (last 10 items from previous task if relevant)
+   - Ambiguities detected (warnings/errors in notes)
+   - Recommended next actions
+3. Use this context to continue work intelligently
+4. If status shows no open work → suggest next milestone or ask user what to do
+
+**Why Status-First?**
+- Prevents AI from working without context
+- Ensures continuation aligns with project state
+- Provides historical context for better decisions
+- Detects and surfaces ambiguities early
+
+**Example Flow**:
+```
+User: "continue working on the project"
+AI:
+  1. Calls aifp_status directive
+  2. Receives: "Current focus: Sidequest #3 (Fix type errors in matrix.py)"
+  3. Receives: "Parent task: Implement matrix operations"
+  4. Receives: "Historical context: Last completed - Added multiplication function"
+  5. AI: "I see you're working on fixing type errors in matrix.py.
+          The parent task is implementing matrix operations, and you
+          recently completed the multiplication function. Let me continue
+          fixing the type errors..."
+```
+
 ---
 
 ## Directive Refresh

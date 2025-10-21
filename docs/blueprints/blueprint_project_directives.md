@@ -185,11 +185,14 @@ Common issues and their resolutions:
 
 | Directive | Tables Updated | Purpose |
 |-----------|----------------|---------|
-| `project_init` | `project`, `completion_path`, `milestones` | Initialize project structure |
-| `project_themes_flows_init` | `themes`, `flows`, `flow_themes` | Create organizational structure |
+| `project_init` | `project`, `completion_path`, `milestones`, `infrastructure` | Initialize project structure with ProjectBlueprint.md |
+| `aifp_status` | None (read-only) | Read project state for context-aware continuation |
 | `project_task_decomposition` | `tasks`, `subtasks`, `items` | Break down work into actionable units |
 | `project_file_write` | `files`, `functions`, `interactions` | Track written code and relationships |
+| `project_theme_flow_mapping` | `themes`, `flows`, `flow_themes` | Link files to themes/flows, trigger blueprint updates |
 | `project_update_db` | All tables | Generic database update handler |
+| `project_evolution` | `project` (version, blueprint_checksum), `infrastructure`, `themes`, `flows` | Handle pivots and update ProjectBlueprint.md |
+| `project_blueprint_update` | `project` (blueprint_checksum) | Update ProjectBlueprint.md sections |
 | `project_compliance_check` | `functions` (read), `notes` (write) | Validate AIFP compliance |
 | `project_completion_check` | `completion_path`, `milestones`, `tasks` | Verify completion criteria |
 
@@ -256,12 +259,23 @@ Project directives **call FP directives** to enforce code standards:
 Hierarchical directive chaining:
 
 ```
-project_run (L0)
+aifp_run (L0)
+  → aifp_status (L1)
+    → project_blueprint_read (L2)
   → project_task_decomposition (L1)
-    → project_task_update (L2)
-      → project_update_db (L2)
-        → project_metadata_sync (L3)
+    → aifp_status (L1) [for context before decomposing]
+  → project_evolution (L4)
+    → project_blueprint_update (L2)
+  → project_theme_flow_mapping (L3)
+    → project_evolution (L4) [when themes/flows change]
 ```
+
+**New Cross-Directive Calls (Added)**:
+- `aifp_run` → `aifp_status` (on continuation requests: "continue", "status", "resume")
+- `project_task_decomposition` → `aifp_status` (check context before creating tasks)
+- `project_theme_flow_mapping` → `project_evolution` (trigger blueprint update when themes/flows change)
+- `aifp_status` → `project_blueprint_read` (read ProjectBlueprint.md for status context)
+- `project_evolution` → `project_blueprint_update` (update blueprint sections on project-wide changes)
 
 ### Escalation to Markdown
 
@@ -271,30 +285,36 @@ When JSON workflow is insufficient (complex edge cases, ambiguous user intent), 
 
 ## Directive List
 
-### Level 0
-- `project_init`: Initialize project structure
-- `project_run`: Master command router
+### Level 0 - Root Orchestration
+- `aifp_run`: Gateway entry point for AIFP system, returns guidance and routes to appropriate directives
 
-### Level 1
-- `project_task_decomposition`: Break goals into tasks → subtasks → items
-- `project_themes_flows_init`: Create themes and flows for code organization
-- `project_completion_path_setup`: Establish finite roadmap
+### Level 1 - Initialization & Status
+- `project_init`: Initialize project structure with ProjectBlueprint.md creation and database setup
+- `aifp_status`: Retrieve comprehensive project status with priority-based context (sidequests → subtasks → tasks)
+- `project_task_decomposition`: Break goals into tasks → subtasks → items (calls aifp_status first for context)
 
-### Level 2
+### Level 2 - Operations & Helpers
+- `project_add_path`: Create or update completion_path, milestones, and tasks
 - `project_file_write`: Write code files with FP compliance
-- `project_file_read`: Read and parse existing files
-- `project_update_db`: Generic database update handler
-- `project_task_update`: Update task/subtask/sidequest status
-- `project_sidequest_create`: Create priority deviation tasks
+- `project_blueprint_read`: Read and parse ProjectBlueprint.md into structured data (helper)
+- `project_blueprint_update`: Update specific sections of ProjectBlueprint.md (helper)
 
-### Level 3
+### Level 3 - Coordination
+- `project_update_db`: Parse code and sync metadata with project.db
+- `project_theme_flow_mapping`: Link files to themes/flows, triggers blueprint updates
+- `project_dependency_sync`: Reconcile code dependencies with database records
+- `project_auto_resume`: Resume interrupted tasks or workflows
+
+### Level 4 - Validation & Evolution
 - `project_compliance_check`: Validate AIFP compliance
-- `project_evolution`: Handle project pivots and goal changes
-- `project_metadata_sync`: Sync file metadata with database
-
-### Level 4
+- `project_evolution`: Handle project pivots, goal changes, and ProjectBlueprint.md updates
 - `project_completion_check`: Verify completion criteria
+- `project_error_handling`: Monitor directive execution failures
+- `project_user_referral`: Delegate unresolved issues to user
+- `project_metrics`: Track quantitative project progress
 - `project_archival`: Archive completed project state
+
+**Note**: See `docs/directives-json/directives-project.json` for complete directive specifications (25 total project directives).
 
 ---
 

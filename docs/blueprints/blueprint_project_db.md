@@ -29,6 +29,7 @@ CREATE TABLE project (
     goals_json TEXT NOT NULL,              -- JSON array: ["Fast computation", "No OOP"]
     status TEXT DEFAULT 'active',          -- active, paused, completed, abandoned
     version INTEGER DEFAULT 1,             -- Tracks project pivots
+    blueprint_checksum TEXT,               -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -39,11 +40,13 @@ CREATE TABLE project (
 - `purpose`: One-sentence description
 - `goals_json`: JSON array of project goals
 - `version`: Increments on major pivots (tracked by `project_evolution`)
+- `blueprint_checksum`: Checksum of `.aifp/ProjectBlueprint.md` for sync validation
 
 **Usage**:
 - **ONE row per database** (one project per database)
-- Updated by `project_init`, `project_evolution`
+- Updated by `project_init`, `project_evolution`, `project_blueprint_update`
 - Queried by almost all directives for context
+- `blueprint_checksum` updated whenever ProjectBlueprint.md is modified
 
 ---
 

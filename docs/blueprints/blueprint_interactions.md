@@ -213,26 +213,68 @@ def execute(context):
 #### Hierarchical Directive Calls
 
 ```
-project_run (Level 0: Master Router)
-  ↓ routes to
-project_task_decomposition (Level 1: High-Level Coordination)
-  ├─ Analyzes user goal
-  ├─ Creates hierarchical task structure
-  ├─ Calls project_update_db (Level 2: Operational)
-  │   └─ INSERT INTO tasks, subtasks, items
-  ├─ For each task:
-  │   └─ Calls project_themes_flows_init (Level 1)
-  │       └─ Creates themes/flows
-  │       └─ Calls project_update_db
-  │           └─ INSERT INTO themes, flows, flow_themes
-  └─ Returns complete task tree
+aifp_run (Level 0: Gateway)
+  ├─ On continuation request ("continue", "status", "resume")
+  │   └─ Calls aifp_status (Level 1)
+  │       └─ Calls project_blueprint_read (Level 2)
+  │           ├─ Reads .aifp/ProjectBlueprint.md
+  │           ├─ Parses sections into structured data
+  │           └─ Returns project context
+  │       └─ Queries project.db for status tree (sidequests → subtasks → tasks)
+  │       └─ Returns status report with context
+  │
+  ├─ Routes to project_task_decomposition (Level 1)
+  │   ├─ First calls aifp_status for current context
+  │   ├─ Analyzes user goal
+  │   ├─ Creates hierarchical task structure
+  │   └─ Calls project_update_db (Level 2)
+  │       └─ INSERT INTO tasks, subtasks, items
+  │
+  └─ Routes to project_theme_flow_mapping (Level 3)
+      ├─ Links files to themes/flows
+      ├─ UPDATE themes, flows tables
+      └─ If themes/flows changed:
+          └─ Calls project_evolution (Level 4)
+              └─ Calls project_blueprint_update (Level 2)
+                  ├─ Backs up ProjectBlueprint.md
+                  ├─ Updates section 3 (Themes & Flows)
+                  ├─ Increments project.version
+                  └─ UPDATE project.blueprint_checksum
 ```
 
 **Key Points**:
 - Higher-level directives orchestrate lower-level directives
 - Each level has specific responsibilities
-- Database updates happen at Level 2 (project_update_db)
-- Level 3 (State Management) validates and syncs
+- Database updates happen at Levels 2-4 depending on scope
+- New directives enable status-first continuation and blueprint management
+- `aifp_status` is called proactively for context before task operations
+
+#### New Cross-Directive Interactions (v1.1+)
+
+**Status-First Pattern**:
+```
+aifp_run → aifp_status → project_blueprint_read
+```
+- Used when user requests continuation or status
+- Provides full project context from ProjectBlueprint.md + database
+- Enables historical context for task continuation
+
+**Blueprint Update Pattern**:
+```
+project_theme_flow_mapping → project_evolution → project_blueprint_update
+project_evolution → project_blueprint_update
+```
+- Triggered when project-wide changes occur (themes, flows, goals, architecture)
+- Automatically updates ProjectBlueprint.md sections
+- Maintains sync between blueprint and database via checksum
+
+**Context-Aware Decomposition**:
+```
+project_task_decomposition → aifp_status
+```
+- Calls `aifp_status` before creating new tasks
+- Ensures new tasks align with current work state
+- Prevents duplicate or conflicting task creation
 
 ---
 

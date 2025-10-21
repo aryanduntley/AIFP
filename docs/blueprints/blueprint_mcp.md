@@ -22,13 +22,14 @@ The AIFP MCP (Model Context Protocol) server provides **database-driven context 
 MCP Server
 ├── aifp_core.db (Read-Only)
 │   ├── FP directives (60+)
-│   ├── Project directives (21)
+│   ├── Project directives (25)
 │   ├── Helper function definitions
 │   ├── Tool schemas
 │   └── AIFP standards and templates
 │
 └── project.db (Per-Project, Mutable)
     ├── Project-specific state
+    ├── Project table (with blueprint_checksum field)
     ├── Files, functions, interactions
     ├── Tasks, subtasks, items
     ├── Themes, flows

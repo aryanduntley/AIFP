@@ -3,7 +3,7 @@ README.md
 docs/db-schema/schemaExampleMCP.sql
 docs/db-schema/schemaExampleProject.sql
 docs/db-schema/schemaExampleSettings.sql
-docs/blueprints/blueprint_system_prompt.md
+docs/db-schema/schemaExampleSettings.sql
 docs/blueprints/blueprint_system_prompt.md
 
 The blueprints/context for the project are located in docs/blueprints and the directive json files are located in docs/directives-json. 
@@ -40,7 +40,7 @@ NEED DB import/export/migration py scripts
 find_directive_by_intent helper
 ensure helper functionsfor all directives that could use it; there are some that may not need helper functions and should be AI processing only
 
-project blueprint
+need .aifp/ project blueprint
 directives need an addition, ProjectBlueprint.md file creation. If init and first run, AI must discuss project with user and get details to create a ProjectBlueprint.md file, and to initialize the database with initial entries, including project infrastructure, flow, themes, project completion path, etc. ProjectBlueprint should be a high level overview of the entire project, explaining more the idea of the project, the goals and the blueprint for the project as a whole. This will be used for inital context whenever AI does not have context (new session). 
 
 aifp run causes aifp status.
