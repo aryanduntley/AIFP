@@ -162,13 +162,15 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 **Purpose**: Persistent state for a single AIFP project. Tracks code structure, tasks, and runtime notes.
 
 **Key Tables**:
-- `project`: High-level metadata (name, purpose, goals, status, user_directives_status)
+- `project`: High-level metadata (name, purpose, goals, status, user_directives_status, last_known_git_hash)
 - `files`, `functions`, `interactions`: Code structure tracking
 - `themes`, `flows`: Organizational groupings
 - `completion_path`, `milestones`, `tasks`, `subtasks`, `sidequests`: Hierarchical roadmap
 - `notes`: Runtime logging with optional directive context (source, severity, directive_name)
 - `types`: Algebraic data types (ADTs)
 - `infrastructure`: Project setup (language, packages, testing)
+- `work_branches`: Git collaboration metadata (user, purpose, merge strategy)
+- `merge_history`: FP-powered merge conflict resolution audit trail
 
 **User Directives Integration**: The `project.user_directives_status` field tracks whether user directives are initialized (NULL/in_progress/active/disabled), allowing `aifp_run` and `aifp_status` directives to include user directive context when active.
 
@@ -477,6 +479,54 @@ directives:
 
 See [User Directives Blueprint](docs/blueprints/blueprint_user_directives.md) and [examples](docs/examples/) for more details.
 
+### Git Integration (6 Directives)
+
+**NEW**: FP-powered Git collaboration for multi-user and multi-AI development:
+
+| Directive | Purpose |
+|-----------|---------|
+| **git_init** | Initialize or integrate with Git repository for version control |
+| **git_detect_external_changes** | Detect code modifications made outside AIFP sessions |
+| **git_create_branch** | Create user/AI work branches (`aifp-{user}-{number}`) |
+| **git_detect_conflicts** | FP-powered conflict analysis before merging |
+| **git_merge_branch** | Merge branches with AI-assisted conflict resolution |
+| **git_sync_state** | Synchronize Git hash with project.db for external change detection |
+
+**Key Features**:
+- **Multi-user collaboration**: Multiple developers and AI instances work simultaneously
+- **FP-powered conflict resolution**: Uses purity levels, dependencies, and test results to auto-resolve conflicts
+- **Branch naming**: `aifp-alice-001`, `aifp-bob-002`, `aifp-ai-claude-001`
+- **Auto-resolution**: High-confidence conflicts (>0.8) resolved automatically using FP purity rules
+- **External change detection**: Compares Git HEAD with stored hash to detect changes made outside AIFP
+- **Simplified schema**: No separate git_state table - Git commands are fast enough (~1ms)
+
+**Why AIFP + Git is Superior to OOP + Git**:
+
+| OOP Merge Problem | AIFP FP Solution |
+|-------------------|------------------|
+| Class hierarchies conflict | ✅ No classes → No hierarchy conflicts |
+| Hidden state changes | ✅ Pure functions → Explicit inputs/outputs |
+| Side effects everywhere | ✅ Side effects isolated → Easy to identify conflicts |
+| Hard to test both versions | ✅ Pure functions → Easy to test and compare |
+
+**Example Conflict Resolution**:
+```
+Alice and Bob both modify calculate_total():
+
+Alice's version:
+- Purity: ✅ Pure function
+- Tests: 10/10 passing
+
+Bob's version:
+- Purity: ✅ Pure function
+- Tests: 12/12 passing (includes edge cases)
+
+AI Recommendation: Keep Bob's version (confidence: 85%)
+Reason: More comprehensive tests, still pure
+```
+
+See [Git Integration Blueprint](docs/blueprints/blueprint_git.md) for complete multi-user collaboration workflows.
+
 ---
 
 ## Project Lifecycle
@@ -619,8 +669,9 @@ AI: ✅ Preference learned: project_file_write
 - **[Project DB Blueprint](docs/blueprints/blueprint_project_db.md)** - project.db schema and queries
 - **[MCP DB Blueprint](docs/mcp_db_blueprint.md)** - aifp_core.db schema and population
 - **[User Directives Blueprint](docs/blueprints/blueprint_user_directives.md)** - User-defined automation system (home automation, cloud infrastructure, custom workflows)
-- **[Interactions Blueprint](docs/interactions_blueprint.md)** - Cross-component interactions
-- **[Git Blueprint](docs/git_blueprint.md)** - Git integration and external change detection
+- **[Interactions Blueprint](docs/blueprints/blueprint_interactions.md)** - Cross-component interactions including Git integration
+- **[Git Integration Blueprint](docs/blueprints/blueprint_git.md)** - Multi-user collaboration, FP-powered conflict resolution, external change detection
+- **[AIFP Project Structure Blueprint](docs/blueprints/blueprint_aifp_project_structure.md)** - Complete project directory structure and organization
 
 ### Schema Files
 
@@ -640,6 +691,8 @@ AI: ✅ Preference learned: project_file_write
 - **[Project Directives](docs/directives-json/directives-project.json)** - All project directives (22)
 - **[User Preference Directives](docs/directives-json/directives-user-pref.json)** - User customization directives (7)
 - **[User Directive System](docs/directives-json/directives-user-system.json)** - User-defined automation directives (8) with 10 helper functions
+- **[Git Integration Directives](docs/directives-json/directives-git.json)** - Git collaboration and conflict resolution directives (6) with 9 helper functions
+- **[Directive Interactions](docs/directives-json/directives-interactions.json)** - Cross-directive relationships and dependencies (including Git integration)
 
 ---
 
@@ -681,12 +734,17 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ### Current (v1.0)
 
-- ✅ Core directive system (60+ FP, 22 Project, 7 User Preference)
-- ✅ Three-database architecture (aifp_core, project, user_preferences)
+- ✅ Core directive system (60+ FP, 22 Project, 7 User Preference, 6 Git, 8 User Directives)
+- ✅ Four-database architecture (aifp_core, project, user_preferences, user_directives)
 - ✅ MCP server design with command routing
-- ✅ User preference system with directive mapping
-- ✅ Git integration (auto-init, external change detection)
-- ✅ Complete documentation and blueprints
+- ✅ User preference system with directive mapping and AI learning
+- ✅ User-defined directives system for domain-specific automation
+- ✅ Git integration with FP-powered multi-user collaboration
+  - External change detection
+  - Branch-based workflows (`aifp-{user}-{number}`)
+  - FP-powered conflict resolution (auto-resolve >0.8 confidence)
+  - Merge history audit trail
+- ✅ Complete documentation and blueprints (9 blueprints, 44+ helper functions)
 - ✅ Cost-conscious tracking (all features opt-in by default)
 
 ### Planned (v1.1+)

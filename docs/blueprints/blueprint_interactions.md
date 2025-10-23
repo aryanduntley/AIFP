@@ -319,36 +319,75 @@ fp_purity (executed via project_file_write)
 
 ### 6. Git Integration Points
 
-#### Session Boot Detection
+**Simplified Approach**: Git state (current branch, current hash) is queried from Git directly. Only AIFP-specific collaboration metadata stored in database.
+
+#### Session Boot Detection (External Change Detection)
 
 ```
-MCP Server Startup:
-  └─ Calls aifp_git_status helper
-      └─ Queries project.db for last_known_git_hash
-      └─ Compares with current Git HEAD
-      └─ If different:
-          ├─ Detects changed files since last session
-          ├─ Queries project.db to find affected themes/flows
-          ├─ Updates project.db with new Git state
-          └─ Notifies AI of external code changes
+MCP Server Startup → git_sync_state directive:
+  └─ Calls get_current_commit_hash() helper
+      └─ git rev-parse HEAD → current_hash
+  └─ Queries project.last_known_git_hash from project.db
+  └─ If different:
+      ├─ Calls git_detect_external_changes directive
+      │   ├─ git diff --name-only <last_hash>..HEAD
+      │   ├─ Queries project.db to find affected themes/flows/functions
+      │   └─ Builds impact report
+      ├─ Updates project.last_known_git_hash = current_hash
+      ├─ Updates project.last_git_sync = now
+      └─ Notifies AI of external code changes with impact analysis
 ```
 
-#### Git Branch-Based Workflow
+**Key Insight**: No separate git_state table needed. Git commands are fast (~1ms) and eliminate duplication.
+
+#### Git Branch-Based Workflow (Multi-User Collaboration)
 
 ```
-User: "Create instance for authentication work"
+User: "Alice wants to work on authentication"
   ↓
-AI calls: aifp_run("Create instance for authentication work")
+AI calls: git_create_branch directive
   ↓
-MCP routes to: (hypothetical future directive: project_instance_create)
+git_create_branch execution:
+  └─ Calls get_user_name_for_branch() helper
+      ├─ git config user.name → "alice"
+      └─ (or detects from $USER, prompts, etc.)
+  └─ Queries work_branches table for max branch number
+      └─ SELECT MAX(id) FROM work_branches WHERE user_name='alice'
+      └─ Next: 001
+  └─ Creates Git branch
+      └─ git checkout -b aifp-alice-001 main
+  └─ Stores collaboration metadata in work_branches table
+      └─ INSERT INTO work_branches (branch_name, user_name, purpose, status)
+      └─ VALUES ('aifp-alice-001', 'alice', 'authentication', 'active')
+  └─ Returns: {branch: "aifp-alice-001", user: "alice", status: "active"}
+
+Later: Merge with FP intelligence
   ↓
-project_instance_create:
-  └─ Calls git_create_branch helper
-      └─ git checkout -b aifp-branch-001 main
-  └─ Updates project.db (or separate instance DB)
-      └─ INSERT INTO instance_branches (branch_name, purpose)
-  └─ Returns: {branch: "aifp-branch-001", status: "active"}
+AI calls: git_merge_branch directive
+  ↓
+git_merge_branch execution:
+  └─ Calls detect_conflicts_before_merge() helper
+      ├─ Extracts project.db from both branches
+      │   ├─ git show main:.aifp/project.db > main.db
+      │   └─ git show aifp-alice-001:.aifp/project.db > alice.db
+      ├─ Queries function metadata from both databases
+      ├─ Applies FP conflict resolution rules:
+      │   ├─ One pure, one impure → prefer pure (confidence: 0.9)
+      │   ├─ Both pure, different tests → prefer more tests (0.8)
+      │   └─ Dependencies differ → manual review (0.5)
+      └─ Returns conflict analysis
+  └─ Auto-resolves high-confidence conflicts (>0.8)
+  └─ Presents low-confidence conflicts to user with AI recommendations
+  └─ Executes merge: git merge aifp-alice-001
+  └─ Logs to merge_history table with resolution details
+  └─ Updates work_branches: status='merged', merged_at=now
 ```
+
+**Key Features**:
+- Branch naming: `aifp-{user}-{number}` (e.g., `aifp-alice-001`, `aifp-ai-claude-001`)
+- FP-powered conflict resolution using purity levels
+- Full audit trail in `merge_history` table
+- Supports both human developers and autonomous AI instances
 
 ---
 

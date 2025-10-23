@@ -13,11 +13,6 @@ are we handling oop wrapping appropriately with our directives. Probably some ex
 
 directives file for each db table?
 
-need directives file for git related tracking, evolve to multi-user/multi-ai tracking with pull requests, etc.
-must have directives regarding versioning and proper use of notes and items tables
-
-"Add cross-links between FP and Project directives" from docs/suggestions-directives.txt pending. discuss.
-
 Notes are md examples and init structuring are the idea evolution files
 docs/directiveNotes/*
 docs/initialStructuring/*
@@ -32,107 +27,19 @@ ensure helper functionsfor all directives that could use it; there are some that
 project status prompt?
 
 
-
-
-Based on my analysis, yes, we should absolutely create a 
-  separate directives-git.json file. Here's what I found:
-
-  Current State
-
-  ❌ Missing Components
-
-  1. No directives-git.json file - Git functionality is
-  scattered in project directives
-  2. Git tables missing from schema - git_state and
-  work_branches tables defined in blueprint but NOT in
-  schemaExampleProject.sql
-  3. Git helpers not documented - Helper functions exist in
-  blueprint but missing from helper-functions-reference.md
-
-  ✅ What Exists
-
-  - Git blueprint (docs/blueprints/blueprint_git.md) -
-  Comprehensive design document
-  - Git references in project directives - project_init checks
-   for git backups, various directives use checksums
-  - Helper function examples in blueprint -
-  get_current_commit_hash(), get_changed_files_since(),
-  create_branch(), etc.
-
-  What the Blueprint Defines
-
-  Git Directives (Implied but Not Implemented)
-
-  1. git_init - Initialize Git repository
-  2. git_detect_external_changes - Detect changes made outside
-   AI sessions
-  3. git_analyze_impact - Analyze which themes/flows are
-  affected by external changes
-  4. git_create_branch - Create work branch (optional feature)
-  5. git_commit - Commit at milestones
-  6. git_status_sync - Sync git state with project.db
-
-  Git Helper Functions (From Blueprint)
-
-  1. get_current_commit_hash(project_root) - Get HEAD commit
-  hash
-  2. get_changed_files_since(commit_hash, project_root) - List
-   changed files
-  3. create_branch(branch_name, from_branch, project_root) -
-  Create new branch
-  4. get_current_branch(project_root) - Get active branch name
-  5. store_git_state(project_root) - Save git state to
-  project.db
-  6. detect_external_changes(project_root) - Compare current
-  hash with last known
-
-  Missing Database Tables
-
-  -- From blueprint, NOT in schemaExampleProject.sql
-  CREATE TABLE git_state (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      current_branch TEXT NOT NULL,
-      last_known_hash TEXT,
-      last_sync_timestamp DATETIME,
-      project_root_path TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE work_branches (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      branch_name TEXT UNIQUE NOT NULL,
-      purpose TEXT NOT NULL,
-      status TEXT DEFAULT 'active',
-      created_from TEXT DEFAULT 'main',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      merged_at DATETIME NULL,
-      metadata_json TEXT
-  );
-
-  Recommendation
-
-  Create these files:
-
-  1. ✅ docs/directives-json/directives-git.json -
-  Git-specific directives (6 directives, ~6 helpers)
-  2. ✅ Add to schemaExampleProject.sql - git_state and
-  work_branches tables
-  3. ✅ Update helper-functions-reference.md - Add Git helpers
-   section
-  4. ✅ Update README.md - Reference git directives
-
-  Benefits:
-  - Clean separation of concerns
-  - Git is optional (can implement later without touching
-  core)
-  - Aligns with blueprint architecture
-  - Makes Phase 4 (Advanced Features - Git Integration)
-  cleaner
-
-  Should I create these files now? I can:
-  1. Create directives-git.json with 6 directives based on
-  blueprint
-  2. Add missing tables to schemaExampleProject.sql
-  3. Add Git helpers section to helper-functions-reference.md
-  4. Update README to reference git directives
+ | directives-fp-core.json       | 30    | FP Core
+  | ✅ Complete     |
+  | directives-fp-aux.json        | 32    | FP Auxiliary
+  | ✅ Complete     |
+  | directives-project.json       | 25    | Project Mgmt
+  | ✅ Complete     |
+  | directives-user-pref.json     | 7     | User Preferences
+  | ✅ Complete     |
+  | directives-user-system.json   | 8     | User Automation
+  | ✅ Complete     |
+  | directives-git.json           | 6     | Git Integration
+  | ✅ Complete     |
+  | Total                         | 108   | All Directives
+  | ✅ Ready for DB |
+  | directives-interactions.json  | 70    | Relationships
+  | ✅ Complete     |

@@ -454,5 +454,109 @@
     "description": "tracking_toggle depends on user_preferences_sync to access tracking_settings table",
     "weight": 1,
     "active": true
+  },
+  {
+    "source": "project_init",
+    "target": "git_init",
+    "relation_type": "triggers",
+    "description": "project_init triggers git_init to initialize Git repository for version control",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "aifp_run",
+    "target": "git_sync_state",
+    "relation_type": "triggers",
+    "description": "aifp_run triggers git_sync_state on session boot to detect external changes",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "git_sync_state",
+    "target": "git_detect_external_changes",
+    "relation_type": "triggers",
+    "description": "git_sync_state triggers git_detect_external_changes when commit hash differs",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "git_detect_external_changes",
+    "target": "project_theme_flow_mapping",
+    "relation_type": "cross_link",
+    "description": "git_detect_external_changes queries project_theme_flow_mapping to analyze affected themes",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "git_detect_external_changes",
+    "target": "project_update_db",
+    "relation_type": "triggers",
+    "description": "git_detect_external_changes triggers project_update_db to sync Git hash in project table",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "git_create_branch",
+    "relation_type": "triggers",
+    "description": "project_task_decomposition triggers git_create_branch for multi-user task isolation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "git_create_branch",
+    "target": "project_update_db",
+    "relation_type": "triggers",
+    "description": "git_create_branch triggers project_update_db to store branch metadata in work_branches table",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_update",
+    "target": "git_merge_branch",
+    "relation_type": "triggers",
+    "description": "project_task_update triggers git_merge_branch when task is completed and branch should be merged",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "git_merge_branch",
+    "target": "git_detect_conflicts",
+    "relation_type": "depends_on",
+    "description": "git_merge_branch depends on git_detect_conflicts for FP-powered conflict analysis",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "git_detect_conflicts",
+    "target": "fp_purity",
+    "relation_type": "fp_reference",
+    "description": "git_detect_conflicts references fp_purity to analyze function purity for conflict resolution",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "git_detect_conflicts",
+    "target": "fp_dependency_tracking",
+    "relation_type": "fp_reference",
+    "description": "git_detect_conflicts references fp_dependency_tracking to compare function dependencies",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "git_merge_branch",
+    "target": "project_update_db",
+    "relation_type": "triggers",
+    "description": "git_merge_branch triggers project_update_db to log merge history and update work_branches status",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "git_sync_state",
+    "relation_type": "triggers",
+    "description": "project_file_write triggers git_sync_state after code commits to update project.last_known_git_hash",
+    "weight": 1,
+    "active": true
   }
 ]

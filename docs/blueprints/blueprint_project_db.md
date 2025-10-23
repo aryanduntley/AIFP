@@ -32,6 +32,8 @@ CREATE TABLE project (
     blueprint_checksum TEXT,               -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
     user_directives_status TEXT DEFAULT NULL CHECK (user_directives_status IN (NULL, 'in_progress', 'active', 'disabled')),
                                            -- NULL: no user directives, 'in_progress': being set up, 'active': running, 'disabled': paused
+    last_known_git_hash TEXT,              -- Last Git commit hash processed by AIFP (for external change detection)
+    last_git_sync DATETIME,                -- Last time Git state was synchronized
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -48,6 +50,8 @@ CREATE TABLE project (
   - `'in_progress'`: User directives being set up (parsing/validating)
   - `'active'`: User directives running and executing
   - `'disabled'`: User directives paused but database exists
+- `last_known_git_hash`: Last Git commit hash processed by AIFP (for external change detection)
+- `last_git_sync`: Timestamp of last Git state synchronization
 
 **Usage**:
 - **ONE row per database** (one project per database)
@@ -481,6 +485,157 @@ VALUES ('FP compliance check required refactoring function X to eliminate mutati
 -- Roadblock
 INSERT INTO notes (content, note_type, reference_table, reference_id, source, severity)
 VALUES ('Cannot write to /protected/ - needs elevated permissions', 'roadblock', 'files', 5, 'directive', 'error');
+```
+
+---
+
+## Git Integration Tables
+
+**Purpose**: Track Git collaboration metadata for multi-user and multi-AI development. Current Git state (branch, hash) is queried from Git directly - only AIFP-specific collaboration metadata is stored.
+
+### Work Branches Table
+
+**Purpose**: Track user/AI work branches for collaboration
+
+```sql
+CREATE TABLE IF NOT EXISTS work_branches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    branch_name TEXT UNIQUE NOT NULL,           -- e.g., 'aifp-alice-001', 'aifp-ai-claude-001'
+    user_name TEXT NOT NULL,                    -- e.g., 'alice', 'ai-claude'
+    purpose TEXT NOT NULL,                      -- e.g., 'Implement matrix operations'
+    status TEXT DEFAULT 'active',               -- active, merged, abandoned
+    created_from TEXT DEFAULT 'main',           -- Parent branch (usually 'main')
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    merged_at DATETIME NULL,                    -- When branch was merged
+    merge_conflicts_count INTEGER DEFAULT 0,    -- Number of conflicts during merge
+    merge_resolution_strategy TEXT,             -- JSON: how conflicts were resolved (FP purity, tests, manual)
+    metadata_json TEXT                          -- Additional branch metadata (themes, flows, tasks)
+);
+
+CREATE INDEX IF NOT EXISTS idx_work_branches_user ON work_branches(user_name);
+CREATE INDEX IF NOT EXISTS idx_work_branches_status ON work_branches(status);
+```
+
+**Key Fields**:
+- `branch_name`: Git branch name following `aifp-{user}-{number}` convention
+- `user_name`: User or AI instance that owns this branch
+- `purpose`: Description of what work is being done
+- `status`: Lifecycle tracking (active = working, merged = integrated, abandoned = discontinued)
+- `merge_resolution_strategy`: JSON documenting how FP purity was used to resolve conflicts
+
+**Usage**:
+- Created by `git_create_branch` directive
+- Updated by `git_merge_branch` directive (sets status='merged', merge metadata)
+- Queried for collaboration coordination and status reporting
+- Supports both human developers and autonomous AI instances
+
+**Examples**:
+```sql
+-- Alice creates branch for authentication work
+INSERT INTO work_branches (branch_name, user_name, purpose, status)
+VALUES ('aifp-alice-001', 'alice', 'Implement user authentication', 'active');
+
+-- After merge, update with resolution details
+UPDATE work_branches
+SET status = 'merged',
+    merged_at = CURRENT_TIMESTAMP,
+    merge_conflicts_count = 3,
+    merge_resolution_strategy = '{"auto_resolved": 2, "manual_resolved": 1, "purity_based": true}'
+WHERE branch_name = 'aifp-alice-001';
+```
+
+---
+
+### Merge History Table
+
+**Purpose**: Full audit trail of branch merges and FP-powered conflict resolutions
+
+```sql
+CREATE TABLE IF NOT EXISTS merge_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_branch TEXT NOT NULL,                -- Branch being merged (e.g., 'aifp-alice-001')
+    target_branch TEXT DEFAULT 'main',          -- Branch being merged into (usually 'main')
+    merge_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    conflicts_detected INTEGER DEFAULT 0,       -- Total conflicts detected
+    conflicts_auto_resolved INTEGER DEFAULT 0,  -- Conflicts AI auto-resolved using FP purity
+    conflicts_manual_resolved INTEGER DEFAULT 0,-- Conflicts user manually resolved
+    resolution_details TEXT,                    -- JSON: detailed resolution log (function-by-function)
+    merged_by TEXT,                             -- User or AI instance that performed merge
+    merge_commit_hash TEXT                      -- Git commit hash of merge
+);
+
+CREATE INDEX IF NOT EXISTS idx_merge_history_timestamp ON merge_history(merge_timestamp);
+CREATE INDEX IF NOT EXISTS idx_merge_history_source ON merge_history(source_branch);
+```
+
+**Key Fields**:
+- `conflicts_auto_resolved`: Count of conflicts AI resolved using FP purity analysis (confidence > 0.8)
+- `conflicts_manual_resolved`: Count of conflicts requiring user decision
+- `resolution_details`: JSON with function-level resolution decisions (why Alice's version over Bob's, purity levels, test results)
+- `merged_by`: Attribution (which user or AI instance performed the merge)
+
+**Usage**:
+- Written by `git_merge_branch` directive after successful merge
+- Provides complete audit trail for compliance and learning
+- Enables analysis of FP-powered conflict resolution effectiveness
+
+**Examples**:
+```sql
+-- Log merge with FP-powered conflict resolution
+INSERT INTO merge_history (
+    source_branch,
+    target_branch,
+    conflicts_detected,
+    conflicts_auto_resolved,
+    conflicts_manual_resolved,
+    resolution_details,
+    merged_by,
+    merge_commit_hash
+) VALUES (
+    'aifp-alice-001',
+    'main',
+    5,
+    4,  -- 4 conflicts auto-resolved using FP purity
+    1,  -- 1 required manual review
+    '{"calculate_total": {"decision": "prefer_alice", "reason": "pure function, more tests", "confidence": 0.9}, ...}',
+    'alice',
+    'abc123def456'
+);
+```
+
+---
+
+### Project Table Git Fields
+
+Git state tracking is integrated into the `project` table (no separate git_state table needed):
+
+```sql
+-- Added fields to project table
+last_known_git_hash TEXT,  -- Last Git commit hash processed by AIFP (for external change detection)
+last_git_sync DATETIME      -- Last time Git state was synchronized
+```
+
+**Purpose**: Enable external change detection by comparing stored hash with current Git HEAD.
+
+**Rationale**: Current Git state (branch, hash) is fast to query (~1ms via `git rev-parse HEAD`), so no separate git_state table is needed. This eliminates duplication and simplifies the schema.
+
+**Usage**:
+- Updated by `git_sync_state` directive after commits and during session boot
+- Compared with current Git HEAD by `git_detect_external_changes` directive
+- If hash differs → external changes detected → AI analyzes impact on themes/flows/functions
+
+**Examples**:
+```sql
+-- Update after commit
+UPDATE project
+SET last_known_git_hash = 'abc123def456',
+    last_git_sync = CURRENT_TIMESTAMP
+WHERE id = 1;
+
+-- Check for external changes
+SELECT last_known_git_hash FROM project WHERE id = 1;
+-- Compare with: git rev-parse HEAD
+-- If different → trigger git_detect_external_changes
 ```
 
 ---

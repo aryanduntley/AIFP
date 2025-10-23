@@ -13,6 +13,8 @@ CREATE TABLE project (
     blueprint_checksum TEXT,                -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
     user_directives_status TEXT DEFAULT NULL CHECK (user_directives_status IN (NULL, 'in_progress', 'active', 'disabled')),
                                             -- NULL: no user directives, 'in_progress': being set up, 'active': running, 'disabled': paused
+    last_known_git_hash TEXT,               -- Last Git commit hash processed by AIFP (for external change detection)
+    last_git_sync DATETIME,                 -- Last time Git state was synchronized
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -255,13 +257,55 @@ CREATE INDEX IF NOT EXISTS idx_notes_severity ON notes(severity);
 CREATE INDEX IF NOT EXISTS idx_notes_source ON notes(source);
 
 -- ===============================================================
+-- Git Integration Tables (Multi-User Collaboration)
+-- ===============================================================
+-- Note: Current Git state (branch, hash) is queried from Git directly via commands.
+-- Only AIFP-specific collaboration metadata is stored in database.
+-- External change detection uses project.last_known_git_hash field.
+
+-- Work Branches Table: Track user/AI work branches for collaboration
+CREATE TABLE IF NOT EXISTS work_branches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    branch_name TEXT UNIQUE NOT NULL,           -- e.g., 'aifp-alice-001', 'aifp-ai-claude-001'
+    user_name TEXT NOT NULL,                    -- e.g., 'alice', 'ai-claude'
+    purpose TEXT NOT NULL,                      -- e.g., 'Implement matrix operations'
+    status TEXT DEFAULT 'active',               -- active, merged, abandoned
+    created_from TEXT DEFAULT 'main',           -- Parent branch (usually 'main')
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    merged_at DATETIME NULL,                    -- When branch was merged
+    merge_conflicts_count INTEGER DEFAULT 0,    -- Number of conflicts during merge
+    merge_resolution_strategy TEXT,             -- JSON: how conflicts were resolved (FP purity, tests, manual)
+    metadata_json TEXT                          -- Additional branch metadata (themes, flows, tasks)
+);
+
+-- Merge History Table: Full audit trail of branch merges and conflict resolutions
+CREATE TABLE IF NOT EXISTS merge_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_branch TEXT NOT NULL,                -- Branch being merged (e.g., 'aifp-alice-001')
+    target_branch TEXT DEFAULT 'main',          -- Branch being merged into (usually 'main')
+    merge_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    conflicts_detected INTEGER DEFAULT 0,       -- Total conflicts detected
+    conflicts_auto_resolved INTEGER DEFAULT 0,  -- Conflicts AI auto-resolved using FP purity
+    conflicts_manual_resolved INTEGER DEFAULT 0,-- Conflicts user manually resolved
+    resolution_details TEXT,                    -- JSON: detailed resolution log (function-by-function)
+    merged_by TEXT,                             -- User or AI instance that performed merge
+    merge_commit_hash TEXT                      -- Git commit hash of merge
+);
+
+-- Indexes for Git collaboration tables
+CREATE INDEX IF NOT EXISTS idx_work_branches_user ON work_branches(user_name);
+CREATE INDEX IF NOT EXISTS idx_work_branches_status ON work_branches(status);
+CREATE INDEX IF NOT EXISTS idx_merge_history_timestamp ON merge_history(merge_timestamp);
+CREATE INDEX IF NOT EXISTS idx_merge_history_source ON merge_history(source_branch);
+
+-- ===============================================================
 -- Schema Version Tracking
 -- ===============================================================
 
 CREATE TABLE IF NOT EXISTS schema_version (
     id INTEGER PRIMARY KEY CHECK (id = 1),      -- Only one row allowed
-    version TEXT NOT NULL,                      -- e.g., '1.0'
+    version TEXT NOT NULL,                      -- e.g., '1.1'
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO schema_version (id, version) VALUES (1, '1.0');
+INSERT INTO schema_version (id, version) VALUES (1, '1.1');

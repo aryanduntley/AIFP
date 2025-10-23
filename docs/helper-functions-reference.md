@@ -377,6 +377,321 @@ Helper functions are organized by the database schema they primarily operate on:
 
 ---
 
+## Git Integration Helpers
+
+**Database**: Git repository + `project.db` for collaboration metadata
+**Purpose**: Git operations for version control, external change detection, and multi-user collaboration
+
+**Note**: Git state (current branch, current hash) is queried from Git directly - no duplication in database. Only AIFP-specific collaboration metadata is stored.
+
+### get_current_commit_hash(project_root)
+
+**File Path**: `helpers/git/get_current_commit_hash.py`
+
+**Parameters**:
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Get current Git HEAD commit hash for external change detection.
+
+**Returns**:
+```python
+str  # e.g., "a1b2c3d4e5f6..."
+```
+
+**Implementation**:
+```python
+subprocess.run(['git', 'rev-parse', 'HEAD'],
+              cwd=project_root,
+              capture_output=True,
+              text=True).stdout.strip()
+```
+
+**Error Handling**: Return None if Git unavailable or not a Git repository.
+
+**Used By**: `git_init`, `git_sync_state`, `git_detect_external_changes`
+
+---
+
+### get_current_branch(project_root)
+
+**File Path**: `helpers/git/get_current_branch.py`
+
+**Parameters**:
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Get current Git branch name.
+
+**Returns**:
+```python
+str  # e.g., "main", "aifp-alice-001"
+```
+
+**Implementation**:
+```python
+subprocess.run(['git', 'branch', '--show-current'],
+              cwd=project_root,
+              capture_output=True,
+              text=True).stdout.strip()
+```
+
+**Error Handling**: Return None if Git unavailable.
+
+**Used By**: `git_create_branch`, `git_sync_state`, status reporting
+
+---
+
+### detect_external_changes(project_root)
+
+**File Path**: `helpers/git/detect_external_changes.py`
+
+**Parameters**:
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Compare current Git HEAD with project.last_known_git_hash to detect external code modifications.
+
+**Returns**:
+```python
+{
+    "changed": bool,
+    "changed_files": list[str],
+    "affected_themes": list[str],
+    "affected_functions": list[str],
+    "commit_range": str  # e.g., "abc123..def456"
+}
+```
+
+**Implementation**:
+1. Query `project.last_known_git_hash` from project.db
+2. Get current hash via `get_current_commit_hash()`
+3. If hashes differ: `git diff --name-only <last_hash>..HEAD`
+4. Query project.db for themes/functions in changed files
+5. Update `project.last_known_git_hash` to current hash
+
+**Error Handling**: Return empty changes if Git unavailable or hash missing.
+
+**Used By**: `git_detect_external_changes` directive, `aifp_status`
+
+---
+
+### create_user_branch(user, purpose, project_root)
+
+**File Path**: `helpers/git/create_user_branch.py`
+
+**Parameters**:
+- `user` (str) - User name (e.g., "alice", "ai-claude")
+- `purpose` (str) - Branch purpose description
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Create new work branch following naming convention `aifp-{user}-{number}`.
+
+**Returns**:
+```python
+{
+    "branch_name": str,    # e.g., "aifp-alice-001"
+    "user": str,
+    "purpose": str,
+    "created_from": str    # e.g., "main"
+}
+```
+
+**Implementation**:
+1. Query `work_branches` table for max branch number for user
+2. Format branch name: `aifp-{user}-{next_number:03d}`
+3. Create Git branch: `git checkout -b {branch_name} main`
+4. Insert metadata into `work_branches` table
+
+**Error Handling**: Increment number if branch exists, prompt user if Git fails.
+
+**Used By**: `git_create_branch` directive
+
+---
+
+### detect_conflicts_before_merge(source_branch, project_root)
+
+**File Path**: `helpers/git/detect_conflicts_before_merge.py`
+
+**Parameters**:
+- `source_branch` (str) - Branch to merge (e.g., "aifp-alice-001")
+- `project_root` (Path) - Project root directory
+
+**Purpose**: FP-powered conflict analysis before merging. Queries project.db from both branches to analyze function purity, dependencies, and tests.
+
+**Returns**:
+```python
+{
+    "has_conflicts": bool,
+    "conflicts": [
+        {
+            "file": str,
+            "function": str,
+            "main_version": {
+                "purity": str,
+                "dependencies": list[str],
+                "tests_passed": int
+            },
+            "source_version": {
+                "purity": str,
+                "dependencies": list[str],
+                "tests_passed": int
+            },
+            "resolution": {
+                "recommendation": str,  # "prefer_main", "prefer_source", "keep_both", "manual"
+                "reason": str,
+                "confidence": float
+            }
+        },
+        ...
+    ],
+    "auto_resolvable": int  # Count of conflicts AI can auto-resolve
+}
+```
+
+**Implementation**:
+1. Get changed files: `git diff --name-only main..{source_branch}`
+2. Extract project.db from both branches:
+   - `git show main:.aifp/project.db > main.db`
+   - `git show {source_branch}:.aifp/project.db > source.db`
+3. Query function metadata from both databases
+4. Apply FP conflict resolution rules:
+   - One pure, one impure → prefer pure (confidence: 0.9)
+   - Both pure, different tests → prefer more tests (confidence: 0.8)
+   - Dependencies differ → manual review (confidence: 0.5)
+5. Return detailed analysis
+
+**Error Handling**: Fall back to file-level conflicts if DB query fails.
+
+**Used By**: `git_detect_conflicts`, `git_merge_branch` directives
+
+---
+
+### merge_with_fp_intelligence(source_branch, project_root)
+
+**File Path**: `helpers/git/merge_with_fp_intelligence.py`
+
+**Parameters**:
+- `source_branch` (str) - Branch to merge
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Perform Git merge with FP-powered conflict resolution. Auto-resolves high-confidence conflicts (>0.8) using purity analysis.
+
+**Returns**:
+```python
+{
+    "success": bool,
+    "conflicts_detected": int,
+    "auto_resolved": int,
+    "manual_resolved": int,
+    "merge_commit_hash": str
+}
+```
+
+**Implementation**:
+1. Call `detect_conflicts_before_merge()`
+2. Auto-resolve conflicts with confidence > 0.8
+3. Present low-confidence conflicts to user
+4. Execute merge: `git merge {source_branch}`
+5. Log to `merge_history` table
+6. Update `work_branches` status to 'merged'
+
+**Error Handling**: Abort merge (`git merge --abort`) if unresolvable conflicts.
+
+**Used By**: `git_merge_branch` directive
+
+---
+
+### get_user_name_for_branch()
+
+**File Path**: `helpers/git/get_user_name_for_branch.py`
+
+**Parameters**: None
+
+**Purpose**: Detect user name for branch creation from multiple sources.
+
+**Returns**:
+```python
+str  # e.g., "alice", "ai-claude"
+```
+
+**Implementation**:
+1. Try `git config user.name`
+2. Try environment variables: `$USER`, `$USERNAME`
+3. Try system username: `getpass.getuser()`
+4. Fallback: prompt user or use "ai-user"
+
+**Error Handling**: Never fail - always return a valid username.
+
+**Used By**: `git_create_branch` directive
+
+---
+
+### sync_git_state(project_root)
+
+**File Path**: `helpers/git/sync_git_state.py`
+
+**Parameters**:
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Update `project.last_known_git_hash` with current Git HEAD. Called after commits and during session boot.
+
+**Returns**:
+```python
+{
+    "synced": bool,
+    "current_branch": str,
+    "current_hash": str,
+    "last_sync": datetime
+}
+```
+
+**Implementation**:
+1. Get current hash: `get_current_commit_hash()`
+2. Query `project.last_known_git_hash`
+3. If differs: Call `detect_external_changes()`
+4. Update: `project.last_known_git_hash = current_hash`
+5. Update: `project.last_git_sync = now`
+
+**Error Handling**: Log warning if Git unavailable, continue with cached hash.
+
+**Used By**: `git_sync_state` directive, `aifp_status`
+
+---
+
+### list_active_branches()
+
+**File Path**: `helpers/git/list_active_branches.py`
+
+**Parameters**: None
+
+**Purpose**: List all active AIFP work branches from `work_branches` table.
+
+**Returns**:
+```python
+[
+    {
+        "branch_name": str,
+        "user_name": str,
+        "purpose": str,
+        "created_at": datetime,
+        "status": str  # "active", "merged", "abandoned"
+    },
+    ...
+]
+```
+
+**Implementation**:
+```sql
+SELECT branch_name, user_name, purpose, created_at, status
+FROM work_branches
+WHERE status = 'active'
+ORDER BY created_at DESC
+```
+
+**Error Handling**: Return empty list if table doesn't exist.
+
+**Used By**: Status reporting, collaboration coordination
+
+---
+
 ## User Preferences Helpers (user_preferences.db)
 
 **Database**: `user_preferences.db` (per-project, mutable)

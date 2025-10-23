@@ -22,7 +22,15 @@
               "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
               "assumption": "Always assume AIFP applies unless user explicitly rejects it with 'do not use aifp for this task'.",
               "first_action": "If user says 'continue', 'status', 'what's next', 'resume work', or starts session without clear context, call aifp_status first to understand project state.",
-              "status_triggers": ["continue", "status", "what's next", "resume", "resume work", "show status", "project status"],
+              "status_triggers": [
+                "continue",
+                "status",
+                "what's next",
+                "resume",
+                "resume work",
+                "show status",
+                "project status"
+              ],
               "available_helpers": [
                 "get_all_directives",
                 "get_directive",
@@ -37,8 +45,8 @@
               ]
             },
             "ai_decision_flow": [
-              "1. Check: Is this a status/continuation request? → Call aifp_status",
-              "2. Check: project.user_directives_status='active'? → Include user directive context",
+              "1. Check: Is this a status/continuation request? \u2192 Call aifp_status",
+              "2. Check: project.user_directives_status='active'? \u2192 Include user directive context",
               "3. Evaluate: Is this coding, project management, or user directive automation?",
               "4. Check: Do I have directives in memory?",
               "5. If no directives: Call get_all_directives()",
@@ -50,15 +58,37 @@
           }
         }
       ],
-      "error_handling": {"on_failure": "return_guidance_anyway"}
+      "error_handling": {
+        "on_failure": "return_guidance_anyway"
+      }
     },
     "roadblocks_json": [
-      {"issue": "ai_bypasses_aifp", "resolution": "System prompt should enforce: 'If AIFP MCP present, always call aifp_run unless explicitly rejected'"},
-      {"issue": "ai_forgets_directives", "resolution": "AI should call get_all_directives() when directives not in memory"},
-      {"issue": "ai_unsure_when_to_use", "resolution": "Guidance clarifies: coding + project management = use directives"},
-      {"issue": "ai_starts_without_context", "resolution": "Call aifp_status first to understand project state and current focus"}
+      {
+        "issue": "ai_bypasses_aifp",
+        "resolution": "System prompt should enforce: 'If AIFP MCP present, always call aifp_run unless explicitly rejected'"
+      },
+      {
+        "issue": "ai_forgets_directives",
+        "resolution": "AI should call get_all_directives() when directives not in memory"
+      },
+      {
+        "issue": "ai_unsure_when_to_use",
+        "resolution": "Guidance clarifies: coding + project management = use directives"
+      },
+      {
+        "issue": "ai_starts_without_context",
+        "resolution": "Call aifp_status first to understand project state and current focus"
+      }
     ],
-    "intent_keywords_json": ["run", "execute", "aifp", "start", "continue", "status", "resume"],
+    "intent_keywords_json": [
+      "run",
+      "execute",
+      "aifp",
+      "start",
+      "continue",
+      "status",
+      "resume"
+    ],
     "confidence_threshold": 1.0
   },
   {
@@ -75,31 +105,184 @@
     "workflow": {
       "trunk": "check_existing_state",
       "branches": [
-        {"if": "aifp_folder_exists", "then": "call_aifp_status", "details": {"message": ".aifp/ folder already exists"}},
-        {"if": "git_aifp_backup_exists", "then": "prompt_restore_or_new", "details": {"check_path": ".git/.aifp/ProjectBlueprint.md"}},
-        {"if": "restore_chosen", "then": "restore_from_git_backup", "details": {"copy_from": ".git/.aifp/", "copy_to": ".aifp/"}},
-        {"if": "new_project_chosen", "then": "interactive_blueprint_creation", "details": {"prompts": ["project_name", "purpose", "goals", "language", "build_tool", "fp_strictness_level"]}},
-        {"if": "blueprint_prompts_complete", "then": "create_project_structure", "details": {"create_folders": [".aifp/", ".aifp/backups/"]}},
-        {"if": "structure_created", "then": "generate_project_blueprint", "details": {"template": "ProjectBlueprint_template.md", "output": ".aifp/ProjectBlueprint.md"}},
-        {"if": "blueprint_generated", "then": "initialize_databases", "details": {"databases": ["project.db", "user_preferences.db"], "schemas": ["project_db_schema.sql", "user_preferences_schema.sql"]}},
-        {"if": "databases_initialized", "then": "populate_project_data", "details": {"tables": ["project", "infrastructure", "completion_path", "milestones"]}},
-        {"if": "project_data_populated", "then": "create_initial_completion_path", "details": {"stages": ["Setup", "Core Development", "Finalization"]}},
-        {"if": "completion_path_created", "then": "prompt_user_directives_init", "details": {"prompt": "Initialize user directives system? (y/n)", "optional": true}},
-        {"if": "user_directives_yes", "then": "init_user_directives_db", "details": {"create_db": "user_directives.db", "apply_schema": "user_directives_schema.sql", "set_status": "in_progress"}},
-        {"if": "user_directives_no_or_complete", "then": "backup_blueprint", "details": {"backup_to": ".aifp/backups/ProjectBlueprint.md.backup"}},
-        {"if": "backup_complete", "then": "report_success", "details": {"show": ["project_name", "blueprint_path", "databases", "completion_stages", "user_directives_status"]}},
-        {"fallback": "prompt_user", "details": {"clarify": "Provide missing project details or choose restoration option"}}
+        {
+          "if": "aifp_folder_exists",
+          "then": "call_aifp_status",
+          "details": {
+            "message": ".aifp/ folder already exists"
+          }
+        },
+        {
+          "if": "git_aifp_backup_exists",
+          "then": "prompt_restore_or_new",
+          "details": {
+            "check_path": ".git/.aifp/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "restore_chosen",
+          "then": "restore_from_git_backup",
+          "details": {
+            "copy_from": ".git/.aifp/",
+            "copy_to": ".aifp/"
+          }
+        },
+        {
+          "if": "new_project_chosen",
+          "then": "interactive_blueprint_creation",
+          "details": {
+            "prompts": [
+              "project_name",
+              "purpose",
+              "goals",
+              "language",
+              "build_tool",
+              "fp_strictness_level"
+            ]
+          }
+        },
+        {
+          "if": "blueprint_prompts_complete",
+          "then": "create_project_structure",
+          "details": {
+            "create_folders": [
+              ".aifp/",
+              ".aifp/backups/"
+            ]
+          }
+        },
+        {
+          "if": "structure_created",
+          "then": "generate_project_blueprint",
+          "details": {
+            "template": "ProjectBlueprint_template.md",
+            "output": ".aifp/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "blueprint_generated",
+          "then": "initialize_databases",
+          "details": {
+            "databases": [
+              "project.db",
+              "user_preferences.db"
+            ],
+            "schemas": [
+              "project_db_schema.sql",
+              "user_preferences_schema.sql"
+            ]
+          }
+        },
+        {
+          "if": "databases_initialized",
+          "then": "populate_project_data",
+          "details": {
+            "tables": [
+              "project",
+              "infrastructure",
+              "completion_path",
+              "milestones"
+            ]
+          }
+        },
+        {
+          "if": "project_data_populated",
+          "then": "create_initial_completion_path",
+          "details": {
+            "stages": [
+              "Setup",
+              "Core Development",
+              "Finalization"
+            ]
+          }
+        },
+        {
+          "if": "completion_path_created",
+          "then": "prompt_user_directives_init",
+          "details": {
+            "prompt": "Initialize user directives system? (y/n)",
+            "optional": true
+          }
+        },
+        {
+          "if": "user_directives_yes",
+          "then": "init_user_directives_db",
+          "details": {
+            "create_db": "user_directives.db",
+            "apply_schema": "user_directives_schema.sql",
+            "set_status": "in_progress"
+          }
+        },
+        {
+          "if": "user_directives_no_or_complete",
+          "then": "initialize_git_if_needed",
+          "details": {
+            "trigger": "git_init directive",
+            "action": "Initialize or integrate with Git repository"
+          }
+        },
+        {
+          "if": "git_initialized",
+          "then": "backup_blueprint",
+          "details": {
+            "backup_to": ".aifp/backups/ProjectBlueprint.md.backup"
+          }
+        },
+        {
+          "if": "backup_complete",
+          "then": "report_success",
+          "details": {
+            "show": [
+              "project_name",
+              "blueprint_path",
+              "databases",
+              "completion_stages",
+              "user_directives_status",
+              "git_status"
+            ]
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Provide missing project details or choose restoration option"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user", "retry": "max 2 attempts"}
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 2 attempts"
+      }
     },
     "roadblocks_json": [
-      {"issue": "db_creation_failed", "resolution": "Check file permissions or re-run as admin"},
-      {"issue": "schema_missing", "resolution": "Verify schema file in /schemas/"},
-      {"issue": "aifp_folder_exists", "resolution": "Call aifp_status to show existing project state"},
-      {"issue": "blueprint_generation_failed", "resolution": "Use default template and prompt user for manual completion"},
-      {"issue": "git_backup_corrupted", "resolution": "Prompt user to start fresh or provide backup manually"}
+      {
+        "issue": "db_creation_failed",
+        "resolution": "Check file permissions or re-run as admin"
+      },
+      {
+        "issue": "schema_missing",
+        "resolution": "Verify schema file in /schemas/"
+      },
+      {
+        "issue": "aifp_folder_exists",
+        "resolution": "Call aifp_status to show existing project state"
+      },
+      {
+        "issue": "blueprint_generation_failed",
+        "resolution": "Use default template and prompt user for manual completion"
+      },
+      {
+        "issue": "git_backup_corrupted",
+        "resolution": "Prompt user to start fresh or provide backup manually"
+      }
     ],
-    "intent_keywords_json": ["create project", "initialize", "start project", "init project", "new project"],
+    "intent_keywords_json": [
+      "create project",
+      "initialize",
+      "start project",
+      "init project",
+      "new project"
+    ],
     "confidence_threshold": 0.8
   },
   {
@@ -111,29 +294,131 @@
       "name": "task_management",
       "description": "Manages decomposition of user goals into AIFP-aligned tasks, subtasks, and sidequests."
     },
-    "description": "Breaks complex user instructions into trackable tasks, subtasks, and sidequests in project.db, maintaining roadmap alignment. Calls aifp_status first to understand current project state and context before creating new tasks. Guides project structure expansion and roadmap alignment through database updates.",
+    "description": "Decomposes high-level user requests into completion_path, milestones, tasks, subtasks, and items. Respects user preferences for task granularity, naming conventions, and decomposition style. Creates roadmap structure and ensures hierarchy consistency. Central decomposition directive; translates user intent into actionable milestones.",
     "md_file_path": "directives/project_task_decomposition.md",
     "workflow": {
-      "trunk": "check_current_status_first",
+      "trunk": "check_user_preferences",
       "branches": [
-        {"if": "task_decomposition_requested", "then": "call_aifp_status", "details": {"purpose": "Understand current context before creating new tasks", "brief": true}},
-        {"if": "status_obtained", "then": "review_open_tasks", "details": {"check_sidequests": true, "check_subtasks": true, "check_tasks": true}},
-        {"if": "related_to_open_task", "then": "update_if_needed", "details": {"check_alignment": true}},
-        {"if": "new_task_needed", "then": "create_new_task", "details": {"link_to_completion_path": true, "update_project_version": true}},
-        {"if": "subtask_needed", "then": "create_subtask", "details": {"table": "subtasks", "priority": "high", "pause_parent_task": true}},
-        {"if": "sidequest_needed", "then": "create_sidequest", "details": {"table": "sidequests", "priority": "low", "link_to_project": true}},
-        {"if": "interruption_detected", "then": "handle_subtask_priority", "details": {"notify_user": true, "options": "complete/discard/resume"}},
-        {"fallback": "prompt_user", "details": {"clarify": "Is this a new task, subtask, or sidequest?"}},
-        {"parallel": ["execute_code_gen", "update_db"], "details": {"if_code_and_db": true}}
+        {
+          "if": "directive_preferences_exist",
+          "then": "load_task_preferences",
+          "details": {
+            "query": "SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name='project_task_decomposition' AND active=1",
+            "common_preferences": [
+              "task_granularity",
+              "naming_convention",
+              "auto_create_items",
+              "default_priority"
+            ]
+          }
+        },
+        {
+          "if": "preferences_loaded",
+          "then": "decompose_with_preferences",
+          "details": {
+            "apply_granularity": true,
+            "respect_naming_convention": true
+          }
+        },
+        {
+          "if": "task_decomposition_requested",
+          "then": "call_aifp_status",
+          "details": {
+            "purpose": "Understand current context before creating new tasks",
+            "brief": true
+          }
+        },
+        {
+          "if": "status_obtained",
+          "then": "review_open_tasks",
+          "details": {
+            "check_sidequests": true,
+            "check_subtasks": true,
+            "check_tasks": true
+          }
+        },
+        {
+          "if": "related_to_open_task",
+          "then": "update_if_needed",
+          "details": {
+            "check_alignment": true
+          }
+        },
+        {
+          "if": "new_task_needed",
+          "then": "create_new_task",
+          "details": {
+            "link_to_completion_path": true,
+            "update_project_version": true
+          }
+        },
+        {
+          "if": "subtask_needed",
+          "then": "create_subtask",
+          "details": {
+            "table": "subtasks",
+            "priority": "high",
+            "pause_parent_task": true
+          }
+        },
+        {
+          "if": "sidequest_needed",
+          "then": "create_sidequest",
+          "details": {
+            "table": "sidequests",
+            "priority": "low",
+            "link_to_project": true
+          }
+        },
+        {
+          "if": "interruption_detected",
+          "then": "handle_subtask_priority",
+          "details": {
+            "notify_user": true,
+            "options": "complete/discard/resume"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Is this a new task, subtask, or sidequest?"
+          }
+        },
+        {
+          "parallel": [
+            "execute_code_gen",
+            "update_db"
+          ],
+          "details": {
+            "if_code_and_db": true
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user", "retry": "max 2 attempts"}
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 2 attempts"
+      }
     },
     "roadblocks_json": [
-      {"issue": "task vs subtask vs sidequest ambiguity", "resolution": "Prompt user for clarification, log in notes"},
-      {"issue": "no matching open task", "resolution": "Create new task or sidequest, align to completion_path"},
-      {"issue": "status_unavailable", "resolution": "Continue with decomposition but warn user about potential context issues"}
+      {
+        "issue": "task vs subtask vs sidequest ambiguity",
+        "resolution": "Prompt user for clarification, log in notes"
+      },
+      {
+        "issue": "no matching open task",
+        "resolution": "Create new task or sidequest, align to completion_path"
+      },
+      {
+        "issue": "status_unavailable",
+        "resolution": "Continue with decomposition but warn user about potential context issues"
+      }
     ],
-    "intent_keywords_json": ["decompose task", "break down", "plan steps", "explore"],
+    "intent_keywords_json": [
+      "decompose task",
+      "break down",
+      "plan steps",
+      "explore"
+    ],
     "confidence_threshold": 0.5
   },
   {
@@ -150,18 +435,54 @@
     "workflow": {
       "trunk": "modify_path",
       "branches": [
-        {"if": "new_path", "then": "insert_completion_path", "details": {"order_index": true}},
-        {"if": "new_task", "then": "insert_task", "details": {"link_to_milestone": true}},
-        {"if": "new_subtask", "then": "insert_subtask", "details": {"table": "subtasks", "priority": "high"}},
-        {"fallback": "prompt_user", "details": {"clarify": "Add to roadmap?"}}
+        {
+          "if": "new_path",
+          "then": "insert_completion_path",
+          "details": {
+            "order_index": true
+          }
+        },
+        {
+          "if": "new_task",
+          "then": "insert_task",
+          "details": {
+            "link_to_milestone": true
+          }
+        },
+        {
+          "if": "new_subtask",
+          "then": "insert_subtask",
+          "details": {
+            "table": "subtasks",
+            "priority": "high"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Add to roadmap?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "path_misaligned", "resolution": "Prompt user for roadmap alignment"},
-      {"issue": "duplicate_entry", "resolution": "Verify milestone/task uniqueness"}
+      {
+        "issue": "path_misaligned",
+        "resolution": "Prompt user for roadmap alignment"
+      },
+      {
+        "issue": "duplicate_entry",
+        "resolution": "Verify milestone/task uniqueness"
+      }
     ],
-    "intent_keywords_json": ["add path", "update roadmap", "milestone"],
+    "intent_keywords_json": [
+      "add path",
+      "update roadmap",
+      "milestone"
+    ],
     "confidence_threshold": 0.6
   },
   {
@@ -173,25 +494,96 @@
       "name": "file_operations",
       "description": "Handles file generation and metadata updates."
     },
-    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly. Detects user directive generated files and marks them with appropriate metadata. Core file generation directive; bridges code creation and database synchronization.",
+    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
     "md_file_path": "directives/project_file_write.md",
     "workflow": {
-      "trunk": "generate_file",
+      "trunk": "check_user_preferences",
       "branches": [
-        {"if": "file_path_starts_with_.aifp/user-directives/generated/", "then": "mark_as_user_directive_implementation", "details": {"metadata_tag": "user_directive_generated", "still_apply_fp_checks": true}},
-        {"if": "user_directive_file_and_compliant", "then": "write_file_and_link_to_directive", "details": {"update_db": true, "update_directive_implementations_table": true, "link_to_user_directive": true}},
-        {"if": "code_compliant", "then": "write_file", "details": {"metadata": true, "update_db": true}},
-        {"if": "non_compliant", "then": "fp_compliance_check", "details": {"escalate_to_fp_directives": true}},
-        {"fallback": "prompt_user", "details": {"clarify": "Fix compliance before write?"}}
+        {
+          "if": "directive_preferences_exist",
+          "then": "load_and_apply_preferences",
+          "details": {
+            "query": "SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name='project_file_write' AND active=1",
+            "apply_to": "code_generation_context",
+            "common_preferences": [
+              "always_add_docstrings",
+              "max_function_length",
+              "prefer_guard_clauses",
+              "code_style",
+              "indent_style"
+            ]
+          }
+        },
+        {
+          "if": "preferences_applied",
+          "then": "generate_file_with_preferences",
+          "details": {
+            "respect_user_settings": true,
+            "fallback_to_defaults": "if_preference_missing"
+          }
+        },
+        {
+          "if": "file_path_starts_with_.aifp/user-directives/generated/",
+          "then": "mark_as_user_directive_implementation",
+          "details": {
+            "metadata_tag": "user_directive_generated",
+            "still_apply_fp_checks": true
+          }
+        },
+        {
+          "if": "user_directive_file_and_compliant",
+          "then": "write_file_and_link_to_directive",
+          "details": {
+            "update_db": true,
+            "update_directive_implementations_table": true,
+            "link_to_user_directive": true
+          }
+        },
+        {
+          "if": "code_compliant",
+          "then": "write_file",
+          "details": {
+            "metadata": true,
+            "update_db": true
+          }
+        },
+        {
+          "if": "non_compliant",
+          "then": "fp_compliance_check",
+          "details": {
+            "escalate_to_fp_directives": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Fix compliance before write?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "missing_metadata", "resolution": "Add AIFP_METADATA, prompt user"},
-      {"issue": "fp_violation", "resolution": "Trigger fp_compliance_check"},
-      {"issue": "user_directive_link_missing", "resolution": "Parse file for directive reference in AIFP_METADATA or prompt user"}
+      {
+        "issue": "missing_metadata",
+        "resolution": "Add AIFP_METADATA, prompt user"
+      },
+      {
+        "issue": "fp_violation",
+        "resolution": "Trigger fp_compliance_check"
+      },
+      {
+        "issue": "user_directive_link_missing",
+        "resolution": "Parse file for directive reference in AIFP_METADATA or prompt user"
+      }
     ],
-    "intent_keywords_json": ["create file", "write code", "generate file"],
+    "intent_keywords_json": [
+      "create file",
+      "write code",
+      "generate file"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -208,21 +600,74 @@
     "workflow": {
       "trunk": "parse_content",
       "branches": [
-        {"if": "user_directive_generated_file", "then": "update_user_directives_db", "details": {"table": "directive_implementations", "link_to_user_directive": true, "store_file_path": true, "update_status": "implemented"}},
-        {"if": "user_directive_implementation_updated", "then": "continue_with_project_db_update", "details": {"proceed_to_standard_flow": true}},
-        {"if": "new_file", "then": "update_files_table", "details": {"checksum": true}},
-        {"if": "new_function", "then": "update_functions_table", "details": {"deps_json": true}},
-        {"if": "task_related", "then": "update_items_subtasks", "details": {"link_to_completion_path": true}},
-        {"fallback": "prompt_user", "details": {"clarify": "Update DB for what component?"}}
+        {
+          "if": "user_directive_generated_file",
+          "then": "update_user_directives_db",
+          "details": {
+            "table": "directive_implementations",
+            "link_to_user_directive": true,
+            "store_file_path": true,
+            "update_status": "implemented"
+          }
+        },
+        {
+          "if": "user_directive_implementation_updated",
+          "then": "continue_with_project_db_update",
+          "details": {
+            "proceed_to_standard_flow": true
+          }
+        },
+        {
+          "if": "new_file",
+          "then": "update_files_table",
+          "details": {
+            "checksum": true
+          }
+        },
+        {
+          "if": "new_function",
+          "then": "update_functions_table",
+          "details": {
+            "deps_json": true
+          }
+        },
+        {
+          "if": "task_related",
+          "then": "update_items_subtasks",
+          "details": {
+            "link_to_completion_path": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Update DB for what component?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "missing_metadata", "resolution": "Parse again or prompt user for function metadata"},
-      {"issue": "checksum_mismatch", "resolution": "Recalculate and resync file entry"},
-      {"issue": "user_directive_not_found", "resolution": "Parse file for directive reference or prompt user to link manually"}
+      {
+        "issue": "missing_metadata",
+        "resolution": "Parse again or prompt user for function metadata"
+      },
+      {
+        "issue": "checksum_mismatch",
+        "resolution": "Recalculate and resync file entry"
+      },
+      {
+        "issue": "user_directive_not_found",
+        "resolution": "Parse file for directive reference or prompt user to link manually"
+      }
     ],
-    "intent_keywords_json": ["update db", "track file", "metadata"],
+    "intent_keywords_json": [
+      "update db",
+      "track file",
+      "metadata"
+    ],
     "confidence_threshold": 0.6
   },
   {
@@ -234,22 +679,75 @@
       "name": "compliance",
       "description": "Verifies AIFP rule adherence and functional progress."
     },
-    "description": "Runs FP compliance directives to ensure code purity, no OOP, and structural correctness. Also verifies project completion alignment via project.db. Validates project state and functional integrity before database updates or completion marking.",
+    "description": "Runs FP compliance directives to ensure code purity, no OOP, and structural correctness. Also verifies project completion alignment via project.db. Respects user preferences for compliance strictness (e.g., fp_strictness_level, auto_fix_violations) and applies user-approved exceptions. Validates project state and functional integrity before database updates or completion marking.",
     "md_file_path": "directives/project_compliance_check.md",
     "workflow": {
-      "trunk": "run_checks",
+      "trunk": "check_user_preferences",
       "branches": [
-        {"if": "compliance_passed", "then": "proceed", "details": {"update_db": true}},
-        {"if": "compliance_failed", "then": "alert_user", "details": {"escalate_to_fp_directives": ["fp_purity", "fp_no_oop"]}},
-        {"fallback": "prompt_user", "details": {"clarify": "Resolve compliance issue manually?"}}
+        {
+          "if": "directive_preferences_exist",
+          "then": "load_compliance_preferences",
+          "details": {
+            "query": "SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name='project_compliance_check' AND active=1",
+            "also_check_user_settings": "fp_strictness_level",
+            "common_preferences": [
+              "auto_fix_violations",
+              "skip_warnings",
+              "strict_mode"
+            ]
+          }
+        },
+        {
+          "if": "preferences_loaded",
+          "then": "run_checks_with_preferences",
+          "details": {
+            "apply_strictness_level": true,
+            "respect_user_exceptions": true
+          }
+        },
+        {
+          "if": "compliance_passed",
+          "then": "proceed",
+          "details": {
+            "update_db": true
+          }
+        },
+        {
+          "if": "compliance_failed",
+          "then": "alert_user",
+          "details": {
+            "escalate_to_fp_directives": [
+              "fp_purity",
+              "fp_no_oop"
+            ]
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Resolve compliance issue manually?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "compliance_failure", "resolution": "Refer to FP directives and retry"},
-      {"issue": "fp_violation", "resolution": "Run linked fp_* directives automatically"}
+      {
+        "issue": "compliance_failure",
+        "resolution": "Refer to FP directives and retry"
+      },
+      {
+        "issue": "fp_violation",
+        "resolution": "Run linked fp_* directives automatically"
+      }
     ],
-    "intent_keywords_json": ["verify", "check compliance", "validate code"],
+    "intent_keywords_json": [
+      "verify",
+      "check compliance",
+      "validate code"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -266,17 +764,46 @@
     "workflow": {
       "trunk": "check_progress",
       "branches": [
-        {"if": "criteria_met", "then": "mark_done", "details": {"update_status": true}},
-        {"if": "drift_detected", "then": "alert_user", "details": {"log_note": true}},
-        {"fallback": "prompt_user", "details": {"clarify": "Adjust roadmap or tasks?"}}
+        {
+          "if": "criteria_met",
+          "then": "mark_done",
+          "details": {
+            "update_status": true
+          }
+        },
+        {
+          "if": "drift_detected",
+          "then": "alert_user",
+          "details": {
+            "log_note": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Adjust roadmap or tasks?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "roadmap_drift", "resolution": "Prompt user to realign completion_path"},
-      {"issue": "incomplete_tasks", "resolution": "Auto-mark pending subtasks or prompt user"}
+      {
+        "issue": "roadmap_drift",
+        "resolution": "Prompt user to realign completion_path"
+      },
+      {
+        "issue": "incomplete_tasks",
+        "resolution": "Auto-mark pending subtasks or prompt user"
+      }
     ],
-    "intent_keywords_json": ["progress", "check completion", "roadmap"],
+    "intent_keywords_json": [
+      "progress",
+      "check completion",
+      "roadmap"
+    ],
     "confidence_threshold": 0.6
   },
   {
@@ -293,17 +820,47 @@
     "workflow": {
       "trunk": "check_roadblocks",
       "branches": [
-        {"if": "known_issue", "then": "apply_resolution", "details": {"log_note": true}},
-        {"if": "unknown_issue", "then": "prompt_user", "details": {"escalate_to_md": true}},
-        {"fallback": "prompt_user", "details": {"clarify": "Resolve error manually?"}}
+        {
+          "if": "known_issue",
+          "then": "apply_resolution",
+          "details": {
+            "log_note": true
+          }
+        },
+        {
+          "if": "unknown_issue",
+          "then": "prompt_user",
+          "details": {
+            "escalate_to_md": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Resolve error manually?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "log_and_halt"}
+      "error_handling": {
+        "on_failure": "log_and_halt"
+      }
     },
     "roadblocks_json": [
-      {"issue": "generic_error", "resolution": "Prompt user and record in notes"},
-      {"issue": "workflow_failure", "resolution": "Escalate to associated .md file for guidance"}
+      {
+        "issue": "generic_error",
+        "resolution": "Prompt user and record in notes"
+      },
+      {
+        "issue": "workflow_failure",
+        "resolution": "Escalate to associated .md file for guidance"
+      }
     ],
-    "intent_keywords_json": ["error", "failure", "roadblock", "issue"],
+    "intent_keywords_json": [
+      "error",
+      "failure",
+      "roadblock",
+      "issue"
+    ],
     "confidence_threshold": 0.5
   },
   {
@@ -320,26 +877,147 @@
     "workflow": {
       "trunk": "detect_project_wide_change",
       "branches": [
-        {"if": "architecture_change", "then": "update_blueprint_section_2", "details": {"section": "Technical Blueprint", "update_db": ["project.version", "infrastructure"], "increment_version": true, "backup_blueprint": true}},
-        {"if": "goals_change", "then": "update_blueprint_section_1", "details": {"section": "Project Overview", "update_db": ["project.goals_json", "project.version"], "increment_version": true, "backup_blueprint": true}},
-        {"if": "themes_or_flows_change", "then": "update_blueprint_section_3", "details": {"section": "Project Themes & Flows", "update_db": ["themes", "flows", "project.version"], "increment_version": true, "backup_blueprint": true}},
-        {"if": "completion_path_change", "then": "update_blueprint_section_4", "details": {"section": "Completion Path", "update_db": ["completion_path", "milestones", "project.version"], "increment_version": true, "backup_blueprint": true}},
-        {"if": "infrastructure_change", "then": "update_blueprint_section_2_infrastructure", "details": {"section": "Technical Blueprint - Key Infrastructure", "update_db": ["infrastructure", "project.version"], "increment_version": true, "backup_blueprint": true}},
-        {"if": "pivot_detected", "then": "increment_version", "details": {"update_goals": true, "update_blueprint_section_1": true}},
-        {"if": "path_affected", "then": "update_completion_path", "details": {"log_note": true, "update_blueprint_section_4": true}},
-        {"if": "blueprint_updated", "then": "add_evolution_history", "details": {"section": "Section 5: Evolution History", "log_change": true, "show_version": true}},
-        {"parallel": ["backup_blueprint_to_aifp_backups", "log_evolution_to_notes"], "details": {"backup_path": ".aifp/backups/", "note_type": "evolution", "source": "directive", "directive_name": "project_evolution"}},
-        {"fallback": "prompt_user", "details": {"clarify": "Confirm pivot or adjust roadmap?"}}
+        {
+          "if": "architecture_change",
+          "then": "update_blueprint_section_2",
+          "details": {
+            "section": "Technical Blueprint",
+            "update_db": [
+              "project.version",
+              "infrastructure"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "goals_change",
+          "then": "update_blueprint_section_1",
+          "details": {
+            "section": "Project Overview",
+            "update_db": [
+              "project.goals_json",
+              "project.version"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "themes_or_flows_change",
+          "then": "update_blueprint_section_3",
+          "details": {
+            "section": "Project Themes & Flows",
+            "update_db": [
+              "themes",
+              "flows",
+              "project.version"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "completion_path_change",
+          "then": "update_blueprint_section_4",
+          "details": {
+            "section": "Completion Path",
+            "update_db": [
+              "completion_path",
+              "milestones",
+              "project.version"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "infrastructure_change",
+          "then": "update_blueprint_section_2_infrastructure",
+          "details": {
+            "section": "Technical Blueprint - Key Infrastructure",
+            "update_db": [
+              "infrastructure",
+              "project.version"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "pivot_detected",
+          "then": "increment_version",
+          "details": {
+            "update_goals": true,
+            "update_blueprint_section_1": true
+          }
+        },
+        {
+          "if": "path_affected",
+          "then": "update_completion_path",
+          "details": {
+            "log_note": true,
+            "update_blueprint_section_4": true
+          }
+        },
+        {
+          "if": "blueprint_updated",
+          "then": "add_evolution_history",
+          "details": {
+            "section": "Section 5: Evolution History",
+            "log_change": true,
+            "show_version": true
+          }
+        },
+        {
+          "parallel": [
+            "backup_blueprint_to_aifp_backups",
+            "log_evolution_to_notes"
+          ],
+          "details": {
+            "backup_path": ".aifp/backups/",
+            "note_type": "evolution",
+            "source": "directive",
+            "directive_name": "project_evolution"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Confirm pivot or adjust roadmap?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "pivot_ambiguity", "resolution": "Prompt user for new purpose and goals"},
-      {"issue": "version_conflict", "resolution": "Reconcile project version and completion_path entries"},
-      {"issue": "blueprint_missing", "resolution": "Generate new ProjectBlueprint.md from current database state"},
-      {"issue": "blueprint_update_failed", "resolution": "Backup current state and prompt user for manual update"}
+      {
+        "issue": "pivot_ambiguity",
+        "resolution": "Prompt user for new purpose and goals"
+      },
+      {
+        "issue": "version_conflict",
+        "resolution": "Reconcile project version and completion_path entries"
+      },
+      {
+        "issue": "blueprint_missing",
+        "resolution": "Generate new ProjectBlueprint.md from current database state"
+      },
+      {
+        "issue": "blueprint_update_failed",
+        "resolution": "Backup current state and prompt user for manual update"
+      }
     ],
-    "intent_keywords_json": ["pivot", "evolve", "update goals", "project change", "change architecture", "update infrastructure"],
+    "intent_keywords_json": [
+      "pivot",
+      "evolve",
+      "update goals",
+      "project change",
+      "change architecture",
+      "update infrastructure"
+    ],
     "confidence_threshold": 0.6
   },
   {
@@ -351,22 +1029,52 @@
       "name": "error_handling",
       "description": "Delegates unresolved issues back to the user."
     },
-    "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review. Standard fallback directive for AI–user collaboration. Ensures ambiguous operations always route through human confirmation.",
+    "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review. Standard fallback directive for AI\u2013user collaboration. Ensures ambiguous operations always route through human confirmation.",
     "md_file_path": "directives/project_user_referral.md",
     "workflow": {
       "trunk": "check_confidence",
       "branches": [
-        {"if": "low_confidence", "then": "prompt_user", "details": {"log_note": true}},
-        {"if": "workflow_failure", "then": "escalate_to_md", "details": {"prompt_user": true}},
-        {"fallback": "prompt_user", "details": {"clarify": "Resolve or confirm intended action?"}}
+        {
+          "if": "low_confidence",
+          "then": "prompt_user",
+          "details": {
+            "log_note": true
+          }
+        },
+        {
+          "if": "workflow_failure",
+          "then": "escalate_to_md",
+          "details": {
+            "prompt_user": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Resolve or confirm intended action?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "log_and_halt"}
+      "error_handling": {
+        "on_failure": "log_and_halt"
+      }
     },
     "roadblocks_json": [
-      {"issue": "unresolved_issue", "resolution": "Prompt user and record clarification in notes"},
-      {"issue": "low_confidence_path", "resolution": "Escalate to user confirmation"}
+      {
+        "issue": "unresolved_issue",
+        "resolution": "Prompt user and record clarification in notes"
+      },
+      {
+        "issue": "low_confidence_path",
+        "resolution": "Escalate to user confirmation"
+      }
     ],
-    "intent_keywords_json": ["clarify", "user input", "confirmation", "resolve"],
+    "intent_keywords_json": [
+      "clarify",
+      "user input",
+      "confirmation",
+      "resolve"
+    ],
     "confidence_threshold": 0.5
   },
   {
@@ -383,21 +1091,76 @@
     "workflow": {
       "trunk": "infer_metadata",
       "branches": [
-        {"if": "metadata_present", "then": "update_flow_themes", "details": {"confidence_score": true}},
-        {"if": "no_metadata", "then": "prompt_user", "details": {"assign_default": true}},
-        {"if": "theme_or_flow_updated", "then": "call_project_evolution", "details": {"change_type": "themes_or_flows_change", "trigger_blueprint_update": true, "update_section": 3}},
-        {"if": "new_theme_created", "then": "call_project_evolution", "details": {"change_type": "themes_or_flows_change", "trigger_blueprint_update": true}},
-        {"if": "new_flow_created", "then": "call_project_evolution", "details": {"change_type": "themes_or_flows_change", "trigger_blueprint_update": true}},
-        {"fallback": "prompt_user", "details": {"clarify": "Assign theme and flow manually?"}}
+        {
+          "if": "metadata_present",
+          "then": "update_flow_themes",
+          "details": {
+            "confidence_score": true
+          }
+        },
+        {
+          "if": "no_metadata",
+          "then": "prompt_user",
+          "details": {
+            "assign_default": true
+          }
+        },
+        {
+          "if": "theme_or_flow_updated",
+          "then": "call_project_evolution",
+          "details": {
+            "change_type": "themes_or_flows_change",
+            "trigger_blueprint_update": true,
+            "update_section": 3
+          }
+        },
+        {
+          "if": "new_theme_created",
+          "then": "call_project_evolution",
+          "details": {
+            "change_type": "themes_or_flows_change",
+            "trigger_blueprint_update": true
+          }
+        },
+        {
+          "if": "new_flow_created",
+          "then": "call_project_evolution",
+          "details": {
+            "change_type": "themes_or_flows_change",
+            "trigger_blueprint_update": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Assign theme and flow manually?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "ambiguous_mapping", "resolution": "Prompt user to specify theme or flow"},
-      {"issue": "missing_metadata", "resolution": "Parse file for AIFP_METADATA or prompt user"},
-      {"issue": "blueprint_update_failed", "resolution": "Continue with DB update but log warning about blueprint sync"}
+      {
+        "issue": "ambiguous_mapping",
+        "resolution": "Prompt user to specify theme or flow"
+      },
+      {
+        "issue": "missing_metadata",
+        "resolution": "Parse file for AIFP_METADATA or prompt user"
+      },
+      {
+        "issue": "blueprint_update_failed",
+        "resolution": "Continue with DB update but log warning about blueprint sync"
+      }
     ],
-    "intent_keywords_json": ["theme", "flow", "grouping", "categorize"],
+    "intent_keywords_json": [
+      "theme",
+      "flow",
+      "grouping",
+      "categorize"
+    ],
     "confidence_threshold": 0.5
   },
   {
@@ -414,17 +1177,43 @@
     "workflow": {
       "trunk": "gather_metrics",
       "branches": [
-        {"if": "completion_path_available", "then": "compute_progress", "details": {"aggregate": true}},
-        {"if": "function_table_updated", "then": "calculate_compliance_score", "details": {"fp_links": true}},
-        {"fallback": "log_metrics_to_notes"}
+        {
+          "if": "completion_path_available",
+          "then": "compute_progress",
+          "details": {
+            "aggregate": true
+          }
+        },
+        {
+          "if": "function_table_updated",
+          "then": "calculate_compliance_score",
+          "details": {
+            "fp_links": true
+          }
+        },
+        {
+          "fallback": "log_metrics_to_notes"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "missing_task_data", "resolution": "Requery project.db and retry"},
-      {"issue": "stale_metrics", "resolution": "Recalculate from base tables"}
+      {
+        "issue": "missing_task_data",
+        "resolution": "Requery project.db and retry"
+      },
+      {
+        "issue": "stale_metrics",
+        "resolution": "Recalculate from base tables"
+      }
     ],
-    "intent_keywords_json": ["progress", "metrics", "statistics"],
+    "intent_keywords_json": [
+      "progress",
+      "metrics",
+      "statistics"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -441,16 +1230,33 @@
     "workflow": {
       "trunk": "summarize_recent_runs",
       "branches": [
-        {"if": "error_logs_present", "then": "analyze_failures"},
-        {"if": "recent_successes", "then": "record_success_rate"},
-        {"fallback": "write_summary_to_notes"}
+        {
+          "if": "error_logs_present",
+          "then": "analyze_failures"
+        },
+        {
+          "if": "recent_successes",
+          "then": "record_success_rate"
+        },
+        {
+          "fallback": "write_summary_to_notes"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "missing_logs", "resolution": "Query notes table for directive references"}
+      {
+        "issue": "missing_logs",
+        "resolution": "Query notes table for directive references"
+      }
     ],
-    "intent_keywords_json": ["summary", "audit", "performance"],
+    "intent_keywords_json": [
+      "summary",
+      "audit",
+      "performance"
+    ],
     "confidence_threshold": 0.6
   },
   {
@@ -467,17 +1273,37 @@
     "workflow": {
       "trunk": "compare_db_and_files",
       "branches": [
-        {"if": "missing_function_in_db", "then": "insert_function_entry"},
-        {"if": "db_function_stale", "then": "update_dependency_entry"},
-        {"if": "unlinked_file", "then": "link_to_flow"},
-        {"fallback": "log_sync_status"}
+        {
+          "if": "missing_function_in_db",
+          "then": "insert_function_entry"
+        },
+        {
+          "if": "db_function_stale",
+          "then": "update_dependency_entry"
+        },
+        {
+          "if": "unlinked_file",
+          "then": "link_to_flow"
+        },
+        {
+          "fallback": "log_sync_status"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "unresolved_dependency", "resolution": "Prompt user to confirm update direction"}
+      {
+        "issue": "unresolved_dependency",
+        "resolution": "Prompt user to confirm update direction"
+      }
     ],
-    "intent_keywords_json": ["dependency", "sync", "link"],
+    "intent_keywords_json": [
+      "dependency",
+      "sync",
+      "link"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -494,16 +1320,33 @@
     "workflow": {
       "trunk": "run_integrity_queries",
       "branches": [
-        {"if": "missing_foreign_key", "then": "repair_link"},
-        {"if": "checksum_error", "then": "recalculate_file_checksum"},
-        {"fallback": "log_integrity_status"}
+        {
+          "if": "missing_foreign_key",
+          "then": "repair_link"
+        },
+        {
+          "if": "checksum_error",
+          "then": "recalculate_file_checksum"
+        },
+        {
+          "fallback": "log_integrity_status"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "data_misalignment", "resolution": "Auto-correct links where safe"}
+      {
+        "issue": "data_misalignment",
+        "resolution": "Auto-correct links where safe"
+      }
     ],
-    "intent_keywords_json": ["integrity", "verify database", "consistency"],
+    "intent_keywords_json": [
+      "integrity",
+      "verify database",
+      "consistency"
+    ],
     "confidence_threshold": 0.8
   },
   {
@@ -520,16 +1363,33 @@
     "workflow": {
       "trunk": "detect_incomplete_tasks",
       "branches": [
-        {"if": "task_paused", "then": "resume_from_checkpoint"},
-        {"if": "sidequest_paused", "then": "prompt_resume"},
-        {"fallback": "mark_as_resolved"}
+        {
+          "if": "task_paused",
+          "then": "resume_from_checkpoint"
+        },
+        {
+          "if": "sidequest_paused",
+          "then": "prompt_resume"
+        },
+        {
+          "fallback": "mark_as_resolved"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "resume_conflict", "resolution": "Prompt user to choose branch or discard task"}
+      {
+        "issue": "resume_conflict",
+        "resolution": "Prompt user to choose branch or discard task"
+      }
     ],
-    "intent_keywords_json": ["resume", "continue", "checkpoint"],
+    "intent_keywords_json": [
+      "resume",
+      "continue",
+      "checkpoint"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -546,16 +1406,33 @@
     "workflow": {
       "trunk": "perform_backup",
       "branches": [
-        {"if": "scheduled_backup_time", "then": "execute_backup"},
-        {"if": "restore_requested", "then": "load_backup"},
-        {"fallback": "log_backup_status"}
+        {
+          "if": "scheduled_backup_time",
+          "then": "execute_backup"
+        },
+        {
+          "if": "restore_requested",
+          "then": "load_backup"
+        },
+        {
+          "fallback": "log_backup_status"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "backup_failure", "resolution": "Prompt user to retry or restore manually"}
+      {
+        "issue": "backup_failure",
+        "resolution": "Prompt user to retry or restore manually"
+      }
     ],
-    "intent_keywords_json": ["backup", "restore", "recovery"],
+    "intent_keywords_json": [
+      "backup",
+      "restore",
+      "recovery"
+    ],
     "confidence_threshold": 0.6
   },
   {
@@ -572,16 +1449,33 @@
     "workflow": {
       "trunk": "prepare_archive",
       "branches": [
-        {"if": "project_completed", "then": "compress_and_store"},
-        {"if": "incomplete_milestones", "then": "prompt_user_to_finalize"},
-        {"fallback": "log_archive_status"}
+        {
+          "if": "project_completed",
+          "then": "compress_and_store"
+        },
+        {
+          "if": "incomplete_milestones",
+          "then": "prompt_user_to_finalize"
+        },
+        {
+          "fallback": "log_archive_status"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "archive_incomplete", "resolution": "Prompt user for approval before packaging"}
+      {
+        "issue": "archive_incomplete",
+        "resolution": "Prompt user for approval before packaging"
+      }
     ],
-    "intent_keywords_json": ["archive", "package", "finalize"],
+    "intent_keywords_json": [
+      "archive",
+      "package",
+      "finalize"
+    ],
     "confidence_threshold": 0.8
   },
   {
@@ -598,16 +1492,32 @@
     "workflow": {
       "trunk": "analyze_completion_path",
       "branches": [
-        {"if": "duplicate_milestone", "then": "merge_entries"},
-        {"if": "order_misaligned", "then": "reorder_path"},
-        {"fallback": "log_changes"}
+        {
+          "if": "duplicate_milestone",
+          "then": "merge_entries"
+        },
+        {
+          "if": "order_misaligned",
+          "then": "reorder_path"
+        },
+        {
+          "fallback": "log_changes"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "path_conflict", "resolution": "Prompt user for reorder approval"}
+      {
+        "issue": "path_conflict",
+        "resolution": "Prompt user for reorder approval"
+      }
     ],
-    "intent_keywords_json": ["refactor path", "reorder roadmap"],
+    "intent_keywords_json": [
+      "refactor path",
+      "reorder roadmap"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -624,15 +1534,29 @@
     "workflow": {
       "trunk": "generate_dependency_graph",
       "branches": [
-        {"if": "linked_entities_found", "then": "store_dependency_map"},
-        {"fallback": "log_dependency_status"}
+        {
+          "if": "linked_entities_found",
+          "then": "store_dependency_map"
+        },
+        {
+          "fallback": "log_dependency_status"
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "missing_links", "resolution": "Rebuild function-to-task relationships"}
+      {
+        "issue": "missing_links",
+        "resolution": "Rebuild function-to-task relationships"
+      }
     ],
-    "intent_keywords_json": ["dependency map", "graph", "visualize"],
+    "intent_keywords_json": [
+      "dependency map",
+      "graph",
+      "visualize"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -649,16 +1573,36 @@
     "workflow": {
       "trunk": "summarize_project_state",
       "branches": [
-        {"if": "active_tasks_found", "then": "summarize_by_path"},
-        {"if": "completed_milestones", "then": "log_completion_summary"},
-        {"fallback": "prompt_user", "details": {"clarify": "Include additional context?"}}
+        {
+          "if": "active_tasks_found",
+          "then": "summarize_by_path"
+        },
+        {
+          "if": "completed_milestones",
+          "then": "log_completion_summary"
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Include additional context?"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "summary_generation_failed", "resolution": "Retry summary or prompt user for context"}
+      {
+        "issue": "summary_generation_failed",
+        "resolution": "Retry summary or prompt user for context"
+      }
     ],
-    "intent_keywords_json": ["summary", "status", "report"],
+    "intent_keywords_json": [
+      "summary",
+      "status",
+      "report"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -670,37 +1614,201 @@
       "name": "status_management",
       "description": "Retrieves comprehensive project status with context-aware task continuation support."
     },
-    "description": "Retrieves comprehensive project status with historical context for task continuation. For existing projects: reads ProjectBlueprint.md, loads infrastructure, builds priority status tree (sidequests → subtasks → tasks), provides historical context from previous tasks, checks for ambiguities, and generates status report. For new projects: checks for .aifp/ folder, checks .git/.aifp/ backup, prompts for restoration or initialization.",
+    "description": "Retrieves comprehensive project status with historical context for task continuation. For existing projects: reads ProjectBlueprint.md, loads infrastructure, builds priority status tree (sidequests \u2192 subtasks \u2192 tasks), provides historical context from previous tasks, checks for ambiguities, and generates status report. For new projects: checks for .aifp/ folder, checks .git/.aifp/ backup, prompts for restoration or initialization.",
     "md_file_path": "directives/aifp_status.md",
     "workflow": {
       "trunk": "determine_project_state",
       "branches": [
-        {"if": "aifp_folder_exists", "then": "get_existing_project_status", "details": {"call_helper": "get_project_status"}},
-        {"if": "no_aifp_folder", "then": "check_git_aifp_backup", "details": {"check_path": ".git/.aifp/ProjectBlueprint.md"}},
-        {"if": "git_backup_found", "then": "prompt_restore_or_init", "details": {"options": ["restore", "init_new", "exit"]}},
-        {"if": "no_backups", "then": "prompt_init_new_project", "details": {"suggest_project_init": true}},
-        {"if": "existing_project", "then": "read_project_blueprint", "details": {"call_helper": "project_blueprint_read", "path": ".aifp/ProjectBlueprint.md"}},
-        {"if": "blueprint_read", "then": "load_infrastructure_context", "details": {"query": "SELECT type, value, description FROM infrastructure WHERE project_id = ?"}},
-        {"if": "infrastructure_loaded", "then": "check_user_directives_status", "details": {"query": "SELECT user_directives_status FROM project WHERE id = ?", "include_in_report": true}},
-        {"if": "user_directives_active", "then": "query_user_directive_stats", "details": {"count_active": true, "get_last_execution": true, "get_error_count": true}},
-        {"if": "user_directive_stats_gathered", "then": "build_priority_status_tree", "details": {"priority_order": ["sidequests", "subtasks", "tasks"], "context_limit": 10}},
-        {"if": "open_sidequests_found", "then": "get_sidequest_context", "details": {"get_parent_task": true, "get_all_items": true, "get_previous_task_if_no_completed": true, "previous_task_item_limit": 10}},
-        {"if": "no_sidequests_open_subtasks", "then": "get_subtask_context", "details": {"get_parent_task": true, "get_all_items": true, "get_previous_task_if_no_completed": true, "previous_task_item_limit": 10}},
-        {"if": "no_subtasks_open_tasks", "then": "get_task_context", "details": {"get_all_items": true, "evaluate_completed_vs_incomplete": true, "order_incomplete": true}},
-        {"if": "context_gathered", "then": "check_for_ambiguities", "details": {"query_notes": true, "filter_severity": ["warning", "error"], "filter_source": ["directive", "ai"], "limit": 5}},
-        {"if": "auto_run_mode", "then": "auto_browse_for_context", "details": {"browse_flows": true, "browse_functions": true, "browse_notes": true}},
-        {"if": "status_complete", "then": "generate_status_report", "details": {"sections": ["current_focus", "open_items", "recently_completed", "historical_context", "ambiguities", "next_actions"]}},
-        {"fallback": "prompt_user", "details": {"clarify": "Unable to determine project state"}}
+        {
+          "if": "aifp_folder_exists",
+          "then": "sync_git_state_on_boot",
+          "details": {
+            "trigger": "git_sync_state directive",
+            "action": "Detect external changes and sync Git hash"
+          }
+        },
+        {
+          "if": "git_synced",
+          "then": "get_existing_project_status",
+          "details": {
+            "call_helper": "get_project_status"
+          }
+        },
+        {
+          "if": "no_aifp_folder",
+          "then": "check_git_aifp_backup",
+          "details": {
+            "check_path": ".git/.aifp/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "git_backup_found",
+          "then": "prompt_restore_or_init",
+          "details": {
+            "options": [
+              "restore",
+              "init_new",
+              "exit"
+            ]
+          }
+        },
+        {
+          "if": "no_backups",
+          "then": "prompt_init_new_project",
+          "details": {
+            "suggest_project_init": true
+          }
+        },
+        {
+          "if": "existing_project",
+          "then": "read_project_blueprint",
+          "details": {
+            "call_helper": "project_blueprint_read",
+            "path": ".aifp/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "blueprint_read",
+          "then": "load_infrastructure_context",
+          "details": {
+            "query": "SELECT type, value, description FROM infrastructure WHERE project_id = ?"
+          }
+        },
+        {
+          "if": "infrastructure_loaded",
+          "then": "check_user_directives_status",
+          "details": {
+            "query": "SELECT user_directives_status FROM project WHERE id = ?",
+            "include_in_report": true
+          }
+        },
+        {
+          "if": "user_directives_active",
+          "then": "query_user_directive_stats",
+          "details": {
+            "count_active": true,
+            "get_last_execution": true,
+            "get_error_count": true
+          }
+        },
+        {
+          "if": "user_directive_stats_gathered",
+          "then": "build_priority_status_tree",
+          "details": {
+            "priority_order": [
+              "sidequests",
+              "subtasks",
+              "tasks"
+            ],
+            "context_limit": 10
+          }
+        },
+        {
+          "if": "open_sidequests_found",
+          "then": "get_sidequest_context",
+          "details": {
+            "get_parent_task": true,
+            "get_all_items": true,
+            "get_previous_task_if_no_completed": true,
+            "previous_task_item_limit": 10
+          }
+        },
+        {
+          "if": "no_sidequests_open_subtasks",
+          "then": "get_subtask_context",
+          "details": {
+            "get_parent_task": true,
+            "get_all_items": true,
+            "get_previous_task_if_no_completed": true,
+            "previous_task_item_limit": 10
+          }
+        },
+        {
+          "if": "no_subtasks_open_tasks",
+          "then": "get_task_context",
+          "details": {
+            "get_all_items": true,
+            "evaluate_completed_vs_incomplete": true,
+            "order_incomplete": true
+          }
+        },
+        {
+          "if": "context_gathered",
+          "then": "check_for_ambiguities",
+          "details": {
+            "query_notes": true,
+            "filter_severity": [
+              "warning",
+              "error"
+            ],
+            "filter_source": [
+              "directive",
+              "ai"
+            ],
+            "limit": 5
+          }
+        },
+        {
+          "if": "auto_run_mode",
+          "then": "auto_browse_for_context",
+          "details": {
+            "browse_flows": true,
+            "browse_functions": true,
+            "browse_notes": true
+          }
+        },
+        {
+          "if": "status_complete",
+          "then": "generate_status_report",
+          "details": {
+            "sections": [
+              "current_focus",
+              "open_items",
+              "recently_completed",
+              "historical_context",
+              "ambiguities",
+              "next_actions"
+            ]
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Unable to determine project state"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "blueprint_missing", "resolution": "Attempt to load from database, generate new blueprint if needed"},
-      {"issue": "no_open_work_items", "resolution": "Report project as idle, suggest next milestone or task creation"},
-      {"issue": "database_empty", "resolution": "Inform user project initialized but no tasks created yet"},
-      {"issue": "ambiguity_detected", "resolution": "Present ambiguities to user and offer to browse DB for more context"}
+      {
+        "issue": "blueprint_missing",
+        "resolution": "Attempt to load from database, generate new blueprint if needed"
+      },
+      {
+        "issue": "no_open_work_items",
+        "resolution": "Report project as idle, suggest next milestone or task creation"
+      },
+      {
+        "issue": "database_empty",
+        "resolution": "Inform user project initialized but no tasks created yet"
+      },
+      {
+        "issue": "ambiguity_detected",
+        "resolution": "Present ambiguities to user and offer to browse DB for more context"
+      }
     ],
-    "intent_keywords_json": ["status", "continue", "resume", "what's next", "show status", "project status", "where were we"],
+    "intent_keywords_json": [
+      "status",
+      "continue",
+      "resume",
+      "what's next",
+      "show status",
+      "project status",
+      "where were we"
+    ],
     "confidence_threshold": 0.8
   },
   {
@@ -717,20 +1825,78 @@
     "workflow": {
       "trunk": "read_blueprint_file",
       "branches": [
-        {"if": "blueprint_exists", "then": "parse_markdown_sections", "details": {"sections": [1, 2, 3, 4, 5, 6, 7], "return_structured_data": true}},
-        {"if": "blueprint_missing", "then": "check_database_fallback", "details": {"query_project_table": true, "query_infrastructure": true, "query_themes": true, "query_flows": true}},
-        {"if": "database_fallback_success", "then": "return_db_data", "details": {"warn_user": "Blueprint missing, using database data"}},
-        {"if": "parse_complete", "then": "return_structured_data", "details": {"include_checksum": true, "compare_with_db": true, "db_checksum_field": "project.blueprint_checksum"}},
-        {"fallback": "prompt_user", "details": {"clarify": "Blueprint not found and database empty"}}
+        {
+          "if": "blueprint_exists",
+          "then": "parse_markdown_sections",
+          "details": {
+            "sections": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "return_structured_data": true
+          }
+        },
+        {
+          "if": "blueprint_missing",
+          "then": "check_database_fallback",
+          "details": {
+            "query_project_table": true,
+            "query_infrastructure": true,
+            "query_themes": true,
+            "query_flows": true
+          }
+        },
+        {
+          "if": "database_fallback_success",
+          "then": "return_db_data",
+          "details": {
+            "warn_user": "Blueprint missing, using database data"
+          }
+        },
+        {
+          "if": "parse_complete",
+          "then": "return_structured_data",
+          "details": {
+            "include_checksum": true,
+            "compare_with_db": true,
+            "db_checksum_field": "project.blueprint_checksum"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Blueprint not found and database empty"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "prompt_user"}
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
     },
     "roadblocks_json": [
-      {"issue": "blueprint_corrupted", "resolution": "Attempt to parse sections individually, use database fallback for missing sections"},
-      {"issue": "markdown_parse_error", "resolution": "Use database data and offer to regenerate blueprint"},
-      {"issue": "checksum_mismatch", "resolution": "Warn user about potential blueprint/DB desync"}
+      {
+        "issue": "blueprint_corrupted",
+        "resolution": "Attempt to parse sections individually, use database fallback for missing sections"
+      },
+      {
+        "issue": "markdown_parse_error",
+        "resolution": "Use database data and offer to regenerate blueprint"
+      },
+      {
+        "issue": "checksum_mismatch",
+        "resolution": "Warn user about potential blueprint/DB desync"
+      }
     ],
-    "intent_keywords_json": ["read blueprint", "load blueprint", "parse blueprint"],
+    "intent_keywords_json": [
+      "read blueprint",
+      "load blueprint",
+      "parse blueprint"
+    ],
     "confidence_threshold": 0.7
   },
   {
@@ -747,26 +1913,105 @@
     "workflow": {
       "trunk": "validate_parameters",
       "branches": [
-        {"if": "parameters_valid", "then": "read_current_blueprint", "details": {"call_helper": "project_blueprint_read"}},
-        {"if": "blueprint_read", "then": "backup_current_blueprint", "details": {"backup_to": ".aifp/backups/ProjectBlueprint.md.v{version}", "include_timestamp": true}},
-        {"if": "backup_complete", "then": "replace_section_content", "details": {"section_number": "from_params", "new_content": "from_params"}},
-        {"if": "increment_version_requested", "then": "update_version_and_date", "details": {"increment_project_version_in_db": true, "update_last_updated_date": true}},
-        {"if": "version_incremented", "then": "add_evolution_history_entry", "details": {"section": 5, "log_change": true, "show_version": true, "show_date": true}},
-        {"if": "section_replaced", "then": "write_updated_blueprint", "details": {"path": ".aifp/ProjectBlueprint.md"}},
-        {"if": "write_complete", "then": "update_blueprint_checksum", "details": {"update_checksum": true, "table": "project", "field": "blueprint_checksum"}},
-        {"if": "update_complete", "then": "return_success", "details": {"show_new_version": true}},
-        {"fallback": "prompt_user", "details": {"clarify": "Blueprint update failed"}}
+        {
+          "if": "parameters_valid",
+          "then": "read_current_blueprint",
+          "details": {
+            "call_helper": "project_blueprint_read"
+          }
+        },
+        {
+          "if": "blueprint_read",
+          "then": "backup_current_blueprint",
+          "details": {
+            "backup_to": ".aifp/backups/ProjectBlueprint.md.v{version}",
+            "include_timestamp": true
+          }
+        },
+        {
+          "if": "backup_complete",
+          "then": "replace_section_content",
+          "details": {
+            "section_number": "from_params",
+            "new_content": "from_params"
+          }
+        },
+        {
+          "if": "increment_version_requested",
+          "then": "update_version_and_date",
+          "details": {
+            "increment_project_version_in_db": true,
+            "update_last_updated_date": true
+          }
+        },
+        {
+          "if": "version_incremented",
+          "then": "add_evolution_history_entry",
+          "details": {
+            "section": 5,
+            "log_change": true,
+            "show_version": true,
+            "show_date": true
+          }
+        },
+        {
+          "if": "section_replaced",
+          "then": "write_updated_blueprint",
+          "details": {
+            "path": ".aifp/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "write_complete",
+          "then": "update_blueprint_checksum",
+          "details": {
+            "update_checksum": true,
+            "table": "project",
+            "field": "blueprint_checksum"
+          }
+        },
+        {
+          "if": "update_complete",
+          "then": "return_success",
+          "details": {
+            "show_new_version": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Blueprint update failed"
+          }
+        }
       ],
-      "error_handling": {"on_failure": "restore_from_backup", "prompt_user": true}
+      "error_handling": {
+        "on_failure": "restore_from_backup",
+        "prompt_user": true
+      }
     },
     "roadblocks_json": [
-      {"issue": "section_not_found", "resolution": "Warn user and append new section to blueprint"},
-      {"issue": "backup_failed", "resolution": "Abort update and prompt user"},
-      {"issue": "write_failed", "resolution": "Restore from backup and prompt user"},
-      {"issue": "version_conflict", "resolution": "Prompt user to resolve version manually"}
+      {
+        "issue": "section_not_found",
+        "resolution": "Warn user and append new section to blueprint"
+      },
+      {
+        "issue": "backup_failed",
+        "resolution": "Abort update and prompt user"
+      },
+      {
+        "issue": "write_failed",
+        "resolution": "Restore from backup and prompt user"
+      },
+      {
+        "issue": "version_conflict",
+        "resolution": "Prompt user to resolve version manually"
+      }
     ],
-    "intent_keywords_json": ["update blueprint", "modify blueprint", "change blueprint section"],
+    "intent_keywords_json": [
+      "update blueprint",
+      "modify blueprint",
+      "change blueprint section"
+    ],
     "confidence_threshold": 0.7
   }
 ]
-

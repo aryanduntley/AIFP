@@ -3,18 +3,19 @@
 **Purpose**: Restructure database architecture to properly separate immutable MCP configuration from mutable project state and user preferences.
 
 **Date Created**: 2025-10-12
-**Date Completed**: 2025-10-12
-**Status**: Schema Design Complete - Ready for Implementation
+**Date Completed**: 2025-10-23 (with Git integration)
+**Status**: Documentation & Planning Complete - Implementation Not Started
 
 ---
 
 ## Overview
 
-The current design has architectural conflicts around the notes table and runtime state management. This plan establishes a clear three-database architecture:
+The current design has architectural conflicts around the notes table and runtime state management. This plan establishes a clear **four-database architecture**:
 
 1. **aifp_core.db** - Read-only MCP configuration (shipped with MCP)
-2. **project.db** - Mutable project state (in `.aifp-project/`)
+2. **project.db** - Mutable project state (in `.aifp-project/`) - **v1.1 with Git integration**
 3. **user_preferences.db** - User/project-specific AI behavior customization (in `.aifp-project/`)
+4. **user_directives.db** - User-defined automation directives (in `.aifp-project/`) **NEW**
 
 ---
 
@@ -270,6 +271,124 @@ INSERT INTO tracking_settings (feature_name, enabled, description, estimated_tok
 
 ---
 
+### Database 4: user_directives.db (NEW - User-Defined Automation)
+
+**Location**: `.aifp-project/user_directives.db`
+**Mutability**: Updated during directive parsing, validation, and execution
+**Purpose**: Store user-defined automation directives parsed from YAML/JSON/TXT files
+
+#### Tables
+
+**user_directives**:
+```sql
+CREATE TABLE IF NOT EXISTS user_directives (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    trigger_type TEXT NOT NULL,                 -- 'time', 'condition', 'event', 'manual'
+    trigger_definition TEXT NOT NULL,           -- JSON: cron schedule, condition, event source
+    implementation_file_path TEXT,              -- Path to generated implementation code
+    status TEXT DEFAULT 'draft',                -- 'draft', 'validated', 'active', 'paused', 'error'
+    validation_errors TEXT,                     -- JSON array of validation issues
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**directive_executions**:
+```sql
+CREATE TABLE IF NOT EXISTS directive_executions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_directive_id INTEGER NOT NULL,
+    execution_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status TEXT NOT NULL,                       -- 'success', 'failure', 'partial'
+    duration_ms INTEGER,
+    error_message TEXT,
+    FOREIGN KEY (user_directive_id) REFERENCES user_directives(id) ON DELETE CASCADE
+);
+```
+
+**directive_dependencies**:
+```sql
+CREATE TABLE IF NOT EXISTS directive_dependencies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_directive_id INTEGER NOT NULL,
+    dependency_type TEXT NOT NULL,              -- 'package', 'api', 'file'
+    dependency_name TEXT NOT NULL,
+    version_requirement TEXT,
+    installed BOOLEAN DEFAULT 0,
+    FOREIGN KEY (user_directive_id) REFERENCES user_directives(id) ON DELETE CASCADE
+);
+```
+
+See `docs/db-schema/schemaExampleUserDirectives.sql` for complete schema.
+
+---
+
+## Git Integration (Added v1.1)
+
+### project.db Enhancements
+
+**New Fields in project table**:
+```sql
+ALTER TABLE project ADD COLUMN last_known_git_hash TEXT;
+ALTER TABLE project ADD COLUMN last_git_sync DATETIME;
+```
+
+**New Table: work_branches** (Multi-user collaboration):
+```sql
+CREATE TABLE IF NOT EXISTS work_branches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    branch_name TEXT UNIQUE NOT NULL,           -- e.g., 'aifp-alice-001', 'aifp-ai-claude-001'
+    user_name TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    status TEXT DEFAULT 'active',
+    created_from TEXT DEFAULT 'main',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    merged_at DATETIME NULL,
+    merge_conflicts_count INTEGER DEFAULT 0,
+    merge_resolution_strategy TEXT,
+    metadata_json TEXT
+);
+```
+
+**New Table: merge_history** (FP-powered conflict resolution):
+```sql
+CREATE TABLE IF NOT EXISTS merge_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_branch TEXT NOT NULL,
+    target_branch TEXT DEFAULT 'main',
+    merge_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    conflicts_detected INTEGER DEFAULT 0,
+    conflicts_auto_resolved INTEGER DEFAULT 0,
+    conflicts_manual_resolved INTEGER DEFAULT 0,
+    resolution_details TEXT,                    -- JSON: detailed resolution log
+    merged_by TEXT,
+    merge_commit_hash TEXT
+);
+```
+
+**6 New Git Directives**:
+1. `git_init` - Initialize or integrate with Git repository
+2. `git_detect_external_changes` - Detect code modifications outside AIFP
+3. `git_create_branch` - Create user/AI work branches (aifp-{user}-{number})
+4. `git_detect_conflicts` - FP-powered conflict detection before merge
+5. `git_merge_branch` - Merge with AI-assisted conflict resolution
+6. `git_sync_state` - Synchronize Git hash with project.db
+
+**9 New Git Helper Functions**:
+- `get_current_commit_hash(project_root)`
+- `detect_external_changes(project_root)`
+- `create_work_branch(user_name, purpose, project_root)`
+- `get_branch_metadata(branch_name, project_root)`
+- `detect_conflicts_before_merge(source_branch, target_branch, project_root)`
+- `merge_with_fp_intelligence(source_branch, project_root)`
+- `log_merge_history(merge_data, project_root)`
+- `get_user_from_git_config(project_root)`
+- `update_git_sync_state(project_root)`
+
+---
+
 ## Integration Points
 
 ### 1. Directive Execution Flow
@@ -405,7 +524,32 @@ The directive JSON files contain a `"notes"` field that provides additional cont
 - [ ] Add to sync-directives.py as optional initialization
 - [ ] Create extract-preferences.py for export
 
-### Phase 4: Implement User Preferences Directives (Medium Priority)
+### Phase 3.5: Create user_directives.db (Medium Priority)
+- [x] Create new schema file: `schemaExampleUserDirectives.sql`
+- [x] Implement tables:
+  - [x] user_directives
+  - [x] directive_executions
+  - [x] directive_dependencies
+  - [x] generated_code_references
+  - [x] directive_source_tracking
+- [x] Add schema_version table
+- [ ] Add to sync-directives.py as optional initialization
+
+### Phase 3.6: Add Git Integration to project.db (High Priority) ✅ COMPLETE
+- [x] Add Git fields to project table:
+  - [x] `last_known_git_hash TEXT`
+  - [x] `last_git_sync DATETIME`
+- [x] Create work_branches table for multi-user/multi-AI collaboration
+- [x] Create merge_history table for FP-powered conflict resolution
+- [x] Add indexes for Git collaboration tables:
+  - [x] `idx_work_branches_user`
+  - [x] `idx_work_branches_status`
+  - [x] `idx_merge_history_timestamp`
+  - [x] `idx_merge_history_source`
+- [x] Update schema_version to 1.1
+- [x] Create migration path (v1.0 → v1.1) in migration-scripts-plan.md
+
+### Phase 4: Implement User Preferences Directives (Medium Priority) ✅ COMPLETE
 - [x] Create directives-user-pref.json with 7 new directives:
   - [x] user_preferences_sync - Loads and applies preferences
   - [x] user_preferences_update - Maps user requests to directives (uses find_directive_by_intent helper)
@@ -415,12 +559,50 @@ The directive JSON files contain a `"notes"` field that provides additional cont
   - [x] project_notes_log - Handles logging to project.db with directive_name field
   - [x] tracking_toggle - Enables/disables tracking features
 - [ ] Create markdown documentation (7 .md files in directives/)
-- [ ] Add to directives-interactions.json:
-  - [ ] aifp_run → user_preferences_sync (triggers)
-  - [ ] user_preferences_sync → user_preferences_update (depends_on)
-  - [ ] user_preferences_update → find_directive_by_intent helper (fp_reference)
-  - [ ] project_file_write → user_preferences_sync (cross_link)
-  - [ ] project_compliance_check → user_preferences_sync (cross_link)
+- [x] Add to directives-interactions.json:
+  - [x] aifp_run → user_preferences_sync (triggers)
+  - [x] user_preferences_sync → user_preferences_update (depends_on)
+  - [x] user_preferences_update → find_directive_by_intent helper (fp_reference)
+  - [x] project_file_write → user_preferences_sync (cross_link)
+  - [x] project_compliance_check → user_preferences_sync (cross_link)
+- [x] **Update directive workflows with explicit preference checking** 🆕:
+  - [x] project_file_write: Added "check_user_preferences" trunk and preference loading branches
+  - [x] project_compliance_check: Added explicit preference checking for compliance strictness
+  - [x] project_task_decomposition: Added explicit preference checking for task decomposition style
+  - [x] Added 12 example directive_preferences entries to schemaExampleSettings.sql
+
+### Phase 4.5: Implement User System Directives (Medium Priority) ✅ COMPLETE
+- [x] Create directives-user-system.json with 8 new directives:
+  - [x] user_directive_parse - Parse directive files with ambiguity detection
+  - [x] user_directive_validate - Interactive Q&A validation
+  - [x] user_directive_implement - Generate FP-compliant implementation code
+  - [x] user_directive_approve - User testing and approval workflow
+  - [x] user_directive_activate - Deploy and start execution
+  - [x] user_directive_monitor - Track execution and errors
+  - [x] user_directive_update - Handle source file changes
+  - [x] user_directive_deactivate - Stop execution and cleanup
+- [ ] Create markdown documentation (8 .md files in directives/)
+- [x] Add to directives-interactions.json (integrated with existing interactions)
+
+### Phase 4.6: Implement Git Directives (High Priority) ✅ COMPLETE
+- [x] Create directives-git.json with 6 new directives:
+  - [x] git_init - Initialize or integrate with Git repository
+  - [x] git_detect_external_changes - Detect code modifications outside AIFP
+  - [x] git_create_branch - Create user/AI work branches (aifp-{user}-{number})
+  - [x] git_detect_conflicts - FP-powered conflict detection before merge
+  - [x] git_merge_branch - Merge with AI-assisted conflict resolution
+  - [x] git_sync_state - Synchronize Git hash with project.db
+- [ ] Create markdown documentation (6 .md files in directives/)
+- [x] Add to directives-interactions.json:
+  - [x] project_init → git_init (triggers)
+  - [x] aifp_run → git_sync_state (triggers on boot)
+  - [x] git_sync_state → git_detect_external_changes (triggers)
+  - [x] git_detect_conflicts → fp_purity (fp_reference)
+  - [x] git_detect_conflicts → fp_dependency_tracking (fp_reference)
+  - [x] git_merge_branch → project_update_db (triggers)
+- [x] Document 9 Git helper functions in helper-functions-reference.md
+- [x] Update blueprint_git.md with complete architecture
+- [x] Update blueprint_project_db.md with Git tables
 
 ### Phase 5: Update Python Scripts (Low Priority)
 - [ ] sync-directives.py:
@@ -499,30 +681,62 @@ The directive JSON files contain a `"notes"` field that provides additional cont
 
 ---
 
-## Success Criteria
+## Success Criteria - Planning Phase Complete ✅
 
+### Database Architecture
 - [x] aifp_core.db contains zero mutable tables
 - [x] All runtime logging goes to project.db
+- [x] All four databases have clear, documented purposes
+- [x] Directive JSON files align with new database schemas
+- [x] Schema version tracking added to all databases
+- [x] Migration path documented (v1.0 → v1.1 for Git integration)
+
+### User Preferences System
 - [x] User can set preferences that persist across sessions (via directive_preferences table)
 - [x] User can see what preferences are active for a directive (via user_preferences_sync)
 - [x] AI learns from corrections and offers to update preferences (via user_preferences_learn)
 - [x] AI can map user behavior requests to directives (via find_directive_by_intent helper)
 - [x] Users can export preferences for backup/sharing (via user_preferences_export)
-- [x] All three databases have clear, documented purposes
-- [x] Directive JSON files align with new database schemas
+- [x] Opt-in tracking with cost transparency (tracking_settings table)
+
+### User Automation System
+- [x] Users can define custom automation directives (user_directives.db)
+- [x] Directive validation workflow designed (user_directive_validate)
+- [x] FP-compliant implementation generation designed (user_directive_implement)
+- [x] Execution monitoring and error handling designed (user_directive_monitor)
+
+### Git Integration (v1.1)
+- [x] External change detection designed (last_known_git_hash)
+- [x] Multi-user/multi-AI collaboration designed (work_branches table)
+- [x] FP-powered conflict resolution designed (merge_history table)
+- [x] 6 Git directives defined and documented
+- [x] 9 Git helper functions documented
+- [x] Cross-references between Git and FP directives established
+
+### Directive System
+- [x] 108 total directives defined (30 FP core + 32 FP aux + 25 Project + 7 User Prefs + 8 User System + 6 Git)
+- [x] 70 directive interactions mapped
+- [x] Cross-links between FP and Project directives established
+- [x] 44+ helper functions documented
 
 ---
 
 ## Implementation Roadmap (Next Steps)
 
-### Completed ✅
-1. ~~Design three-database architecture~~
-2. ~~Create all three database schemas~~
-3. ~~Design user preferences directives~~
-4. ~~Align existing directives with schema changes~~
-5. ~~Create helper functions for directive lookup~~
+### Planning Phase - Completed ✅
+1. ~~Design four-database architecture~~
+2. ~~Create all four database schemas (MCP, Project v1.1, User Prefs, User Directives)~~
+3. ~~Design user preferences directives (7 directives)~~
+4. ~~Design user automation directives (8 directives)~~
+5. ~~Design Git integration directives (6 directives)~~
+6. ~~Align existing directives with schema changes~~
+7. ~~Create helper functions documentation (44+ functions)~~
+8. ~~Map directive interactions (70 interactions)~~
+9. ~~Document migration paths (v1.0 → v1.1)~~
 
-### Ready for Implementation 🚀
+### Implementation Phase - Not Started ⚪
+
+**IMPORTANT**: All items below are **planning documents only**. No Python code has been written yet.
 
 #### Phase 5: Python Scripts & Tooling
 - [ ] **sync-directives.py**: Populate aifp_core.db from JSON files
@@ -553,9 +767,39 @@ The directive JSON files contain a `"notes"` field that provides additional cont
 
 ---
 
-## Notes
+## Summary
+
+### What's Complete: PLANNING & DOCUMENTATION ✅
+- ✅ Four-database architecture designed
+- ✅ All 4 database schemas created (MCP, Project v1.1, User Prefs, User Directives)
+- ✅ 108 directives defined across 7 JSON files
+- ✅ 70 directive interactions mapped
+- ✅ 44+ helper functions documented
+- ✅ Git integration designed (v1.1)
+- ✅ User preferences system designed
+- ✅ User automation system designed
+- ✅ Migration paths documented
+- ✅ All blueprints and architecture docs updated
+
+### What's NOT Complete: IMPLEMENTATION ⚪
+- ⚪ No Python code written
+- ⚪ No MCP server implementation
+- ⚪ No databases created or populated
+- ⚪ No helper functions implemented
+- ⚪ No directive execution engine
+- ⚪ No tests written
+- ⚪ No migration scripts coded
+
+### Next Steps
+See `docs/implementation-plans/phase-1-mcp-server-bootstrap.md` for the complete implementation roadmap (Phase 1-6, estimated 6-12 months).
+
+---
+
+## Design Notes
 
 - This restructuring maintains backward compatibility by ensuring project.db structure remains stable
-- The user_preferences.db is entirely additive; existing projects work without it
-- Migration path is graceful: detect missing preferences DB and initialize on first run
+- The user_preferences.db and user_directives.db are entirely additive; existing projects work without them
+- Migration path is graceful: detect missing databases and initialize on first run
 - This design positions AIFP for future enhancements like multi-project preference sharing
+- Git integration (v1.1) adds external change detection and FP-powered conflict resolution
+- All directive JSON files are ready to be loaded into aifp_core.db once implementation begins

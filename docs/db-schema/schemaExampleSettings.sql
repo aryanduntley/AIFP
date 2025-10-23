@@ -46,7 +46,15 @@ INSERT INTO directive_preferences (directive_name, preference_key, preference_va
   ('project_file_write', 'always_add_docstrings', 'true', 'Always add docstrings to functions'),
   ('project_file_write', 'max_function_length', '50', 'Maximum function length in lines'),
   ('project_file_write', 'prefer_guard_clauses', 'true', 'Use guard clauses instead of nested conditionals'),
-  ('project_compliance_check', 'auto_fix_violations', 'false', 'Automatically fix FP violations when detected');
+  ('project_file_write', 'code_style', 'explicit', 'Prefer explicit over implicit code style'),
+  ('project_file_write', 'indent_style', 'spaces_2', 'Use 2 spaces for indentation'),
+  ('project_compliance_check', 'auto_fix_violations', 'false', 'Automatically fix FP violations when detected'),
+  ('project_compliance_check', 'skip_warnings', 'false', 'Skip low-severity compliance warnings'),
+  ('project_compliance_check', 'strict_mode', 'false', 'Enable strict FP compliance mode'),
+  ('project_task_decomposition', 'task_granularity', 'medium', 'Level of task breakdown detail (low/medium/high)'),
+  ('project_task_decomposition', 'naming_convention', 'verb_noun', 'Task naming style (verb_noun, descriptive, user_choice)'),
+  ('project_task_decomposition', 'auto_create_items', 'true', 'Automatically create items for small tasks'),
+  ('project_task_decomposition', 'default_priority', 'medium', 'Default priority for new tasks (low/medium/high)');
 
 -- ===============================================================
 -- AI Interaction Logging (Disabled by Default)

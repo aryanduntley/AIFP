@@ -36,7 +36,7 @@ This phase establishes the foundational infrastructure for the AIFP MCP server. 
 
 - **Phase 2**: Directive System Expansion (6-8 weeks) - All FP & Project directives
 - **Phase 3**: User Directive Automation (6-8 weeks) - User-defined automation system
-- **Phase 4**: Advanced Features (4-6 weeks) - Git integration, analytics, optimization
+- **Phase 4**: Advanced Features (4-6 weeks) - Blueprint sync, analytics, optimization (Git integration ✅ complete)
 - **Phase 5**: Packaging & Distribution (3-4 weeks) - PyPI release, documentation
 - **Phase 6**: Community & Maintenance (Ongoing) - Community building, enhancements
 
@@ -295,9 +295,9 @@ Build an MCP (Model Context Protocol) server that provides AI assistants with da
 
 ## Project Themes
 
-1. **Database Operations** - Pure query builders + isolated effects
-2. **Helper Functions** - 35 helpers organized by database
-3. **Directive System** - FP + Project + User directive implementations
+1. **Database Operations** - Pure query builders + isolated effects (including Git tables)
+2. **Helper Functions** - 44+ helpers organized by database (MCP, Project, Git, User Prefs, User Directives)
+3. **Directive System** - FP + Project + User + Git directive implementations
 4. **MCP Server** - Protocol handlers and tool registration
 5. **Testing Infrastructure** - Unit + integration + property-based tests
 
@@ -313,6 +313,9 @@ Build an MCP (Model Context Protocol) server that provides AI assistants with da
 ### Stage 2: Core Helpers (Weeks 3-4)
 - [ ] MCP database helpers (11 functions)
 - [ ] Project database helpers (11 functions)
+- [x] Git integration helpers (9 functions) ✅ Complete
+- [ ] User preferences helpers (4 functions)
+- [ ] User directives helpers (10 functions)
 - [ ] Comprehensive test suites
 - [ ] FP compliance verification
 
@@ -1281,6 +1284,9 @@ jobs:
 
 - ✅ All 11 MCP database helpers implemented
 - ✅ All 11 Project database helpers implemented
+- ✅ All 9 Git integration helpers implemented ✅ Complete
+- ✅ All 4 User preferences helpers implemented
+- ✅ All 10 User directives helpers implemented
 - ✅ Each helper has comprehensive test suite
 - ✅ Integration tests pass with real databases
 - ✅ Path separation verified (dev `.aifp/` vs user `.aifp-project/`)

@@ -1,0 +1,203 @@
+[
+  {
+    "name": "git_init",
+    "type": "git",
+    "level": 1,
+    "parent_directive": "project_init",
+    "category": {
+      "name": "git_setup",
+      "description": "Initialize or integrate with Git repository for version control and collaboration."
+    },
+    "description": "Initializes Git repository if one doesn't exist, or integrates with existing repository. Creates initial .gitignore for AIFP files, stores initial Git hash in project.last_known_git_hash for external change tracking, and optionally creates initial commit. For existing repos, detects current branch and commit hash. Current Git state is always queried from Git directly (no duplication in DB).",
+    "md_file_path": "directives/git_init.md",
+    "workflow": {
+      "trunk": "check_git_repo_exists",
+      "branches": [
+        {"if": "git_repo_exists", "then": "integrate_existing_repo", "details": {"check": ".git folder exists", "actions": ["verify_git_working", "get_current_hash", "update_project_last_known_git_hash", "update_gitignore"]}},
+        {"if": "no_git_repo", "then": "create_new_repo", "details": {"actions": ["git_init", "create_gitignore", "initial_commit", "update_project_last_known_git_hash"]}},
+        {"if": "git_hash_stored", "then": "create_git_tables", "details": {"tables": ["work_branches", "merge_history"]}},
+        {"if": "tables_created", "then": "report_success", "details": {"show": ["git_status", "current_branch", "tracking_status"]}},
+        {"fallback": "prompt_user", "details": {"clarify": "Git initialization failed - check permissions or Git installation"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user", "retry": "max 1 attempt"}
+    },
+    "roadblocks_json": [
+      {"issue": "git_not_installed", "resolution": "Prompt user to install Git or proceed without version control"},
+      {"issue": "git_repo_corrupted", "resolution": "Suggest git fsck or re-initialization"},
+      {"issue": "permission_denied", "resolution": "Check file permissions or run with appropriate privileges"}
+    ],
+    "intent_keywords_json": ["git init", "initialize git", "setup version control", "create repository"],
+    "confidence_threshold": 0.9
+  },
+  {
+    "name": "git_detect_external_changes",
+    "type": "git",
+    "level": 2,
+    "parent_directive": "aifp_status",
+    "category": {
+      "name": "change_detection",
+      "description": "Detect code modifications made outside AIFP sessions using Git commit hash comparison."
+    },
+    "description": "Detects external code changes by comparing current Git HEAD with project.last_known_git_hash. Identifies modified files using git diff, analyzes theme impact by querying project.db for affected themes/flows, and updates project.last_known_git_hash with new hash. Presents changes to user with recommendations for organizational state reconciliation.",
+    "md_file_path": "directives/git_detect_external_changes.md",
+    "workflow": {
+      "trunk": "get_last_known_hash_from_project_table",
+      "branches": [
+        {"if": "no_last_hash", "then": "store_current_hash", "details": {"action": "first_run", "update": "project.last_known_git_hash = current_hash"}},
+        {"if": "hash_matches", "then": "return_no_changes", "details": {"message": "No external changes detected"}},
+        {"if": "hash_differs", "then": "analyze_changes", "details": {"actions": ["git_diff_names", "query_file_themes", "query_file_functions", "build_impact_report"]}},
+        {"if": "changes_analyzed", "then": "present_to_user", "details": {"show": ["changed_files", "affected_themes", "affected_functions", "commit_range"]}},
+        {"if": "user_acknowledged", "then": "update_project_table", "details": {"update": "project.last_known_git_hash = current_hash, project.last_git_sync = now"}},
+        {"if": "organizational_impact", "then": "suggest_reconciliation", "details": {"actions": ["update_themes", "update_flows", "mark_functions_for_review"]}},
+        {"fallback": "log_warning", "details": {"message": "External changes detected but analysis failed"}}
+      ],
+      "error_handling": {"on_failure": "log_warning_and_continue", "retry": "max 2 attempts"}
+    },
+    "roadblocks_json": [
+      {"issue": "git_hash_corrupted", "resolution": "Re-initialize project.last_known_git_hash from current Git HEAD"},
+      {"issue": "too_many_changes", "resolution": "Present summary instead of full diff, offer detailed analysis"},
+      {"issue": "theme_analysis_fails", "resolution": "Skip theme impact, just show changed files"}
+    ],
+    "intent_keywords_json": ["detect changes", "external modifications", "git changes", "code changed outside"],
+    "confidence_threshold": 0.85
+  },
+  {
+    "name": "git_create_branch",
+    "type": "git",
+    "level": 2,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "collaboration",
+      "description": "Create user/AI work branches for multi-user collaboration."
+    },
+    "description": "Creates new work branch following naming convention aifp-{user}-{number}. Detects user from Git config, environment, or prompts if needed. Stores branch metadata in work_branches table including purpose, user, and status. Optionally links branch to specific tasks/themes. Supports both human developers and autonomous AI instances.",
+    "md_file_path": "directives/git_create_branch.md",
+    "workflow": {
+      "trunk": "get_user_identification",
+      "branches": [
+        {"if": "user_provided", "then": "use_provided_user", "details": {"validate": "user_name"}},
+        {"if": "no_user", "then": "detect_user", "details": {"sources": ["git_config_user", "env_USER", "env_USERNAME", "system_username"], "fallback": "prompt_user"}},
+        {"if": "user_determined", "then": "get_next_branch_number", "details": {"query": "MAX(branch_number) FROM work_branches WHERE user_name = ?"}},
+        {"if": "branch_number_determined", "then": "format_branch_name", "details": {"format": "aifp-{user}-{number:03d}"}},
+        {"if": "branch_name_valid", "then": "create_git_branch", "details": {"command": "git checkout -b {branch_name} main"}},
+        {"if": "git_branch_created", "then": "store_branch_metadata", "details": {"insert": "work_branches table", "fields": ["branch_name", "user_name", "purpose", "status=active", "created_from=main"]}},
+        {"if": "optional_task_link", "then": "link_to_task", "details": {"update": "tasks table with git_branch column"}},
+        {"if": "all_complete", "then": "report_success", "details": {"show": ["branch_name", "user", "purpose", "linked_tasks"]}},
+        {"fallback": "prompt_user", "details": {"clarify": "Branch creation failed - check Git status"}}
+      ],
+      "error_handling": {"on_failure": "prompt_user", "retry": "max 1 attempt"}
+    },
+    "roadblocks_json": [
+      {"issue": "branch_exists", "resolution": "Increment branch number or prompt for alternative name"},
+      {"issue": "user_detection_fails", "resolution": "Prompt user to provide name manually"},
+      {"issue": "uncommitted_changes", "resolution": "Prompt user to commit or stash changes before branching"}
+    ],
+    "intent_keywords_json": ["create branch", "new branch", "start work on", "branch for task"],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "git_detect_conflicts",
+    "type": "git",
+    "level": 3,
+    "parent_directive": "git_merge_branch",
+    "category": {
+      "name": "conflict_resolution",
+      "description": "FP-powered conflict detection before merging branches."
+    },
+    "description": "Performs dry-run analysis of branch merge conflicts using FP intelligence. Compares source and target branches at both file and function level. Queries project.db to get function metadata (purity, dependencies, tests) from both branches. Classifies conflicts by type (file, function, database) and assigns confidence scores for auto-resolution based on FP purity. Returns detailed conflict analysis with AI recommendations.",
+    "md_file_path": "directives/git_detect_conflicts.md",
+    "workflow": {
+      "trunk": "git_diff_branches",
+      "branches": [
+        {"if": "no_file_changes", "then": "return_no_conflicts", "details": {"message": "No changes to merge"}},
+        {"if": "files_changed", "then": "categorize_changes", "details": {"categories": ["files_only_in_source", "files_only_in_target", "files_modified_in_both"]}},
+        {"if": "files_only_in_one", "then": "mark_safe_merge", "details": {"conflict_type": "none", "auto_resolvable": true}},
+        {"if": "files_modified_in_both", "then": "analyze_function_conflicts", "details": {"actions": ["extract_functions_from_both", "compare_function_signatures", "query_purity_levels", "query_dependencies", "query_test_results"]}},
+        {"if": "function_conflicts_detected", "then": "apply_fp_analysis", "details": {"rules": ["one_pure_one_impure -> prefer_pure", "both_pure_different_logic -> compare_tests", "dependencies_differ -> manual_review", "unclear -> manual_review"]}},
+        {"if": "fp_analysis_complete", "then": "check_database_conflicts", "details": {"actions": ["extract_db_from_both_branches", "compare_tables", "identify_row_conflicts"]}},
+        {"if": "all_conflicts_analyzed", "then": "build_conflict_report", "details": {"include": ["file_conflicts", "function_conflicts", "db_conflicts", "auto_resolvable_count", "manual_review_count", "confidence_scores", "ai_recommendations"]}},
+        {"if": "report_complete", "then": "return_analysis", "details": {"format": "ConflictAnalysis object"}},
+        {"fallback": "return_error", "details": {"message": "Conflict detection failed - manual merge required"}}
+      ],
+      "error_handling": {"on_failure": "return_manual_merge_required", "retry": "max 1 attempt"}
+    },
+    "roadblocks_json": [
+      {"issue": "git_diff_fails", "resolution": "Check Git status and branch existence"},
+      {"issue": "project_db_query_fails", "resolution": "Fall back to file-level conflict detection only"},
+      {"issue": "branch_diverged_too_much", "resolution": "Suggest rebasing or manual merge"}
+    ],
+    "intent_keywords_json": ["check conflicts", "analyze merge", "detect conflicts", "can merge"],
+    "confidence_threshold": 0.85
+  },
+  {
+    "name": "git_merge_branch",
+    "type": "git",
+    "level": 2,
+    "parent_directive": "project_task_update",
+    "category": {
+      "name": "collaboration",
+      "description": "Merge work branch with FP-powered conflict resolution."
+    },
+    "description": "Merges user/AI work branch into main using FP intelligence for conflict resolution. Calls git_detect_conflicts first to analyze potential conflicts. Auto-resolves high-confidence conflicts (>0.8) using FP purity rules. Presents low-confidence conflicts to user with AI recommendations. Logs merge history to merge_history table with detailed resolution strategy. Updates work_branches status to 'merged'.",
+    "md_file_path": "directives/git_merge_branch.md",
+    "workflow": {
+      "trunk": "validate_merge_request",
+      "branches": [
+        {"if": "branch_not_found", "then": "return_error", "details": {"message": "Branch does not exist"}},
+        {"if": "uncommitted_changes", "then": "prompt_commit_first", "details": {"action": "stash or commit changes"}},
+        {"if": "validation_passed", "then": "call_git_detect_conflicts", "details": {"directive": "git_detect_conflicts"}},
+        {"if": "no_conflicts", "then": "perform_merge", "details": {"command": "git merge {branch_name}"}},
+        {"if": "conflicts_detected", "then": "analyze_auto_resolvable", "details": {"threshold": "confidence > 0.8"}},
+        {"if": "all_auto_resolvable", "then": "prompt_auto_resolution", "details": {"message": "All conflicts can be auto-resolved using FP purity analysis. Proceed?"}},
+        {"if": "user_approves_auto", "then": "apply_auto_resolutions", "details": {"actions": ["prefer_pure_functions", "prefer_more_tests", "keep_both_if_equal", "log_decisions"]}},
+        {"if": "manual_conflicts_remain", "then": "present_conflicts_to_user", "details": {"format": "conflict_resolution_ui", "show": ["alice_version", "bob_version", "purity_levels", "test_results", "dependencies", "ai_recommendation"]}},
+        {"if": "user_resolves_conflicts", "then": "apply_user_resolutions", "details": {"options": ["keep_alice", "keep_bob", "keep_both_rename", "manual_merge"]}},
+        {"if": "all_conflicts_resolved", "then": "complete_merge", "details": {"actions": ["git_merge", "resolve_db_conflicts", "update_project_db"]}},
+        {"if": "merge_successful", "then": "log_merge_history", "details": {"insert": "merge_history table", "fields": ["source_branch", "conflicts_detected", "auto_resolved", "manual_resolved", "resolution_details_json", "merged_by", "commit_hash"]}},
+        {"if": "history_logged", "then": "update_work_branches", "details": {"set": "status=merged, merged_at=now"}},
+        {"if": "all_complete", "then": "report_success", "details": {"show": ["merge_result", "conflicts_resolved", "commit_hash"]}},
+        {"fallback": "abort_merge", "details": {"command": "git merge --abort", "log": "merge failed"}}
+      ],
+      "error_handling": {"on_failure": "abort_merge_and_log", "retry": "none"}
+    },
+    "roadblocks_json": [
+      {"issue": "merge_conflicts_complex", "resolution": "Present to user with AI recommendations, offer manual merge"},
+      {"issue": "database_merge_fails", "resolution": "Extract both DBs, merge at SQL level, present conflicts"},
+      {"issue": "tests_fail_after_merge", "resolution": "Abort merge, report test failures, suggest alternative resolution"}
+    ],
+    "intent_keywords_json": ["merge branch", "integrate changes", "merge work", "combine branches"],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "git_sync_state",
+    "type": "git",
+    "level": 2,
+    "parent_directive": "aifp_status",
+    "category": {
+      "name": "state_management",
+      "description": "Synchronize Git hash with project.db for external change detection."
+    },
+    "description": "Updates project.last_known_git_hash with current Git HEAD commit hash. Called during session boot, after commits, and after branch operations. Enables external change detection by comparing stored hash with current state. Simple sync operation - just updates project table, no separate git_state table needed (Git itself tracks current branch).",
+    "md_file_path": "directives/git_sync_state.md",
+    "workflow": {
+      "trunk": "get_current_git_hash",
+      "branches": [
+        {"if": "git_hash_retrieved", "then": "query_project_last_known_hash", "details": {"query": "SELECT last_known_git_hash FROM project"}},
+        {"if": "no_last_hash", "then": "initialize_hash", "details": {"update": "project.last_known_git_hash = current_hash, project.last_git_sync = now"}},
+        {"if": "hash_exists", "then": "compare_hashes", "details": {"compare": "stored_hash vs current_hash"}},
+        {"if": "hash_differs", "then": "trigger_external_change_detection", "details": {"call": "git_detect_external_changes directive"}},
+        {"if": "hash_same", "then": "update_sync_timestamp", "details": {"update": "project.last_git_sync = now"}},
+        {"if": "sync_complete", "then": "return_success", "details": {"show": ["current_branch", "commit_hash"]}},
+        {"fallback": "log_warning", "details": {"message": "Git sync failed - external change detection may be affected"}}
+      ],
+      "error_handling": {"on_failure": "log_warning_and_continue", "retry": "max 2 attempts"}
+    },
+    "roadblocks_json": [
+      {"issue": "git_unavailable", "resolution": "Skip sync, continue with cached hash"},
+      {"issue": "database_locked", "resolution": "Retry with exponential backoff"},
+      {"issue": "hash_corrupted", "resolution": "Re-initialize from current Git HEAD"}
+    ],
+    "intent_keywords_json": ["sync git", "update git state", "refresh git status"],
+    "confidence_threshold": 0.9
+  }
+]

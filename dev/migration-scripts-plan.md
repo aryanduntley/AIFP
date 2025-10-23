@@ -1,18 +1,20 @@
 # Migration Scripts Plan
 
-**Purpose**: Define migration strategy for AIFP database schema updates across all three databases.
+**Purpose**: Define migration strategy for AIFP database schema updates across all four databases.
 
 **Date Created**: 2025-10-12
+**Last Updated**: 2025-10-23
 **Status**: Planning
 
 ---
 
 ## Overview
 
-AIFP uses a three-database architecture:
+AIFP uses a four-database architecture:
 1. **aifp_core.db** - Read-only MCP configuration (shipped with MCP)
-2. **project.db** - Mutable project state (per-project)
+2. **project.db** - Mutable project state (per-project) - **Updated for Git integration v1.1**
 3. **user_preferences.db** - User behavior customization (per-project)
+4. **user_directives.db** - User-defined automation directives (per-project)
 
 Each database requires independent versioning and migration paths.
 
@@ -364,7 +366,87 @@ CREATE INDEX IF NOT EXISTS idx_notes_severity ON notes(severity);
 UPDATE schema_version SET version = '1.1', updated_at = CURRENT_TIMESTAMP WHERE id = 1;
 ```
 
-### Example 4: Initialize user_preferences.db (v1.0)
+### Example 4: Add Git Integration Tables (v1.0 → v1.1)
+**Goal**: Add Git integration tables and fields to project.db
+
+**project/v1.0_to_v1.1_git_integration.sql**:
+```sql
+-- Add Git tracking fields to project table
+ALTER TABLE project ADD COLUMN last_known_git_hash TEXT;
+ALTER TABLE project ADD COLUMN last_git_sync DATETIME;
+
+-- Create work_branches table for multi-user/multi-AI collaboration
+CREATE TABLE IF NOT EXISTS work_branches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    branch_name TEXT UNIQUE NOT NULL,
+    user_name TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    status TEXT DEFAULT 'active',
+    created_from TEXT DEFAULT 'main',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    merged_at DATETIME NULL,
+    merge_conflicts_count INTEGER DEFAULT 0,
+    merge_resolution_strategy TEXT,
+    metadata_json TEXT
+);
+
+-- Create merge_history table for FP-powered conflict resolution audit trail
+CREATE TABLE IF NOT EXISTS merge_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_branch TEXT NOT NULL,
+    target_branch TEXT DEFAULT 'main',
+    merge_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    conflicts_detected INTEGER DEFAULT 0,
+    conflicts_auto_resolved INTEGER DEFAULT 0,
+    conflicts_manual_resolved INTEGER DEFAULT 0,
+    resolution_details TEXT,
+    merged_by TEXT,
+    merge_commit_hash TEXT
+);
+
+-- Create indexes for Git collaboration tables
+CREATE INDEX IF NOT EXISTS idx_work_branches_user ON work_branches(user_name);
+CREATE INDEX IF NOT EXISTS idx_work_branches_status ON work_branches(status);
+CREATE INDEX IF NOT EXISTS idx_merge_history_timestamp ON merge_history(merge_timestamp);
+CREATE INDEX IF NOT EXISTS idx_merge_history_source ON merge_history(source_branch);
+
+-- Update schema version
+UPDATE schema_version SET version = '1.1', updated_at = CURRENT_TIMESTAMP WHERE id = 1;
+```
+
+**Rollback** (project/rollback/v1.1_to_v1.0_git_integration.sql):
+```sql
+-- Drop Git integration tables
+DROP TABLE IF EXISTS work_branches;
+DROP TABLE IF EXISTS merge_history;
+
+-- Drop indexes (automatically dropped with tables)
+
+-- Remove Git fields from project table (SQLite limitation workaround)
+-- Note: SQLite doesn't support DROP COLUMN before version 3.35.0
+-- Alternative: Create new table without columns, copy data, rename
+CREATE TABLE project_backup AS
+SELECT id, name, purpose, goals_json, status, version,
+       blueprint_checksum, user_directives_status,
+       created_at, updated_at
+FROM project;
+
+DROP TABLE project;
+ALTER TABLE project_backup RENAME TO project;
+
+-- Recreate triggers
+CREATE TRIGGER IF NOT EXISTS update_project_timestamp
+AFTER UPDATE ON project
+FOR EACH ROW
+BEGIN
+    UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+-- Revert schema version
+UPDATE schema_version SET version = '1.0', updated_at = CURRENT_TIMESTAMP WHERE id = 1;
+```
+
+### Example 5: Initialize user_preferences.db (v1.0)
 **Goal**: Create user_preferences.db if it doesn't exist
 
 **user_preferences/v1.0_initial_schema.sql**:
@@ -378,19 +460,30 @@ UPDATE schema_version SET version = '1.1', updated_at = CURRENT_TIMESTAMP WHERE 
 
 ## Migration Timeline
 
-### Phase 1: Clean aifp_core.db (v1.0 → v1.1)
-- Remove notes table
+### Phase 1: Git Integration - project.db (v1.0 → v1.1) ✅ Complete
+- ✅ Add last_known_git_hash and last_git_sync fields to project table
+- ✅ Create work_branches table for multi-user/multi-AI collaboration
+- ✅ Create merge_history table for FP-powered conflict resolution
+- ✅ Add indexes for Git collaboration tables
+- ✅ Update schema version to 1.1
+
+### Phase 2: Clean aifp_core.db (v1.0 → v1.1)
+- Remove notes table (if needed)
 - Update workflow references in sample directives
 - Add schema_version table
 
-### Phase 2: Enhance project.db (v1.0 → v1.1)
+### Phase 3: Enhance project.db - Notes Enhancement (v1.1 → v1.2)
 - Add source, directive_name, severity to notes table
 - Add indexes for new fields
-- Add schema_version table
+- Update schema version to 1.2
 
-### Phase 3: Create user_preferences.db (v1.0)
+### Phase 4: Create user_preferences.db (v1.0)
 - Initialize complete schema
 - Create with all tracking disabled by default
+- Add schema_version table
+
+### Phase 5: Create user_directives.db (v1.0)
+- Initialize complete schema for user-defined automation
 - Add schema_version table
 
 ---
@@ -423,14 +516,17 @@ UPDATE schema_version SET version = '1.1', updated_at = CURRENT_TIMESTAMP WHERE 
 
 ### Migration Announcement Template
 ```markdown
-## AIFP v1.1 Migration Required
+## AIFP v1.1 Migration Required - Git Integration
 
-This release includes database schema changes. Please run the migration script before using AIFP v1.1.
+This release includes database schema changes for Git integration and multi-user collaboration. Please run the migration script before using AIFP v1.1.
 
 ### What's Changed
-- aifp_core.db: Removed notes table (now in project.db)
-- project.db: Enhanced notes table with directive tracking
-- user_preferences.db: New database for user customizations (created automatically)
+- **project.db v1.0 → v1.1**: Git integration tables and fields added
+  - New fields: `last_known_git_hash`, `last_git_sync` in project table
+  - New tables: `work_branches` (collaboration), `merge_history` (FP conflict resolution)
+  - New indexes for Git operations
+  - Schema version updated to 1.1
+- **New features enabled**: External change detection, multi-user branching, FP-powered merge conflict resolution
 
 ### How to Migrate
 ```bash
@@ -446,6 +542,13 @@ python migrations/migrate.py --db project --rollback
 ```
 
 Your databases are automatically backed up before migration.
+
+### What This Enables
+- 🔍 **External Change Detection**: AIFP detects code changes made outside sessions
+- 🌿 **Multi-User Collaboration**: Work on separate branches (aifp-{user}-{number})
+- 🤖 **Multi-AI Collaboration**: Multiple AI instances can work on same project
+- 🔀 **FP-Powered Merging**: Intelligent conflict resolution using function purity analysis
+- 📊 **Merge Audit Trail**: Complete history of all merges and conflict resolutions
 
 ### Questions?
 See [Migration Guide](docs/migration-guide.md) or open an issue.
