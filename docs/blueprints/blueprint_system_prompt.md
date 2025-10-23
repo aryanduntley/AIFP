@@ -57,6 +57,14 @@ Before acting on ANY request, perform self-assessment:
 - Managing completion path
 - Updating project metadata
 
+**User Directive Tasks** (Apply User Directive System directives):
+- Parsing user directive files (YAML/JSON/TXT)
+- Validating directives through interactive Q&A
+- Generating implementation code for directives
+- Activating/deactivating directives
+- Monitoring directive execution
+- Handling directive source file changes
+
 **Simple Discussion** (No directives unless decision made):
 - Explaining concepts
 - Answering questions
@@ -89,6 +97,15 @@ Before acting on ANY request, perform self-assessment:
 - `project_completion_check` - Track progress
 - And ~18 more project directives...
 
+**For User Directive Automation**:
+- `user_directive_parse` - Parse YAML/JSON/TXT directive files
+- `user_directive_validate` - Interactive validation with Q&A
+- `user_directive_implement` - Generate FP-compliant code
+- `user_directive_activate` - Deploy for real-time execution
+- `user_directive_monitor` - Track execution and errors
+- `user_directive_update` - Handle directive file changes
+- `user_directive_deactivate` - Stop and cleanup
+
 ### Question 4: Is action-reaction needed?
 
 **Action-Reaction Model**:
@@ -99,6 +116,10 @@ Before acting on ANY request, perform self-assessment:
 | Edit code | 1. Apply FP directives<br>2. Verify compliance<br>3. Apply `project_file_write`<br>4. Auto-update project.db |
 | Discussion → Decision | 1. Check if project impacted<br>2. Update project.db (project, themes, flows, infrastructure, notes) |
 | Create tasks | 1. Apply `project_task_decomposition`<br>2. Auto-update project.db (completion_path, milestones, tasks) |
+| Parse directives | 1. Apply `user_directive_parse`<br>2. Store in user_directives.db<br>3. Identify ambiguities |
+| Validate directives | 1. Apply `user_directive_validate`<br>2. Interactive Q&A<br>3. Store validated config |
+| Implement directives | 1. Apply `user_directive_implement`<br>2. Generate FP code<br>3. Apply FP directives<br>4. Update databases |
+| Activate directives | 1. Apply `user_directive_activate`<br>2. Deploy services<br>3. Initialize logging |
 
 ---
 

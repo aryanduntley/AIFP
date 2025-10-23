@@ -13,6 +13,7 @@
 - [How It Works](#how-it-works)
 - [Getting Started](#getting-started)
 - [Directives System](#directives-system)
+- [User-Defined Directives](#user-defined-directives-7)
 - [Project Lifecycle](#project-lifecycle)
 - [Example Workflow](#example-workflow)
 - [Documentation](#documentation)
@@ -121,23 +122,23 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 │  - Provides helper functions                         │
 └───┬────────────────────┬─────────────────────────┬──┘
     │                    │                         │
-┌───▼──────────────┐ ┌───▼────────────────┐ ┌─────▼─────────────────┐
-│  aifp_core.db    │ │  project.db        │ │  user_preferences.db  │
-│  (Global,        │ │  (Per-Project,     │ │  (Per-Project,        │
-│   Read-Only)     │ │   Mutable)         │ │   Mutable)            │
-│                  │ │                    │ │                       │
-│ - 60+ FP directs │ │ - Project metadata │ │ - Directive prefs     │
-│ - 21 Project     │ │ - Files & funcs    │ │ - User settings       │
-│ - 7 User Pref    │ │ - Task hierarchy   │ │ - AI learning log     │
-│ - Helper defs    │ │ - Themes & flows   │ │ - Tracking features   │
-│ - Code templates │ │ - Completion path  │ │ - Issue reports       │
-│ - Standards      │ │ - Runtime notes    │ │ (All opt-in)          │
-└──────────────────┘ └────────────────────┘ └───────────────────────┘
+┌───▼──────────────┐ ┌───▼────────────────┐ ┌─────▼─────────────────┐ ┌──────▼────────────────┐
+│  aifp_core.db    │ │  project.db        │ │  user_preferences.db  │ │  user_directives.db   │
+│  (Global,        │ │  (Per-Project,     │ │  (Per-Project,        │ │  (Per-Project,        │
+│   Read-Only)     │ │   Mutable)         │ │   Mutable)            │ │   Optional)           │
+│                  │ │                    │ │                       │ │                       │
+│ - 60+ FP directs │ │ - Project metadata │ │ - Directive prefs     │ │ - User directives     │
+│ - 21 Project     │ │ - Files & funcs    │ │ - User settings       │ │ - Execution stats     │
+│ - 7 User Pref    │ │ - Task hierarchy   │ │ - AI learning log     │ │ - Dependencies        │
+│ - 7 User Direct  │ │ - Themes & flows   │ │ - Tracking features   │ │ - Generated code refs │
+│ - Helper defs    │ │ - Completion path  │ │ - Issue reports       │ │ - Source file tracking│
+│ - Code templates │ │ - Runtime notes    │ │ (All opt-in)          │ │ (Logs in files)       │
+└──────────────────┘ └────────────────────┘ └───────────────────────┘ └───────────────────────┘
 ```
 
 ---
 
-## Three-Database System
+## Database Architecture
 
 ### aifp_core.db (Global, Read-Only)
 
@@ -161,13 +162,15 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 **Purpose**: Persistent state for a single AIFP project. Tracks code structure, tasks, and runtime notes.
 
 **Key Tables**:
-- `project`: High-level metadata (name, purpose, goals, status)
+- `project`: High-level metadata (name, purpose, goals, status, user_directives_status)
 - `files`, `functions`, `interactions`: Code structure tracking
 - `themes`, `flows`: Organizational groupings
 - `completion_path`, `milestones`, `tasks`, `subtasks`, `sidequests`: Hierarchical roadmap
 - `notes`: Runtime logging with optional directive context (source, severity, directive_name)
 - `types`: Algebraic data types (ADTs)
 - `infrastructure`: Project setup (language, packages, testing)
+
+**User Directives Integration**: The `project.user_directives_status` field tracks whether user directives are initialized (NULL/in_progress/active/disabled), allowing `aifp_run` and `aifp_status` directives to include user directive context when active.
 
 **Enhanced Notes**: The `notes` table now includes `source` (user/ai/directive), `directive_name` (optional context), and `severity` (info/warning/error) for better traceability.
 
@@ -195,6 +198,29 @@ VALUES ('project_file_write', 'always_add_docstrings', 'true');
 
 -- Next file write automatically includes docstrings
 ```
+
+### user_directives.db (Per-Project, Optional)
+
+**Location**: `<project-root>/.aifp/user_directives.db`
+
+**Purpose**: Store user-defined domain-specific directives for automation (home automation, cloud infrastructure, etc.). The AIFP project becomes an execution engine for these directives.
+
+**Key Tables**:
+- `user_directives`: Directive definitions (triggers, actions, status, validated configuration)
+- `directive_executions`: Execution statistics (summary only, detailed logs in files)
+- `directive_dependencies`: Required packages, APIs, environment variables
+- `directive_implementations`: Links directives to generated code files
+- `source_files`: Tracks user directive source files (YAML/JSON/TXT)
+- `logging_config`: File-based logging configuration
+
+**File-Based Logging Philosophy**: Database stores state and statistics only. Detailed execution logs (30-day retention) and error logs (90-day retention) are stored in rotating files at `.aifp/logs/`.
+
+**Example Workflow**:
+1. User writes directives in `.aifp/user-directives/source/home_automation.yaml`
+2. AI parses and validates through interactive Q&A
+3. AI generates FP-compliant implementation code
+4. Directives execute in real-time via background services
+5. Execution logs to files, statistics to database
 
 ---
 
@@ -405,6 +431,52 @@ Manage AI behavior customization and learning:
 | **project_notes_log** | Handles logging to project.db with directive context |
 | **tracking_toggle** | Enables/disables tracking features with token cost warnings |
 
+### User-Defined Directives (7)
+
+**NEW**: Automation system for domain-specific tasks (home automation, cloud infrastructure, etc.):
+
+| Directive | Purpose |
+|-----------|---------|
+| **user_directive_parse** | Parse YAML/JSON/TXT directive files and extract structured directives |
+| **user_directive_validate** | Validate directives through interactive Q&A to resolve ambiguities |
+| **user_directive_implement** | Generate FP-compliant implementation code for validated directives |
+| **user_directive_activate** | Deploy and activate directives for real-time execution |
+| **user_directive_monitor** | Track execution statistics and handle errors |
+| **user_directive_update** | Handle changes to directive source files (re-parse, re-validate) |
+| **user_directive_deactivate** | Stop execution and clean up resources |
+
+**Use Cases**:
+- **Home Automation**: "At 5pm turn off living room lights", "If stove on > 20 min, turn off"
+- **Cloud Infrastructure**: "Scale EC2 when CPU > 80%", "Backup RDS nightly at 1am"
+- **Custom Workflows**: Define automation rules in simple files, AI generates and executes code
+
+**Key Features**:
+- Write directives in YAML, JSON, or plain text
+- AI validates through interactive Q&A
+- Generates FP-compliant Python code
+- Real-time execution via background services
+- File-based logging (30-day execution logs, 90-day error logs)
+- Dependency management with user confirmation
+
+**Example**:
+```yaml
+# .aifp/user-directives/source/home_automation.yaml
+directives:
+  - name: turn_off_lights_5pm
+    trigger:
+      type: time
+      time: "17:00"
+      timezone: America/New_York
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/light/turn_off
+      params:
+        entity_id: group.living_room_lights
+```
+
+See [User Directives Blueprint](docs/blueprints/blueprint_user_directives.md) and [examples](docs/examples/) for more details.
+
 ---
 
 ## Project Lifecycle
@@ -544,8 +616,9 @@ AI: ✅ Preference learned: project_file_write
 - **[Project Directives Blueprint](docs/project_directives_blueprint.md)** - Project lifecycle management
 - **[FP Directives Blueprint](docs/fp_directives_blueprint.md)** - Functional programming enforcement
 - **[MCP Blueprint](docs/mcp_blueprint.md)** - MCP server architecture and tools
-- **[Project DB Blueprint](docs/project_db_blueprint.md)** - project.db schema and queries
+- **[Project DB Blueprint](docs/blueprints/blueprint_project_db.md)** - project.db schema and queries
 - **[MCP DB Blueprint](docs/mcp_db_blueprint.md)** - aifp_core.db schema and population
+- **[User Directives Blueprint](docs/blueprints/blueprint_user_directives.md)** - User-defined automation system (home automation, cloud infrastructure, custom workflows)
 - **[Interactions Blueprint](docs/interactions_blueprint.md)** - Cross-component interactions
 - **[Git Blueprint](docs/git_blueprint.md)** - Git integration and external change detection
 
@@ -554,6 +627,11 @@ AI: ✅ Preference learned: project_file_write
 - **[schemaExampleMCP.sql](docs/db-schema/schemaExampleMCP.sql)** - Complete aifp_core.db schema
 - **[schemaExampleProject.sql](docs/db-schema/schemaExampleProject.sql)** - Complete project.db schema
 - **[schemaExampleSettings.sql](docs/db-schema/schemaExampleSettings.sql)** - Complete user_preferences.db schema
+- **[schemaExampleUserDirectives.sql](docs/db-schema/schemaExampleUserDirectives.sql)** - Complete user_directives.db schema
+
+### Reference Documents
+
+- **[Helper Functions Reference](docs/helper-functions-reference.md)** - Comprehensive catalog of all helper functions organized by database (MCP, Project, Preferences, User Directives). Includes specifications for 35 helper functions with parameters, return types, error handling, and usage by directives.
 
 ### Directive Definitions
 
@@ -561,6 +639,7 @@ AI: ✅ Preference learned: project_file_write
 - **[FP Aux Directives](docs/directives-json/directives-fp-aux.json)** - Auxiliary FP directives (30+)
 - **[Project Directives](docs/directives-json/directives-project.json)** - All project directives (22)
 - **[User Preference Directives](docs/directives-json/directives-user-pref.json)** - User customization directives (7)
+- **[User Directive System](docs/directives-json/directives-user-system.json)** - User-defined automation directives (8) with 10 helper functions
 
 ---
 

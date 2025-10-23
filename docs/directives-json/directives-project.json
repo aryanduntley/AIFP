@@ -38,12 +38,14 @@
             },
             "ai_decision_flow": [
               "1. Check: Is this a status/continuation request? → Call aifp_status",
-              "2. Evaluate: Is this coding or project management?",
-              "3. Check: Do I have directives in memory?",
-              "4. If no directives: Call get_all_directives()",
-              "5. If coding: Apply FP directives (how to code) + project directives (DB updates)",
-              "6. If project management: Apply project directives",
-              "7. If simple discussion: No directives needed unless decision impacts project"
+              "2. Check: project.user_directives_status='active'? → Include user directive context",
+              "3. Evaluate: Is this coding, project management, or user directive automation?",
+              "4. Check: Do I have directives in memory?",
+              "5. If no directives: Call get_all_directives()",
+              "6. If coding: Apply FP directives (how to code) + project directives (DB updates)",
+              "7. If project management: Apply project directives",
+              "8. If user directive task (parse/validate/implement/activate): Apply user directive system directives",
+              "9. If simple discussion: No directives needed unless decision impacts project"
             ]
           }
         }
@@ -82,8 +84,10 @@
         {"if": "blueprint_generated", "then": "initialize_databases", "details": {"databases": ["project.db", "user_preferences.db"], "schemas": ["project_db_schema.sql", "user_preferences_schema.sql"]}},
         {"if": "databases_initialized", "then": "populate_project_data", "details": {"tables": ["project", "infrastructure", "completion_path", "milestones"]}},
         {"if": "project_data_populated", "then": "create_initial_completion_path", "details": {"stages": ["Setup", "Core Development", "Finalization"]}},
-        {"if": "completion_path_created", "then": "backup_blueprint", "details": {"backup_to": ".aifp/backups/ProjectBlueprint.md.backup"}},
-        {"if": "backup_complete", "then": "report_success", "details": {"show": ["project_name", "blueprint_path", "databases", "completion_stages"]}},
+        {"if": "completion_path_created", "then": "prompt_user_directives_init", "details": {"prompt": "Initialize user directives system? (y/n)", "optional": true}},
+        {"if": "user_directives_yes", "then": "init_user_directives_db", "details": {"create_db": "user_directives.db", "apply_schema": "user_directives_schema.sql", "set_status": "in_progress"}},
+        {"if": "user_directives_no_or_complete", "then": "backup_blueprint", "details": {"backup_to": ".aifp/backups/ProjectBlueprint.md.backup"}},
+        {"if": "backup_complete", "then": "report_success", "details": {"show": ["project_name", "blueprint_path", "databases", "completion_stages", "user_directives_status"]}},
         {"fallback": "prompt_user", "details": {"clarify": "Provide missing project details or choose restoration option"}}
       ],
       "error_handling": {"on_failure": "prompt_user", "retry": "max 2 attempts"}
@@ -169,11 +173,13 @@
       "name": "file_operations",
       "description": "Handles file generation and metadata updates."
     },
-    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly. Core file generation directive; bridges code creation and database synchronization.",
+    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly. Detects user directive generated files and marks them with appropriate metadata. Core file generation directive; bridges code creation and database synchronization.",
     "md_file_path": "directives/project_file_write.md",
     "workflow": {
       "trunk": "generate_file",
       "branches": [
+        {"if": "file_path_starts_with_.aifp/user-directives/generated/", "then": "mark_as_user_directive_implementation", "details": {"metadata_tag": "user_directive_generated", "still_apply_fp_checks": true}},
+        {"if": "user_directive_file_and_compliant", "then": "write_file_and_link_to_directive", "details": {"update_db": true, "update_directive_implementations_table": true, "link_to_user_directive": true}},
         {"if": "code_compliant", "then": "write_file", "details": {"metadata": true, "update_db": true}},
         {"if": "non_compliant", "then": "fp_compliance_check", "details": {"escalate_to_fp_directives": true}},
         {"fallback": "prompt_user", "details": {"clarify": "Fix compliance before write?"}}
@@ -182,7 +188,8 @@
     },
     "roadblocks_json": [
       {"issue": "missing_metadata", "resolution": "Add AIFP_METADATA, prompt user"},
-      {"issue": "fp_violation", "resolution": "Trigger fp_compliance_check"}
+      {"issue": "fp_violation", "resolution": "Trigger fp_compliance_check"},
+      {"issue": "user_directive_link_missing", "resolution": "Parse file for directive reference in AIFP_METADATA or prompt user"}
     ],
     "intent_keywords_json": ["create file", "write code", "generate file"],
     "confidence_threshold": 0.7
@@ -196,11 +203,13 @@
       "name": "file_operations",
       "description": "Synchronizes generated code metadata with the project database."
     },
-    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking. Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle.",
+    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking. Handles user directive generated files by also updating user_directives.db tables (directive_implementations). Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle.",
     "md_file_path": "directives/project_update_db.md",
     "workflow": {
       "trunk": "parse_content",
       "branches": [
+        {"if": "user_directive_generated_file", "then": "update_user_directives_db", "details": {"table": "directive_implementations", "link_to_user_directive": true, "store_file_path": true, "update_status": "implemented"}},
+        {"if": "user_directive_implementation_updated", "then": "continue_with_project_db_update", "details": {"proceed_to_standard_flow": true}},
         {"if": "new_file", "then": "update_files_table", "details": {"checksum": true}},
         {"if": "new_function", "then": "update_functions_table", "details": {"deps_json": true}},
         {"if": "task_related", "then": "update_items_subtasks", "details": {"link_to_completion_path": true}},
@@ -210,7 +219,8 @@
     },
     "roadblocks_json": [
       {"issue": "missing_metadata", "resolution": "Parse again or prompt user for function metadata"},
-      {"issue": "checksum_mismatch", "resolution": "Recalculate and resync file entry"}
+      {"issue": "checksum_mismatch", "resolution": "Recalculate and resync file entry"},
+      {"issue": "user_directive_not_found", "resolution": "Parse file for directive reference or prompt user to link manually"}
     ],
     "intent_keywords_json": ["update db", "track file", "metadata"],
     "confidence_threshold": 0.6
@@ -671,7 +681,9 @@
         {"if": "no_backups", "then": "prompt_init_new_project", "details": {"suggest_project_init": true}},
         {"if": "existing_project", "then": "read_project_blueprint", "details": {"call_helper": "project_blueprint_read", "path": ".aifp/ProjectBlueprint.md"}},
         {"if": "blueprint_read", "then": "load_infrastructure_context", "details": {"query": "SELECT type, value, description FROM infrastructure WHERE project_id = ?"}},
-        {"if": "infrastructure_loaded", "then": "build_priority_status_tree", "details": {"priority_order": ["sidequests", "subtasks", "tasks"], "context_limit": 10}},
+        {"if": "infrastructure_loaded", "then": "check_user_directives_status", "details": {"query": "SELECT user_directives_status FROM project WHERE id = ?", "include_in_report": true}},
+        {"if": "user_directives_active", "then": "query_user_directive_stats", "details": {"count_active": true, "get_last_execution": true, "get_error_count": true}},
+        {"if": "user_directive_stats_gathered", "then": "build_priority_status_tree", "details": {"priority_order": ["sidequests", "subtasks", "tasks"], "context_limit": 10}},
         {"if": "open_sidequests_found", "then": "get_sidequest_context", "details": {"get_parent_task": true, "get_all_items": true, "get_previous_task_if_no_completed": true, "previous_task_item_limit": 10}},
         {"if": "no_sidequests_open_subtasks", "then": "get_subtask_context", "details": {"get_parent_task": true, "get_all_items": true, "get_previous_task_if_no_completed": true, "previous_task_item_limit": 10}},
         {"if": "no_subtasks_open_tasks", "then": "get_task_context", "details": {"get_all_items": true, "evaluate_completed_vs_incomplete": true, "order_incomplete": true}},

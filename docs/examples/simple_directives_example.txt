@@ -1,0 +1,62 @@
+# Simple User Directives Example (TXT Format)
+# This file demonstrates the simple line-by-line format for user directives
+# Save to: .aifp/user-directives/source/simple_directives.txt
+#
+# Format patterns:
+# - "At <time> <action>" for time-based triggers
+# - "Every <interval> at <time> <action>" for recurring time-based triggers
+# - "If <condition> then <action>" or "When <condition> <action>" for condition-based triggers
+# - "<action>" for manual triggers
+#
+# Note: The AI will ask clarifying questions to resolve any ambiguities
+
+# Home Automation Examples
+At 5pm turn off living room lights
+At 6:30am turn on bedroom lights and start coffee maker
+At 10pm lock all doors
+If stove is on for more than 20 minutes, turn off stove
+When motion detected in hallway, turn on hallway lights
+Every night at 2am backup home automation config
+
+# Temperature Control
+If temperature is below 68 degrees, turn on heat
+If temperature is above 74 degrees, turn on air conditioning
+When thermostat is set to away mode, reduce temperature to 62 degrees
+
+# Security
+When garage door is open after 11pm, close garage door
+If front door is unlocked after midnight, send alert
+When security camera detects person, turn on exterior lights
+
+# Energy Management
+At 2pm enable energy saving mode
+At 7pm disable energy saving mode
+When electricity usage exceeds 5000 watts, send notification
+
+# AWS Infrastructure Examples (requires more clarification from AI)
+When EC2 CPU usage exceeds 80%, scale up instances
+If EC2 instance is idle for 2 hours, stop instance
+Every night at 1am backup RDS database
+Every Sunday at 3am delete S3 backups older than 30 days
+When CloudWatch alarm triggers, send SNS notification
+
+# Database Management
+Every night at 3am backup project database
+Every Monday at 1am run database maintenance
+If database disk usage exceeds 80%, expand storage
+
+# Development Automation
+When code is pushed to main branch, run tests
+If tests pass, deploy to staging environment
+Every Friday at 5pm create weekly backup
+
+# Monitoring
+Every 5 minutes check server health
+If server response time exceeds 5 seconds, send alert
+When disk space is below 10%, send critical alert
+
+# Manual Triggers (executed on demand)
+Run security audit
+Generate monthly report
+Clean up temporary files
+Reset development environment

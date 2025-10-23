@@ -5,21 +5,10 @@ docs/db-schema/schemaExampleProject.sql
 docs/db-schema/schemaExampleSettings.sql
 docs/db-schema/schemaExampleSettings.sql
 docs/blueprints/blueprint_system_prompt.md
+docs/blueprints/blueprint_aifp_project_structure.md
 
 The blueprints/context for the project are located in docs/blueprints and the directive json files are located in docs/directives-json. 
 
-{
-    "trunk": "init_check",
-    "branches": [
-        {"if": "file_modified", "then": "update_project_db", "details": {"parse_files": true, "associate_flows": true}},
-        {"if": "coding_needed", "then": "apply_fp_style", "details": {"wrap_oop": true}},
-        {"fallback": "log_note", "details": {"reference_table": "items", "type": "clarification"}}
-    ],
-    "error_handling": {
-        "on_failure": "CALL helper_log_error(:step, :error_message)",
-        "retry": "max 2 attempts"
-    }
-}
 are we handling oop wrapping appropriately with our directives. Probably some example files.
 
 directives file for each db table?
@@ -40,45 +29,110 @@ NEED DB import/export/migration py scripts
 find_directive_by_intent helper
 ensure helper functionsfor all directives that could use it; there are some that may not need helper functions and should be AI processing only
 
-need .aifp/ project blueprint
-directives need an addition, ProjectBlueprint.md file creation. If init and first run, AI must discuss project with user and get details to create a ProjectBlueprint.md file, and to initialize the database with initial entries, including project infrastructure, flow, themes, project completion path, etc. ProjectBlueprint should be a high level overview of the entire project, explaining more the idea of the project, the goals and the blueprint for the project as a whole. This will be used for inital context whenever AI does not have context (new session). 
-
-aifp run causes aifp status.
-aifp status for existing project:
-find .aifp folder
-read ProjectBlueprint
-get db context entries like infrastructure, etc.
-then status tree for current project status. Find open sidequests. If open sidequests, get parent task or substask. Get all items related to parent task or subtask, get all items related to open sidequest. If no complete items in task or subtask, get previus task and last X items for that task. This provides historical contect for tasks, providing better context for continuation. Complete sidequest(s) as priority. If no sidequests, get current subtask (subtask take precedence over tasks), follow similar steps as sidequest, but one hierarchy higher now. If no open subtask, get current opent task. get all items for task. If none complete, get previous task and last X items of previous task for context. If some are complete, evaluate completed items and incomplete items. Order incomplete and inform user status has been obtained and ready for continuation of tasks. If ambiguity exists, describe to user ambiguity and ask to browse database for more context. If in auto-run and user does not want much interaction, browse database accordingly for more context (tasks, flows, notes, files and functions, etc.), browse file if needed as well. Once sufficient context is derived, continue finishing tasks.
-
-aifp status for new project; steps to obtain status and upon failure identifies new project and init needed:
-find .aifp folder.
-If not exists, check .git for .aifp folder
-if .git has .aifp folder, check .git .aifp/ProjectBlueprint.md
-    Then notify user of findings in .git, ask if to restore or begin a new aifp project
-if no .git .aifp/ProjectBlueprint.md this is a new project, ask user if they want to initialize a new .aifp project folder
-if .aifp folder
-read ProjectBlueprint
-if no ProjectBlueprint
-    check for database exists
-        If database, attempt to aifp status
-            if results empty, notify user that folder was created, but no project setup exists. Ask user if ready for init
-        if no database, notify user that project not initialized. Ask if they want to initialize project
-    if no database notify user that project not initialized. Ask if they want to initialize project
-if ProjectBluprint and read successful
-    check for database exists
-        follow same rules as above for no ProjectBlueprint
-
-whenever an idea is discussed and somethig project wide changes:
-aifp run causes aifp ?
-update ProjectBlueprint?
-update themes?
-update flows?
-update infrastruture?
-
-Need system prompt for MCP to guide AI on using MCP for coding guidance and project management guidance (instead of just tools via API like most other MCP's). if AIFP MCP present, always assume and run aifp_run unless explicitly rejected "do not use aifp for this specific task".
-
-check on project init directives what they do and what they should do.
-check on project status directives and ensure they get current context appropriately.
-project status should be run before init, if no status available, must run init.
-
 project status prompt?
+
+
+
+
+Based on my analysis, yes, we should absolutely create a 
+  separate directives-git.json file. Here's what I found:
+
+  Current State
+
+  ❌ Missing Components
+
+  1. No directives-git.json file - Git functionality is
+  scattered in project directives
+  2. Git tables missing from schema - git_state and
+  work_branches tables defined in blueprint but NOT in
+  schemaExampleProject.sql
+  3. Git helpers not documented - Helper functions exist in
+  blueprint but missing from helper-functions-reference.md
+
+  ✅ What Exists
+
+  - Git blueprint (docs/blueprints/blueprint_git.md) -
+  Comprehensive design document
+  - Git references in project directives - project_init checks
+   for git backups, various directives use checksums
+  - Helper function examples in blueprint -
+  get_current_commit_hash(), get_changed_files_since(),
+  create_branch(), etc.
+
+  What the Blueprint Defines
+
+  Git Directives (Implied but Not Implemented)
+
+  1. git_init - Initialize Git repository
+  2. git_detect_external_changes - Detect changes made outside
+   AI sessions
+  3. git_analyze_impact - Analyze which themes/flows are
+  affected by external changes
+  4. git_create_branch - Create work branch (optional feature)
+  5. git_commit - Commit at milestones
+  6. git_status_sync - Sync git state with project.db
+
+  Git Helper Functions (From Blueprint)
+
+  1. get_current_commit_hash(project_root) - Get HEAD commit
+  hash
+  2. get_changed_files_since(commit_hash, project_root) - List
+   changed files
+  3. create_branch(branch_name, from_branch, project_root) -
+  Create new branch
+  4. get_current_branch(project_root) - Get active branch name
+  5. store_git_state(project_root) - Save git state to
+  project.db
+  6. detect_external_changes(project_root) - Compare current
+  hash with last known
+
+  Missing Database Tables
+
+  -- From blueprint, NOT in schemaExampleProject.sql
+  CREATE TABLE git_state (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      current_branch TEXT NOT NULL,
+      last_known_hash TEXT,
+      last_sync_timestamp DATETIME,
+      project_root_path TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE work_branches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      branch_name TEXT UNIQUE NOT NULL,
+      purpose TEXT NOT NULL,
+      status TEXT DEFAULT 'active',
+      created_from TEXT DEFAULT 'main',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      merged_at DATETIME NULL,
+      metadata_json TEXT
+  );
+
+  Recommendation
+
+  Create these files:
+
+  1. ✅ docs/directives-json/directives-git.json -
+  Git-specific directives (6 directives, ~6 helpers)
+  2. ✅ Add to schemaExampleProject.sql - git_state and
+  work_branches tables
+  3. ✅ Update helper-functions-reference.md - Add Git helpers
+   section
+  4. ✅ Update README.md - Reference git directives
+
+  Benefits:
+  - Clean separation of concerns
+  - Git is optional (can implement later without touching
+  core)
+  - Aligns with blueprint architecture
+  - Makes Phase 4 (Advanced Features - Git Integration)
+  cleaner
+
+  Should I create these files now? I can:
+  1. Create directives-git.json with 6 directives based on
+  blueprint
+  2. Add missing tables to schemaExampleProject.sql
+  3. Add Git helpers section to helper-functions-reference.md
+  4. Update README to reference git directives

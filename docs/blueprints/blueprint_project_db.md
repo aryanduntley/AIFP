@@ -30,6 +30,8 @@ CREATE TABLE project (
     status TEXT DEFAULT 'active',          -- active, paused, completed, abandoned
     version INTEGER DEFAULT 1,             -- Tracks project pivots
     blueprint_checksum TEXT,               -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
+    user_directives_status TEXT DEFAULT NULL CHECK (user_directives_status IN (NULL, 'in_progress', 'active', 'disabled')),
+                                           -- NULL: no user directives, 'in_progress': being set up, 'active': running, 'disabled': paused
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -41,12 +43,19 @@ CREATE TABLE project (
 - `goals_json`: JSON array of project goals
 - `version`: Increments on major pivots (tracked by `project_evolution`)
 - `blueprint_checksum`: Checksum of `.aifp/ProjectBlueprint.md` for sync validation
+- `user_directives_status`: Tracks user directive system status
+  - `NULL` (default): User directives not initialized
+  - `'in_progress'`: User directives being set up (parsing/validating)
+  - `'active'`: User directives running and executing
+  - `'disabled'`: User directives paused but database exists
 
 **Usage**:
 - **ONE row per database** (one project per database)
 - Updated by `project_init`, `project_evolution`, `project_blueprint_update`
+- Updated by `user_directive_parse` (sets 'in_progress'), `user_directive_activate` (sets 'active'), `user_directive_deactivate` (sets 'disabled')
 - Queried by almost all directives for context
 - `blueprint_checksum` updated whenever ProjectBlueprint.md is modified
+- `user_directives_status` checked by `aifp_run` and `aifp_status` to include user directive context
 
 ---
 

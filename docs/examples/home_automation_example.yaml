@@ -1,0 +1,180 @@
+# Home Automation User Directives Example
+# This file demonstrates user-defined directives for home automation using Home Assistant
+# Save to: .aifp/user-directives/source/home_automation.yaml
+
+directives:
+  # Time-based directive: Turn off lights at specific time
+  - name: turn_off_living_room_lights_5pm
+    description: Turn off all living room lights at 5pm every day
+    domain: home_automation
+    priority: 5
+    trigger:
+      type: time
+      time: "17:00"                     # 24-hour format
+      timezone: America/New_York        # IANA timezone
+      daylight_savings: true            # Account for DST
+      days: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]  # All days
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/light/turn_off
+      method: POST
+      params:
+        entity_id: group.living_room_lights
+      headers:
+        Content-Type: application/json
+
+  # Condition-based directive: Monitor stove safety
+  - name: monitor_stove_safety
+    description: Turn off stove if it's been on for more than 20 minutes
+    domain: home_automation
+    priority: 10                        # High priority (safety)
+    trigger:
+      type: condition
+      check_interval: 60                # Check every 60 seconds
+      condition: |
+        stove.state == 'on' AND stove.duration_seconds > 1200
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/switch/turn_off
+      params:
+        entity_id: switch.kitchen_stove
+      headers:
+        Content-Type: application/json
+
+  # Time-based directive: Morning routine
+  - name: morning_routine_weekdays
+    description: Turn on bedroom lights and start coffee at 6:30am on weekdays
+    domain: home_automation
+    priority: 3
+    trigger:
+      type: time
+      time: "06:30"
+      timezone: America/New_York
+      days: [monday, tuesday, wednesday, thursday, friday]
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/scene/turn_on
+      params:
+        entity_id: scene.morning_routine
+
+  # Condition-based directive: Temperature control
+  - name: adjust_thermostat_temperature
+    description: Adjust thermostat if temperature goes outside comfortable range
+    domain: home_automation
+    priority: 5
+    trigger:
+      type: condition
+      check_interval: 300               # Check every 5 minutes
+      condition: |
+        (temperature < 68 OR temperature > 74) AND hvac.mode == 'auto'
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/climate/set_temperature
+      params:
+        entity_id: climate.main_floor
+        target_temp_high: 74
+        target_temp_low: 68
+        hvac_mode: heat_cool
+
+  # Time-based directive: Evening security
+  - name: lock_doors_at_night
+    description: Lock all doors at 10pm every night
+    domain: home_automation
+    priority: 8                         # High priority (security)
+    trigger:
+      type: time
+      time: "22:00"
+      timezone: America/New_York
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/lock/lock
+      params:
+        entity_id: group.all_door_locks
+
+  # Event-based directive: Motion detection
+  - name: turn_on_lights_on_motion
+    description: Turn on lights when motion detected in hallway
+    domain: home_automation
+    priority: 5
+    trigger:
+      type: event
+      source: homeassistant
+      event_name: motion_detected
+      filter: |
+        event.entity_id == 'binary_sensor.hallway_motion'
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/light/turn_on
+      params:
+        entity_id: light.hallway
+        brightness: 255
+
+  # Condition-based directive: Garage door safety
+  - name: close_garage_if_open_at_night
+    description: Close garage door if it's open after 11pm
+    domain: home_automation
+    priority: 8
+    trigger:
+      type: condition
+      check_interval: 300               # Check every 5 minutes
+      condition: |
+        garage_door.state == 'open' AND current_time > '23:00'
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/cover/close_cover
+      params:
+        entity_id: cover.garage_door
+
+  # Time-based directive: Energy saving mode
+  - name: enable_energy_saving_mode
+    description: Enable energy saving mode during peak hours
+    domain: home_automation
+    priority: 4
+    trigger:
+      type: time
+      time: "14:00"                     # 2pm - peak energy hours
+      timezone: America/New_York
+      days: [monday, tuesday, wednesday, thursday, friday]
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/script/turn_on
+      params:
+        entity_id: script.energy_saving_mode
+
+  # Script execution directive: Backup automation config
+  - name: backup_home_assistant_config
+    description: Backup Home Assistant configuration nightly
+    domain: home_automation
+    priority: 2
+    trigger:
+      type: time
+      time: "02:00"                     # 2am
+      timezone: America/New_York
+    action:
+      type: script_execution
+      script: /config/scripts/backup_ha.sh
+      working_dir: /config
+      env:
+        BACKUP_DIR: /backup/home_assistant
+
+  # Manual directive: Party mode
+  - name: activate_party_mode
+    description: Set lights and music for party mode (manual trigger)
+    domain: home_automation
+    priority: 1
+    trigger:
+      type: manual                      # User executes via command
+    action:
+      type: api_call
+      api: homeassistant
+      endpoint: /services/scene/turn_on
+      params:
+        entity_id: scene.party_mode

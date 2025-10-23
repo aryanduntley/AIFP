@@ -11,6 +11,8 @@ CREATE TABLE project (
     status TEXT DEFAULT 'active',           -- active, paused, completed, abandoned
     version INTEGER DEFAULT 1,              -- Tracks idea evolution
     blueprint_checksum TEXT,                -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
+    user_directives_status TEXT DEFAULT NULL CHECK (user_directives_status IN (NULL, 'in_progress', 'active', 'disabled')),
+                                            -- NULL: no user directives, 'in_progress': being set up, 'active': running, 'disabled': paused
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
