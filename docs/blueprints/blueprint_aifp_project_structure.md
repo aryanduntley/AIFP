@@ -2,7 +2,16 @@
 
 ## Overview
 
-This blueprint defines the `.aifp/` project folder structure, the ProjectBlueprint.md document, and the enhanced status/initialization workflow that enables context-aware project management across AI sessions.
+This blueprint defines the `.aifp-project/` folder structure for user projects, the ProjectBlueprint.md document, and the enhanced status/initialization workflow that enables context-aware project management across AI sessions.
+
+**Important**: User projects use `.aifp-project/` to distinguish from the MCP server's own development folder (`.aifp/`).
+
+**Note**: This blueprint references both `.aifp/` (historical/conceptual) and `.aifp-project/` (actual implementation for user projects). In practice:
+- **User projects**: Use `.aifp-project/` directory
+- **MCP server development**: Uses `.aifp/` for meta-circular tracking
+- **Legacy/Archive**: `.git/.aifp/` for backward compatibility backups
+
+When implementing, all user-facing code should use `.aifp-project/` paths.
 
 ---
 
@@ -10,16 +19,21 @@ This blueprint defines the `.aifp/` project folder structure, the ProjectBluepri
 
 ```
 <project-root>/
-├── .aifp/
+├── .aifp-project/                   # User project AIFP state
 │   ├── ProjectBlueprint.md          # High-level project overview (human & AI readable)
 │   ├── project.db                   # Project state database
 │   ├── user_preferences.db          # User customization database
+│   ├── user_directives.db           # Optional: user-defined automation
 │   ├── config.json                  # Project-specific AIFP configuration
-│   └── backups/                     # Optional: automated backups
-│       ├── project.db.backup
-│       └── ProjectBlueprint.md.backup
+│   ├── .gitkeep                     # Ensures directory tracked in Git
+│   ├── backups/                     # Optional: automated backups
+│   │   ├── project.db.backup
+│   │   └── ProjectBlueprint.md.backup
+│   └── logs/                        # Optional: user directive execution logs
+│       ├── execution/               # 30-day execution logs
+│       └── errors/                  # 90-day error logs
 ├── .git/
-│   └── .aifp/                       # Optional: archived project state
+│   └── .aifp/                       # Optional: archived project state (legacy path)
 │       ├── ProjectBlueprint.md      # Snapshot for recovery
 │       └── project.db.backup
 └── src/                             # Actual project code
@@ -27,9 +41,11 @@ This blueprint defines the `.aifp/` project folder structure, the ProjectBluepri
 
 ### Design Rationale
 
-- **`.aifp/` at project root**: Primary location for active AIFP state
-- **`.git/.aifp/` archive**: Optional backup/recovery mechanism for project resets
+- **`.aifp-project/` at project root**: Primary location for user project AIFP state
+- **Separation from MCP dev**: MCP server uses `.aifp/` for its own development tracking
+- **`.git/.aifp/` archive**: Optional backup/recovery mechanism (legacy compatibility)
 - **ProjectBlueprint.md**: Markdown for human readability and AI context loading
+- **Four-database architecture**: Core directives (aifp_core.db via MCP), project state, user prefs, user directives
 
 ---
 

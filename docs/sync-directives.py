@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
 """
-AIFP Directive Sync Manager — Schema v1.3
+AIFP Directive Sync Manager — Schema v1.4
 ------------------------------------------
 Synchronizes all directive JSON definitions with the aifp_core.db database.
 
 Handles:
-- Directives (FP + Project)
+- Directives (FP Core + FP Aux + Project + User Preferences + User System + Git)
 - Categories & Linking
-- Directive Interactions (from Graph JSON)
+- Directive Interactions (from directives-interactions.json)
 - Parent relationships
 - Helper Functions, Tools, and Notes table presence
 - Integrity Validation (post-sync verification)
 
-This version aligns with the full schema (v1.3) for aifp_core.db.
+Updated: 2025-10-25
+- Added support for user preference directives (directives-user-pref.json)
+- Added support for user system directives (directives-user-system.json)
+- Added support for git integration directives (directives-git.json)
+- Updated to use directives-interactions.json (replaces project_directive_graph.json)
+- Updated file paths to include directives-json/ prefix
+- Maintains backward compatibility with old graph format
+
+Total Directives: 108 (30 FP Core + 32 FP Aux + 25 Project + 7 User Pref + 8 User System + 6 Git)
+
+This version aligns with the full schema (v1.4) for aifp_core.db.
 """
 
 import os
@@ -28,18 +38,35 @@ from typing import List, Dict, Any
 DB_PATH = "aifp_core.db"
 
 FP_DIRECTIVE_FILES = [
-    "directives-fp-core.json",
-    "directives-fp-aux.json"
+    "directives-json/directives-fp-core.json",
+    "directives-json/directives-fp-aux.json"
 ]
 
 PROJECT_DIRECTIVE_FILES = [
-    "directives-project.json"
+    "directives-json/directives-project.json"
 ]
 
-DIRECTIVE_GRAPH_FILE = "project_directive_graph.json"
+USER_PREFERENCE_FILES = [
+    "directives-json/directives-user-pref.json"
+]
 
+USER_SYSTEM_FILES = [
+    "directives-json/directives-user-system.json"
+]
+
+GIT_DIRECTIVE_FILES = [
+    "directives-json/directives-git.json"
+]
+
+DIRECTIVE_INTERACTIONS_FILE = "directives-json/directives-interactions.json"
+
+# Deprecated - kept for backward compatibility
+DIRECTIVE_GRAPH_FILE = "directives-json/project_directive_graph.json"
+
+MIGRATIONS_DIR = "directives-json/migrations"
 SYNC_REPORT_FILE = "logs/sync_report.json"
 
+CURRENT_SCHEMA_VERSION = "1.4"
 DRY_RUN = False
 
 
@@ -161,6 +188,109 @@ def ensure_schema(conn: sqlite3.Connection):
 
 
 # ===================================
+# MIGRATION SYSTEM
+# ===================================
+
+def get_current_db_version(conn: sqlite3.Connection) -> str:
+    """Get current schema version from database."""
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT version FROM schema_version WHERE id = 1")
+        row = cur.fetchone()
+        return row['version'] if row else "1.0"
+    except sqlite3.OperationalError:
+        # schema_version table doesn't exist yet
+        return "1.0"
+
+
+def set_db_version(conn: sqlite3.Connection, version: str):
+    """Update schema version in database."""
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT OR REPLACE INTO schema_version (id, version, updated_at)
+        VALUES (1, ?, CURRENT_TIMESTAMP)
+    """, (version,))
+    conn.commit()
+
+
+def get_migration_files() -> List[tuple]:
+    """
+    Get all migration files from migrations directory.
+    Returns list of (version, filepath) tuples sorted by version.
+
+    Migration files should be named: migration_1.2_to_1.3.sql
+    """
+    if not os.path.exists(MIGRATIONS_DIR):
+        return []
+
+    migrations = []
+    for filename in os.listdir(MIGRATIONS_DIR):
+        if filename.endswith('.sql') and filename.startswith('migration_'):
+            # Parse version from filename: migration_1.2_to_1.3.sql -> 1.3
+            try:
+                parts = filename.replace('.sql', '').split('_to_')
+                if len(parts) == 2:
+                    target_version = parts[1]
+                    migrations.append((target_version, os.path.join(MIGRATIONS_DIR, filename)))
+            except Exception:
+                print(f"⚠️  Could not parse migration filename: {filename}")
+
+    # Sort by version
+    migrations.sort(key=lambda x: [int(n) for n in x[0].split('.')])
+    return migrations
+
+
+def run_migrations(conn: sqlite3.Connection):
+    """
+    Run all pending migrations to bring database to current schema version.
+    Ensures backward compatibility when schema changes.
+    """
+    current_version = get_current_db_version(conn)
+    print(f"📊 Current database schema version: {current_version}")
+
+    if current_version == CURRENT_SCHEMA_VERSION:
+        print(f"✅ Database already at current version ({CURRENT_SCHEMA_VERSION})")
+        return
+
+    print(f"🔄 Migrating database from {current_version} to {CURRENT_SCHEMA_VERSION}")
+
+    migrations = get_migration_files()
+    if not migrations:
+        print("⚠️  No migration files found. Using ensure_schema() for initialization.")
+        return
+
+    # Run migrations that are newer than current version
+    for target_version, migration_file in migrations:
+        # Compare versions
+        current_parts = [int(n) for n in current_version.split('.')]
+        target_parts = [int(n) for n in target_version.split('.')]
+
+        # Only run if target > current
+        if target_parts > current_parts:
+            print(f"  → Applying migration to {target_version}: {os.path.basename(migration_file)}")
+
+            try:
+                with open(migration_file, 'r', encoding='utf-8') as f:
+                    migration_sql = f.read()
+
+                conn.executescript(migration_sql)
+                set_db_version(conn, target_version)
+                print(f"  ✅ Migration to {target_version} complete")
+
+            except Exception as e:
+                print(f"  ❌ Migration to {target_version} failed: {e}")
+                if not DRY_RUN:
+                    conn.rollback()
+                raise
+
+    # Update to current version
+    if get_current_db_version(conn) != CURRENT_SCHEMA_VERSION:
+        set_db_version(conn, CURRENT_SCHEMA_VERSION)
+
+    print(f"✅ Database migrated to version {CURRENT_SCHEMA_VERSION}")
+
+
+# ===================================
 # CORE HELPERS
 # ===================================
 
@@ -256,14 +386,27 @@ def insert_interaction(conn, src_id, tgt_id, relation_type, desc=""):
 # ===================================
 
 def sync_directives():
-    print("🔄 Starting Full AIFP Directive Sync (Schema v1.3)")
+    print("🔄 Starting Full AIFP Directive Sync (Schema v1.4)")
+    print("📦 Including: FP Core, FP Aux, Project, User Prefs, User System, Git Integration")
     conn = get_conn(DB_PATH)
     ensure_schema(conn)
+
+    # Run any pending migrations
+    run_migrations(conn)
+
     cur = conn.cursor()
 
-    # Load directives
+    # Load all directive files
+    all_directive_files = (
+        FP_DIRECTIVE_FILES +
+        PROJECT_DIRECTIVE_FILES +
+        USER_PREFERENCE_FILES +
+        USER_SYSTEM_FILES +
+        GIT_DIRECTIVE_FILES
+    )
+
     all_entries = []
-    for file in FP_DIRECTIVE_FILES + PROJECT_DIRECTIVE_FILES:
+    for file in all_directive_files:
         entries = load_json_file(file)
         all_entries.extend(entries)
         print(f"📘 Loaded {len(entries)} directives from {file}")
@@ -288,9 +431,50 @@ def sync_directives():
             """, (entry["parent_directive"], entry["name"]))
     conn.commit()
 
-    # Directive relationships
-    if os.path.exists(DIRECTIVE_GRAPH_FILE):
-        print(f"📊 Linking interactions from {DIRECTIVE_GRAPH_FILE}")
+    # Directive relationships from directives-interactions.json
+    if os.path.exists(DIRECTIVE_INTERACTIONS_FILE):
+        print(f"📊 Linking interactions from {DIRECTIVE_INTERACTIONS_FILE}")
+        interactions_data = load_json_file(DIRECTIVE_INTERACTIONS_FILE)
+
+        # Handle both old graph format and new interactions format
+        for item in interactions_data:
+            # New format: direct interactions list
+            if "source_directive" in item and "target_directive" in item:
+                cur.execute("SELECT id FROM directives WHERE name=?", (item["source_directive"],))
+                src = cur.fetchone()
+                cur.execute("SELECT id FROM directives WHERE name=?", (item["target_directive"],))
+                tgt = cur.fetchone()
+
+                if src and tgt:
+                    insert_interaction(
+                        conn,
+                        src["id"],
+                        tgt["id"],
+                        relation_type_map(item.get("relation_type", "cross_link")),
+                        item.get("description", "")
+                    )
+                    report["interactions"] += 1
+
+            # Old graph format: node with relationship lists
+            elif "name" in item:
+                cur.execute("SELECT id FROM directives WHERE name=?", (item["name"],))
+                src = cur.fetchone()
+                if not src:
+                    continue
+                src_id = src["id"]
+                for rel_type in ["triggers", "depends_on", "escalates_to", "cross_links", "fp_links"]:
+                    for target in item.get(rel_type, []):
+                        cur.execute("SELECT id FROM directives WHERE name=?", (target,))
+                        tgt = cur.fetchone()
+                        if tgt:
+                            insert_interaction(conn, src_id, tgt["id"],
+                                               relation_type_map(rel_type),
+                                               f"{item['name']} {rel_type} {target}")
+                            report["interactions"] += 1
+
+    # Fallback to old graph file if new file not found
+    elif os.path.exists(DIRECTIVE_GRAPH_FILE):
+        print(f"📊 Linking interactions from {DIRECTIVE_GRAPH_FILE} (deprecated)")
         graph_data = load_json_file(DIRECTIVE_GRAPH_FILE)
         for node in graph_data:
             cur.execute("SELECT id FROM directives WHERE name=?", (node["name"],))
@@ -375,6 +559,40 @@ def validate_integrity(conn):
     if note_count == 0:
         issues.append("ℹ️ Notes table is empty — this may be fine, but consider adding documentation entries.")
 
+    # 6. Verify tool entries have valid directive references
+    cur.execute("""
+        SELECT t.name, t.maps_to_directive_id
+        FROM tools t
+        WHERE t.maps_to_directive_id IS NOT NULL
+        AND t.maps_to_directive_id NOT IN (SELECT id FROM directives)
+    """)
+    for row in cur.fetchall():
+        issues.append(f"❌ Tool '{row['name']}' references non-existent directive_id={row['maps_to_directive_id']}")
+
+    # 7. Verify helper_functions referenced in workflows exist
+    cur.execute("SELECT id, name, workflow FROM directives;")
+    for row in cur.fetchall():
+        try:
+            workflow = json.loads(row['workflow']) if isinstance(row['workflow'], str) else row['workflow']
+            helper_refs = extract_helper_references(workflow)
+
+            for helper_name in helper_refs:
+                cur.execute("SELECT name FROM helper_functions WHERE name=?", (helper_name,))
+                if not cur.fetchone():
+                    issues.append(f"⚠️ Directive '{row['name']}' references undefined helper_function '{helper_name}'")
+        except (json.JSONDecodeError, TypeError):
+            issues.append(f"⚠️ Directive '{row['name']}' has invalid workflow JSON")
+
+    # 8. Verify all directives have valid workflow structure
+    cur.execute("SELECT name, workflow FROM directives;")
+    for row in cur.fetchall():
+        try:
+            workflow = json.loads(row['workflow']) if isinstance(row['workflow'], str) else row['workflow']
+            if not isinstance(workflow, dict) or 'trunk' not in workflow:
+                issues.append(f"⚠️ Directive '{row['name']}' missing required 'trunk' in workflow")
+        except (json.JSONDecodeError, TypeError):
+            issues.append(f"❌ Directive '{row['name']}' has malformed workflow JSON")
+
     if issues:
         print(f"❗ Found {len(issues)} integrity warnings:")
         for i in issues:
@@ -383,6 +601,39 @@ def validate_integrity(conn):
         print("✅ Database passed all integrity checks cleanly.")
 
     print("🔍 Integrity validation complete.\n")
+
+
+def extract_helper_references(workflow: dict, refs: set = None) -> set:
+    """
+    Recursively extract helper function references from workflow JSON.
+    Looks for common patterns like 'helper', 'call', 'function' keys.
+    """
+    if refs is None:
+        refs = set()
+
+    if isinstance(workflow, dict):
+        # Check for helper references in common patterns
+        for key in ['helper', 'call', 'function', 'helper_function']:
+            if key in workflow and isinstance(workflow[key], str):
+                refs.add(workflow[key])
+
+        # Check 'details' which often contains helper calls
+        if 'details' in workflow and isinstance(workflow['details'], dict):
+            for value in workflow['details'].values():
+                if isinstance(value, str) and value.startswith('helper:'):
+                    refs.add(value.replace('helper:', ''))
+
+        # Recurse into nested structures
+        for value in workflow.values():
+            if isinstance(value, (dict, list)):
+                extract_helper_references(value, refs)
+
+    elif isinstance(workflow, list):
+        for item in workflow:
+            if isinstance(item, (dict, list)):
+                extract_helper_references(item, refs)
+
+    return refs
 
 
 # ===================================
@@ -396,8 +647,20 @@ if __name__ == "__main__":
         print(f"❌ Sync failed: {e}")
 
 # ==================================
-# Should we extend the Integrity Validation Layer next to also verify that:
-# Each tool entry has a valid maps_to_directive_id
-# Each helper_function referenced in any workflow JSON actually exists in helper_functions
-# That would give you a truly self-auditing MCP core database — no dangling references anywhere.
+# MIGRATION GUIDE
+# ==================================
+# To create a new migration:
+# 1. Create file: directives-json/migrations/migration_1.4_to_1.5.sql
+# 2. Include schema changes (ALTER TABLE, CREATE TABLE, etc.)
+# 3. Update CURRENT_SCHEMA_VERSION at top of this file
+# 4. Run sync script - migrations apply automatically
+#
+# Example migration file structure:
+# -- Migration from v1.4 to v1.5
+# -- Description: Add new feature X
+#
+# ALTER TABLE directives ADD COLUMN new_field TEXT;
+# CREATE INDEX IF NOT EXISTS idx_new_field ON directives(new_field);
+#
+# -- Update version (handled automatically by run_migrations)
 # ==================================

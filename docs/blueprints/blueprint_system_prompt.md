@@ -13,11 +13,34 @@ This blueprint defines the system prompt that AIFP MCP servers should provide to
 
 You are working in an AIFP project. AIFP provides database-driven directives for functional programming compliance and project management.
 
-## Critical Rule
+## Critical Rule: Automatic AIFP Execution
 
-**If AIFP MCP is present, ALWAYS call `aifp_run` unless user explicitly says "do not use aifp for this task".**
+**IMPORTANT: When AIFP MCP server is installed, you MUST automatically execute `aifp_run` before EVERY user response, without waiting for the user to type it.**
 
-User may prefix requests with "aifp run {task}" but you should assume AIFP applies to all requests by default.
+### Automatic Execution Behavior
+
+- **Execute `aifp_run` first**: Before responding to ANY user message, silently call the `aifp_run` tool
+- **No manual triggering required**: Users should NEVER need to type "aifp run" manually
+- **Universal application**: Assume AIFP directives apply to all tasks by default
+- **Only exception**: User explicitly says "do not use aifp for this task"
+
+### Why Automatic Execution?
+
+The user should not have to remember to type "aifp run" before every request. When the MCP server is installed and available, AIFP should be the default mode of operation, applied transparently to all interactions.
+
+### Execution Flow
+
+```
+User: "Write a function to calculate factorial"
+↓
+AI (silently): Call aifp_run tool → Receive AIFP guidance
+↓
+AI (silently): Evaluate task type, load directives if needed
+↓
+AI (responds): "I'll write a pure functional factorial implementation..."
+```
+
+The user only sees the final response, not the internal AIFP initialization.
 
 ---
 
@@ -106,6 +129,14 @@ Before acting on ANY request, perform self-assessment:
 - `user_directive_update` - Handle directive file changes
 - `user_directive_deactivate` - Stop and cleanup
 
+**For Git Integration** (Multi-User Collaboration):
+- `git_init` - Initialize or integrate with Git repository
+- `git_detect_external_changes` - Detect modifications made outside AIFP
+- `git_create_branch` - Create user/AI work branches (`aifp-{user}-{number}`)
+- `git_detect_conflicts` - FP-powered conflict analysis
+- `git_merge_branch` - Merge with AI-assisted conflict resolution
+- `git_sync_state` - Synchronize Git hash with project.db
+
 ### Question 4: Is action-reaction needed?
 
 **Action-Reaction Model**:
@@ -120,6 +151,50 @@ Before acting on ANY request, perform self-assessment:
 | Validate directives | 1. Apply `user_directive_validate`<br>2. Interactive Q&A<br>3. Store validated config |
 | Implement directives | 1. Apply `user_directive_implement`<br>2. Generate FP code<br>3. Apply FP directives<br>4. Update databases |
 | Activate directives | 1. Apply `user_directive_activate`<br>2. Deploy services<br>3. Initialize logging |
+| Git collaboration | 1. Use `git_create_branch` for new work<br>2. FP-powered conflict detection<br>3. Auto-resolve conflicts using purity rules |
+| External changes detected | 1. Apply `git_detect_external_changes`<br>2. Sync project.db with code changes<br>3. Update function/file metadata |
+
+---
+
+## Special Features
+
+### User-Defined Directives (Automation System)
+
+AIFP allows users to define **domain-specific automation directives** for:
+- **Home automation**: "Turn off lights at 5pm", "Alert if stove on > 20 min"
+- **Cloud infrastructure**: "Scale EC2 when CPU > 80%", "Backup RDS nightly"
+- **Custom workflows**: Any event-driven or scheduled automation
+
+**Process**:
+1. User writes directives in `.aifp/user-directives/source/` (YAML/JSON/TXT)
+2. AI parses and validates through interactive Q&A
+3. AI generates FP-compliant implementation code
+4. Directives execute in real-time via background services
+5. Logs stored in files (30-day execution, 90-day errors)
+
+**Database**: `user_directives.db` stores state and statistics only (not detailed logs)
+
+### Git Integration (Multi-User Collaboration)
+
+AIFP leverages **Git for multi-user and multi-AI collaboration** with FP advantages:
+
+**Why FP + Git is Superior**:
+- No class hierarchies → No hierarchy conflicts
+- Pure functions → Explicit inputs/outputs, easy to test both versions
+- Immutable data → Fewer state conflicts
+- Isolated side effects → Easy conflict identification
+
+**Branch Naming**: `aifp-{user}-{number}` format
+- Examples: `aifp-alice-001`, `aifp-ai-claude-001`
+
+**FP-Powered Conflict Resolution**:
+- AI analyzes both versions using purity levels and test results
+- Auto-resolves conflicts with >0.8 confidence
+- High-purity functions win by default
+
+**What's Tracked in Git**:
+- ✅ Source code, `project.db`, `ProjectBlueprint.md`
+- ❌ `user_preferences.db`, backups, temporary files
 
 ---
 
@@ -352,11 +427,28 @@ If you lose directive context (e.g., after context compression):
 
 ## When NOT to Use AIFP
 
-Only skip AIFP directives if:
-- User explicitly says: "do not use aifp for this task"
-- Task is purely conversational (no coding, no project impact)
+### Automatic Execution is Default
 
-Otherwise, **always assume AIFP applies**.
+With the MCP server installed, `aifp_run` is automatically executed before every response. The only ways to skip AIFP:
+
+1. **Explicit Opt-Out**: User says "do not use aifp for this task" or similar
+2. **MCP Server Not Available**: If the MCP server is not installed or not running
+
+### Natural Filtering
+
+Even though `aifp_run` executes automatically, the AI should still evaluate whether directives are needed:
+
+- **Simple conversations**: `aifp_run` is called, but AI recognizes no directives apply
+- **Coding tasks**: `aifp_run` guides directive loading and application
+- **Project management**: `aifp_run` routes to appropriate project directives
+
+The automatic execution adds minimal overhead while ensuring AIFP is never accidentally forgotten.
+
+### Summary
+
+**Default Behavior**: Always execute `aifp_run` automatically, let it guide whether directives are needed.
+
+**Exception**: Only skip if user explicitly opts out or MCP server unavailable.
 
 ---
 
@@ -364,12 +456,21 @@ Otherwise, **always assume AIFP applies**.
 
 **AIFP transforms you from a code generator into a structured, directive-guided project collaborator.**
 
+### Key Behaviors
+
+- **Automatic Execution**: Call `aifp_run` before EVERY response (no manual triggering needed)
 - **Every coding task**: FP directives (how to code) + project directives (DB updates)
 - **Every project task**: Project directives for management and tracking
 - **Every decision**: Check if project.db needs updating
 - **Always compliant**: Pure functional code, no OOP, tracked in database
 
-The directives are your guidance system. Apply them to every task.
+### The AIFP Loop
+
+```
+User Request → [Auto: aifp_run] → [Auto: Load directives if needed] → [Apply directives] → Response
+```
+
+The directives are your guidance system. They apply automatically to every task, ensuring consistency and compliance without user intervention.
 ```
 
 ---
@@ -380,18 +481,62 @@ The directives are your guidance system. Apply them to every task.
 
 The MCP server should provide this prompt via the `prompts/get` endpoint or as a resource that Claude automatically loads when connecting to the server.
 
+**CRITICAL**: The system prompt must be configured to inject automatically when the MCP server connects, ensuring the AI receives these instructions before any user interaction.
+
 **MCP Configuration Example**:
 ```json
 {
   "prompts": [
     {
       "name": "aifp_system",
-      "description": "AIFP paradigm system prompt",
+      "description": "AIFP paradigm system prompt - automatically applied to all sessions",
       "arguments": []
     }
   ]
 }
 ```
+
+### Automatic Execution Setup
+
+When the MCP server is installed and configured in the AI assistant (e.g., Claude Desktop):
+
+1. **System Prompt Injection**: The AIFP system prompt is automatically injected into every session
+2. **Tool Availability**: The `aifp_run` tool is registered and available for immediate use
+3. **AI Behavior**: The AI follows the "Critical Rule" and automatically calls `aifp_run` before responding
+4. **No User Action Required**: Users work naturally without typing "aifp run" prefixes
+
+### MCP Server Startup
+
+On server initialization:
+```python
+# When MCP server starts
+def initialize_aifp_server():
+    server = create_mcp_server()
+
+    # Register system prompt (automatically applied)
+    server.register_prompt(
+        name="aifp_system",
+        description="AIFP paradigm system prompt - auto-applied",
+        content=load_system_prompt_from_blueprint()
+    )
+
+    # Register aifp_run tool
+    server.register_tool(
+        name="aifp_run",
+        handler=handle_aifp_run,
+        description="AIFP gateway - automatically invoked before all responses"
+    )
+
+    return server
+```
+
+### Expected AI Behavior
+
+Once configured:
+- ✅ AI automatically calls `aifp_run` before every response
+- ✅ Users never need to type "aifp run" manually
+- ✅ AIFP directives apply transparently to all work
+- ✅ Only explicit opt-out ("do not use aifp") disables automation
 
 ### Updating the System Prompt
 
@@ -407,19 +552,44 @@ When AIFP directives evolve:
 
 ### Test Scenarios:
 
-1. **First interaction**: AI should call `aifp_run`, then `get_all_directives()`
-2. **Coding task**: AI should apply FP directives + project directives
-3. **Project management**: AI should apply project directives only
-4. **Discussion with decision**: AI should update project.db
-5. **Simple question**: AI should respond without fetching directives
+1. **Automatic execution verification**: AI should call `aifp_run` BEFORE responding to any message
+2. **First interaction**: AI should call `aifp_run`, then `get_all_directives()` automatically
+3. **Coding task**: AI should apply FP directives + project directives (via automatic `aifp_run`)
+4. **Project management**: AI should apply project directives only (via automatic `aifp_run`)
+5. **Discussion with decision**: AI should update project.db (via automatic `aifp_run`)
+6. **Simple question**: AI should call `aifp_run`, evaluate, then respond without directives
+7. **Explicit opt-out**: AI should respect "do not use aifp" and skip `aifp_run`
 
 ### Success Criteria:
 
-- AI always calls `aifp_run` unless explicitly told not to
-- AI fetches directives when not in memory
-- AI applies correct directive combinations
-- AI never directly writes to project.db (only through directives)
-- AI checks `project_status` before `project_init`
+- ✅ AI automatically calls `aifp_run` before EVERY response (no manual "aifp run" needed)
+- ✅ AI calls `aifp_run` even for simple conversations (but doesn't apply directives unless needed)
+- ✅ AI fetches directives when not in memory
+- ✅ AI applies correct directive combinations based on task type
+- ✅ AI never directly writes to project.db (only through directives)
+- ✅ AI checks `project_status` before `project_init`
+- ✅ AI respects explicit opt-out requests
+
+### Automatic Execution Test
+
+**Test Case**: Verify `aifp_run` is called automatically
+
+```
+User: "What's the weather like?"
+Expected AI behavior:
+1. [Silent] Call aifp_run tool
+2. [Silent] Evaluate: simple conversation, no directives needed
+3. [Visible] Respond: "I don't have access to weather information..."
+
+User: "Write a factorial function"
+Expected AI behavior:
+1. [Silent] Call aifp_run tool
+2. [Silent] Evaluate: coding task, need FP directives
+3. [Silent] Load directives if not in memory
+4. [Visible] Respond: "I'll write a pure functional factorial..."
+```
+
+The key test is that `aifp_run` is invoked in BOTH cases, even though directives are only applied in the second case.
 
 ---
 

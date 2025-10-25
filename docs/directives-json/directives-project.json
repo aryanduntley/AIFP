@@ -100,7 +100,7 @@
       "name": "initialization",
       "description": "Handles creation and setup of new AIFP projects with ProjectBlueprint.md creation."
     },
-    "description": "Initializes a new AIFP project by creating .aifp/ folder structure, generating ProjectBlueprint.md through interactive prompts, initializing project.db and user_preferences.db, and populating with initial infrastructure, themes, flows, and completion path. Checks for existing .aifp/ or .git/.aifp/ folders before initialization. Offers restoration from .git/.aifp/ backup if found.",
+    "description": "Initializes a new AIFP project by creating .aifp-project/ folder structure, generating ProjectBlueprint.md through interactive prompts, initializing project.db and user_preferences.db, and populating with initial infrastructure, themes, flows, and completion path. Wraps the standalone initialization script (aifp.scripts.init_aifp_project) helper functions to ensure consistent setup. Checks for existing .aifp-project/ or .git/.aifp/ folders before initialization. Offers restoration from .git/.aifp/ backup if found.",
     "md_file_path": "directives/project_init.md",
     "workflow": {
       "trunk": "check_existing_state",
@@ -145,24 +145,44 @@
           "if": "blueprint_prompts_complete",
           "then": "create_project_structure",
           "details": {
+            "helper": "create_project_directory",
+            "module": "aifp.scripts.init_aifp_project",
+            "parameters": {
+              "target_path": "user_working_dir"
+            },
             "create_folders": [
-              ".aifp/",
-              ".aifp/backups/"
-            ]
+              ".aifp-project/",
+              ".aifp-project/backups/"
+            ],
+            "note": "Uses standalone initialization script helper function"
           }
         },
         {
           "if": "structure_created",
           "then": "generate_project_blueprint",
           "details": {
+            "helper": "create_project_blueprint",
+            "module": "aifp.scripts.init_aifp_project",
+            "parameters": {
+              "aifp_dir": ".aifp-project/",
+              "metadata": "from_prompts"
+            },
             "template": "ProjectBlueprint_template.md",
-            "output": ".aifp/ProjectBlueprint.md"
+            "output": ".aifp-project/ProjectBlueprint.md",
+            "note": "Uses standalone initialization script helper function"
           }
         },
         {
           "if": "blueprint_generated",
           "then": "initialize_databases",
           "details": {
+            "helper_project_db": "initialize_project_db",
+            "helper_prefs_db": "initialize_user_preferences_db",
+            "module": "aifp.scripts.init_aifp_project",
+            "parameters": {
+              "aifp_dir": ".aifp-project/",
+              "project_metadata": "from_prompts"
+            },
             "databases": [
               "project.db",
               "user_preferences.db"
@@ -170,11 +190,30 @@
             "schemas": [
               "project_db_schema.sql",
               "user_preferences_schema.sql"
-            ]
+            ],
+            "note": "Uses standalone initialization script helper functions"
           }
         },
         {
           "if": "databases_initialized",
+          "then": "validate_initialization",
+          "details": {
+            "helper": "validate_initialization",
+            "module": "aifp.scripts.init_aifp_project",
+            "parameters": {
+              "aifp_dir": ".aifp-project/"
+            },
+            "checks": [
+              "project.db exists and has metadata",
+              "user_preferences.db has schema",
+              "ProjectBlueprint.md exists",
+              "all required tables created"
+            ],
+            "note": "Validates complete initialization using script function"
+          }
+        },
+        {
+          "if": "validation_passed",
           "then": "populate_project_data",
           "details": {
             "tables": [
@@ -182,7 +221,8 @@
               "infrastructure",
               "completion_path",
               "milestones"
-            ]
+            ],
+            "note": "Project metadata already populated by initialize_project_db helper"
           }
         },
         {

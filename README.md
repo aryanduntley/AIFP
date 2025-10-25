@@ -265,7 +265,7 @@ aifp run "Initialize project for calculator"
 1. Calls `aifp_run` → receives guidance
 2. Evaluates: "Project initialization = project management action"
 3. Checks memory: "Do I have directives? No."
-4. Calls `get_all_directives()` → receives all ~89 directives
+4. Calls `get_all_directives()` → receives all 108 directives (30 FP Core + 32 FP Aux + 25 Project + 7 User Prefs + 8 User System + 6 Git)
 5. Reviews directives: "This matches `project_init`"
 6. Checks prerequisites: "Should run `project_status` first?"
 7. Executes `project_init` directive workflow:
@@ -559,7 +559,7 @@ AI → aifp_run("Initialize AIFP for my matrix calculator")
     → Evaluates: "Project management action"
     → Checks: "No directives in memory"
     → Calls: get_all_directives()
-    → Receives: ~89 directives + self-assessment questions
+    → Receives: 108 directives + self-assessment questions
     → Matches: project_init directive
     → Checks: project_status first (no existing project)
     → Executes: project_init workflow
@@ -682,7 +682,7 @@ AI: ✅ Preference learned: project_file_write
 
 ### Reference Documents
 
-- **[Helper Functions Reference](docs/helper-functions-reference.md)** - Comprehensive catalog of all helper functions organized by database (MCP, Project, Preferences, User Directives). Includes specifications for 35 helper functions with parameters, return types, error handling, and usage by directives.
+- **[Helper Functions Reference](docs/helper-functions-reference.md)** - Comprehensive catalog of all 44 helper functions organized by database (MCP, Project, Git, Preferences, User Directives). Includes 5 MCP helpers, 16 Project helpers (5 initialization + 11 management), 9 Git integration helpers, 4 User Preferences helpers, and 10 User Directives helpers with full specifications, parameters, return types, error handling, and usage by directives.
 
 ### Directive Definitions
 
@@ -744,7 +744,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
   - Branch-based workflows (`aifp-{user}-{number}`)
   - FP-powered conflict resolution (auto-resolve >0.8 confidence)
   - Merge history audit trail
-- ✅ Complete documentation and blueprints (9 blueprints, 44+ helper functions)
+- ✅ Complete documentation and blueprints (9 blueprints, 44 helper functions fully specified)
 - ✅ Cost-conscious tracking (all features opt-in by default)
 
 ### Planned (v1.1+)

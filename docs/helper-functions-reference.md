@@ -12,10 +12,13 @@ This document provides a centralized reference for all helper functions used acr
 
 Helper functions are organized by the database schema they primarily operate on:
 
-1. **MCP Database Helpers** (`aifp_core.db`) - Read-only operations on directive metadata
-2. **Project Database Helpers** (`project.db`) - Read/write operations on project state
-3. **User Preferences Helpers** (`user_preferences.db`) - User customization management
-4. **User Directives Helpers** (`user_directives.db`) - User-defined directive automation
+1. **MCP Database Helpers** (`aifp_core.db`) - 5 functions - Read-only operations on directive metadata
+2. **Project Database Helpers** (`project.db`) - 16 functions (5 initialization + 11 management) - Read/write operations on project state
+3. **Git Integration Helpers** - 9 functions - Version control and multi-user collaboration
+4. **User Preferences Helpers** (`user_preferences.db`) - 4 functions - User customization management
+5. **User Directives Helpers** (`user_directives.db`) - 10 functions - User-defined directive automation
+
+**Total**: 44 helper functions across 4 databases + Git integration
 
 ---
 
@@ -143,6 +146,176 @@ Helper functions are organized by the database schema they primarily operate on:
 
 **Database**: `project.db` (per-project, mutable)
 **Purpose**: Manage project state, files, tasks, and code tracking
+
+---
+
+### Project Initialization Script Helpers
+
+**Module**: `aifp.scripts.init_aifp_project`
+**Purpose**: Standalone initialization functions for bootstrapping new AIFP projects
+**Note**: These helpers are wrapped by the `project_init` directive but also usable standalone via CLI
+
+#### create_project_directory(target_path)
+
+**File Path**: `src/aifp/scripts/init_aifp_project.py`
+
+**Parameters**:
+- `target_path` (Path) - Target directory for new project (user working directory)
+
+**Purpose**: Create `.aifp-project/` directory structure with necessary subdirectories.
+
+**Returns**:
+```python
+Result[Path, str]  # Success: path to .aifp-project/, Failure: error message
+```
+
+**Creates**:
+- `.aifp-project/` directory
+- `.aifp-project/backups/` subdirectory
+- `.aifp-project/.gitkeep` file
+
+**Error Handling**: Returns Failure if directory already exists or insufficient permissions.
+
+**Used By**: `project_init` directive (create_project_structure step), standalone CLI
+
+**FP Compliance**: Pure function with side effects isolated, returns Result type
+
+---
+
+#### initialize_project_db(aifp_dir, project_metadata)
+
+**File Path**: `src/aifp/scripts/init_aifp_project.py`
+
+**Parameters**:
+- `aifp_dir` (Path) - Path to `.aifp-project/` directory
+- `project_metadata` (dict) - Project information:
+  ```python
+  {
+      "name": str,
+      "purpose": str,
+      "goals": list[str],
+      "language": str,
+      "status": str,  # default: 'active'
+      "version": int  # default: 1
+  }
+  ```
+
+**Purpose**: Create and initialize `project.db` with schema and populate project metadata.
+
+**Returns**:
+```python
+Result[Path, str]  # Success: path to project.db, Failure: error message
+```
+
+**Operations**:
+1. Load `project_db_schema.sql` from templates
+2. Create `project.db` at `{aifp_dir}/project.db`
+3. Execute schema SQL to create all tables
+4. Insert project metadata into `project` table
+5. Validate table creation
+
+**Error Handling**: Returns Failure if schema load fails, database creation fails, or validation fails.
+
+**Used By**: `project_init` directive (initialize_databases step), standalone CLI
+
+**FP Compliance**: Effect function with explicit Result type, immutable metadata
+
+---
+
+#### initialize_user_preferences_db(aifp_dir)
+
+**File Path**: `src/aifp/scripts/init_aifp_project.py`
+
+**Parameters**:
+- `aifp_dir` (Path) - Path to `.aifp-project/` directory
+
+**Purpose**: Create `user_preferences.db` with schema only (no initial data).
+
+**Returns**:
+```python
+Result[Path, str]  # Success: path to user_preferences.db, Failure: error message
+```
+
+**Operations**:
+1. Load `user_preferences_schema.sql` from templates
+2. Create `user_preferences.db` at `{aifp_dir}/user_preferences.db`
+3. Execute schema SQL to create all tables (empty)
+4. Validate table creation
+
+**Error Handling**: Returns Failure if schema load fails, database creation fails, or validation fails.
+
+**Used By**: `project_init` directive (initialize_databases step), standalone CLI
+
+**FP Compliance**: Effect function with explicit Result type
+
+---
+
+#### create_project_blueprint(aifp_dir, metadata)
+
+**File Path**: `src/aifp/scripts/init_aifp_project.py`
+
+**Parameters**:
+- `aifp_dir` (Path) - Path to `.aifp-project/` directory
+- `metadata` (dict) - Project metadata for template population
+
+**Purpose**: Generate `ProjectBlueprint.md` from template with placeholder note for user customization.
+
+**Returns**:
+```python
+Result[Path, str]  # Success: path to ProjectBlueprint.md, Failure: error message
+```
+
+**Template Content**:
+```markdown
+# {Project Name} - Project Blueprint
+
+**Note**: This blueprint is auto-generated. Please customize it by discussing the project
+architecture, goals, and structure with your AI assistant. The AI will help fill in:
+- Technical architecture decisions
+- Project themes and flows
+- Completion path milestones
+- Infrastructure requirements
+
+Run 'aifp_run update blueprint' with your AI to collaboratively build this document.
+```
+
+**Error Handling**: Returns Failure if file write fails or template invalid.
+
+**Used By**: `project_init` directive (generate_project_blueprint step), standalone CLI
+
+**FP Compliance**: Effect function with explicit Result type, pure template rendering
+
+---
+
+#### validate_initialization(aifp_dir)
+
+**File Path**: `src/aifp/scripts/init_aifp_project.py`
+
+**Parameters**:
+- `aifp_dir` (Path) - Path to `.aifp-project/` directory
+
+**Purpose**: Validate that project initialization is complete and correct.
+
+**Returns**:
+```python
+Result[bool, str]  # Success: True if valid, Failure: error message with details
+```
+
+**Validation Checks**:
+1. `.aifp-project/` directory exists
+2. `project.db` exists and has valid schema
+3. `project` table has metadata populated
+4. `user_preferences.db` exists and has valid schema
+5. `ProjectBlueprint.md` exists and is not empty
+6. All required tables created in both databases
+
+**Error Handling**: Returns Failure with specific validation error message.
+
+**Used By**: `project_init` directive (validate_initialization step), standalone CLI, tests
+
+**FP Compliance**: Pure validation logic, effect-based file checks, returns Result type
+
+---
 
 ### init_project_db(name, purpose, goals_json, project_id)
 

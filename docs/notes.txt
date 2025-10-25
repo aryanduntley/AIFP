@@ -1,5 +1,6 @@
 Read:
 README.md
+sys-prompt/aifp_system_prompt.txt
 docs/db-schema/schemaExampleMCP.sql
 docs/db-schema/schemaExampleProject.sql
 docs/db-schema/schemaExampleSettings.sql
@@ -11,21 +12,16 @@ The blueprints/context for the project are located in docs/blueprints and the di
 
 are we handling oop wrapping appropriately with our directives. Probably some example files.
 
-directives file for each db table?
-
 Notes are md examples and init structuring are the idea evolution files
 docs/directiveNotes/*
 docs/initialStructuring/*
 Should we make an md file for each and every directive title? ie. (project_init, project_task_decomposition, fp_purity, aifp_run)
 
+PY script to create the .aipm folder, database(s) and empty Project Blueprint file (maybe a note in it that states blueprint needs to be discussed with user and built accordingly). 
 
-NEED DB import/export/migration py scripts
 
-find_directive_by_intent helper
-ensure helper functionsfor all directives that could use it; there are some that may not need helper functions and should be AI processing only
-
-project status prompt?
-
+docs/helper-functions-reference.md
+docs/directives-markdown-reference.md
 
  | directives-fp-core.json       | 30    | FP Core
   | ✅ Complete     |

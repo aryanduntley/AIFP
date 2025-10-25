@@ -399,6 +399,79 @@ Every function must satisfy:
    - [ ] test_create_project_db_creates_all_tables
    - [ ] test_validate_schema_detects_missing_tables
    - [ ] test_populate_directives_inserts_all_records
+
+5. Create standalone initialization script (Pre-MCP Setup)
+   File: src/aifp/scripts/init_aifp_project.py
+
+   Purpose: Standalone script for initializing new AIFP projects BEFORE MCP server is ready.
+   Ensures AI/developers can set up .aifp-project/ folder correctly from day one.
+
+   - [ ] CLI interface with argparse (name, purpose, goals, language)
+   - [ ] create_project_directory(target_path: Path) -> Result[Path, str]
+   - [ ] initialize_project_db(aifp_dir: Path, project_metadata: dict) -> Result[Path, str]
+   - [ ] initialize_user_preferences_db(aifp_dir: Path) -> Result[Path, str]
+   - [ ] create_project_blueprint(aifp_dir: Path, metadata: dict) -> Result[Path, str]
+   - [ ] validate_initialization(aifp_dir: Path) -> Result[bool, str]
+
+   Initialization creates:
+   - .aifp-project/ directory
+   - .aifp-project/project.db (with project metadata populated)
+   - .aifp-project/user_preferences.db (empty, schema only)
+   - .aifp-project/ProjectBlueprint.md (template with placeholder note)
+   - .aifp-project/.gitkeep
+
+   Template ProjectBlueprint.md content:
+   "# {Project Name} - Project Blueprint
+
+   **Note**: This blueprint is auto-generated. Please customize it by discussing the project
+   architecture, goals, and structure with your AI assistant. The AI will help fill in:
+   - Technical architecture decisions
+   - Project themes and flows
+   - Completion path milestones
+   - Infrastructure requirements
+
+   Run 'aifp_run update blueprint' with your AI to collaboratively build this document."
+
+   CLI Usage Examples:
+   ```bash
+   # Basic initialization
+   python -m aifp.scripts.init_aifp_project --name "MyProject" --purpose "Build a web app"
+
+   # With more details
+   python -m aifp.scripts.init_aifp_project \
+     --name "MatrixCalc" \
+     --purpose "Functional matrix calculator" \
+     --goals "Pure FP,No OOP,90% test coverage" \
+     --language "Python"
+
+   # Initialize in specific directory
+   python -m aifp.scripts.init_aifp_project \
+     --name "MyProject" \
+     --purpose "..." \
+     --directory ~/projects/myproject
+   ```
+
+   Exit codes:
+   - 0: Success (project initialized)
+   - 1: Error (directory exists, invalid args, database error)
+
+   Integration with MCP:
+   - The project_init directive WRAPS these helper functions (see directives-project.json)
+   - Directive workflow explicitly calls: create_project_directory(), initialize_project_db(),
+     initialize_user_preferences_db(), create_project_blueprint(), validate_initialization()
+   - Ensures consistent initialization whether used standalone or through MCP
+   - Script also serves as standalone tool during development and for pre-MCP setups
+
+6. Write tests for initialization script
+   File: tests/unit/scripts/test_init_aifp_project.py
+   - [ ] test_creates_directory_structure
+   - [ ] test_initializes_project_db_with_metadata
+   - [ ] test_initializes_user_preferences_db
+   - [ ] test_creates_project_blueprint_template
+   - [ ] test_validates_initialization_success
+   - [ ] test_handles_existing_directory_error
+   - [ ] test_cli_argument_parsing
+   - [ ] test_full_initialization_workflow
 ```
 
 **FP Compliance:**
@@ -1274,11 +1347,13 @@ jobs:
 ### Phase 1 Complete When:
 
 - ✅ All database schemas created and validated
+- ✅ Standalone initialization script (`init_aifp_project.py`) implemented and tested
 - ✅ Core types defined (immutable, type-hinted)
 - ✅ First helper (`get_all_directives`) implemented and tested
 - ✅ Test coverage >95% for implemented code
 - ✅ FP compliance verified (no mutations, pure functions, explicit side effects)
 - ✅ `.aifp/project.db` tracking MCP server development
+- ✅ Pre-MCP project initialization working (AI can bootstrap new projects correctly)
 
 ### Phase 2 Complete When:
 
@@ -1406,16 +1481,20 @@ mutmut run --paths-to-mutate=src/aifp
 5. ✅ Initialize `.aifp/project.db` (manually for now)
 6. ✅ Create `.aifp/ProjectBlueprint.md`
 7. [ ] Copy schema files to `src/aifp/database/schemas/`
-8. [ ] Implement first helper: `get_all_directives()`
-9. [ ] Write comprehensive tests
-10. [ ] Commit and push to Git
+8. [ ] Implement standalone initialization script: `init_aifp_project.py`
+9. [ ] Test initialization script with multiple scenarios
+10. [ ] Implement first helper: `get_all_directives()`
+11. [ ] Write comprehensive tests
+12. [ ] Commit and push to Git
 
 ### Week 1 Deliverable
 
-**Goal**: Working foundation with one complete helper function
+**Goal**: Working foundation with initialization script and first complete helper function
 
 **Acceptance Criteria**:
 - Database schemas in place
+- Standalone initialization script working (`init_aifp_project.py`)
+- AI can bootstrap new AIFP projects correctly using the script
 - Core types defined and tested
 - `get_all_directives()` fully implemented
 - Test coverage >95%

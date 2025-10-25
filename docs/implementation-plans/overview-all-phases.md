@@ -95,6 +95,7 @@ Build the foundational MCP server infrastructure with core functionality:
 #### Key Deliverables
 
 - ✅ Complete database schemas (4 databases)
+- ✅ Standalone initialization script (`init_aifp_project.py`) for pre-MCP setup
 - ✅ 22 helper functions (MCP + Project)
 - ✅ MCP server accepting connections
 - ✅ 4 essential directives working
@@ -104,10 +105,12 @@ Build the foundational MCP server infrastructure with core functionality:
 #### Success Criteria
 
 - User can install MCP server
-- User can initialize AIFP project via `project_init`
+- User/AI can initialize AIFP project via standalone script (pre-MCP)
+- User can initialize AIFP project via `project_init` directive (with MCP)
 - AI can query directives via `get_all_directives`
 - AI can check project status via `aifp_status`
 - All code follows FP principles (immutable, pure, explicit)
+- Complete setup ensures AI bootstraps new projects correctly from day one
 
 #### Dependencies
 
