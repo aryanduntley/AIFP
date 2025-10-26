@@ -62,13 +62,15 @@ User Preference Directives (7 total) - Customize AI behavior:
 - Preferences override default directive behavior (atomic key-value structure)
 - Examples: always_add_docstrings, max_function_length, prefer_guard_clauses
 
-User Directive System (8 total) - Domain-specific automation:
-- user_directive_parse: Parse YAML/JSON/TXT directive files
+User Directive System (8 total) - FOR USE CASE 2 ONLY (Automation Projects):
+- user_directive_parse: Parse YAML/JSON/TXT directive files from user's project
 - user_directive_validate: Interactive validation with Q&A
-- user_directive_implement: Generate FP-compliant implementation code
+- user_directive_implement: Generate FP-compliant implementation code in src/
+- user_directive_approve: User testing and approval workflow
 - user_directive_activate: Deploy for real-time execution via background services
 - user_directive_monitor: Track execution statistics and errors
 - Use cases: Home automation, cloud infrastructure, custom workflows
+- When active: The AIFP project IS dedicated to automation codebase
 - Logs stored in files (30-day execution, 90-day errors), not database
 
 Git Integration (6 total) - Multi-user FP-powered collaboration:
@@ -203,23 +205,50 @@ Conflict resolution strategy:
 - High-purity functions with passing tests win by default
 - User prompted for manual resolution if confidence <0.8
 
-=== USER-DEFINED AUTOMATION ===
+=== TWO DISTINCT USE CASES ===
 
-Purpose: Domain-specific automation via simple directive files
+Use Case 1: Regular Software Development
+- User building applications (web apps, libraries, CLI tools, etc.)
+- AIFP enforces FP compliance and manages the project
+- User writes code, AI assists with FP standards and project tracking
+- Example: ~/projects/my-web-app/.aifp-project/
+
+Use Case 2: Custom Directive Automation
+- User wants automation (home, cloud, workflows)
+- User writes directive definitions (YAML/JSON/TXT) in their project
+- AIFP GENERATES and manages the entire automation codebase
+- The project's code IS the automation code generated from directives
+- Example: ~/automation/home/.aifp-project/
+
+Key Principle: One AIFP instance per project. Never mix web apps with home automation.
+
+=== USER-DEFINED AUTOMATION (USE CASE 2 ONLY) ===
+
+Purpose: Domain-specific automation where AIFP generates the entire codebase
 
 Process:
-1. User writes directives in .aifp/user-directives/source/ (YAML/JSON/TXT)
-2. AI parses with user_directive_parse
-3. AI validates through interactive Q&A with user_directive_validate
-4. AI generates FP-compliant implementation code with user_directive_implement
-5. Directives execute in real-time via background services (user_directive_activate)
-6. Execution logs to files (.aifp/logs/), statistics to user_directives.db
+1. User creates directive files in their project (e.g., directives/lights.yaml)
+2. User tells AI: "Parse my directive file at directives/lights.yaml"
+3. AI parses with user_directive_parse (tracks file reference in user_directives.db)
+4. AI validates through interactive Q&A with user_directive_validate
+5. AI generates FP-compliant implementation code in src/ with user_directive_implement
+6. AI tracks generated code in project.db (files, functions, tasks) like any AIFP project
+7. User approves implementation with user_directive_approve
+8. Directives execute in real-time via background services (user_directive_activate)
+9. Execution logs to .aifp-project/logs/, statistics to user_directives.db
 
 Use cases: Home automation, cloud infrastructure management, custom workflows
 Examples: "Turn off lights at 5pm", "Scale EC2 when CPU >80%", "Backup RDS nightly"
 
+Key Architecture:
+- User directive files stay in user's project (directives/, automations/, wherever they want)
+- .aifp-project/ is AI-managed metadata ONLY - user never touches it
+- Generated code in src/ IS the project codebase
+- project.db tracks src/ files like any AIFP project
+- user_directives.db references user's directive files
+
 Database: user_directives.db stores state and statistics only (not detailed logs)
-Logging: 30-day execution logs, 90-day error logs in rotating files
+Logging: 30-day execution logs, 90-day error logs in rotating files at .aifp-project/logs/
 Dependencies: AI detects required packages/APIs, prompts user before installing
 
 === USER PREFERENCES HIERARCHY ===
@@ -268,10 +297,11 @@ user_preferences.db (Per-Project, Mutable):
 - User customizations persist across sessions
 
 user_directives.db (Per-Project, Optional):
-- Location: <project-root>/.aifp/user_directives.db
-- Contains: user_directives, directive_executions (statistics only), directive_dependencies, directive_implementations, source_files, logging_config
-- File-based logging for detailed execution logs
-- Only created when user defines custom automation directives
+- Location: <project-root>/.aifp-project/user_directives.db
+- Contains: user_directives (with references to user's directive files), directive_executions (statistics only), directive_dependencies, directive_implementations (links to src/ files), source_files (tracks user file paths), logging_config
+- File-based logging for detailed execution logs at .aifp-project/logs/
+- Only exists in Use Case 2 (automation projects)
+- References user's directive files (e.g., ../directives/lights.yaml)
 
 === WHEN NOT TO USE AIFP ===
 
@@ -291,6 +321,17 @@ If directive context lost (after context compression):
 1. Call get_all_directives() to reload
 2. Cache directives in context
 3. Resume work with refreshed directives
+
+=== REFERENCE GUIDES ===
+
+The following guides ship with the AIFP MCP package in src/aifp/reference/guides/ and are available for reference:
+
+1. **automation-projects.md** - Complete guide for custom directive automation (Use Case 2)
+2. **project-structure.md** - .aifp-project/ folder structure and ProjectBlueprint.md specification
+3. **directive-interactions.md** - How directives, databases, and MCP server interact
+4. **git-integration.md** - Multi-user collaboration with FP-powered conflict resolution
+
+Refer to these guides when users ask about automation projects, project structure, directive workflows, or Git collaboration.
 
 === SUMMARY ===
 

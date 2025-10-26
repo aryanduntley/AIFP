@@ -31,6 +31,23 @@
 - **Database-driven project management** (persistent state, instant context retrieval)
 - **Directive-based AI guidance** (deterministic workflows, automated compliance)
 
+### Two Ways to Use AIFP
+
+**Use Case 1: Regular Software Development**
+- Build applications (web apps, libraries, CLI tools, etc.)
+- AIFP enforces FP compliance and manages your project
+- You write code, AI assists with FP standards and project tracking
+- Example: Building a web server, calculator library, data processor
+
+**Use Case 2: Custom Directive Automation**
+- Define automation rules (home automation, cloud management, workflows)
+- **AIFP generates and manages the automation codebase for you**
+- You write directive definitions (YAML/JSON/TXT), AI generates the implementation
+- The project's code IS the automation code generated from your directives
+- Example: Smart home control system, AWS infrastructure manager, workflow automator
+
+**Key Principle**: One AIFP instance per project directory. You would NOT mix a web app with home automation directives. Run separate instances for separate purposes.
+
 ### Why AIFP?
 
 Traditional programming paradigms were designed for humans. AIFP is optimized for **AI-human collaboration**:
@@ -203,9 +220,11 @@ VALUES ('project_file_write', 'always_add_docstrings', 'true');
 
 ### user_directives.db (Per-Project, Optional)
 
-**Location**: `<project-root>/.aifp/user_directives.db`
+**Location**: `<project-root>/.aifp-project/user_directives.db`
 
-**Purpose**: Store user-defined domain-specific directives for automation (home automation, cloud infrastructure, etc.). The AIFP project becomes an execution engine for these directives.
+**Purpose**: Store user-defined domain-specific directives for automation (home automation, cloud infrastructure, etc.). **When this database exists, the AIFP project IS dedicated to building and managing the automation code generated from these directives.**
+
+This database only exists in **Use Case 2: Custom Directive Automation** projects. In regular software development projects, this database is not created.
 
 **Key Tables**:
 - `user_directives`: Directive definitions (triggers, actions, status, validated configuration)
@@ -215,14 +234,47 @@ VALUES ('project_file_write', 'always_add_docstrings', 'true');
 - `source_files`: Tracks user directive source files (YAML/JSON/TXT)
 - `logging_config`: File-based logging configuration
 
-**File-Based Logging Philosophy**: Database stores state and statistics only. Detailed execution logs (30-day retention) and error logs (90-day retention) are stored in rotating files at `.aifp/logs/`.
+**File-Based Logging Philosophy**: Database stores state and statistics only. Detailed execution logs (30-day retention) and error logs (90-day retention) are stored in rotating files at `.aifp-project/logs/`.
 
-**Example Workflow**:
-1. User writes directives in `.aifp/user-directives/source/home_automation.yaml`
-2. AI parses and validates through interactive Q&A
-3. AI generates FP-compliant implementation code
-4. Directives execute in real-time via background services
-5. Execution logs to files, statistics to database
+**Directory Structure Comparison**:
+
+```
+# Use Case 1: Regular Software Development
+my-web-app/
+├── src/                    # Your application code
+├── tests/                  # Your tests
+└── .aifp-project/          # AIFP tracks your application
+    ├── project.db
+    ├── user_preferences.db
+    └── aifp_core.db
+
+# Use Case 2: Custom Directive Automation
+home-automation/
+├── directives/             # ← User writes directive files here
+│   ├── lights.yaml
+│   └── security.yaml
+├── src/                    # ← AIFP GENERATES this code
+│   ├── lights_controller.py
+│   └── security_monitor.py
+├── tests/                  # ← AIFP GENERATES tests
+└── .aifp-project/          # ← AI-managed only, user never touches
+    ├── project.db          # Tracks generated src/ code
+    ├── user_preferences.db
+    ├── user_directives.db  # References ../directives/ files
+    ├── aifp_core.db
+    └── logs/               # 30/90-day execution logs
+```
+
+**Example Workflow (Automation Project)**:
+1. User creates `directives/lights.yaml` in their project
+2. User tells AI: "Parse my directive file at directives/lights.yaml"
+3. AI parses and validates through interactive Q&A
+4. AI generates FP-compliant implementation code in `src/`
+5. AI tracks generated code in `project.db` (files, functions, tasks)
+6. Directives execute in real-time via background services
+7. Execution logs to `.aifp-project/logs/`, statistics to database
+
+**Note**: User directive files stay in the user's project. `.aifp-project/` is AI-managed metadata.
 
 ---
 
@@ -433,36 +485,45 @@ Manage AI behavior customization and learning:
 | **project_notes_log** | Handles logging to project.db with directive context |
 | **tracking_toggle** | Enables/disables tracking features with token cost warnings |
 
-### User-Defined Directives (7)
+### User-Defined Directives (8)
 
-**NEW**: Automation system for domain-specific tasks (home automation, cloud infrastructure, etc.):
+**FOR USE CASE 2 ONLY**: Automation projects where AIFP generates and manages the codebase:
 
 | Directive | Purpose |
 |-----------|---------|
 | **user_directive_parse** | Parse YAML/JSON/TXT directive files and extract structured directives |
 | **user_directive_validate** | Validate directives through interactive Q&A to resolve ambiguities |
-| **user_directive_implement** | Generate FP-compliant implementation code for validated directives |
+| **user_directive_implement** | **Generate FP-compliant implementation code in `src/`** |
+| **user_directive_approve** | User testing and approval workflow before activation |
 | **user_directive_activate** | Deploy and activate directives for real-time execution |
 | **user_directive_monitor** | Track execution statistics and handle errors |
 | **user_directive_update** | Handle changes to directive source files (re-parse, re-validate) |
 | **user_directive_deactivate** | Stop execution and clean up resources |
 
-**Use Cases**:
+**Use Cases** (Automation Projects):
 - **Home Automation**: "At 5pm turn off living room lights", "If stove on > 20 min, turn off"
 - **Cloud Infrastructure**: "Scale EC2 when CPU > 80%", "Backup RDS nightly at 1am"
-- **Custom Workflows**: Define automation rules in simple files, AI generates and executes code
+- **Custom Workflows**: "Every Monday generate report", "Process uploaded files automatically"
+
+**Key Architecture**:
+- User writes directive definitions (YAML/JSON/TXT)
+- **AIFP generates the entire automation codebase** (`src/`, `tests/`, etc.)
+- AIFP manages the generated code like any software project (tasks, files, functions)
+- Directives execute via background services/schedulers
+- Project.db tracks the generated code; user_directives.db tracks directive state
 
 **Key Features**:
 - Write directives in YAML, JSON, or plain text
 - AI validates through interactive Q&A
-- Generates FP-compliant Python code
+- AI generates complete FP-compliant Python modules in `src/`
+- AI creates tests for generated code
 - Real-time execution via background services
 - File-based logging (30-day execution logs, 90-day error logs)
 - Dependency management with user confirmation
 
-**Example**:
+**Example Directive Definition**:
 ```yaml
-# .aifp/user-directives/source/home_automation.yaml
+# directives/home_automation.yaml (user creates this in their project)
 directives:
   - name: turn_off_lights_5pm
     trigger:
@@ -475,6 +536,20 @@ directives:
       endpoint: /services/light/turn_off
       params:
         entity_id: group.living_room_lights
+```
+
+**User tells AI**: "Parse my directive file at directives/home_automation.yaml"
+
+**AI Generates** (in `src/lights_controller.py`):
+```python
+# Auto-generated from home_automation.yaml
+from typing import Result
+from homeassistant_client import HomeAssistant
+
+def turn_off_living_room_lights(ha_client: HomeAssistant) -> Result[None, str]:
+    """Turn off all lights in living room group."""
+    # FP-compliant implementation
+    ...
 ```
 
 See [User Directives Blueprint](docs/blueprints/blueprint_user_directives.md) and [examples](docs/examples/) for more details.

@@ -26,43 +26,47 @@ This document catalogs all markdown documentation files referenced by AIFP direc
 |----------|------------------|---------------------|---------------|-----------|
 | **FP Core** | 30 | 30 | 0 | 30 |
 | **FP Auxiliary** | 32 | 32 | 0 | 32 |
-| **Project** | 25 | 25 | 3 | 22 |
+| **Project** | 25 | 25 | 4 | 21 |
 | **Git** | 6 | 6 | 0 | 6 |
 | **User Preferences** | 7 | 7 | 0 | 7 |
 | **User System** | 8 | 0 (blueprint only) | N/A | N/A |
-| **aifp_run, aifp_status** | 2 | 2 | 1 | 1 |
-| **TOTAL** | **108** | **100** | **4** | **96** |
+| **aifp_run, aifp_status** | 2 | 2 | 2 | 0 |
+| **TOTAL** | **108** | **100** | **6** | **94** |
 
-**Note**: User System directives (8) are documented as a cohesive workflow system in `blueprint_user_directives.md`. They process user-defined automation directives that users create dynamically (home automation, cloud infrastructure, etc.). Individual markdown files are not needed since they work together as a processing pipeline.
+**Note**: User System directives (8) are documented as a cohesive workflow system in `src/aifp/reference/guides/automation-projects.md` (ships with MCP package). They process user-defined automation directives that users create dynamically (home automation, cloud infrastructure, etc.). Individual markdown files are not needed since they work together as a processing pipeline.
 
 ---
 
 ## Files Location
 
-All directive markdown files should be created in:
+All directive markdown files are created in the **MCP package** (ships with the server):
 ```
-docs/directives/
+src/aifp/reference/
+├── directives/              # Individual directive documentation
+│   ├── aifp_run.md          ✅ CREATED (2025-10-26)
+│   ├── aifp_status.md       ✅ CREATED (2025-10-26)
+│   ├── project_init.md      ✅ CREATED (2025-10-26)
+│   ├── fp_purity.md         # TO BE CREATED
+│   └── ...                  # 94 more files
+└── guides/                  # User-facing guides (comprehensive documentation)
+    ├── automation-projects.md        ✅ CREATED (2025-10-26)
+    ├── project-structure.md          ✅ CREATED (2025-10-26)
+    ├── directive-interactions.md     ✅ CREATED (2025-10-26)
+    └── git-integration.md            ✅ CREATED (2025-10-26)
+
+docs/
+├── blueprints/              # Development blueprints (source for guides)
+│   ├── blueprint_user_directives.md
+│   ├── blueprint_aifp_project_structure.md
+│   ├── blueprint_interactions.md
+│   └── blueprint_git.md
+└── directiveNotes/          # Legacy location (old format)
+    ├── directive_aifp_run.md
+    ├── directive_file_write.md
+    └── directive_task_decomposition.md
 ```
 
-Current structure:
-```
-docs/
-├── directives/               # TO BE CREATED (100 files)
-│   ├── aifp_run.md
-│   ├── aifp_status.md
-│   ├── fp_purity.md
-│   ├── fp_immutability.md
-│   ├── ...
-│   ├── project_init.md
-│   ├── project_file_write.md
-│   ├── ...
-│   ├── git_init.md
-│   └── ...
-└── directiveNotes/          # Current location (legacy)
-    ├── directive_aifp_run.md       ✅ EXISTS
-    ├── directive_file_write.md     ✅ EXISTS
-    └── directive_task_decomposition.md  ✅ EXISTS
-```
+**Note**: User-facing guides in `src/aifp/reference/guides/` ship with the MCP package. Development blueprints in `docs/blueprints/` are for project development only.
 
 ---
 
@@ -70,37 +74,43 @@ docs/
 
 These are the foundational directives that orchestrate the entire AIFP system.
 
-### aifp_run.md ✅ EXISTS (as directive_aifp_run.md)
+### aifp_run.md ✅ CREATED (2025-10-26)
 - **Directive**: `aifp_run`
 - **Type**: System orchestrator
-- **Status**: Partial documentation exists
+- **Status**: ✅ Complete
 - **Priority**: CRITICAL - Required for Phase 1
+- **Location**: `src/aifp/reference/directives/aifp_run.md`
 
 **Purpose**: Gateway directive that AI calls automatically before every response. Evaluates user request, determines which directives to apply, and orchestrates the entire workflow.
 
-**Content Should Include**:
-- Automatic execution behavior
-- Task type evaluation (coding, project, discussion)
-- Directive selection logic
-- Self-assessment questions
-- Integration with `get_all_directives()`
+**Includes**:
+- ✅ Automatic execution behavior
+- ✅ Task type evaluation (coding, project, discussion)
+- ✅ Directive selection logic with examples
+- ✅ Hierarchical routing patterns
+- ✅ Integration with other directives
+- ✅ Edge cases and error handling
+- ✅ Examples and best practices
 
 ---
 
-### aifp_status.md
+### aifp_status.md ✅ CREATED (2025-10-26)
 - **Directive**: `aifp_status`
 - **Type**: Status reporting
-- **Status**: NOT CREATED
+- **Status**: ✅ Complete
 - **Priority**: HIGH - Required for Phase 1
+- **Location**: `src/aifp/reference/directives/aifp_status.md`
 
 **Purpose**: Provides comprehensive project status report including ProjectBlueprint.md context, current work focus, open items, ambiguities, and recommended next actions.
 
-**Content Should Include**:
-- Status-first behavior for continuation requests
-- What information is displayed
-- Integration with `get_status_tree()` helper
-- Historical context tracking
-- Ambiguity detection
+**Includes**:
+- ✅ Status-first behavior for continuation requests
+- ✅ What information is displayed
+- ✅ Integration with `get_status_tree()` helper
+- ✅ Database query patterns
+- ✅ Examples of status reports
+- ✅ Edge cases (no tasks, blueprint out of sync)
+- ✅ Interaction patterns with other directives
 
 ---
 
@@ -709,20 +719,24 @@ Project lifecycle management, database updates, task tracking.
 
 ### Initialization & Setup (3 files)
 
-#### project_init.md
+#### project_init.md ✅ CREATED (2025-10-26)
 - **Directive**: `project_init`
 - **Type**: Project
 - **Level**: 1
 - **Priority**: CRITICAL - Phase 1
+- **Status**: ✅ Complete
+- **Location**: `src/aifp/reference/directives/project_init.md`
 
 **Purpose**: Initialize new AIFP project - creates `.aifp-project/` structure, databases, ProjectBlueprint.md.
 
-**Content Must Include**:
-- Integration with init_aifp_project.py helper functions
-- Interactive blueprint creation
-- Database initialization
-- Validation workflow
-- Restoration from .git/.aifp/ backup
+**Includes**:
+- ✅ Check for existing project (get_project_status)
+- ✅ Directory structure creation
+- ✅ Database initialization (project.db, user_preferences.db)
+- ✅ ProjectBlueprint.md generation
+- ✅ Support for both use cases (regular dev vs automation)
+- ✅ Examples for basic init and automation projects
+- ✅ Edge cases and error handling
 
 ---
 
@@ -1334,19 +1348,19 @@ How to verify this directive is working:
 ## Checklist for Phase 2 Implementation
 
 ### Core System (2 files)
-- [ ] Review and update `directive_aifp_run.md` → move to `directives/aifp_run.md`
-- [ ] Create `directives/aifp_status.md`
+- [✅] Review and update `directive_aifp_run.md` → CREATED `src/aifp/reference/directives/aifp_run.md` (2025-10-26)
+- [✅] Create `aifp_status.md` → CREATED `src/aifp/reference/directives/aifp_status.md` (2025-10-26)
 
 ### FP Core Critical (3 files)
-- [ ] Create `directives/fp_purity.md`
-- [ ] Create `directives/fp_immutability.md`
-- [ ] Create `directives/fp_no_oop.md`
+- [ ] Create `fp_purity.md` → `src/aifp/reference/directives/fp_purity.md`
+- [ ] Create `fp_immutability.md` → `src/aifp/reference/directives/fp_immutability.md`
+- [ ] Create `fp_no_oop.md` → `src/aifp/reference/directives/fp_no_oop.md`
 
 ### Project Critical (4 files)
-- [ ] Create `directives/project_init.md`
-- [ ] Review and update `directive_file_write.md` → move to `directives/project_file_write.md`
-- [ ] Review and update `directive_task_decomposition.md` → move to `directives/project_task_decomposition.md`
-- [ ] Create `directives/project_blueprint_read.md`
+- [✅] Create `project_init.md` → CREATED `src/aifp/reference/directives/project_init.md` (2025-10-26)
+- [ ] Review and update `directive_file_write.md` → move to `src/aifp/reference/directives/project_file_write.md`
+- [ ] Review and update `directive_task_decomposition.md` → move to `src/aifp/reference/directives/project_task_decomposition.md`
+- [ ] Create `project_blueprint_read.md` → `src/aifp/reference/directives/project_blueprint_read.md`
 
 ### Git Integration (6 files)
 - [ ] Create `directives/git_init.md`

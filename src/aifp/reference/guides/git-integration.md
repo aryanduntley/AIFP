@@ -1,0 +1,802 @@
+# Git Integration Blueprint (Multi-User FP-Powered Collaboration)
+
+## Overview
+
+AIFP leverages **Git for multi-user and multi-AI collaboration** on functional programming projects. Unlike traditional OOP codebases where merging is complex and error-prone, **AIFP's pure functional nature makes Git collaboration dramatically simpler and safer**.
+
+### Core Philosophy
+
+- **FP makes merging easy**: Pure functions, explicit dependencies, no hidden state
+- **Multi-user by design**: Multiple developers and AI instances work simultaneously
+- **Database-tracked dependencies**: AI understands what changed and potential conflicts
+- **Git as collaboration backbone**: Standard Git workflows, enhanced with FP intelligence
+- **Merge with confidence**: FP purity levels guide conflict resolution
+
+---
+
+## Why AIFP + Git is Superior to OOP + Git
+
+### The FP Collaboration Advantage
+
+| OOP Merge Problem | AIFP FP Solution |
+|-------------------|------------------|
+| **Class hierarchies conflict** | ✅ No classes → No hierarchy conflicts |
+| **Hidden state changes** | ✅ Pure functions → Explicit inputs/outputs |
+| **Side effects everywhere** | ✅ Side effects isolated → Easy to identify conflicts |
+| **Method override conflicts** | ✅ No inheritance → No override conflicts |
+| **Implicit dependencies** | ✅ Database tracks all dependencies → Clear conflict detection |
+| **Mutation conflicts** | ✅ Immutable data → Fewer state conflicts |
+| **Hard to test both versions** | ✅ Pure functions → Easy to test and compare |
+
+### Example: The Merge Advantage
+
+```python
+# SCENARIO: Alice and Bob both modify calculate_total()
+
+# OOP Version (Complex Merge)
+class Calculator:
+    def __init__(self):
+        self.discount = 0.1  # Hidden state
+        self.cache = {}      # Hidden state
+
+    def calculate_total(self, items):
+        # Side effects: modifies self.cache
+        # Depends on hidden self.discount
+        # Hard to merge if both changed
+        ...
+
+# AIFP Version (Simple Merge)
+def calculate_total(items: List[Item]) -> float:
+    """Pure function: deterministic, no side effects"""
+    return reduce(lambda acc, item: acc + item.price, items, 0.0)
+
+# ✅ If Alice and Bob both changed this:
+# - Both versions are pure (easy to test)
+# - No hidden state to worry about
+# - Clear which version is correct (run tests)
+# - Or keep both as calculate_total_v1() and calculate_total_v2()
+```
+
+---
+
+## Multi-User Git Workflow
+
+### Branch Naming Convention
+
+**Format**: `aifp-{user}-{number}`
+
+**Examples**:
+- `aifp-alice-001` - Alice's first work branch
+- `aifp-bob-001` - Bob's first work branch
+- `aifp-alice-002` - Alice's second work branch
+- `aifp-ai-claude-001` - Claude AI instance working autonomously
+- `aifp-ai-gpt-001` - GPT instance working autonomously
+
+**Rationale**:
+- **Simple**: Sequential numbering per user
+- **Clear attribution**: Who did this work?
+- **Flexible**: Supports human developers and AI instances
+- **Purpose in DB**: Branch purpose stored in `project.db`, not branch name
+
+### What Goes in Git?
+
+| Component | Track in Git? | Rationale |
+|-----------|---------------|-----------|
+| **Source code** | ✅ Yes | Standard Git usage |
+| **`.aifp/project.db`** | ✅ Yes | Organizational state (themes, tasks, functions, dependencies) |
+| **`.aifp/ProjectBlueprint.md`** | ✅ Yes | Project context document |
+| **`.aifp/user_preferences.db`** | ❌ No | User-specific settings, not shared |
+| **`.aifp/backups/`** | ❌ No | Generated backup files |
+| **`.aifp/temp/`** | ❌ No | Temporary session files |
+
+**Critical Decision**: **project.db is tracked in Git** because it contains:
+- Function metadata (purity levels, parameters, dependencies)
+- Task hierarchy (who's working on what)
+- Theme organization (architectural groupings)
+- Interaction tracking (which functions call which)
+
+This enables **FP-powered conflict resolution**: AI can query both versions of the database and intelligently merge based on functional purity.
+
+### .gitignore Configuration
+
+```gitignore
+# AIFP-specific (DO track organizational state)
+.aifp/user_preferences.db
+.aifp/backups/
+.aifp/temp/
+.aifp/.mcp-session-*
+
+# Standard ignores
+__pycache__/
+*.pyc
+node_modules/
+.env
+*.log
+```
+
+---
+
+## Collaborative Workflow Example
+
+### Scenario: Alice and Bob Work Simultaneously
+
+```bash
+# ===== ALICE: Works on matrix operations =====
+git checkout main
+git pull  # Get latest
+
+# Create Alice's work branch
+git checkout -b aifp-alice-001
+
+# AI assists Alice
+# - Implements multiply_matrices() in src/matrix.py
+# - Updates project.db:
+#   * Adds to functions table (multiply_matrices, purity=pure)
+#   * Adds to interactions table (depends on validate_dimensions)
+# - Links to task #15 in tasks table
+
+git add .
+git commit -m "[AIFP] Alice: Implement matrix multiplication
+
+- Function: multiply_matrices (pure)
+- File: src/matrix.py:15
+- Dependencies: validate_dimensions
+- Task: #15
+- Tests: 10/10 passing
+
+Auto-generated by AIFP v1.0"
+
+git push origin aifp-alice-001
+
+
+# ===== BOB: Simultaneously works on vector operations =====
+git checkout main
+git pull  # Get latest (same state Alice started from)
+
+# Create Bob's work branch
+git checkout -b aifp-bob-001
+
+# AI assists Bob
+# - Implements vector_add() in src/vector.py
+# - Updates project.db:
+#   * Adds to functions table (vector_add, purity=pure)
+#   * Adds to interactions table (depends on validate_vector)
+# - Links to task #16 in tasks table
+
+git add .
+git commit -m "[AIFP] Bob: Implement vector addition
+
+- Function: vector_add (pure)
+- File: src/vector.py:22
+- Dependencies: validate_vector
+- Task: #16
+- Tests: 12/12 passing
+
+Auto-generated by AIFP v1.0"
+
+git push origin aifp-bob-001
+
+
+# ===== MERGE: Integrate both contributions =====
+
+# Merge Alice's work
+git checkout main
+git merge aifp-alice-001
+# ✅ Result: Clean merge
+# - Different files (src/matrix.py vs src/vector.py)
+# - Different DB entries (function IDs don't conflict)
+# - project.db merges automatically (append-only inserts)
+
+git push origin main
+
+# Merge Bob's work
+git checkout main
+git merge aifp-bob-001
+# ✅ Result: Clean merge
+# - Different files from Alice
+# - Different DB entries
+# - No conflicts
+
+git push origin main
+
+# Both contributions now in main!
+```
+
+---
+
+## Conflict Resolution Strategy (FP-Powered)
+
+### Level 1: Automatic Resolution (No User Intervention)
+
+**When AI auto-merges**:
+1. **Different files modified** → No conflict, automatic merge
+2. **Different functions in same file** → No conflict, automatic merge
+3. **Different DB table rows** → Append both, automatic merge
+4. **Both added pure functions** → No conflict (isolated, testable)
+
+**AI Detection Logic**:
+```python
+def can_auto_merge(alice_changes: Changes, bob_changes: Changes) -> bool:
+    # Check file overlap
+    if not set(alice_changes.files) & set(bob_changes.files):
+        return True  # Different files, safe merge
+
+    # Check function overlap
+    if not set(alice_changes.functions) & set(bob_changes.functions):
+        return True  # Different functions, safe merge
+
+    # Check if both are pure functions (even if same function)
+    if all(f.purity == "pure" for f in alice_changes.functions + bob_changes.functions):
+        return True  # Pure functions, testable, safe to merge
+
+    return False  # Need deeper analysis
+```
+
+### Level 2: FP-Assisted Resolution (AI Suggests, User Confirms)
+
+**When both modified the same function**:
+
+**AI Analysis**:
+```python
+def analyze_function_conflict(alice_fn: Function, bob_fn: Function) -> Resolution:
+    """
+    FP-powered conflict analysis using purity, dependencies, and tests
+    """
+    # Scenario 1: One is pure, one is not
+    if alice_fn.purity == "pure" and bob_fn.purity != "pure":
+        return Resolution(
+            recommendation="prefer_alice",
+            reason="Alice's version is pure (more maintainable)",
+            confidence=0.9
+        )
+
+    # Scenario 2: Both pure, but different logic
+    if alice_fn.purity == "pure" and bob_fn.purity == "pure":
+        # Run tests on both
+        alice_tests = run_tests(alice_fn)
+        bob_tests = run_tests(bob_fn)
+
+        if alice_tests.passed > bob_tests.passed:
+            return Resolution(
+                recommendation="prefer_alice",
+                reason=f"Alice's version passes more tests ({alice_tests.passed} vs {bob_tests.passed})",
+                confidence=0.8
+            )
+        elif bob_tests.passed > alice_tests.passed:
+            return Resolution(
+                recommendation="prefer_bob",
+                reason=f"Bob's version passes more tests ({bob_tests.passed} vs {alice_tests.passed})",
+                confidence=0.8
+            )
+        else:
+            return Resolution(
+                recommendation="keep_both",
+                reason="Both pure and pass same tests. Keep both as multiply_matrices_alice() and multiply_matrices_bob()",
+                confidence=0.7
+            )
+
+    # Scenario 3: Dependencies changed
+    if alice_fn.dependencies != bob_fn.dependencies:
+        return Resolution(
+            recommendation="manual_review",
+            reason="Dependencies differ - requires architectural decision",
+            confidence=0.5,
+            details={
+                "alice_deps": alice_fn.dependencies,
+                "bob_deps": bob_fn.dependencies
+            }
+        )
+
+    # Scenario 4: Unclear - manual review
+    return Resolution(
+        recommendation="manual_review",
+        reason="Complex logic differences require human judgment",
+        confidence=0.3
+    )
+```
+
+**User Presentation**:
+```
+🔀 Merge Conflict Detected: src/matrix.py:multiply_matrices()
+
+📊 Alice's Version:
+   - Purity: ✅ Pure function
+   - Dependencies: validate_dimensions, compute_product
+   - Tests: 10/10 passing
+   - Lines: 15
+   - Commit: aifp-alice-001 (3 hours ago)
+
+📊 Bob's Version:
+   - Purity: ✅ Pure function
+   - Dependencies: validate_dimensions, compute_product, optimize_for_large_matrices
+   - Tests: 12/12 passing (includes edge cases for large matrices)
+   - Lines: 22
+   - Commit: aifp-bob-001 (1 hour ago)
+
+🤖 AI Recommendation: Keep Bob's version
+   Reason: More comprehensive tests, handles edge cases, still pure
+   Confidence: 85%
+
+Alternative: Keep both versions
+   - Alice's: multiply_matrices() (simpler, faster for small matrices)
+   - Bob's: multiply_matrices_optimized() (better for large matrices)
+
+Your choice:
+1. Keep Alice's version
+2. Keep Bob's version (AI recommended)
+3. Keep both (rename Bob's to multiply_matrices_optimized)
+4. Manual merge in editor
+
+Enter choice (1-4): _
+```
+
+### Level 3: Database Conflict Resolution
+
+**project.db conflicts are RARE** due to append-mostly operations, but when they occur:
+
+**AI Process**:
+```python
+def resolve_db_conflict(project_root: Path) -> DBResolution:
+    # Extract both database versions
+    subprocess.run(['git', 'show', 'main:.aifp/project.db'],
+                   stdout=open('main.db', 'wb'))
+    subprocess.run(['git', 'show', 'aifp-alice-001:.aifp/project.db'],
+                   stdout=open('alice.db', 'wb'))
+
+    # Connect to both
+    main_conn = sqlite3.connect('main.db')
+    alice_conn = sqlite3.connect('alice.db')
+
+    # Compare tables
+    conflicts = []
+
+    # Check functions table
+    main_functions = set(row[0] for row in main_conn.execute("SELECT name FROM functions"))
+    alice_functions = set(row[0] for row in alice_conn.execute("SELECT name FROM functions"))
+
+    # New functions in Alice's branch (safe to add)
+    new_functions = alice_functions - main_functions
+
+    # Functions modified in both (need review)
+    modified_both = check_modified_in_both(main_conn, alice_conn)
+
+    if modified_both:
+        conflicts.append(FunctionConflict(functions=modified_both))
+
+    # Generate merge strategy
+    return DBResolution(
+        safe_additions=new_functions,
+        conflicts=conflicts,
+        merge_sql=generate_merge_sql(main_conn, alice_conn, conflicts)
+    )
+```
+
+**Merge Strategy**:
+1. **Append new rows** (safe, no conflict)
+2. **Flag conflicting rows** (same ID, different data)
+3. **Use FP purity to decide** (prefer pure versions)
+4. **Present conflicts to user** if ambiguous
+
+---
+
+## Git Helper Functions (project.db Integration)
+
+### get_current_commit_hash()
+
+```python
+def get_current_commit_hash(project_root: Path) -> str:
+    """Get current Git HEAD commit hash"""
+    result = subprocess.run(
+        ['git', 'rev-parse', 'HEAD'],
+        cwd=project_root,
+        capture_output=True,
+        text=True
+    )
+    return result.stdout.strip()
+```
+
+### create_user_branch()
+
+```python
+def create_user_branch(user: str, purpose: str, project_root: Path) -> BranchResult:
+    """
+    Create user work branch with metadata tracking
+    """
+    # Get next branch number for user
+    conn = get_project_db_connection()
+    result = conn.execute("""
+        SELECT MAX(CAST(SUBSTR(branch_name, LENGTH(?) + 2) AS INTEGER))
+        FROM work_branches
+        WHERE branch_name LIKE ?
+    """, (f"aifp-{user}-", f"aifp-{user}-%")).fetchone()
+
+    next_num = (result[0] or 0) + 1
+    branch_name = f"aifp-{user}-{next_num:03d}"
+
+    # Create Git branch
+    subprocess.run(['git', 'checkout', '-b', branch_name, 'main'], cwd=project_root)
+
+    # Store metadata in project.db
+    conn.execute("""
+        INSERT INTO work_branches (branch_name, user_name, purpose, status, created_at)
+        VALUES (?, ?, ?, 'active', ?)
+    """, (branch_name, user, purpose, datetime.now()))
+    conn.commit()
+
+    return BranchResult(
+        branch_name=branch_name,
+        user=user,
+        purpose=purpose
+    )
+```
+
+### detect_conflicts_before_merge()
+
+```python
+def detect_conflicts_before_merge(source_branch: str, project_root: Path) -> ConflictAnalysis:
+    """
+    FP-powered conflict detection before merge
+    """
+    # Get changed functions in source branch
+    result = subprocess.run([
+        'git', 'diff', '--name-only', f'main..{source_branch}'
+    ], cwd=project_root, capture_output=True, text=True)
+
+    changed_files = result.stdout.strip().split('\n')
+
+    # Query project.db for function details
+    conn = get_project_db_connection()
+
+    conflicts = []
+    for file_path in changed_files:
+        # Get functions in this file from both branches
+        main_functions = get_functions_in_file(file_path, 'main')
+        source_functions = get_functions_in_file(file_path, source_branch)
+
+        # Check for overlapping function modifications
+        for fn_name in set(main_functions.keys()) & set(source_functions.keys()):
+            main_fn = main_functions[fn_name]
+            source_fn = source_functions[fn_name]
+
+            if main_fn != source_fn:
+                # Conflict detected, use FP analysis
+                resolution = analyze_function_conflict(main_fn, source_fn)
+                conflicts.append({
+                    'file': file_path,
+                    'function': fn_name,
+                    'main_version': main_fn,
+                    'source_version': source_fn,
+                    'resolution': resolution
+                })
+
+    return ConflictAnalysis(
+        has_conflicts=len(conflicts) > 0,
+        conflicts=conflicts,
+        auto_resolvable=sum(1 for c in conflicts if c['resolution'].confidence > 0.8)
+    )
+```
+
+### merge_with_fp_intelligence()
+
+```python
+def merge_with_fp_intelligence(source_branch: str, project_root: Path) -> MergeResult:
+    """
+    Merge branch using FP-powered conflict resolution
+    """
+    # Step 1: Detect conflicts
+    analysis = detect_conflicts_before_merge(source_branch, project_root)
+
+    if not analysis.has_conflicts:
+        # Clean merge
+        subprocess.run(['git', 'checkout', 'main'], cwd=project_root)
+        subprocess.run(['git', 'merge', source_branch], cwd=project_root)
+        return MergeResult(success=True, conflicts=[])
+
+    # Step 2: Auto-resolve high-confidence conflicts
+    auto_resolved = []
+    manual_review = []
+
+    for conflict in analysis.conflicts:
+        if conflict['resolution'].confidence > 0.8:
+            # AI auto-resolves
+            apply_resolution(conflict, conflict['resolution'])
+            auto_resolved.append(conflict)
+        else:
+            # Needs user input
+            manual_review.append(conflict)
+
+    # Step 3: Present remaining conflicts to user
+    if manual_review:
+        user_resolutions = present_conflicts_to_user(manual_review)
+        for conflict, resolution in zip(manual_review, user_resolutions):
+            apply_resolution(conflict, resolution)
+
+    # Step 4: Complete merge
+    subprocess.run(['git', 'checkout', 'main'], cwd=project_root)
+    subprocess.run(['git', 'merge', source_branch], cwd=project_root)
+
+    return MergeResult(
+        success=True,
+        auto_resolved=auto_resolved,
+        manual_resolved=manual_review
+    )
+```
+
+---
+
+## Database Schema Extensions
+
+**Simplified Approach**: Only AIFP-specific collaboration metadata is stored in database. Current Git state (branch, hash) is queried from Git directly using fast commands. This eliminates duplication and keeps the schema clean.
+
+### work_branches Table
+
+```sql
+CREATE TABLE IF NOT EXISTS work_branches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    branch_name TEXT UNIQUE NOT NULL,       -- e.g., 'aifp-alice-001'
+    user_name TEXT NOT NULL,                -- e.g., 'alice', 'ai-claude'
+    purpose TEXT NOT NULL,                  -- e.g., 'Implement matrix operations'
+    status TEXT DEFAULT 'active',           -- active, merged, abandoned
+    created_from TEXT DEFAULT 'main',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    merged_at DATETIME NULL,
+    merge_conflicts_count INTEGER DEFAULT 0,
+    merge_resolution_strategy TEXT,         -- JSON: how conflicts were resolved
+    metadata_json TEXT                      -- Additional branch metadata
+);
+
+CREATE INDEX IF NOT EXISTS idx_work_branches_user ON work_branches(user_name);
+CREATE INDEX IF NOT EXISTS idx_work_branches_status ON work_branches(status);
+```
+
+### Git State in Project Table
+
+**No separate git_state table needed** - Git commands are fast enough to query directly.
+
+External change detection uses fields in the `project` table:
+
+```sql
+-- Added to existing project table
+last_known_git_hash TEXT,  -- Last Git commit hash processed by AIFP
+last_git_sync DATETIME      -- Last time Git state was synchronized
+```
+
+**Rationale**:
+- Current branch: `git branch --show-current` (~1ms)
+- Current hash: `git rev-parse HEAD` (~1ms)
+- No duplication of Git data in database
+
+### merge_history Table (New)
+
+```sql
+CREATE TABLE IF NOT EXISTS merge_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_branch TEXT NOT NULL,
+    target_branch TEXT DEFAULT 'main',
+    merge_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    conflicts_detected INTEGER DEFAULT 0,
+    conflicts_auto_resolved INTEGER DEFAULT 0,
+    conflicts_manual_resolved INTEGER DEFAULT 0,
+    resolution_details TEXT,                -- JSON: detailed resolution log
+    merged_by TEXT,                         -- User or AI instance
+    merge_commit_hash TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_merge_history_timestamp ON merge_history(merge_timestamp);
+```
+
+---
+
+## Integration with AIFP Directives
+
+### project_init
+
+```python
+# During project initialization
+if not git_repo_exists(project_root):
+    initialize_git_repo(project_root)
+    create_initial_gitignore(project_root)
+
+# Store initial Git hash in project table
+current_hash = get_current_commit_hash(project_root)
+conn.execute("""
+    UPDATE project
+    SET last_known_git_hash = ?, last_git_sync = ?
+""", (current_hash, datetime.now()))
+
+# Create work_branches and merge_history tables
+create_git_collaboration_tables()
+```
+
+### project_file_write
+
+```python
+# After writing file
+write_file(path, content)
+
+# Update project.db (functions, interactions tables)
+update_project_db(path, functions, interactions)
+
+# Auto-stage for commit
+if config.auto_stage_files:
+    subprocess.run(['git', 'add', path], cwd=project_root)
+    subprocess.run(['git', 'add', '.aifp/project.db'], cwd=project_root)
+```
+
+### project_task_update
+
+```python
+# When task is completed
+update_task_status(task_id, 'completed')
+
+# Create commit linking task to code changes
+if config.auto_commit_on_task_complete:
+    commit_message = generate_fp_commit_message(task_id)
+    create_aifp_commit(commit_message, project_root)
+```
+
+### New Directive: git_merge_branch
+
+```python
+# When user requests merge
+def git_merge_branch(branch_name: str, project_root: Path):
+    # Step 1: FP-powered conflict detection
+    analysis = detect_conflicts_before_merge(branch_name, project_root)
+
+    # Step 2: Present analysis to user
+    if analysis.has_conflicts:
+        print(f"Detected {len(analysis.conflicts)} conflicts")
+        print(f"AI can auto-resolve: {analysis.auto_resolvable}")
+
+        if analysis.auto_resolvable == len(analysis.conflicts):
+            print("All conflicts can be auto-resolved using FP purity analysis")
+            confirm = input("Proceed with auto-resolution? (y/n): ")
+            if confirm.lower() != 'y':
+                return
+
+    # Step 3: Merge with FP intelligence
+    result = merge_with_fp_intelligence(branch_name, project_root)
+
+    # Step 4: Log merge history
+    log_merge_history(branch_name, result)
+
+    # Step 5: Update work_branches table
+    mark_branch_merged(branch_name)
+```
+
+---
+
+## Commit Message Format
+
+### Standard Format
+
+```
+[AIFP] {user}: {action}: {description}
+
+{detailed_notes}
+
+- Functions: {function_list}
+- Files: {file_list}
+- Purity: {purity_summary}
+- Dependencies: {dependency_list}
+- Task: #{task_id}
+- Tests: {test_summary}
+
+Auto-generated by AIFP v1.0
+Branch: {branch_name}
+```
+
+### Example
+
+```
+[AIFP] Alice: Add function: multiply_matrices
+
+Implemented pure functional matrix multiplication with dimension validation.
+
+- Functions: multiply_matrices (pure)
+- Files: src/matrix.py:15
+- Purity: 100% pure (no side effects)
+- Dependencies: validate_dimensions, compute_product
+- Task: #15
+- Tests: 10/10 passing (includes edge cases)
+
+Auto-generated by AIFP v1.0
+Branch: aifp-alice-001
+```
+
+---
+
+## Configuration
+
+### Git Settings (config.json)
+
+```json
+{
+  "git": {
+    "auto_init": true,
+    "auto_stage_files": true,
+    "auto_commit_on_task_complete": false,
+    "branch_based_workflow": true,
+    "default_branch": "main",
+    "detect_external_changes_on_boot": true,
+    "multi_user_collaboration": {
+      "enabled": true,
+      "conflict_resolution": {
+        "auto_resolve_pure_functions": true,
+        "auto_resolve_confidence_threshold": 0.8,
+        "prefer_more_tests": true,
+        "prefer_pure_over_impure": true
+      }
+    }
+  }
+}
+```
+
+---
+
+## Testing Collaboration Scenarios
+
+### Scenario 1: Clean Merge (Different Files)
+
+```bash
+# Alice adds matrix.py, Bob adds vector.py
+# Expected: Clean merge, no conflicts
+```
+
+### Scenario 2: Function Rename/Addition
+
+```bash
+# Alice adds multiply_matrices(), Bob adds multiply_matrices_fast()
+# Expected: Clean merge (different functions)
+```
+
+### Scenario 3: Same Function, Both Pure
+
+```bash
+# Alice and Bob both modify calculate_total()
+# Both versions are pure with same signature
+# Expected: AI tests both, recommends better version or keeps both
+```
+
+### Scenario 4: One Pure, One Impure
+
+```bash
+# Alice makes calculate_total() pure, Bob keeps it impure
+# Expected: AI recommends Alice's pure version (confidence: 90%)
+```
+
+### Scenario 5: Database Conflict
+
+```bash
+# Alice adds theme "authentication", Bob adds theme "authorization"
+# Expected: Clean merge (different DB rows)
+
+# Alice and Bob both modify task #15 status
+# Expected: AI detects conflict, asks user to resolve
+```
+
+---
+
+## Summary: AIFP's Git Collaboration Advantages
+
+### What Makes AIFP Different
+
+1. **FP-Powered Conflict Detection**: AI uses purity levels, dependencies, and test results to intelligently resolve conflicts
+2. **Database-Tracked State**: `project.db` provides full context for merge decisions
+3. **Pure Functions Are Merge-Friendly**: Deterministic, testable, isolated
+4. **Multi-User by Design**: Branch-per-user workflow with clear attribution
+5. **AI-Assisted Resolution**: High-confidence auto-resolution for pure functions
+6. **Clear Merge History**: Full audit trail of conflict resolutions
+
+### Complexity Reduction vs OOP
+
+- **OOP Merge**: Complex class hierarchies, hidden state, side effects → High conflict rate, hard to resolve
+- **AIFP Merge**: Pure functions, explicit dependencies, tracked in DB → Low conflict rate, AI can assist
+
+### The Bottom Line
+
+**AIFP + Git = Collaboration Made Simple**
+
+By combining Git's proven version control with AIFP's pure functional programming and database-tracked dependencies, multi-user and multi-AI collaboration becomes **dramatically simpler** than traditional OOP codebases.
+
+The key insight: **Pure functions don't conflict the way stateful objects do.**

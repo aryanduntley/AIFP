@@ -15,10 +15,21 @@
       "type": "project",
       "level": 2,
       "parent_directive": "aifp_run",
-      "description": "Parse user directive files (YAML/JSON/TXT) and extract structured directives",
+      "description": "Parse user directive files (YAML/JSON/TXT) from wherever user placed them in their project. User tells AI the file path (e.g., 'directives/lights.yaml', 'automations.yaml', etc.).",
+      "parameters": {
+        "file_path": "Path to user's directive file relative to project root"
+      },
       "workflow": {
         "trunk": "parse_directive_file",
         "branches": [
+          {
+            "step": "locate_file",
+            "actions": [
+              {"resolve": "file_path to absolute path from project root"},
+              {"check": "file exists and is readable"},
+              {"if_not_found": "prompt user for correct path"}
+            ]
+          },
           {
             "step": "detect_format",
             "actions": [
@@ -47,9 +58,10 @@
             "step": "store_raw_directives",
             "actions": [
               {"calculate": "file_checksum for change detection"},
-              {"insert": "source_files table (file_path, format, checksum, parse_status)"},
-              {"for_each": "directive", "insert": "user_directives table (status=pending_validation, raw_content)"},
-              {"log": "parse result to .aifp/logs/user-directives.log"}
+              {"insert": "source_files table (absolute file_path, format, checksum, parse_status)"},
+              {"for_each": "directive", "insert": "user_directives table (status=pending_validation, raw_content, source_file_reference)"},
+              {"log": "parse result to .aifp-project/logs/user-directives.log"},
+              {"note": "File stays where user put it - we just track the reference"}
             ]
           },
           {
@@ -113,8 +125,8 @@
             "step": "store_validated_directives",
             "actions": [
               {"update": "user_directives table (status=validated, validated_content, validated_at)"},
-              {"write": "validated directive file to .aifp/user-directives/validated/ folder"},
-              {"log": "validation success to .aifp/logs/user-directives.log"}
+              {"log": "validation success to .aifp-project/logs/user-directives.log"},
+              {"note": "Validated content stored in database only - user's source file unchanged"}
             ]
           }
         ],
@@ -173,14 +185,16 @@
           {
             "step": "write_implementation_files",
             "actions": [
-              {"write": "generated code to .aifp/user-directives/generated/{subdirectory}/"},
-              {"write": "helper functions to appropriate project directories"},
-              {"write": "cron job configurations if needed"},
-              {"write": "automation scripts and service files"},
+              {"write": "generated FP-compliant code to src/{module_name}.py - this is the ACTUAL PROJECT CODE"},
+              {"write": "generated tests to tests/test_{module_name}.py"},
+              {"write": "helper functions to src/helpers/ if needed"},
+              {"write": "scheduler/service configuration to project root if needed"},
+              {"update": "requirements.txt with detected dependencies"},
               {"calculate": "file_checksum for change detection"},
-              {"insert": "directive_implementations table (file_path, implementation_type, function_name, checksum)"},
+              {"insert": "directive_implementations table (links directive to src/ files)"},
               {"update": "user_directives (status=implemented, implementation_status=completed, implementation_file_path)"}
-            ]
+            ],
+            "note": "Generated code becomes the project's src/ codebase. Project.db tracks these files like any AIFP project. User directives are definitions (.aifp-project/directives/source/), generated code is the actual implementation (src/)."
           },
           {
             "step": "update_project_purpose",
@@ -258,7 +272,7 @@
             "actions": [
               {"update": "user_directives (approved=true, approved_at=current_timestamp)"},
               {"insert": "notes table (content='User approved directive implementation', note_type='approval', source='user')"},
-              {"log": "User approved implementation", "to": ".aifp/logs/user-directives.log"}
+              {"log": "User approved implementation", "to": ".aifp-project/logs/user-directives.log"}
             ]
           },
           {
@@ -330,9 +344,9 @@
           {
             "step": "initialize_logging",
             "actions": [
-              {"setup": "execution log handler (rotating file: .aifp/logs/execution/)"},
-              {"setup": "error log handler (rotating file: .aifp/logs/errors/)"},
-              {"log": "Directive activated: {name} (type: {implementation_type}, PID: {process_id})", "to": ".aifp/logs/user-directives.log"}
+              {"setup": "execution log handler (rotating file: .aifp-project/logs/execution/)"},
+              {"setup": "error log handler (rotating file: .aifp-project/logs/errors/)"},
+              {"log": "Directive activated: {name} (type: {implementation_type}, PID: {process_id})", "to": ".aifp-project/logs/user-directives.log"}
             ]
           },
           {
@@ -472,7 +486,7 @@
             "step": "update_source_file_record",
             "actions": [
               {"update": "source_files (file_checksum, last_parsed_at, directive_count)"},
-              {"log": "Source file updated: {file_path}", "to": ".aifp/logs/user-directives.log"}
+              {"log": "Source file updated: {file_path}", "to": ".aifp-project/logs/user-directives.log"}
             ]
           }
         ],
@@ -513,7 +527,7 @@
             "actions": [
               {"update": "user_directives (status=paused)"},
               {"update": "directive_implementations (deployed=false, process_id=null)"},
-              {"log": "Directive deactivated: {name}", "to": ".aifp/logs/user-directives.log"}
+              {"log": "Directive deactivated: {name}", "to": ".aifp-project/logs/user-directives.log"}
             ]
           },
           {
@@ -567,7 +581,7 @@
           {
             "step": "check_user_directives_db_exists",
             "actions": [
-              {"check": ".aifp/user_directives.db exists"},
+              {"check": ".aifp-project/user_directives.db exists"},
               {"if_not_exists": "return message: 'No user directives initialized'"},
               {"if_exists": "proceed with status retrieval"}
             ]
@@ -592,9 +606,9 @@
           {
             "step": "include_log_paths",
             "actions": [
-              {"include": "execution log path (.aifp/logs/execution/current.log)"},
-              {"include": "error log path (.aifp/logs/errors/current_errors.log)"},
-              {"include": "lifecycle log path (.aifp/logs/user-directives.log)"}
+              {"include": "execution log path (.aifp-project/logs/execution/current.log)"},
+              {"include": "error log path (.aifp-project/logs/errors/current_errors.log)"},
+              {"include": "lifecycle log path (.aifp-project/logs/user-directives.log)"}
             ]
           }
         ],
@@ -617,7 +631,7 @@
       "file_path": "helpers/user_directives/parse_directive_file.py",
       "parameters": ["file_path", "file_format"],
       "purpose": "Parse user directive file and extract directives with ambiguity detection",
-      "error_handling": "Log parse errors to .aifp/logs/errors/ and prompt user"
+      "error_handling": "Log parse errors to .aifp-project/logs/errors/ and prompt user"
     },
     {
       "name": "validate_user_directive",
@@ -645,7 +659,7 @@
       "file_path": "helpers/user_directives/install_dependency.py",
       "parameters": ["package", "version", "prompt_user"],
       "purpose": "Install Python package dependency with user confirmation",
-      "error_handling": "Log installation errors to .aifp/logs/errors/ and mark dependency as failed"
+      "error_handling": "Log installation errors to .aifp-project/logs/errors/ and mark dependency as failed"
     },
     {
       "name": "activate_directive",
@@ -686,20 +700,20 @@
 
   "logging_configuration": {
     "execution_logs": {
-      "location": ".aifp/logs/execution/",
+      "location": ".aifp-project/logs/execution/",
       "format": "json_lines",
       "rotation": "daily",
       "retention_days": 30,
       "compress_after_days": 7
     },
     "error_logs": {
-      "location": ".aifp/logs/errors/",
+      "location": ".aifp-project/logs/errors/",
       "format": "json_lines",
       "rotation": "10MB",
       "retention_days": 90
     },
     "lifecycle_log": {
-      "location": ".aifp/logs/user-directives.log",
+      "location": ".aifp-project/logs/user-directives.log",
       "format": "human_readable",
       "rotation": "weekly",
       "retention_days": 90

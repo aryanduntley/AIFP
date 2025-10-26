@@ -109,7 +109,7 @@
           "if": "aifp_folder_exists",
           "then": "call_aifp_status",
           "details": {
-            "message": ".aifp/ folder already exists"
+            "message": ".aifp-project/ folder already exists"
           }
         },
         {
@@ -124,7 +124,7 @@
           "then": "restore_from_git_backup",
           "details": {
             "copy_from": ".git/.aifp/",
-            "copy_to": ".aifp/"
+            "copy_to": ".aifp-project/"
           }
         },
         {
@@ -265,7 +265,7 @@
           "if": "git_initialized",
           "then": "backup_blueprint",
           "details": {
-            "backup_to": ".aifp/backups/ProjectBlueprint.md.backup"
+            "backup_to": ".aifp-project/backups/ProjectBlueprint.md.backup"
           }
         },
         {
@@ -563,7 +563,7 @@
           }
         },
         {
-          "if": "file_path_starts_with_.aifp/user-directives/generated/",
+          "if": "file_path_starts_with_.aifp-project/user-directives/generated/",
           "then": "mark_as_user_directive_implementation",
           "details": {
             "metadata_tag": "user_directive_generated",
@@ -1015,7 +1015,7 @@
             "log_evolution_to_notes"
           ],
           "details": {
-            "backup_path": ".aifp/backups/",
+            "backup_path": ".aifp-project/backups/",
             "note_type": "evolution",
             "source": "directive",
             "directive_name": "project_evolution"
@@ -1704,7 +1704,7 @@
           "then": "read_project_blueprint",
           "details": {
             "call_helper": "project_blueprint_read",
-            "path": ".aifp/ProjectBlueprint.md"
+            "path": ".aifp-project/ProjectBlueprint.md"
           }
         },
         {
@@ -1964,7 +1964,7 @@
           "if": "blueprint_read",
           "then": "backup_current_blueprint",
           "details": {
-            "backup_to": ".aifp/backups/ProjectBlueprint.md.v{version}",
+            "backup_to": ".aifp-project/backups/ProjectBlueprint.md.v{version}",
             "include_timestamp": true
           }
         },
@@ -1998,7 +1998,7 @@
           "if": "section_replaced",
           "then": "write_updated_blueprint",
           "details": {
-            "path": ".aifp/ProjectBlueprint.md"
+            "path": ".aifp-project/ProjectBlueprint.md"
           }
         },
         {
