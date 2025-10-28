@@ -4,11 +4,20 @@ sys-prompt/aifp_system_prompt.txt
 docs/db-schema/schemaExampleMCP.sql
 docs/db-schema/schemaExampleProject.sql
 docs/db-schema/schemaExampleSettings.sql
-docs/db-schema/schemaExampleSettings.sql
+docs/db-schema/schemaExampleUserDirectives.sql
 docs/blueprints/blueprint_system_prompt.md
 docs/blueprints/blueprint_aifp_project_structure.md
+docs/helper-functions-reference.md
+docs/directives-markdown-reference.md
+
+src/aifp/reference/guides/project-structure.md
+src/aifp/reference/guides/automation-projects.md
+src/aifp/reference/guides/directive-interactions.md
+src/aifp/reference/guides/git-integration.md
 
 The blueprints/context for the project are located in docs/blueprints and the directive json files are located in docs/directives-json. 
+
+.aifp is our project management folder and we have project blueprint in it as well as our database to track progress. Please review all that is necessary. We are working on creating the directives md files. please ensure to review any necessary or useful blueprint files in docs/blueprints/ for additional context if needed when creating the directives md files. We are following the FP coding style and managing the project through the project database in .aifp to ensure consistent and updated status. After every batch of completions, update the database to reflect the completed work.
 
 are we handling oop wrapping appropriately with our directives. Probably some example files.
 
@@ -19,23 +28,53 @@ Should we make an md file for each and every directive title? ie. (project_init,
 
 PY script to create the .aipm folder, database(s) and empty Project Blueprint file (maybe a note in it that states blueprint needs to be discussed with user and built accordingly). 
 
+before db input of directives, ensure md paths are correct. ensure all paths (what else besides md's? referece/guides/?)
 
-docs/helper-functions-reference.md
-docs/directives-markdown-reference.md
+need language agnostic oop wraper examples for FP
 
- | directives-fp-core.json       | 30    | FP Core
-  | ✅ Complete     |
-  | directives-fp-aux.json        | 32    | FP Auxiliary
-  | ✅ Complete     |
-  | directives-project.json       | 25    | Project Mgmt
-  | ✅ Complete     |
-  | directives-user-pref.json     | 7     | User Preferences
-  | ✅ Complete     |
-  | directives-user-system.json   | 8     | User Automation
-  | ✅ Complete     |
-  | directives-git.json           | 6     | Git Integration
-  | ✅ Complete     |
-  | Total                         | 108   | All Directives
-  | ✅ Ready for DB |
-  | directives-interactions.json  | 70    | Relationships
-  | ✅ Complete     |
+verify directives md files.
+
+Based on the CSV mapping and file examination, I've
+  identified that:
+
+  All Extra Files Are Legitimate Directives
+
+  The 10 "extra" MD files are well-structured, complete
+  directive files that follow the correct format. They should
+  be added to the JSON files, not removed.
+
+  Extra FP Directives (should be added to 
+  directives-fp-aux.json):
+  1. fp_test_purity.md - Testing purity validation
+  2. fp_api_design.md - API design patterns
+  3. fp_documentation.md - Documentation standards
+  4. fp_naming_conventions.md - Naming standards
+
+  Extra Project Directives (should be added to 
+  directives-project.json):
+  1. project_file_read.md - Context-aware file reading
+  2. project_file_delete.md - File deletion with DB sync
+  3. project_task_create.md - Atomic task creation
+  4. project_task_update.md - Task status updates
+  5. project_subtask_create.md - Subtask creation
+  6. project_item_create.md - Work item creation
+
+  Missing MD Files Need Creation
+
+  5 directives exist in directives-project.json but have no MD
+   files:
+  1. project_backup_restore.md - DB backup/restore
+  2. project_archive.md - Project archival
+  3. project_refactor_path.md - Roadmap refactoring
+  4. project_dependency_map.md - Dependency visualization
+  5. project_auto_summary.md - Status summary generation
+
+  Action Plan
+
+  I'll proceed with:
+
+  Phase 1: Create the 5 missing project directive MD files
+  (already defined in JSON)
+
+  Phase 2: Update JSON files to add the 10 extra directives
+  that already have MD files

@@ -1352,23 +1352,23 @@ How to verify this directive is working:
 - [✅] Create `aifp_status.md` → CREATED `src/aifp/reference/directives/aifp_status.md` (2025-10-26)
 
 ### FP Core Critical (3 files)
-- [ ] Create `fp_purity.md` → `src/aifp/reference/directives/fp_purity.md`
-- [ ] Create `fp_immutability.md` → `src/aifp/reference/directives/fp_immutability.md`
-- [ ] Create `fp_no_oop.md` → `src/aifp/reference/directives/fp_no_oop.md`
+- [✅] Create `fp_purity.md` → `src/aifp/reference/directives/fp_purity.md`
+- [✅] Create `fp_immutability.md` → `src/aifp/reference/directives/fp_immutability.md`
+- [✅] Create `fp_no_oop.md` → `src/aifp/reference/directives/fp_no_oop.md`
 
 ### Project Critical (4 files)
 - [✅] Create `project_init.md` → CREATED `src/aifp/reference/directives/project_init.md` (2025-10-26)
-- [ ] Review and update `directive_file_write.md` → move to `src/aifp/reference/directives/project_file_write.md`
-- [ ] Review and update `directive_task_decomposition.md` → move to `src/aifp/reference/directives/project_task_decomposition.md`
-- [ ] Create `project_blueprint_read.md` → `src/aifp/reference/directives/project_blueprint_read.md`
+- [✅] Review and update `directive_file_write.md` → move to `src/aifp/reference/directives/project_file_write.md`
+- [✅] Review and update `directive_task_decomposition.md` → move to `src/aifp/reference/directives/project_task_decomposition.md`
+- [✅] Create `project_blueprint_read.md` → `src/aifp/reference/directives/project_blueprint_read.md`
 
 ### Git Integration (6 files)
-- [ ] Create `directives/git_init.md`
-- [ ] Create `directives/git_detect_external_changes.md`
-- [ ] Create `directives/git_create_branch.md`
-- [ ] Create `directives/git_detect_conflicts.md`
-- [ ] Create `directives/git_merge_branch.md`
-- [ ] Create `directives/git_sync_state.md`
+- [✅] Create `directives/git_init.md`
+- [✅] Create `directives/git_detect_external_changes.md`
+- [✅] Create `directives/git_create_branch.md`
+- [✅] Create `directives/git_detect_conflicts.md`
+- [✅] Create `directives/git_merge_branch.md`
+- [✅] Create `directives/git_sync_state.md`
 
 ### FP Core Remaining (27 files)
 - [ ] ... (see individual listings above)
