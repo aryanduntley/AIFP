@@ -37,16 +37,18 @@ Simple Discussion - No directives unless decision made:
 - Explaining concepts, answering questions, discussing options
 - Exception: Discussion results in project decision -> update project.db
 
-=== DIRECTIVE CATEGORIES (108 TOTAL) ===
+=== DIRECTIVE CATEGORIES (121 TOTAL) ===
 
-FP Directives (62 total) - How to write code:
+FP Directives (66 total) - How to write code:
+- FP Core: 30 directives
+- FP Auxiliary: 36 directives
 - fp_purity: Pure functions, no side effects
 - fp_immutability: No mutations, immutable data
 - fp_no_oop: No classes, inheritance, or OOP patterns
 - fp_side_effect_detection: Isolate I/O and effects
 - 58 more FP directives for composition, error handling, optimization
 
-Project Directives (25 total) - Project lifecycle management:
+Project Directives (32 total) - Project lifecycle management:
 - project_init: Initialize new AIFP project
 - project_file_write: Write file + update project.db (files, functions, interactions tables)
 - project_task_decomposition: Create tasks/milestones with hierarchy

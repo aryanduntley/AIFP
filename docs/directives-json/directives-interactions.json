@@ -558,5 +558,133 @@
     "description": "project_file_write triggers git_sync_state after code commits to update project.last_known_git_hash",
     "weight": 1,
     "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "fp_test_purity",
+    "relation_type": "fp_reference",
+    "description": "Compliance check uses fp_test_purity to validate test code purity",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "fp_api_design",
+    "relation_type": "fp_reference",
+    "description": "Compliance check uses fp_api_design for public API validation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "fp_documentation",
+    "relation_type": "fp_reference",
+    "description": "File write triggers fp_documentation to ensure proper code documentation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "fp_naming_conventions",
+    "relation_type": "fp_reference",
+    "description": "Compliance check uses fp_naming_conventions to validate naming standards",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "fp_naming_conventions",
+    "relation_type": "fp_reference",
+    "description": "File write uses fp_naming_conventions to validate function/variable names",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_compliance_check",
+    "target": "project_file_read",
+    "relation_type": "depends_on",
+    "description": "Compliance check depends on project_file_read to load file context",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_write",
+    "target": "project_file_read",
+    "relation_type": "depends_on",
+    "description": "File write may depend on project_file_read to check existing code",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_delete",
+    "target": "project_update_db",
+    "relation_type": "triggers",
+    "description": "File delete triggers DB update to remove file records and orphaned functions",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_file_delete",
+    "target": "project_dependency_sync",
+    "relation_type": "triggers",
+    "description": "File delete triggers dependency sync to check for broken dependencies",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_task_create",
+    "relation_type": "triggers",
+    "description": "Task decomposition triggers project_task_create for individual task creation",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_create",
+    "target": "project_update_db",
+    "relation_type": "triggers",
+    "description": "Task creation triggers DB update to insert task record",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_subtask_create",
+    "relation_type": "triggers",
+    "description": "Task decomposition triggers project_subtask_create for task refinement",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_subtask_create",
+    "target": "project_task_update",
+    "relation_type": "triggers",
+    "description": "Subtask creation triggers task update to pause parent task",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_item_create",
+    "relation_type": "triggers",
+    "description": "Task decomposition triggers project_item_create for checklist items",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_decomposition",
+    "target": "project_sidequest_create",
+    "relation_type": "triggers",
+    "description": "Task decomposition triggers project_sidequest_create for exploratory work",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_sidequest_create",
+    "target": "project_task_update",
+    "relation_type": "triggers",
+    "description": "Sidequest creation triggers task update to pause related task",
+    "weight": 1,
+    "active": true
   }
 ]

@@ -20,7 +20,7 @@ Updated: 2025-10-25
 - Updated file paths to include directives-json/ prefix
 - Maintains backward compatibility with old graph format
 
-Total Directives: 108 (30 FP Core + 32 FP Aux + 25 Project + 7 User Pref + 8 User System + 6 Git)
+Total Directives: 121 (30 FP Core + 36 FP Aux + 32 Project + 7 User Pref + 8 User System + 6 Git + 2 System)
 
 This version aligns with the full schema (v1.4) for aifp_core.db.
 """

@@ -144,8 +144,8 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 │  (Global,        │ │  (Per-Project,     │ │  (Per-Project,        │ │  (Per-Project,        │
 │   Read-Only)     │ │   Mutable)         │ │   Mutable)            │ │   Optional)           │
 │                  │ │                    │ │                       │ │                       │
-│ - 60+ FP directs │ │ - Project metadata │ │ - Directive prefs     │ │ - User directives     │
-│ - 21 Project     │ │ - Files & funcs    │ │ - User settings       │ │ - Execution stats     │
+│ - 66 FP directs  │ │ - Project metadata │ │ - Directive prefs     │ │ - User directives     │
+│ - 32 Project     │ │ - Files & funcs    │ │ - User settings       │ │ - Execution stats     │
 │ - 7 User Pref    │ │ - Task hierarchy   │ │ - AI learning log     │ │ - Dependencies        │
 │ - 7 User Direct  │ │ - Themes & flows   │ │ - Tracking features   │ │ - Generated code refs │
 │ - Helper defs    │ │ - Completion path  │ │ - Issue reports       │ │ - Source file tracking│
@@ -459,7 +459,7 @@ Enforce functional programming standards:
 | **OOP Elimination** | `fp_class_elimination`, `fp_inheritance_block`, `fp_wrapper_generation` | Convert OOP to FP patterns |
 | **Optimization** | `fp_memoization`, `fp_lazy_evaluation`, `fp_parallel_evaluation` | Optimize without breaking purity |
 
-### Project Directives (21)
+### Project Directives (32)
 
 Manage project lifecycle:
 
@@ -762,8 +762,8 @@ AI: ✅ Preference learned: project_file_write
 ### Directive Definitions
 
 - **[FP Core Directives](docs/directives-json/directives-fp-core.json)** - Core FP directives (30)
-- **[FP Aux Directives](docs/directives-json/directives-fp-aux.json)** - Auxiliary FP directives (30+)
-- **[Project Directives](docs/directives-json/directives-project.json)** - All project directives (22)
+- **[FP Aux Directives](docs/directives-json/directives-fp-aux.json)** - Auxiliary FP directives (36)
+- **[Project Directives](docs/directives-json/directives-project.json)** - All project directives (32)
 - **[User Preference Directives](docs/directives-json/directives-user-pref.json)** - User customization directives (7)
 - **[User Directive System](docs/directives-json/directives-user-system.json)** - User-defined automation directives (8) with 10 helper functions
 - **[Git Integration Directives](docs/directives-json/directives-git.json)** - Git collaboration and conflict resolution directives (6) with 9 helper functions
@@ -809,7 +809,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ### Current (v1.0)
 
-- ✅ Core directive system (60+ FP, 22 Project, 7 User Preference, 6 Git, 8 User Directives)
+- ✅ Core directive system (66 FP, 32 Project, 7 User Preference, 6 Git, 8 User Directives)
 - ✅ Four-database architecture (aifp_core, project, user_preferences, user_directives)
 - ✅ MCP server design with command routing
 - ✅ User preference system with directive mapping and AI learning

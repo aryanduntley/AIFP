@@ -1400,5 +1400,245 @@
       "error chaining"
     ],
     "confidence_threshold": 0.7
+  },
+  {
+    "name": "fp_test_purity",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "testing",
+      "description": "Ensures test code follows FP principles for reliability and parallelizability."
+    },
+    "description": "Validates test purity by ensuring test fixtures are pure functions, eliminating shared mutable state, and promoting property-based testing. Pure tests are deterministic, parallelizable, and easier to understand.",
+    "md_file_path": "directives/fp_test_purity.md",
+    "workflow": {
+      "trunk": "analyze_test_purity",
+      "branches": [
+        {
+          "if": "test_setup_mutation",
+          "then": "convert_to_pure_fixtures"
+        },
+        {
+          "if": "test_assertion_side_effects",
+          "then": "isolate_effects_from_assertions"
+        },
+        {
+          "if": "property_based_opportunity",
+          "then": "suggest_property_tests"
+        },
+        {
+          "if": "test_isolation_check",
+          "then": "validate_test_independence"
+        },
+        {
+          "fallback": "mark_as_compliant"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_test_purity_violations"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "mutable_fixtures",
+        "resolution": "Refactor to pure fixture functions returning fresh data"
+      },
+      {
+        "issue": "test_order_dependency",
+        "resolution": "Ensure tests can run independently in any order"
+      },
+      {
+        "issue": "framework_limitations",
+        "resolution": "Build pure abstraction layer on top of framework"
+      }
+    ],
+    "intent_keywords_json": [
+      "testing",
+      "test purity",
+      "fixtures",
+      "property-based testing",
+      "test independence"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "fp_api_design",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "api_design",
+      "description": "Establishes FP design principles for public APIs."
+    },
+    "description": "Promotes function-based APIs over class-based, uses immutable data structures, explicit error handling with Result types, and designs for composition. Well-designed FP APIs are easier to test, reason about, and integrate.",
+    "md_file_path": "directives/fp_api_design.md",
+    "workflow": {
+      "trunk": "analyze_api_design",
+      "branches": [
+        {
+          "if": "class_based_api",
+          "then": "convert_to_function_based"
+        },
+        {
+          "if": "exception_based_errors",
+          "then": "convert_to_result_types"
+        },
+        {
+          "if": "implicit_state_api",
+          "then": "make_state_explicit"
+        },
+        {
+          "if": "composition_check",
+          "then": "ensure_composability"
+        },
+        {
+          "fallback": "mark_as_compliant"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_api_design_violations"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "class_based_legacy",
+        "resolution": "Create functional facade layer"
+      },
+      {
+        "issue": "exception_heavy_codebase",
+        "resolution": "Adapter layer converting exceptions to Results"
+      },
+      {
+        "issue": "team_unfamiliarity",
+        "resolution": "Documentation, examples, gradual adoption"
+      }
+    ],
+    "intent_keywords_json": [
+      "api design",
+      "public interface",
+      "composability",
+      "error handling",
+      "immutable api"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "fp_documentation",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "code_quality",
+      "description": "Enforces comprehensive documentation standards for FP code."
+    },
+    "description": "Ensures every pure function, data type, and module is properly documented with signatures, examples, and purity guarantees. Enables AI assistants and developers to understand code behavior without reading implementations.",
+    "md_file_path": "directives/fp_documentation.md",
+    "workflow": {
+      "trunk": "analyze_documentation_coverage",
+      "branches": [
+        {
+          "if": "function_doc_check",
+          "then": "validate_docstring_completeness"
+        },
+        {
+          "if": "type_doc_check",
+          "then": "document_adt_invariants"
+        },
+        {
+          "if": "module_doc_check",
+          "then": "add_module_overview"
+        },
+        {
+          "if": "purity_annotation_check",
+          "then": "add_purity_markers"
+        },
+        {
+          "fallback": "generate_documentation"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_documentation_gap"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "documentation_debt",
+        "resolution": "Incremental documentation, prioritize public API"
+      },
+      {
+        "issue": "documentation_drift",
+        "resolution": "Automated checks, code review requirements"
+      },
+      {
+        "issue": "over_documentation",
+        "resolution": "Templates, focus on public API"
+      }
+    ],
+    "intent_keywords_json": [
+      "documentation",
+      "docstrings",
+      "comments",
+      "examples",
+      "purity annotation"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "fp_naming_conventions",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "code_quality",
+      "description": "Establishes consistent naming standards for FP code."
+    },
+    "description": "Enforces naming patterns that make function purity, side effects, and data flow explicit through names. Pure functions use verb-noun patterns, impure functions have IO/Eff/Unsafe indicators. Enables quick understanding of code intent.",
+    "md_file_path": "directives/fp_naming_conventions.md",
+    "workflow": {
+      "trunk": "analyze_naming_patterns",
+      "branches": [
+        {
+          "if": "pure_function_naming",
+          "then": "validate_verb_noun_pattern"
+        },
+        {
+          "if": "impure_function_naming",
+          "then": "enforce_effect_suffix"
+        },
+        {
+          "if": "data_structure_naming",
+          "then": "use_descriptive_nouns"
+        },
+        {
+          "if": "variable_naming",
+          "then": "ensure_immutability_clarity"
+        },
+        {
+          "fallback": "suggest_rename"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_naming_violation"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "inconsistent_naming",
+        "resolution": "Gradual refactoring, document standards"
+      },
+      {
+        "issue": "legacy_conventions",
+        "resolution": "Adapter layer, isolate at boundaries"
+      },
+      {
+        "issue": "team_disagreement",
+        "resolution": "Document rationale, start with consensus subset"
+      }
+    ],
+    "intent_keywords_json": [
+      "naming",
+      "conventions",
+      "readability",
+      "function names",
+      "variable names"
+    ],
+    "confidence_threshold": 0.7
   }
 ]

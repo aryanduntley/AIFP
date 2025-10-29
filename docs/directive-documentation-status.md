@@ -10,15 +10,16 @@
 | Category | Total | With MD Files | In Guides | Not Documented |
 |----------|-------|---------------|-----------|----------------|
 | **FP Core** | 30 | 30 | 0 | 0 |
-| **FP Auxiliary** | 32 | 32 | 0 | 0 |
-| **Project** | 25 | 25 | 0 | 0 |
+| **FP Auxiliary** | 36 | 36 | 0 | 0 |
+| **Project** | 32 | 32 | 0 | 0 |
 | **Git** | 6 | 6 | 0 | 0 |
 | **User Preferences** | 7 | 7 | 0 | 0 |
 | **User System** | 8 | 0 | 8 | 0 |
 | **System (aifp_run, aifp_status)** | 2 | 2 | 0 | 0 |
-| **TOTAL** | **110** | **102** | **8** | **0** |
+| **TOTAL** | **121** | **113** | **8** | **0** |
 
 **✅ All JSON-defined directives now have MD files!**
+**✨ Updated 2025-10-28: Added 11 directives to JSON (4 FP Auxiliary + 7 Project)**
 
 ---
 
@@ -59,18 +60,19 @@ All 30 have individual MD files in `src/aifp/reference/directives/`:
 29. ✅ `fp_test_purity.md`
 30. ✅ `fp_call_graph_generation.md`
 
-**Additional FP files NOT in JSON** (3 - should be added to FP Auxiliary):
-- ⚠️ `fp_api_design.md` - Not in directives-fp-aux.json (should add)
-- ⚠️ `fp_documentation.md` - Not in directives-fp-aux.json (should add)
-- ⚠️ `fp_naming_conventions.md` - Not in directives-fp-aux.json (should add)
+**✅ All FP files now in JSON!** (4 added 2025-10-28):
+- ✅ `fp_test_purity.md` - ✨ Added to directives-fp-aux.json
+- ✅ `fp_api_design.md` - ✨ Added to directives-fp-aux.json
+- ✅ `fp_documentation.md` - ✨ Added to directives-fp-aux.json
+- ✅ `fp_naming_conventions.md` - ✨ Added to directives-fp-aux.json
 
 ---
 
-## 2. FP Auxiliary Directives (32)
+## 2. FP Auxiliary Directives (36)
 
 **Source**: `docs/directives-json/directives-fp-aux.json`
 
-All 32 have individual MD files in `src/aifp/reference/directives/`:
+All 36 have individual MD files in `src/aifp/reference/directives/`:
 
 ### Error Handling (5)
 1. ✅ `fp_optionals.md`
@@ -121,15 +123,21 @@ All 32 have individual MD files in `src/aifp/reference/directives/`:
 ### Debug/Analysis (1)
 33. ✅ `fp_ai_reasoning_trace.md`
 
-**Note**: Total is 33 listed above due to duplicate category entry. Actual unique count is 32.
+### Code Quality (4) - ✨ Added 2025-10-28
+34. ✅ `fp_test_purity.md` - Testing purity validation
+35. ✅ `fp_api_design.md` - API design patterns
+36. ✅ `fp_documentation.md` - Documentation standards
+37. ✅ `fp_naming_conventions.md` - Naming standards
+
+**Note**: Total count updated to 36 after adding 4 code quality directives.
 
 ---
 
-## 3. Project Directives (25)
+## 3. Project Directives (32)
 
 **Source**: `docs/directives-json/directives-project.json`
 
-**All 25 documented** (MD files complete):
+**All 32 documented** (MD files complete):
 1. ✅ `project_init.md`
 2. ✅ `project_blueprint_read.md`
 3. ✅ `project_blueprint_update.md`
@@ -154,15 +162,15 @@ All 32 have individual MD files in `src/aifp/reference/directives/`:
 22. ✅ `project_backup_restore.md` - ✨ Created this session
 23. ✅ `project_dependency_map.md` - ✨ Created this session
 24. ✅ `project_refactor_path.md` - ✨ Created this session
+25. ✅ `project_file_read.md` - ✨ Added to JSON 2025-10-28
+26. ✅ `project_file_delete.md` - ✨ Added to JSON 2025-10-28
+27. ✅ `project_task_create.md` - ✨ Added to JSON 2025-10-28
+28. ✅ `project_task_update.md` - ✨ Added to JSON 2025-10-28
+29. ✅ `project_subtask_create.md` - ✨ Added to JSON 2025-10-28
+30. ✅ `project_item_create.md` - ✨ Added to JSON 2025-10-28
+31. ✅ `project_sidequest_create.md` - ✨ Added to JSON 2025-10-28
 
-**Additional Project files NOT in JSON** (7 - should be added to JSON):
-- ⚠️ `project_file_delete.md` - Not in directives-project.json (should add)
-- ⚠️ `project_file_read.md` - Not in directives-project.json (should add)
-- ⚠️ `project_item_create.md` - Not in directives-project.json (should add)
-- ⚠️ `project_subtask_create.md` - Not in directives-project.json (should add)
-- ⚠️ `project_task_create.md` - Not in directives-project.json (should add)
-- ⚠️ `project_task_update.md` - Not in directives-project.json (should add)
-- ✅ `project_sidequest_create.md` - ✨ Created this session to complete pattern
+**✅ All Project files now in JSON!** (7 atomic task/file management directives added 2025-10-28)
 
 ---
 

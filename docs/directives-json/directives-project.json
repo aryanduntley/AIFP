@@ -2053,5 +2053,396 @@
       "change blueprint section"
     ],
     "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_file_read",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "file_operations",
+      "description": "Context-aware file reading with database metadata"
+    },
+    "description": "Intelligent file reader that provides file content with full database context including metadata, functions, dependencies, theme/flow associations, and checksum verification. Detects if file changed since last DB update.",
+    "md_file_path": "directives/project_file_read.md",
+    "workflow": {
+      "trunk": "validate_file_path",
+      "branches": [
+        {
+          "if": "file_exists_in_db",
+          "then": "load_with_context"
+        },
+        {
+          "if": "file_not_in_db_but_exists",
+          "then": "load_without_context"
+        },
+        {
+          "if": "checksum_mismatch",
+          "then": "warn_file_changed"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "file_not_found",
+        "resolution": "Verify path and prompt user"
+      },
+      {
+        "issue": "file_not_tracked",
+        "resolution": "Suggest running project_file_write"
+      }
+    ],
+    "intent_keywords_json": [
+      "read file",
+      "load file",
+      "file context"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_file_delete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "file_operations",
+      "description": "Safe file deletion with database cleanup"
+    },
+    "description": "Safe file remover that ensures filesystem and database consistency. Handles dependency checking, soft vs hard delete, backup creation, and cascade cleanup of orphaned functions and interactions.",
+    "md_file_path": "directives/project_file_delete.md",
+    "workflow": {
+      "trunk": "validate_delete_request",
+      "branches": [
+        {
+          "if": "file_tracked_in_db",
+          "then": "check_dependencies"
+        },
+        {
+          "if": "dependencies_exist",
+          "then": "warn_and_confirm"
+        },
+        {
+          "if": "user_confirms_delete",
+          "then": "create_backup_option"
+        },
+        {
+          "if": "hard_delete_confirmed",
+          "then": "delete_file_and_db_records"
+        },
+        {
+          "if": "soft_delete_confirmed",
+          "then": "mark_deleted_in_db"
+        },
+        {
+          "fallback": "cancel_delete"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "restore_from_backup"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "dependencies_exist",
+        "resolution": "Warn user and offer soft delete"
+      },
+      {
+        "issue": "delete_failed",
+        "resolution": "Restore from backup if created"
+      }
+    ],
+    "intent_keywords_json": [
+      "delete file",
+      "remove file",
+      "file cleanup"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_task_create",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Atomic task creation"
+    },
+    "description": "Atomic task constructor for creating new independent tasks. Links to milestone, sets initial status, assigns priority, validates inputs, and returns task ID for immediate use.",
+    "md_file_path": "directives/project_task_create.md",
+    "workflow": {
+      "trunk": "validate_inputs",
+      "branches": [
+        {
+          "if": "inputs_valid",
+          "then": "check_milestone_exists"
+        },
+        {
+          "if": "milestone_valid",
+          "then": "check_duplicate_tasks"
+        },
+        {
+          "if": "no_duplicates_or_confirmed",
+          "then": "create_task_record"
+        },
+        {
+          "if": "task_created",
+          "then": "return_task_id"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "duplicate_task",
+        "resolution": "Prompt user to confirm or rename"
+      },
+      {
+        "issue": "invalid_milestone",
+        "resolution": "Prompt user to select valid milestone"
+      }
+    ],
+    "intent_keywords_json": [
+      "create task",
+      "new task",
+      "add task"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_task_update",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Task lifecycle state management"
+    },
+    "description": "Central task state manager for updating status, priority, and metadata. Handles completion logic, resumes paused tasks, maintains roadmap integrity, and triggers downstream actions.",
+    "md_file_path": "directives/project_task_update.md",
+    "workflow": {
+      "trunk": "identify_update_type",
+      "branches": [
+        {
+          "if": "status_update_requested",
+          "then": "update_task_status"
+        },
+        {
+          "if": "task_completed",
+          "then": "handle_completion"
+        },
+        {
+          "if": "subtask_completed_parent_paused",
+          "then": "resume_parent_task"
+        },
+        {
+          "if": "priority_update_requested",
+          "then": "update_task_priority"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "invalid_state_transition",
+        "resolution": "Warn user about valid transitions"
+      },
+      {
+        "issue": "completed_task_reopened",
+        "resolution": "Block reopening completed tasks"
+      }
+    ],
+    "intent_keywords_json": [
+      "update task",
+      "mark complete",
+      "change status",
+      "task priority"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_subtask_create",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Atomic subtask creation with parent management"
+    },
+    "description": "Atomic subtask constructor that creates focused, high-priority subtasks and automatically pauses parent tasks until completion. Subtasks are immediate-focus work that blocks parent task progress.",
+    "md_file_path": "directives/project_subtask_create.md",
+    "workflow": {
+      "trunk": "validate_inputs",
+      "branches": [
+        {
+          "if": "inputs_valid",
+          "then": "check_parent_task_exists"
+        },
+        {
+          "if": "parent_task_valid",
+          "then": "check_active_subtasks"
+        },
+        {
+          "if": "no_blocking_subtasks_or_confirmed",
+          "then": "create_subtask_record"
+        },
+        {
+          "if": "subtask_created",
+          "then": "pause_parent_task"
+        },
+        {
+          "if": "parent_paused",
+          "then": "return_subtask_id"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "parent_task_completed",
+        "resolution": "Cannot create subtask for completed task"
+      },
+      {
+        "issue": "multiple_active_subtasks",
+        "resolution": "Warn about context switching"
+      }
+    ],
+    "intent_keywords_json": [
+      "create subtask",
+      "new subtask",
+      "refine task"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_item_create",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Atomic item creation for granular tracking"
+    },
+    "description": "Atomic item constructor for creating smallest work units within tasks. Links to parent task, supports optional file/function references, and enables fine-grained progress tracking.",
+    "md_file_path": "directives/project_item_create.md",
+    "workflow": {
+      "trunk": "validate_inputs",
+      "branches": [
+        {
+          "if": "inputs_valid",
+          "then": "check_parent_task_exists"
+        },
+        {
+          "if": "parent_task_valid",
+          "then": "check_duplicate_items"
+        },
+        {
+          "if": "no_duplicates_or_confirmed",
+          "then": "create_item_record"
+        },
+        {
+          "if": "item_created",
+          "then": "return_item_id"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "parent_task_completed",
+        "resolution": "Cannot add items to completed task"
+      },
+      {
+        "issue": "duplicate_item",
+        "resolution": "Prompt user to confirm"
+      }
+    ],
+    "intent_keywords_json": [
+      "create item",
+      "new item",
+      "add checklist"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_sidequest_create",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Exploratory work tracking"
+    },
+    "description": "Atomic sidequest constructor for creating exploratory interruptions. Handles fixes, pivots, or unrelated work that pauses tasks. Default low priority for exploratory work outside main roadmap.",
+    "md_file_path": "directives/project_sidequest_create.md",
+    "workflow": {
+      "trunk": "validate_inputs",
+      "branches": [
+        {
+          "if": "linked_to_task",
+          "then": "create_with_task_link"
+        },
+        {
+          "if": "exploratory_work",
+          "then": "create_standalone"
+        },
+        {
+          "if": "bug_fix",
+          "then": "create_fix_sidequest"
+        },
+        {
+          "if": "pivot_exploration",
+          "then": "create_pivot_sidequest"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "too_many_sidequests",
+        "resolution": "Warn about focus fragmentation"
+      },
+      {
+        "issue": "sidequest_should_be_task",
+        "resolution": "Suggest creating task instead"
+      }
+    ],
+    "intent_keywords_json": [
+      "create sidequest",
+      "exploratory work",
+      "bug fix",
+      "interruption"
+    ],
+    "confidence_threshold": 0.7
   }
 ]
