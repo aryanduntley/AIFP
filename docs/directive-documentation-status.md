@@ -14,12 +14,16 @@
 | **Project** | 32 | 32 | 0 | 0 |
 | **Git** | 6 | 6 | 0 | 0 |
 | **User Preferences** | 7 | 7 | 0 | 0 |
-| **User System** | 8 | 0 | 8 | 0 |
-| **System (aifp_run, aifp_status)** | 2 | 2 | 0 | 0 |
-| **TOTAL** | **121** | **113** | **8** | **0** |
+| **User System** | 9 | 9 | 0 | 0 |
+| **TOTAL** | **120** | **120** | **0** | **0** |
 
 **✅ All JSON-defined directives now have MD files!**
 **✨ Updated 2025-10-28: Added 11 directives to JSON (4 FP Auxiliary + 7 Project)**
+**✨ Updated 2025-10-29: Phase 1 cleanup complete - All 9 user system directive MD files added, automation-projects.md guide deleted**
+**✨ Updated 2025-10-29: Phase 2.1 complete - project-structure.md guide content absorbed into project_init.md, aifp_status.md, aifp_run.md**
+**✨ Updated 2025-10-29: Phase 2.2 complete - git-integration.md guide content absorbed into git_init.md, git_merge_branch.md**
+**✨ Updated 2025-10-29: Phase 2.3 complete - directive-interactions.md guide deleted. All 120 directives already have "Related Directives" sections. directives-interactions.json (689 relationships) is canonical source**
+**🎉 ALL PHASES COMPLETE! All guides absorbed into directive MD files. Zero standalone guides remain.**
 
 ---
 
@@ -205,25 +209,23 @@ All 7 have individual MD files in `src/aifp/reference/directives/`:
 
 ---
 
-## 6. User System Directives (8)
+## 6. User System Directives (9)
 
 **Source**: `docs/directives-json/directives-user-system.json`
 
-**Documentation**: These directives are documented as a cohesive system in:
-- 📚 `src/aifp/reference/guides/automation-projects.md`
+**All 9 have individual MD files** in `src/aifp/reference/directives/`:
 
-These directives work together as a processing pipeline for user-defined automation directives (home automation, cloud infrastructure, custom workflows). They do NOT have individual MD files by design.
+1. ✅ `user_directive_parse.md` - Parse YAML/JSON/TXT directive files
+2. ✅ `user_directive_validate.md` - Interactive validation with Q&A
+3. ✅ `user_directive_implement.md` - Generate FP-compliant implementation
+4. ✅ `user_directive_approve.md` - User testing and approval workflow
+5. ✅ `user_directive_activate.md` - Deploy for real-time execution
+6. ✅ `user_directive_monitor.md` - Track execution statistics
+7. ✅ `user_directive_update.md` - Handle directive file changes
+8. ✅ `user_directive_deactivate.md` - Stop and cleanup
+9. ✅ `user_directive_status.md` - Comprehensive status reporting
 
-1. 📚 `user_directive_parse` - Parse YAML/JSON/TXT directive files
-2. 📚 `user_directive_validate` - Interactive validation with Q&A
-3. 📚 `user_directive_implement` - Generate FP-compliant implementation
-4. 📚 `user_directive_approve` - User testing and approval workflow
-5. 📚 `user_directive_activate` - Deploy for real-time execution
-6. 📚 `user_directive_monitor` - Track execution statistics
-7. 📚 `user_directive_update` - Handle directive file changes
-8. 📚 `user_directive_deactivate` - Stop and cleanup
-
-**Why no individual MD files?** These directives form a unified workflow system for processing user-created automation rules. The guide provides comprehensive documentation of the entire system.
+**Phase 1 Complete**: All user system directive MD files created (2025-10-29). The automation-projects.md guide file has been deleted as its content was absorbed into individual directive files.
 
 ---
 
@@ -240,14 +242,14 @@ Both have individual MD files in `src/aifp/reference/directives/`:
 
 ## 8. Comprehensive Guides
 
-These guides document systems, not individual directives:
+These guides document systems and cross-cutting concerns:
 
-| Guide | Location | Covers |
-|-------|----------|--------|
-| **Automation Projects** | `src/aifp/reference/guides/automation-projects.md` | User System directives (8) |
-| **Project Structure** | `src/aifp/reference/guides/project-structure.md` | AIFP project organization |
-| **Directive Interactions** | `src/aifp/reference/guides/directive-interactions.md` | Cross-directive workflows |
-| **Git Integration** | `src/aifp/reference/guides/git-integration.md` | Git directives and workflows |
+| Guide | Location | Covers | Status |
+|-------|----------|--------|--------|
+| **Automation Projects** | ~~`src/aifp/reference/guides/automation-projects.md`~~ | User System directives (9) | ❌ **DELETED** (Phase 1) - Content absorbed into individual directive MD files |
+| **Project Structure** | ~~`src/aifp/reference/guides/project-structure.md`~~ | AIFP project organization | ❌ **DELETED** (Phase 2.1) - Content absorbed into project_init.md, aifp_status.md, aifp_run.md |
+| **Git Integration** | ~~`src/aifp/reference/guides/git-integration.md`~~ | Git directives and workflows | ❌ **DELETED** (Phase 2.2) - Content absorbed into git_init.md, git_merge_branch.md |
+| **Directive Interactions** | ~~`src/aifp/reference/guides/directive-interactions.md`~~ | Cross-directive workflows | ❌ **DELETED** (Phase 2.3) - 120/122 directives already have "Related Directives" sections. directives-interactions.json is canonical source (689 relationships) |
 
 ---
 

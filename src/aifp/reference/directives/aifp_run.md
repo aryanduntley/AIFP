@@ -259,8 +259,24 @@ aifp_run routes to: project_init
 ## Database Operations
 
 **Read Operations**:
-- Queries `aifp_core.db` for directive definitions
-- Checks `project.db` via `get_project_status()`
+- Queries `aifp_core.db` (via MCP server) for directive definitions
+- Checks `project.db` (in user project) via `get_project_status()`
+- Reads `config.json` for project-specific configuration
+
+**Database Architecture**:
+- **`aifp_core.db`**: Lives in MCP server installation directory, accessed via MCP tools
+  - Contains all 122 core AIFP directive definitions
+  - Read-only, immutable
+  - Never copied to user projects
+- **`project.db`**: Lives in user's `.aifp-project/` directory
+  - Contains project-specific state (tasks, files, functions)
+  - Mutable, updated by directives
+- **`user_preferences.db`**: Lives in user's `.aifp-project/` directory
+  - Contains user customizations and preferences
+  - Mutable
+- **`user_directives.db`**: (Optional, Use Case 2 only) Lives in user's `.aifp-project/` directory
+  - Contains user-defined automation directives
+  - Created on first directive parse
 
 **Write Operations**:
 - None directly (routing only)

@@ -32,6 +32,69 @@ After initialization, the directive:
 
 ---
 
+## Why AIFP + Git is Superior to OOP + Git
+
+### The FP Collaboration Advantage
+
+AIFP's pure functional programming approach makes Git collaboration **dramatically simpler and safer** than traditional OOP codebases:
+
+| OOP Merge Problem | AIFP FP Solution |
+|-------------------|------------------|
+| **Class hierarchies conflict** | ✅ No classes → No hierarchy conflicts |
+| **Hidden state changes** | ✅ Pure functions → Explicit inputs/outputs |
+| **Side effects everywhere** | ✅ Side effects isolated → Easy to identify conflicts |
+| **Method override conflicts** | ✅ No inheritance → No override conflicts |
+| **Implicit dependencies** | ✅ Database tracks all dependencies → Clear conflict detection |
+| **Mutation conflicts** | ✅ Immutable data → Fewer state conflicts |
+| **Hard to test both versions** | ✅ Pure functions → Easy to test and compare |
+
+### Multi-User Collaboration Philosophy
+
+AIFP Git integration is designed for:
+- **Multiple developers working simultaneously** on different branches
+- **Autonomous AI instances** creating and managing their own branches
+- **FP-powered intelligent conflict resolution** using purity levels and test coverage
+- **Database-tracked project state** enabling informed merge decisions
+- **Clear attribution** through structured branch naming: `aifp-{user}-{number}`
+
+### What Gets Tracked in Git?
+
+| Component | Track in Git? | Rationale |
+|-----------|---------------|-----------|
+| **Source code** | ✅ Yes | Standard Git usage |
+| **`.aifp-project/project.db`** | ✅ Yes | Organizational state (themes, tasks, functions, dependencies) - enables FP-powered merging |
+| **`.aifp-project/ProjectBlueprint.md`** | ✅ Yes | Project context document |
+| **`.aifp-project/user_preferences.db`** | ❌ No | User-specific settings, not shared |
+| **`.aifp-project/backups/`** | ❌ No | Generated backup files |
+| **`.aifp-project/logs/`** | ❌ No | Use Case 2 execution logs (temporary) |
+
+**Critical Decision**: `project.db` is tracked because it contains function metadata (purity levels, parameters, dependencies) that enables AI to intelligently resolve merge conflicts.
+
+### .gitignore Configuration
+
+During initialization, this directive creates/updates `.gitignore`:
+
+```gitignore
+# AIFP-specific (DO track organizational state)
+.aifp-project/user_preferences.db
+.aifp-project/backups/
+.aifp-project/logs/
+.aifp-project/temp/
+.aifp-project/.mcp-session-*
+
+# Standard ignores
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+node_modules/
+.env
+*.log
+.DS_Store
+```
+
+---
+
 ## When to Apply
 
 This directive applies when:

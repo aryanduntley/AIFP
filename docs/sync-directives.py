@@ -12,15 +12,17 @@ Handles:
 - Helper Functions, Tools, and Notes table presence
 - Integrity Validation (post-sync verification)
 
-Updated: 2025-10-25
+Updated: 2025-10-29
 - Added support for user preference directives (directives-user-pref.json)
 - Added support for user system directives (directives-user-system.json)
 - Added support for git integration directives (directives-git.json)
 - Updated to use directives-interactions.json (replaces project_directive_graph.json)
 - Updated file paths to include directives-json/ prefix
 - Maintains backward compatibility with old graph format
+- Added MD file existence validation
+- Added guide file removal verification
 
-Total Directives: 121 (30 FP Core + 36 FP Aux + 32 Project + 7 User Pref + 8 User System + 6 Git + 2 System)
+Total Directives: 120 (30 FP Core + 36 FP Aux + 32 Project + 7 User Pref + 9 User System + 6 Git)
 
 This version aligns with the full schema (v1.4) for aifp_core.db.
 """
@@ -592,6 +594,32 @@ def validate_integrity(conn):
                 issues.append(f"⚠️ Directive '{row['name']}' missing required 'trunk' in workflow")
         except (json.JSONDecodeError, TypeError):
             issues.append(f"❌ Directive '{row['name']}' has malformed workflow JSON")
+
+    # 9. Verify MD file paths exist for all directives
+    cur.execute("SELECT name, md_file_path FROM directives WHERE md_file_path IS NOT NULL;")
+    md_files_checked = 0
+    for row in cur.fetchall():
+        # Construct path relative to project root
+        md_path = os.path.join("../src/aifp/reference", row['md_file_path'])
+        if not os.path.exists(md_path):
+            issues.append(f"❌ Directive '{row['name']}' references missing MD file: {row['md_file_path']}")
+        md_files_checked += 1
+
+    if md_files_checked > 0:
+        print(f"   ✓ Verified {md_files_checked} MD file paths")
+
+    # 10. Verify guide files have been removed (should not exist)
+    guide_files_to_check = [
+        "../src/aifp/reference/guides/automation-projects.md",
+        "../src/aifp/reference/guides/project-structure.md",
+        "../src/aifp/reference/guides/git-integration.md",
+        "../src/aifp/reference/guides/directive-interactions.md"
+    ]
+    for guide_file in guide_files_to_check:
+        if os.path.exists(guide_file):
+            issues.append(f"⚠️ Guide file still exists (should be deleted): {guide_file}")
+
+    print(f"   ✓ Verified {len(guide_files_to_check)} guide files removed")
 
     if issues:
         print(f"❗ Found {len(issues)} integrity warnings:")

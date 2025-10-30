@@ -159,7 +159,7 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 
 ### aifp_core.db (Global, Read-Only)
 
-**Location**: `~/.aifp/aifp_core.db`
+**Location**: Within MCP server installation directory (user-defined location, configured in AI client)
 
 **Purpose**: Immutable knowledge base containing all AIFP standards, directives, and helper definitions.
 
@@ -317,7 +317,7 @@ aifp run "Initialize project for calculator"
 1. Calls `aifp_run` → receives guidance
 2. Evaluates: "Project initialization = project management action"
 3. Checks memory: "Do I have directives? No."
-4. Calls `get_all_directives()` → receives all 108 directives (30 FP Core + 32 FP Aux + 25 Project + 7 User Prefs + 8 User System + 6 Git)
+4. Calls `get_all_directives()` → receives all 120 directives (30 FP Core + 36 FP Aux + 32 Project + 7 User Prefs + 9 User System + 6 Git)
 5. Reviews directives: "This matches `project_init`"
 6. Checks prerequisites: "Should run `project_status` first?"
 7. Executes `project_init` directive workflow:
@@ -401,16 +401,14 @@ project_file_write
 ### Installation
 
 ```bash
-# Install AIFP MCP server (global)
-pip install aifp-mcp-server
+# Download/clone AIFP MCP server to your preferred location
+# Example: ~/mcp-servers/aifp/ or /path/to/your/mcp-servers/aifp/
 
-# Initialize AIFP system
-aifp init --global
-
-# This creates:
-# ~/.aifp/mcp-server/
-# ~/.aifp/aifp_core.db
-# ~/.aifp/config.json
+# The MCP server installation contains:
+# aifp_core.db (directive definitions)
+# Server code (Python)
+# Helper function implementations
+# Database schemas
 ```
 
 ### Project Initialization
@@ -433,15 +431,17 @@ Add to Claude Desktop config (`claude_desktop_config.json`):
 {
   "mcpServers": {
     "aifp": {
-      "command": "aifp",
-      "args": ["serve", "--stdio"],
+      "command": "python",
+      "args": ["/path/to/your/aifp-mcp-server/src/main.py"],
       "env": {
-        "AIFP_CONFIG_PATH": "~/.aifp/config.json"
+        "AIFP_SERVER_ROOT": "/path/to/your/aifp-mcp-server"
       }
     }
   }
 }
 ```
+
+**Note**: Replace `/path/to/your/aifp-mcp-server` with the actual path where you installed/cloned the AIFP MCP server.
 
 ---
 
@@ -485,7 +485,7 @@ Manage AI behavior customization and learning:
 | **project_notes_log** | Handles logging to project.db with directive context |
 | **tracking_toggle** | Enables/disables tracking features with token cost warnings |
 
-### User-Defined Directives (8)
+### User-Defined Directives (9)
 
 **FOR USE CASE 2 ONLY**: Automation projects where AIFP generates and manages the codebase:
 
@@ -499,6 +499,7 @@ Manage AI behavior customization and learning:
 | **user_directive_monitor** | Track execution statistics and handle errors |
 | **user_directive_update** | Handle changes to directive source files (re-parse, re-validate) |
 | **user_directive_deactivate** | Stop execution and clean up resources |
+| **user_directive_status** | Comprehensive status reporting for all user directives |
 
 **Use Cases** (Automation Projects):
 - **Home Automation**: "At 5pm turn off living room lights", "If stove on > 20 min, turn off"
@@ -757,17 +758,24 @@ AI: ✅ Preference learned: project_file_write
 
 ### Reference Documents
 
-- **[Helper Functions Reference](docs/helper-functions-reference.md)** - Comprehensive catalog of all 44 helper functions organized by database (MCP, Project, Git, Preferences, User Directives). Includes 5 MCP helpers, 16 Project helpers (5 initialization + 11 management), 9 Git integration helpers, 4 User Preferences helpers, and 10 User Directives helpers with full specifications, parameters, return types, error handling, and usage by directives.
+- **[Helper Functions Reference](docs/helper-functions-reference.md)** - Comprehensive catalog of all 50 helper functions organized by database (MCP, Project, Git, Preferences, User Directives). Includes 7 MCP helpers, 19 Project helpers (5 initialization + 14 management), 10 Git integration helpers, 4 User Preferences helpers, and 10 User Directives helpers with full specifications, parameters, return types, error handling, and usage by directives.
+- **[Directive MD Files](src/aifp/reference/directives/)** - Complete **self-contained** documentation for all 120 directives in individual MD files. Each directive MD file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, database operations, and testing scenarios. All original guide content has been absorbed into directive MD files for comprehensive self-documentation.
+- **[Directives Markdown Reference](docs/directives-markdown-reference.md)** - Template and standards for creating directive MD files.
+- **[Directive Documentation Status](docs/directive-documentation-status.md)** - Tracking document for directive MD file completion status.
 
-### Directive Definitions
+### Directive Definitions (JSON + MD)
 
-- **[FP Core Directives](docs/directives-json/directives-fp-core.json)** - Core FP directives (30)
-- **[FP Aux Directives](docs/directives-json/directives-fp-aux.json)** - Auxiliary FP directives (36)
-- **[Project Directives](docs/directives-json/directives-project.json)** - All project directives (32)
-- **[User Preference Directives](docs/directives-json/directives-user-pref.json)** - User customization directives (7)
-- **[User Directive System](docs/directives-json/directives-user-system.json)** - User-defined automation directives (8) with 10 helper functions
-- **[Git Integration Directives](docs/directives-json/directives-git.json)** - Git collaboration and conflict resolution directives (6) with 9 helper functions
-- **[Directive Interactions](docs/directives-json/directives-interactions.json)** - Cross-directive relationships and dependencies (including Git integration)
+All directives are defined in JSON with corresponding MD documentation files:
+
+- **[FP Core Directives](docs/directives-json/directives-fp-core.json)** - Core FP directives (30) - [MD Files](src/aifp/reference/directives/)
+- **[FP Aux Directives](docs/directives-json/directives-fp-aux.json)** - Auxiliary FP directives (36) - [MD Files](src/aifp/reference/directives/)
+- **[Project Directives](docs/directives-json/directives-project.json)** - All project directives (32) - [MD Files](src/aifp/reference/directives/)
+- **[User Preference Directives](docs/directives-json/directives-user-pref.json)** - User customization directives (7) - [MD Files](src/aifp/reference/directives/)
+- **[User Directive System](docs/directives-json/directives-user-system.json)** - User-defined automation directives (9) - [MD Files](src/aifp/reference/directives/)
+- **[Git Integration Directives](docs/directives-json/directives-git.json)** - Git collaboration directives (6) - [MD Files](src/aifp/reference/directives/)
+- **[System Directives](docs/directives-json/)** - aifp_run, aifp_status (2) - [MD Files](src/aifp/reference/directives/)
+
+**Total**: 120 directives, each with JSON definition and comprehensive MD documentation including workflows, examples, edge cases, database operations, FP compliance notes, and cross-directive relationships.
 
 ---
 
@@ -809,7 +817,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ### Current (v1.0)
 
-- ✅ Core directive system (66 FP, 32 Project, 7 User Preference, 6 Git, 8 User Directives)
+- ✅ Core directive system (120 total: 66 FP, 32 Project, 7 User Preference, 6 Git, 9 User Directives)
 - ✅ Four-database architecture (aifp_core, project, user_preferences, user_directives)
 - ✅ MCP server design with command routing
 - ✅ User preference system with directive mapping and AI learning
@@ -819,7 +827,11 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
   - Branch-based workflows (`aifp-{user}-{number}`)
   - FP-powered conflict resolution (auto-resolve >0.8 confidence)
   - Merge history audit trail
-- ✅ Complete documentation and blueprints (9 blueprints, 44 helper functions fully specified)
+- ✅ Complete documentation:
+  - 9 comprehensive blueprints
+  - 50 helper functions fully specified
+  - 120 directive MD files with workflows, examples, and cross-references
+  - All guide content absorbed into directive MD files
 - ✅ Cost-conscious tracking (all features opt-in by default)
 
 ### Planned (v1.1+)

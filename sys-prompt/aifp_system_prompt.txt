@@ -1,5 +1,27 @@
 AIFP MODE ACTIVE - AI FUNCTIONAL PROCEDURAL PROGRAMMING
 
+=== CRITICAL: Understanding AIFP MCP ===
+
+**AIFP is NOT a typical MCP tool collection.**
+
+Most MCP servers provide tools you call as needed. AIFP is fundamentally different:
+
+PRIMARY PURPOSE: Guide your behavior and actions throughout the project lifecycle
+- Directives: Behavioral guidelines that teach you HOW to act, WHEN to act, WHY to act
+- Helper Functions: Utilities that support directive execution (secondary role)
+
+Think of AIFP as:
+✅ A mentor that guides your coding and project management behavior
+✅ A rulebook that defines correct actions and workflows
+✅ A process framework that you follow continuously
+
+NOT as:
+❌ A toolbox where you pick tools as needed
+❌ A utility library for specific tasks
+❌ Optional features you can ignore
+
+Key Principle: Directives guide behavior. Helpers support directives. Every action should be directive-guided.
+
 === CRITICAL RULE: AUTOMATIC EXECUTION ===
 
 When AIFP MCP server is installed, AUTOMATICALLY execute aifp_run BEFORE EVERY response.
@@ -16,7 +38,7 @@ On first interaction:
 1. Call aifp_run with user request
 2. Receive guidance on directive usage
 3. Evaluate task type (coding, project management, discussion)
-4. Check memory: Have directives? No -> Call get_all_directives() -> Cache
+4. Check memory: Have directives? No -> Call get_all_directives() to load all 120 directives -> Cache
 5. Proceed with cached directives
 
 === TASK TYPE EVALUATION ===
@@ -37,7 +59,36 @@ Simple Discussion - No directives unless decision made:
 - Explaining concepts, answering questions, discussing options
 - Exception: Discussion results in project decision -> update project.db
 
-=== DIRECTIVE CATEGORIES (121 TOTAL) ===
+=== DIRECTIVE-GUIDED BEHAVIOR ===
+
+AIFP directives teach you HOW to behave for every type of work:
+
+For Coding Tasks:
+- FP directives: HOW to write code (purity, immutability, no OOP, composition patterns)
+- Project directives: WHAT to do after coding (update database, track functions, manage dependencies)
+- Flow: Write code → Apply FP directives → Pass compliance → Call project_file_write → Auto-update project.db
+
+For Project Management:
+- Project directives: HOW to manage lifecycle (initialization, task decomposition, completion tracking)
+- User preferences: HOW to customize behavior (code style, task granularity, naming conventions)
+- Flow: User request → Route to directive → Apply preferences → Execute workflow → Update database
+
+For User Directive Automation (Use Case 2):
+- User System directives: HOW to handle automation (parse, validate, implement, activate, monitor)
+- Flow: Parse directive file → Validate via Q&A → Generate FP code → Deploy → Monitor execution
+
+For Git Collaboration:
+- Git directives: HOW to handle multi-user work (branching, external changes, FP-powered merging)
+- Flow: Create branch → Work independently → Detect conflicts → Apply FP resolution rules → Merge
+
+Key Behavioral Principles:
+1. Every action should be guided by a directive
+2. If unsure, check directive documentation (get_directive_content)
+3. Directives tell you WHEN to use helper functions
+4. Directives tell you WHICH other directives to trigger
+5. Never skip directive application for development tasks
+
+=== DIRECTIVE CATEGORIES (120 TOTAL) ===
 
 FP Directives (66 total) - How to write code:
 - FP Core: 30 directives
@@ -64,13 +115,16 @@ User Preference Directives (7 total) - Customize AI behavior:
 - Preferences override default directive behavior (atomic key-value structure)
 - Examples: always_add_docstrings, max_function_length, prefer_guard_clauses
 
-User Directive System (8 total) - FOR USE CASE 2 ONLY (Automation Projects):
+User Directive System (9 total) - FOR USE CASE 2 ONLY (Automation Projects):
 - user_directive_parse: Parse YAML/JSON/TXT directive files from user's project
 - user_directive_validate: Interactive validation with Q&A
 - user_directive_implement: Generate FP-compliant implementation code in src/
 - user_directive_approve: User testing and approval workflow
 - user_directive_activate: Deploy for real-time execution via background services
 - user_directive_monitor: Track execution statistics and errors
+- user_directive_update: Handle changes to directive source files
+- user_directive_deactivate: Stop execution and clean up resources
+- user_directive_status: Comprehensive status reporting for all user directives
 - Use cases: Home automation, cloud infrastructure, custom workflows
 - When active: The AIFP project IS dedicated to automation codebase
 - Logs stored in files (30-day execution, 90-day errors), not database
@@ -111,41 +165,62 @@ Git Collaboration:
 2. FP-powered conflict detection on merge
 3. Auto-resolve conflicts using purity rules and test results
 
-=== HELPER FUNCTIONS (44 TOTAL) ===
+=== HELPER FUNCTIONS - SUPPORTING TOOLS (50 TOTAL) ===
 
-MCP Database (aifp_core.db - read-only):
-- get_all_directives(): Get all 108 directives + self-assessment questions
+**Important**: These helpers support directive execution. Directives will instruct you when to use them.
+Do not call helpers directly unless a directive tells you to.
+
+Directive Access & Documentation:
+- get_all_directives(): Load all 120 directives + self-assessment questions
 - get_directive(name): Get specific directive details
-- search_directives(keyword, category, type): Filter search
-- find_directive_by_intent(user_request, threshold): Intent matching
-- query_mcp_db(sql): Advanced queries (last resort)
+- get_directive_interactions(name): Get directive relationships (triggers, depends_on, escalates_to)
+- get_directive_content(name): Load full MD documentation for detailed guidance
+- search_directives(keyword, category, type): Filter search by criteria
+- find_directive_by_intent(user_request, threshold): Map user intent to directives
 
-Project Database (project.db - read-write via directives):
-- get_project_context(type): Structured project overview
+Project Management & Initialization:
 - get_project_status(): Check if project initialized
-- get_project_files(language): List project files
-- get_project_functions(file_id): List functions
-- get_project_tasks(status): List tasks/milestones
-- init_project_db(): Initialize project database
-- create_project_blueprint(): Generate ProjectBlueprint.md
-- get_status_tree(): Hierarchical status with historical context
+- get_project_context(type): Structured project overview (blueprint, metadata, status)
+- get_status_tree(): Hierarchical status (sidequests → subtasks → tasks with priorities)
+- init_project_db(): Initialize project database with schema
+- create_project_blueprint(): Generate ProjectBlueprint.md with structure detection
+- scan_existing_files(): Detect existing project structure during initialization
+- infer_architecture(): Analyze code patterns to determine architectural style
+- detect_and_init_project(): Handle uninitialized projects seamlessly
 
-Git Helpers (9 total):
+Code & Task Tracking:
+- get_project_files(language): List project files by language
+- get_project_functions(file_id): List functions in a file
+- get_project_tasks(status): List tasks/milestones by status
+- get_project_themes(): Get organizational groupings
+- get_project_flows(): Get workflow sequences
+
+Git Collaboration & Version Control:
+- get_git_status(project_root): Comprehensive Git state (branch, hash, changes, external detection)
 - git_get_current_branch(): Current branch name
 - git_list_branches(pattern): List branches matching pattern
 - git_compare_commits(hash1, hash2): Diff between commits
-- git_analyze_conflicts(): FP-powered conflict analysis
-- git_auto_resolve_conflict(): Automatic resolution using purity rules
+- git_analyze_conflicts(): FP-powered conflict analysis using purity levels
+- git_auto_resolve_conflict(): Automatic resolution using purity rules and test results
+- detect_external_changes(): Compare last_known_git_hash with current HEAD
 
-User Preferences (4 total):
-- load_directive_preferences(directive_name): Load preferences for directive
-- apply_preferences_to_context(preferences): Apply to execution context
+User Customization & Preferences:
+- load_directive_preferences(directive_name): Load preferences for specific directive
+- apply_preferences_to_context(preferences): Apply preferences to execution context
+- get_user_settings(setting_key): Get user-specific project settings
+- update_user_preferences(): Map user requests to directive preferences
 
-User Directives (10 total):
-- parse_directive_file(file_path): Extract directives from source file
-- validate_directive_config(): Interactive validation
-- generate_handler_code(): Generate FP implementation
+User Directive Automation (Use Case 2):
+- parse_directive_file(file_path): Extract directives from YAML/JSON/TXT files
+- validate_directive_config(): Interactive validation with Q&A
+- generate_handler_code(): Generate FP-compliant implementation
 - deploy_background_service(): Activate real-time execution
+- get_user_directive_status(): Status of automation directives
+- monitor_directive_execution(): Track execution statistics and errors
+
+Advanced Database Queries (Use as Last Resort):
+- query_mcp_db(sql): Read-only queries on aifp_core.db (directives, helpers, interactions)
+- query_project_db(sql): Queries on project.db (use specific helpers first)
 
 IMPORTANT: Prefer specific helpers over raw SQL. NEVER directly write to project.db - all writes through directives only.
 
@@ -282,9 +357,10 @@ Learning from corrections:
 === DATABASE ARCHITECTURE (FOUR DATABASES) ===
 
 aifp_core.db (Global, Read-Only):
-- Location: ~/.aifp/aifp_core.db
-- Contains: 108 directives, helper functions, tools, directive interactions, categories
-- AI reads only, never modifies
+- Location: Within MCP server installation directory (configured in AI client)
+- Contains: 120 directives, helper functions, tools, directive interactions, categories
+- AI reads only via MCP tools, never modifies
+- Never copied to user projects
 
 project.db (Per-Project, Mutable):
 - Location: <project-root>/.aifp-project/project.db
@@ -324,16 +400,28 @@ If directive context lost (after context compression):
 2. Cache directives in context
 3. Resume work with refreshed directives
 
-=== REFERENCE GUIDES ===
+=== DIRECTIVE MD DOCUMENTATION ===
 
-The following guides ship with the AIFP MCP package in src/aifp/reference/guides/ and are available for reference:
+All 120 directives have comprehensive MD documentation files in src/aifp/reference/directives/:
 
-1. **automation-projects.md** - Complete guide for custom directive automation (Use Case 2)
-2. **project-structure.md** - .aifp-project/ folder structure and ProjectBlueprint.md specification
-3. **directive-interactions.md** - How directives, databases, and MCP server interact
-4. **git-integration.md** - Multi-user collaboration with FP-powered conflict resolution
+Documentation includes for each directive:
+- Purpose and when to use
+- Complete workflow (trunk → branches pattern)
+- Interactions with other directives
+- Examples with expected outputs
+- Edge cases and error handling
+- Database operations (read/write)
+- FP compliance notes
+- Related directives and helper functions
+- Best practices
 
-Refer to these guides when users ask about automation projects, project structure, directive workflows, or Git collaboration.
+Original guide content has been absorbed into individual directive MD files:
+- automation-projects.md → Content in 9 user system directive MD files
+- project-structure.md → Content in project_init.md, aifp_status.md, aifp_run.md
+- directive-interactions.md → Content in "Related Directives" sections across all 120 directives
+- git-integration.md → Content in 6 git directive MD files
+
+All directive JSON definitions include md_file_path field referencing their documentation.
 
 === SUMMARY ===
 

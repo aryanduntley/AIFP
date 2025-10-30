@@ -36,6 +36,38 @@ Called by other directives:
 - `aifp_run` → Routes continuation requests to `aifp_status`
 - `project_evolution` → Checks status before architectural changes
 
+### Project Not Initialized
+
+If `.aifp-project/` does not exist, `aifp_status` invokes **`detect_and_init_project`** sub-workflow:
+
+**Step 1: Check for `.aifp-project/`**
+```bash
+if [ ! -d ".aifp-project" ]; then
+    # Check for legacy backup in .git/.aifp/
+    if [ -d ".git/.aifp" ]; then
+        prompt_user: "Found archived project state. Restore or initialize new?"
+    else
+        prompt_user: "Project not initialized. Initialize now?"
+    fi
+fi
+```
+
+**Step 2: Optional Restore from `.git/.aifp/`**
+```bash
+if restore_selected:
+    cp .git/.aifp/ProjectBlueprint.md .aifp-project/
+    cp .git/.aifp/project.db.backup .aifp-project/project.db
+    # Verify restoration
+    call aifp_status again
+```
+
+**Step 3: Route to `project_init`**
+```bash
+if initialize_new:
+    call project_init directive
+    # After init completes, call aifp_status again
+```
+
 ---
 
 ## Workflow
@@ -103,7 +135,89 @@ ORDER BY created_at DESC
 LIMIT 10;
 ```
 
-**Step 3: Build Status Tree**
+**Step 3: Build Priority-Based Status Tree**
+
+AIFP uses a priority-based system for determining current focus:
+
+**Priority 1: Open Sidequests** (Highest priority)
+```sql
+-- Find open sidequests
+SELECT sq.id, sq.name, sq.status, sq.paused_task_id, sq.paused_subtask_id
+FROM sidequests sq
+WHERE sq.status IN ('pending', 'in_progress')
+ORDER BY sq.created_at ASC;
+
+-- Get parent task context
+SELECT t.name, t.status, t.description
+FROM tasks t
+WHERE t.id = ?;
+
+-- Get all items for parent task
+SELECT i.name, i.status, i.description
+FROM items i
+WHERE i.reference_table = 'tasks' AND i.reference_id = ?;
+
+-- Get all items for sidequest
+SELECT i.name, i.status, i.description
+FROM items i
+WHERE i.reference_table = 'sidequests' AND i.reference_id = ?;
+
+-- If no completed items in task, get historical context
+SELECT t.name, t.status, i.name AS item_name, i.status AS item_status
+FROM tasks t
+LEFT JOIN items i ON i.reference_table = 'tasks' AND i.reference_id = t.id
+WHERE t.milestone_id = ? AND t.created_at < ?
+ORDER BY t.created_at DESC, i.created_at DESC
+LIMIT 10;
+```
+
+**Priority 2: Current Subtask** (If no sidequests)
+```sql
+-- Find open subtask
+SELECT st.id, st.name, st.status, st.parent_task_id
+FROM subtasks st
+WHERE st.status IN ('pending', 'in_progress')
+ORDER BY st.priority DESC, st.created_at ASC
+LIMIT 1;
+
+-- Get all items for subtask
+SELECT i.name, i.status, i.description
+FROM items i
+WHERE i.reference_table = 'subtasks' AND i.reference_id = ?;
+
+-- If no completed items, get historical context from parent task
+```
+
+**Priority 3: Current Task** (If no subtasks)
+```sql
+-- Find open task
+SELECT t.id, t.name, t.status, t.milestone_id
+FROM tasks t
+WHERE t.status IN ('pending', 'in_progress')
+ORDER BY t.priority DESC, t.created_at ASC
+LIMIT 1;
+
+-- Get all items for task
+SELECT i.name, i.status, i.description
+FROM items i
+WHERE i.reference_table = 'tasks' AND i.reference_id = ?;
+
+-- Evaluate completed vs incomplete items
+```
+
+**Step 4: Check for Ambiguities and Recent Context**
+
+```sql
+-- Query notes for recent clarifications or warnings
+SELECT content, note_type, directive_name, severity
+FROM notes
+WHERE source IN ('directive', 'ai')
+  AND severity IN ('warning', 'error')
+ORDER BY created_at DESC
+LIMIT 5;
+```
+
+**Step 5: Build Status Report**
 
 ```python
 status_report = {
@@ -121,14 +235,16 @@ status_report = {
         }
     ],
     "current_focus": {
-        "milestone": active_milestone_name,
-        "progress": f"{completed_tasks}/{total_tasks} tasks",
-        "open_tasks": [
-            {"id": 1, "name": "Implement multiply", "priority": 1}
-        ]
+        "type": "sidequest|subtask|task",  # Priority type
+        "item": current_item,
+        "parent": parent_context if applicable,
+        "progress": f"{completed_items}/{total_items} items"
     },
-    "sidequests": [
-        {"name": "Fix type hint", "reason": "Test failure", "priority": 1}
+    "historical_context": [
+        {"task": "Previous task", "last_items": [...], "completed": True}
+    ],
+    "ambiguities": [
+        {"note": "Type error in function", "severity": "warning"}
     ],
     "recent_activity": [
         {"note": "Added matrix operations", "source": "ai", "when": "2 hours ago"}
@@ -140,9 +256,9 @@ status_report = {
 }
 ```
 
-**Step 4: Return Status Report**
+**Step 6: Return Status Report**
 
-Returns structured JSON with full context.
+Returns structured JSON with full context, prioritized focus, and historical awareness.
 
 ---
 
@@ -391,8 +507,24 @@ Should we fix this first? (Recommended: Yes)
 ### Helper Functions Used
 
 - `get_project_context(type)` - Structured project overview
-- `get_status_tree()` - Hierarchical status with history
+- `get_status_tree(project_id, context_limit)` - Hierarchical status with history
 - `parse_blueprint_section(file, section)` - Parse blueprint sections
+- `detect_and_init_project()` - Handle uninitialized projects
+
+### Helper Functions Defined by Project Structure
+
+**`get_status_tree(project_id, context_limit=10)`**
+- Builds hierarchical status tree with historical context
+- Returns priority-based current focus (sidequest → subtask → task)
+- Includes parent context and previous task items
+- Returns: `{"priority": "type", "current": {...}, "parent": {...}, "historical_context": [...]}`
+
+**`detect_and_init_project()`**
+- Checks for `.aifp-project/` existence
+- Checks for `.git/.aifp/` backup if not found
+- Prompts user for restoration or new initialization
+- Routes to `project_init` if needed
+- Returns status after initialization
 
 ---
 

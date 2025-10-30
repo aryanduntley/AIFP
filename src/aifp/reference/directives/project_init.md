@@ -31,6 +31,62 @@ Keywords that trigger `project_init`:
 
 ---
 
+## Project Structure Created
+
+### AIFP Project Management Directory
+
+```
+<project-root>/                      # User's project (any structure)
+├── .aifp-project/                   # AIFP project management folder
+│   ├── ProjectBlueprint.md          # High-level project overview (human & AI readable)
+│   ├── project.db                   # Project state database
+│   ├── user_preferences.db          # User customization database
+│   ├── user_directives.db           # Optional: user-defined automation (Use Case 2 only)
+│   ├── config.json                  # Project-specific AIFP configuration
+│   ├── .gitkeep                     # Ensures directory tracked in Git
+│   ├── backups/                     # Automated backups
+│   │   ├── project.db.backup
+│   │   ├── ProjectBlueprint.md.backup
+│   │   └── ProjectBlueprint.md.v{N} # Versioned backups
+│   └── logs/                        # Use Case 2 only: user directive execution logs
+│       ├── execution/               # 30-day execution logs
+│       └── errors/                  # 90-day error logs
+├── .git/
+│   └── .aifp/                       # Optional: archived project state (legacy path)
+│       ├── ProjectBlueprint.md      # Snapshot for recovery
+│       └── project.db.backup
+└── <user's existing project structure>  # Unchanged - AI respects existing layout
+```
+
+**IMPORTANT**: `aifp_core.db` is NOT copied to user projects. It lives in the MCP server installation directory and is accessed via MCP tools only.
+
+### Design Rationale
+
+- **`.aifp-project/` at project root**: Primary location for AIFP project management state
+- **Respects existing structure**: AI does NOT create or modify user's source code folders during init
+- **Flexible code organization**: User's code may be in root, `src/`, `lib/`, `app/`, or any structure
+- **`.git/.aifp/` archive**: Optional backup/recovery mechanism (legacy compatibility)
+- **ProjectBlueprint.md**: Documents user's actual project structure, language, and architecture
+- **Three-database architecture per project**: project.db, user_preferences.db, and optionally user_directives.db
+
+### Use Case Distinction
+
+**Use Case 1: Software Development** (Managing existing or new code projects)
+- Creates `.aifp-project/` with project.db, user_preferences.db
+- No logs/ directory (not needed)
+- ProjectBlueprint.md documents user's project structure and goals
+- AI detects and works with user's existing code organization
+- For new projects: AI asks user where to create code files or uses language conventions
+
+**Use Case 2: Automation Projects** (Home automation, cloud infrastructure, custom workflows)
+- All of Use Case 1 PLUS:
+- `logs/` directory for directive execution and error tracking
+- `user_directives.db` created on first directive parse
+- Project purpose: Implement and execute user-defined directives
+- AI generates implementation code in appropriate folders (determined during directive implementation)
+
+---
+
 ## Workflow
 
 ### Trunk: `initialize_project`
@@ -68,12 +124,17 @@ project_info = {
 {project_root}/
 └── .aifp-project/
     ├── project.db                  # Project state database
-    ├── user_preferences.db         # User preferences (optional)
-    ├── aifp_core.db                # Copy of core directives (read-only)
+    ├── user_preferences.db         # User preferences
+    ├── config.json                 # Project-specific AIFP configuration
     ├── ProjectBlueprint.md         # High-level architecture doc
-    ├── backups/                    # Blueprint backups
+    ├── .gitkeep                    # Ensures directory tracked in Git
+    ├── backups/                    # Blueprint and database backups
     └── logs/                       # Only for Use Case 2 (automation)
+        ├── execution/              # 30-day execution logs
+        └── errors/                 # 90-day error logs
 ```
+
+**Note**: `aifp_core.db` is NOT copied - it remains in the MCP server and is accessed via MCP tools.
 
 **Step 4: Initialize project.db**
 
@@ -105,17 +166,7 @@ conn.execute("""
 conn.commit()
 ```
 
-**Step 5: Copy aifp_core.db (Read-Only)**
-
-```python
-# Copy core directive database to project for local reference
-shutil.copy(
-    "~/.aifp/aifp_core.db",
-    f"{project_root}/.aifp-project/aifp_core.db"
-)
-```
-
-**Step 6: Initialize user_preferences.db (Optional)**
+**Step 5: Initialize user_preferences.db**
 
 ```python
 # Load schema from src/aifp/database/schemas/schemaExampleSettings.sql
@@ -136,37 +187,109 @@ conn.execute("""
 conn.commit()
 ```
 
+**Step 6: Create config.json**
+
+```python
+# Create project-specific configuration
+config = {
+    "aifp_version": "1.0",
+    "project_name": project_info['name'],
+    "blueprint_path": ".aifp-project/ProjectBlueprint.md",
+    "databases": {
+        "project_db": ".aifp-project/project.db",
+        "user_preferences_db": ".aifp-project/user_preferences.db"
+    },
+    "backups": {
+        "enabled": True,
+        "directory": ".aifp-project/backups/",
+        "auto_backup_on_evolution": True
+    },
+    "status": {
+        "context_limit": 10,
+        "auto_browse": False,
+        "ambiguity_threshold": 0.7
+    },
+    "git_integration": {
+        "archive_to_git_aifp": True,
+        "sync_on_commit": False
+    }
+}
+
+# For Use Case 2 (automation), add logging config
+if project_is_automation:
+    config["logging"] = {
+        "execution_logs_enabled": True,
+        "execution_log_rotation": "daily",
+        "execution_log_retention_days": 30,
+        "error_logs_enabled": True,
+        "error_log_retention_days": 90,
+        "execution_log_dir": ".aifp-project/logs/execution/",
+        "error_log_dir": ".aifp-project/logs/errors/"
+    }
+    config["databases"]["user_directives_db"] = ".aifp-project/user_directives.db"
+
+write_json(f"{project_root}/.aifp-project/config.json", config)
+```
+
 **Step 7: Generate ProjectBlueprint.md**
 
 ```python
 # Call create_project_blueprint() helper
+# Detects existing code structure and documents it
 blueprint_content = generate_blueprint({
     "name": project_info['name'],
     "purpose": project_info['purpose'],
     "goals": project_info['goals'],
     "language": project_info['language'],
+    "existing_structure": scan_existing_files(project_root),
     "architecture": infer_architecture(project_root),
-    "completion_path": ["Setup", "Development", "Testing", "Finalization"]
+    "completion_path": ["Setup", "Development", "Testing", "Finalization"],
+    "use_case": "automation" if project_is_automation else "development"
 })
 
 write_file(
     f"{project_root}/.aifp-project/ProjectBlueprint.md",
     blueprint_content
 )
+
+# Backup blueprint
+backup_file(
+    f"{project_root}/.aifp-project/ProjectBlueprint.md",
+    f"{project_root}/.aifp-project/backups/ProjectBlueprint.md.backup"
+)
 ```
 
-**Step 8: Return Success**
+**Step 8: Create .gitkeep (Optional but Recommended)**
+
+```python
+# Ensure .aifp-project/ is tracked in Git even if empty subdirectories
+write_file(f"{project_root}/.aifp-project/.gitkeep", "")
+
+# For automation projects, ensure logs/ subdirectories exist
+if project_is_automation:
+    os.makedirs(f"{project_root}/.aifp-project/logs/execution/", exist_ok=True)
+    os.makedirs(f"{project_root}/.aifp-project/logs/errors/", exist_ok=True)
+```
+
+**Step 9: Return Success**
 
 ```python
 return {
     "success": true,
     "project_name": project_info['name'],
     "project_root": project_root,
-    "databases_created": ["project.db", "user_preferences.db", "aifp_core.db"],
+    "use_case": "automation" if project_is_automation else "development",
+    "files_created": [
+        ".aifp-project/project.db",
+        ".aifp-project/user_preferences.db",
+        ".aifp-project/config.json",
+        ".aifp-project/ProjectBlueprint.md",
+        ".aifp-project/.gitkeep"
+    ],
     "next_steps": [
-        "Define project themes and flows",
-        "Create first milestone and tasks",
-        "Start coding with FP directives"
+        "Review ProjectBlueprint.md" if project_is_automation else "Define project themes and flows",
+        "Parse directive files" if project_is_automation else "Create first milestone and tasks",
+        "AI will generate implementation code" if project_is_automation else "Start coding with FP directives"
     ]
 }
 ```
@@ -364,10 +487,30 @@ Use "status" to view current state or "continue" to resume work.
 
 ### Helper Functions Used
 
-- `get_project_status()` - Check initialization
-- `create_project_blueprint()` - Generate blueprint
-- `detect_primary_language()` - Infer language
-- `load_schema(name)` - Load database schemas
+- `get_project_status()` - Check initialization status
+- `create_project_blueprint()` - Generate ProjectBlueprint.md from template and user input
+- `detect_primary_language()` - Infer language from existing files
+- `scan_existing_files()` - Detect existing project structure
+- `infer_architecture()` - Analyze code to determine architectural patterns
+- `load_schema(name)` - Load database schema SQL files
+
+### Helper Functions Defined by Project Structure
+
+**`create_project_blueprint(project_name, project_purpose, goals_json, language, build_tool, fp_strictness_level, existing_structure, use_case)`**
+- Generates ProjectBlueprint.md from template
+- Documents existing code structure for Use Case 1
+- Sets up automation architecture documentation for Use Case 2
+- Returns path to created blueprint
+
+**`scan_existing_files(project_root)`**
+- Scans project directory for existing code files
+- Returns structure map: `{"src/": [...], "lib/": [...], "root": [...]}`
+- Used to document existing project layout in blueprint
+
+**`infer_architecture(project_root)`**
+- Analyzes existing code patterns
+- Detects architectural style (MVC, microservices, monolithic, etc.)
+- Returns architecture description for blueprint
 
 ---
 

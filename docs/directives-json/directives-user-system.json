@@ -15,6 +15,7 @@
       "type": "project",
       "level": 2,
       "parent_directive": "aifp_run",
+      "md_file_path": "directives/user_directive_parse.md",
       "description": "Parse user directive files (YAML/JSON/TXT) from wherever user placed them in their project. User tells AI the file path (e.g., 'directives/lights.yaml', 'automations.yaml', etc.).",
       "parameters": {
         "file_path": "Path to user's directive file relative to project root"
@@ -92,6 +93,7 @@
       "type": "project",
       "level": 2,
       "parent_directive": "user_directive_parse",
+      "md_file_path": "directives/user_directive_validate.md",
       "description": "Validate parsed directives through interactive Q&A to resolve ambiguities",
       "workflow": {
         "trunk": "validate_directives",
@@ -149,6 +151,7 @@
       "type": "project",
       "level": 2,
       "parent_directive": "user_directive_validate",
+      "md_file_path": "directives/user_directive_implement.md",
       "description": "Build the entire AIFP project to implement user directives. Generate all necessary FP-compliant code, install dependencies, create helper functions, set up cron jobs, configure automations, and build supporting infrastructure. The project's purpose becomes executing these directives.",
       "workflow": {
         "trunk": "generate_implementation_code",
@@ -246,6 +249,7 @@
       "type": "project",
       "level": 2,
       "parent_directive": "user_directive_implement",
+      "md_file_path": "directives/user_directive_approve.md",
       "description": "User approves tested implementation, transitioning project from 'in_progress' to 'active' status. Called after user has tested the implementation and confirmed it meets their requirements.",
       "workflow": {
         "trunk": "approve_implementation",
@@ -302,6 +306,7 @@
       "type": "project",
       "level": 2,
       "parent_directive": "user_directive_approve",
+      "md_file_path": "directives/user_directive_activate.md",
       "description": "Deploy and activate approved directives for real-time execution. Only called after user approval.",
       "workflow": {
         "trunk": "activate_directive",
@@ -377,6 +382,7 @@
       "type": "project",
       "level": 3,
       "parent_directive": "user_directive_activate",
+      "md_file_path": "directives/user_directive_monitor.md",
       "description": "Monitor active directive executions, track statistics, and handle errors",
       "workflow": {
         "trunk": "monitor_directive_execution",
@@ -437,6 +443,7 @@
       "type": "project",
       "level": 2,
       "parent_directive": "aifp_run",
+      "md_file_path": "directives/user_directive_update.md",
       "description": "Handle changes to user directive source files. When modifications are detected, status returns to 'in_progress', directives are deactivated if active, re-implemented, and require user approval again before reactivation.",
       "workflow": {
         "trunk": "detect_and_update_directive",
@@ -509,6 +516,7 @@
       "type": "project",
       "level": 2,
       "parent_directive": "aifp_run",
+      "md_file_path": "directives/user_directive_deactivate.md",
       "description": "Stop execution of active directives and clean up resources",
       "workflow": {
         "trunk": "deactivate_directive",
@@ -574,6 +582,7 @@
       "type": "project",
       "level": 1,
       "parent_directive": "aifp_run",
+      "md_file_path": "directives/user_directive_status.md",
       "description": "Get comprehensive status report for all user directives",
       "workflow": {
         "trunk": "get_user_directive_status",

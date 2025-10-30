@@ -36,3 +36,4 @@ are we handling oop wrapping appropriately with our directives. Probably some ex
 
 verify directives md files.
 
+ensure we update sys prompt to define mcp usage as directive based not just tooling

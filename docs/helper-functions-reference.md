@@ -12,13 +12,13 @@ This document provides a centralized reference for all helper functions used acr
 
 Helper functions are organized by the database schema they primarily operate on:
 
-1. **MCP Database Helpers** (`aifp_core.db`) - 5 functions - Read-only operations on directive metadata
-2. **Project Database Helpers** (`project.db`) - 16 functions (5 initialization + 11 management) - Read/write operations on project state
-3. **Git Integration Helpers** - 9 functions - Version control and multi-user collaboration
+1. **MCP Database Helpers** (`aifp_core.db`) - 7 functions - Read-only operations on directive metadata
+2. **Project Database Helpers** (`project.db`) - 19 functions (5 initialization + 14 management) - Read/write operations on project state
+3. **Git Integration Helpers** - 10 functions - Version control and multi-user collaboration
 4. **User Preferences Helpers** (`user_preferences.db`) - 4 functions - User customization management
 5. **User Directives Helpers** (`user_directives.db`) - 10 functions - User-defined directive automation
 
-**Total**: 44 helper functions across 4 databases + Git integration
+**Total**: 50 helper functions across 4 databases + Git integration (3 added in Phase 2.1, 3 added in Phase 3)
 
 ---
 
@@ -139,6 +139,103 @@ Helper functions are organized by the database schema they primarily operate on:
 **Error Handling**: Validate SQL is read-only (SELECT only), reject write operations. Log errors and return empty list.
 
 **Used By**: Advanced directive queries
+
+---
+
+### get_directive_interactions(directive_name)
+
+**File Path**: `helpers/mcp/get_directive_interactions.py`
+
+**Parameters**:
+- `directive_name` (str) - Directive name (e.g., 'aifp_run', 'project_file_write')
+
+**Purpose**: Query directive relationships from directives_interactions table. Returns all directives that this directive depends_on, triggers, escalates_to, cross_links with, or references (fp_reference).
+
+**Returns**:
+```python
+{
+    "directive_name": str,
+    "triggers": [str],          # Directives this one triggers
+    "depends_on": [str],        # Directives this one depends on
+    "escalates_to": [str],      # Directives this one escalates to on failure
+    "cross_link": [str],        # Bidirectional relationships
+    "fp_reference": [str],      # FP directives this one references
+    "triggered_by": [str],      # Directives that trigger this one
+    "depended_on_by": [str],    # Directives that depend on this one
+    "escalated_to_by": [str]    # Directives that escalate to this one
+}
+```
+
+**Implementation**:
+```python
+# Query directives_interactions table for source relationships
+SELECT target.name, di.relation_type
+FROM directives_interactions di
+JOIN directives source ON di.source_directive_id = source.id
+JOIN directives target ON di.target_directive_id = target.id
+WHERE source.name = ? AND di.active = 1
+
+# Query for target relationships (reverse lookup)
+SELECT source.name, di.relation_type
+FROM directives_interactions di
+JOIN directives source ON di.source_directive_id = source.id
+JOIN directives target ON di.target_directive_id = target.id
+WHERE target.name = ? AND di.active = 1
+```
+
+**Error Handling**: Return empty dict with empty lists if directive not found. Log warning.
+
+**Used By**: `aifp_status`, directive execution planning, workflow visualization
+
+---
+
+### get_directive_content(directive_name)
+
+**File Path**: `helpers/mcp/get_directive_content.py`
+
+**Parameters**:
+- `directive_name` (str) - Directive name (e.g., 'git_init', 'project_file_write')
+
+**Purpose**: Load full markdown documentation for a directive on-demand. Reads the directive's MD file from `src/aifp/reference/directives/{name}.md` to provide detailed guidance including workflows, examples, edge cases, and related directives.
+
+**Returns**:
+```python
+{
+    "directive_name": str,
+    "md_content": str,         # Full markdown content
+    "file_path": str,          # Path to MD file
+    "sections": dict,          # Parsed sections: Purpose, Workflow, Examples, etc.
+    "exists": bool
+}
+```
+
+**Implementation**:
+```python
+# 1. Query aifp_core.db for md_file_path
+SELECT md_file_path FROM directives WHERE name = ?
+
+# 2. Construct full path
+md_path = BASE_DIR / "src/aifp/reference" / md_file_path
+
+# 3. Read and parse markdown file
+with open(md_path, 'r') as f:
+    content = f.read()
+
+# 4. Optional: Parse sections (## headers)
+sections = parse_markdown_sections(content)
+
+return {
+    "directive_name": directive_name,
+    "md_content": content,
+    "file_path": str(md_path),
+    "sections": sections,
+    "exists": True
+}
+```
+
+**Error Handling**: Return dict with `exists: false` and empty content if MD file not found. Log warning.
+
+**Used By**: AI assistance system (load detailed directive guidance when needed), documentation tools, `aifp_help` commands
 
 ---
 
@@ -438,7 +535,7 @@ Result[bool, str]  # Success: True if valid, Failure: error message with details
 - `project_id` (int) - Project ID
 - `context_limit` (int, optional, default=10) - Number of previous items to include for historical context
 
-**Purpose**: Build hierarchical status tree with historical context for task continuation. Priority order: sidequests → subtasks → tasks.
+**Purpose**: Build hierarchical status tree with historical context for task continuation. Uses priority-based system: sidequests (highest) → subtasks → tasks. Loads parent context and historical items from previous tasks when current focus has no completed items.
 
 **Returns**:
 ```python
@@ -450,19 +547,28 @@ Result[bool, str]  # Success: True if valid, Failure: error message with details
         "status": str,
         "items": list[dict]
     },
-    "parent": dict or None,
-    "historical_context": list[dict],  # Previous task items for context
+    "parent": dict or None,  # Parent task/subtask context
+    "historical_context": list[dict],  # Previous task items for context (up to context_limit)
     "ambiguities": list[str]
 }
 ```
+
+**Implementation Details**:
+1. Check for open sidequests (Priority 1) - if found, load parent task and sidequest items
+2. If no sidequests, check for open subtasks (Priority 2) - load parent task and subtask items
+3. If no subtasks, check for open tasks (Priority 3) - load task items
+4. If current focus has no completed items, load historical context from previous tasks in same milestone
+5. Query notes table for ambiguities (warnings/errors)
 
 **Error Handling**: Return `{"priority": None, "message": "No open tasks"}` if no work items.
 
 **Used By**: `aifp_status` directive
 
+**Enhanced in Phase 2.1**: Added detailed priority system and historical context loading
+
 ---
 
-### create_project_blueprint(project_name, project_purpose, goals_json, language, build_tool, fp_strictness_level)
+### create_project_blueprint(project_name, project_purpose, goals_json, language, build_tool, fp_strictness_level, existing_structure, use_case)
 
 **File Path**: `helpers/project/create_project_blueprint.py`
 
@@ -473,14 +579,18 @@ Result[bool, str]  # Success: True if valid, Failure: error message with details
 - `language` (str)
 - `build_tool` (str)
 - `fp_strictness_level` (str) - 'strict', 'standard', or 'relaxed'
+- `existing_structure` (dict, optional) - Map of existing project files (from `scan_existing_files()`)
+- `use_case` (str) - 'development' or 'automation'
 
-**Purpose**: Generate ProjectBlueprint.md from template and user input. Creates `.aifp/ProjectBlueprint.md` and backs up to `.aifp/backups/`.
+**Purpose**: Generate ProjectBlueprint.md from template and user input. Documents existing project structure for Use Case 1 or automation architecture for Use Case 2. Creates `.aifp-project/ProjectBlueprint.md` and backs up to `.aifp-project/backups/`.
 
 **Returns**: Path to created ProjectBlueprint.md
 
 **Error Handling**: On failure, prompt user for manual creation.
 
 **Used By**: `project_init` directive
+
+**Enhanced in Phase 2.1**: Added parameters for existing structure detection and use case distinction
 
 ---
 
@@ -530,6 +640,112 @@ Result[bool, str]  # Success: True if valid, Failure: error message with details
 **Error Handling**: Restore from backup on write failure and prompt user.
 
 **Used By**: `project_evolution`, `project_blueprint_update`
+
+---
+
+### scan_existing_files(project_root)
+
+**File Path**: `helpers/project/scan_existing_files.py`
+
+**Parameters**:
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Scan project directory for existing code files and return structure map. Used during initialization to document existing project layout in ProjectBlueprint.md.
+
+**Returns**:
+```python
+{
+    "src/": ["file1.py", "file2.py"],
+    "lib/": ["module.py"],
+    "app/": ["main.js"],
+    "root": ["config.yaml", "README.md"],
+    "total_files": int,
+    "languages_detected": ["Python", "JavaScript"]
+}
+```
+
+**Implementation**:
+- Recursively scans project directory
+- Ignores `.aifp-project/`, `.git/`, `node_modules/`, `__pycache__/`, etc.
+- Groups files by directory
+- Detects languages from file extensions
+
+**Error Handling**: Return empty structure if scan fails, log warning.
+
+**Used By**: `project_init` directive
+
+**Added in Phase 2.1**: New helper for existing project detection
+
+---
+
+### infer_architecture(project_root)
+
+**File Path**: `helpers/project/infer_architecture.py`
+
+**Parameters**:
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Analyze existing code patterns to detect architectural style (MVC, microservices, monolithic, functional, etc.). Returns architecture description for ProjectBlueprint.md.
+
+**Returns**:
+```python
+{
+    "style": str,  # "MVC", "Microservices", "Monolithic", "Functional", "Layered", "Unknown"
+    "confidence": float,  # 0.0-1.0
+    "indicators": list[str],  # Evidence for classification
+    "patterns": {
+        "has_controllers": bool,
+        "has_models": bool,
+        "has_views": bool,
+        "has_services": bool,
+        "has_routers": bool
+    }
+}
+```
+
+**Implementation**:
+- Scans for common directory patterns (controllers/, models/, services/, etc.)
+- Analyzes file naming conventions
+- Checks for framework imports (Express, Flask, Django, React, etc.)
+- Assigns confidence score based on evidence strength
+
+**Error Handling**: Return `{"style": "Unknown", "confidence": 0.0}` if analysis fails.
+
+**Used By**: `project_init` directive
+
+**Added in Phase 2.1**: New helper for architecture detection
+
+---
+
+### detect_and_init_project()
+
+**File Path**: `helpers/project/detect_and_init_project.py`
+
+**Parameters**: None (operates on current directory)
+
+**Purpose**: Handle uninitialized projects during `aifp_status` calls. Checks for `.aifp-project/` existence, optionally restores from `.git/.aifp/` backup, or routes to `project_init`.
+
+**Returns**:
+```python
+{
+    "action_taken": str,  # "restored", "initialized", "cancelled"
+    "status": dict,  # Project status after action
+    "error": str or None
+}
+```
+
+**Workflow**:
+1. Check if `.aifp-project/` exists → return project status
+2. Check if `.git/.aifp/` backup exists → prompt user: "Restore or initialize new?"
+3. If restore selected → copy backup to `.aifp-project/`, verify, return status
+4. If initialize selected → route to `project_init`, return status after init
+5. If neither found → prompt user: "Initialize now?"
+
+**Error Handling**: Return error message if restoration/initialization fails.
+
+**Used By**: `aifp_status` directive (when project not initialized)
+
+**Added in Phase 2.1**: New helper for seamless initialization
 
 ---
 
@@ -610,6 +826,80 @@ subprocess.run(['git', 'branch', '--show-current'],
 **Error Handling**: Return None if Git unavailable.
 
 **Used By**: `git_create_branch`, `git_sync_state`, status reporting
+
+---
+
+### get_git_status(project_root)
+
+**File Path**: `helpers/git/get_git_status.py`
+
+**Parameters**:
+- `project_root` (Path) - Project root directory
+
+**Purpose**: Convenience wrapper that combines multiple Git status queries into a single call. Returns comprehensive Git state including current branch, commit hash, uncommitted changes, and external change detection.
+
+**Returns**:
+```python
+{
+    "current_branch": str,           # e.g., "main", "aifp-alice-001"
+    "current_commit_hash": str,      # e.g., "a1b2c3d4e5f6..."
+    "uncommitted_changes": bool,     # True if working directory has changes
+    "changed_files": list[str],      # Files with uncommitted changes
+    "external_changes_detected": bool,  # True if last_known_git_hash differs
+    "external_change_details": dict or None,  # Result from detect_external_changes if applicable
+    "git_available": bool            # False if Git not installed/not a repo
+}
+```
+
+**Implementation**:
+```python
+def get_git_status(project_root: Path) -> dict:
+    """Wrapper combining multiple Git status queries."""
+    status = {
+        "current_branch": None,
+        "current_commit_hash": None,
+        "uncommitted_changes": False,
+        "changed_files": [],
+        "external_changes_detected": False,
+        "external_change_details": None,
+        "git_available": False
+    }
+
+    # Check Git availability
+    if not is_git_repo(project_root):
+        return status
+
+    status["git_available"] = True
+
+    # Get current branch
+    status["current_branch"] = get_current_branch(project_root)
+
+    # Get current commit hash
+    status["current_commit_hash"] = get_current_commit_hash(project_root)
+
+    # Check for uncommitted changes
+    result = subprocess.run(
+        ['git', 'diff', '--name-only'],
+        cwd=project_root,
+        capture_output=True,
+        text=True
+    )
+    if result.stdout.strip():
+        status["uncommitted_changes"] = True
+        status["changed_files"] = result.stdout.strip().split('\n')
+
+    # Check for external changes (if project.db exists)
+    external = detect_external_changes(project_root)
+    if external and external["changed"]:
+        status["external_changes_detected"] = True
+        status["external_change_details"] = external
+
+    return status
+```
+
+**Error Handling**: Returns dict with git_available=False if Git unavailable. Gracefully handles missing project.db.
+
+**Used By**: `git_sync_state`, `aifp_status`, any directive needing comprehensive Git state snapshot
 
 ---
 
@@ -1359,3 +1649,4 @@ Each helper function should have:
 ## Version History
 
 - **v1.0** (2025-10-22): Initial comprehensive reference document
+- **v1.1** (2025-10-29): Phase 2.1 enhancements - Added 3 new project helpers: `scan_existing_files`, `infer_architecture`, `detect_and_init_project`. Enhanced `create_project_blueprint` and `get_status_tree` signatures.
