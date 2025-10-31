@@ -686,5 +686,157 @@
     "description": "Sidequest creation triggers task update to pause related task",
     "weight": 1,
     "active": true
+  },
+  {
+    "source": "aifp_run",
+    "target": "user_directive_parse",
+    "relation_type": "triggers",
+    "description": "aifp_run triggers user_directive_parse when user requests directive automation setup",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_parse",
+    "target": "user_directive_validate",
+    "relation_type": "triggers",
+    "description": "user_directive_parse triggers user_directive_validate after parsing directive file",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_validate",
+    "target": "user_directive_implement",
+    "relation_type": "triggers",
+    "description": "user_directive_validate triggers user_directive_implement after Q&A validation completes",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_implement",
+    "target": "user_directive_approve",
+    "relation_type": "triggers",
+    "description": "user_directive_implement triggers user_directive_approve after code generation completes",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_approve",
+    "target": "user_directive_activate",
+    "relation_type": "triggers",
+    "description": "user_directive_approve triggers user_directive_activate after user tests and approves",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_activate",
+    "target": "user_directive_monitor",
+    "relation_type": "triggers",
+    "description": "user_directive_activate triggers user_directive_monitor to begin continuous monitoring",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_update",
+    "target": "user_directive_deactivate",
+    "relation_type": "triggers",
+    "description": "user_directive_update triggers user_directive_deactivate before re-processing changed directive",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_update",
+    "target": "user_directive_parse",
+    "relation_type": "triggers",
+    "description": "user_directive_update triggers user_directive_parse to re-parse changed directive file",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_monitor",
+    "target": "user_directive_deactivate",
+    "relation_type": "escalates_to",
+    "description": "user_directive_monitor escalates to user_directive_deactivate on high error rate",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_monitor",
+    "target": "user_directive_status",
+    "relation_type": "cross_link",
+    "description": "user_directive_monitor provides execution statistics to user_directive_status",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "aifp_status",
+    "target": "user_directive_status",
+    "relation_type": "triggers",
+    "description": "aifp_status triggers user_directive_status to include user directives in overall status",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_deactivate",
+    "target": "project_update_db",
+    "relation_type": "triggers",
+    "description": "user_directive_deactivate triggers project_update_db to update project status if last directive",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_deactivate",
+    "target": "project_notes_log",
+    "relation_type": "triggers",
+    "description": "user_directive_deactivate triggers project_notes_log to record deactivation event",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_implement",
+    "target": "fp_purity",
+    "relation_type": "fp_reference",
+    "description": "user_directive_implement references fp_purity to validate generated code purity",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_implement",
+    "target": "fp_immutability",
+    "relation_type": "fp_reference",
+    "description": "user_directive_implement references fp_immutability to ensure immutable data structures",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_implement",
+    "target": "fp_no_oop",
+    "relation_type": "fp_reference",
+    "description": "user_directive_implement references fp_no_oop to prevent OOP patterns in generated code",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_implement",
+    "target": "fp_side_effect_detection",
+    "relation_type": "fp_reference",
+    "description": "user_directive_implement references fp_side_effect_detection to isolate side effects",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_implement",
+    "target": "project_file_write",
+    "relation_type": "triggers",
+    "description": "user_directive_implement triggers project_file_write to write generated code to src/",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "user_directive_implement",
+    "target": "project_update_db",
+    "relation_type": "triggers",
+    "description": "user_directive_implement triggers project_update_db to track implementation in directive_implementations table",
+    "weight": 1,
+    "active": true
   }
 ]

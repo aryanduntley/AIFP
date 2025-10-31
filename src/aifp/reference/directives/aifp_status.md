@@ -91,8 +91,8 @@ completion_path = parse_section(blueprint_content, "4. Completion Path")
 **Step 2: Query project.db for Current State**
 
 ```sql
--- Get project metadata
-SELECT name, purpose, status, version, goals_json
+-- Get project metadata (including user directive status)
+SELECT name, purpose, status, version, goals_json, user_directives_status
 FROM project
 WHERE id = 1;
 
@@ -135,7 +135,34 @@ ORDER BY created_at DESC
 LIMIT 10;
 ```
 
-**Step 3: Build Priority-Based Status Tree**
+**Step 3: Check User Directive Status (Use Case 2 Projects)**
+
+```python
+# Check if this is a Use Case 2 project (automation-based)
+if project.user_directives_status is not None:
+    # This is a Use Case 2 project
+    # Call user_directive_status for comprehensive directive reporting
+    user_directive_report = call_directive("user_directive_status")
+
+    # Determine project phase based on status
+    if project.user_directives_status == 'in_progress':
+        project_phase = "DEVELOPMENT MODE - Directives being set up"
+        focus = "Complete directive setup pipeline (parse → validate → implement → approve → activate)"
+    elif project.user_directives_status == 'active':
+        project_phase = "RUN MODE - Directives executing"
+        focus = "Monitor directive execution, check health, handle errors"
+    elif project.user_directives_status == 'disabled':
+        project_phase = "PAUSED - Directives deactivated"
+        focus = "Resume directives when ready or debug issues"
+```
+
+**User Directive Status Values**:
+- **NULL** (default): Use Case 1 project (regular software development)
+- **'in_progress'**: Use Case 2 project, directives being developed (setup phase)
+- **'active'**: Use Case 2 project, directives deployed and running (production phase)
+- **'disabled'**: Use Case 2 project, directives temporarily paused
+
+**Step 4: Build Priority-Based Status Tree**
 
 AIFP uses a priority-based system for determining current focus:
 
@@ -436,6 +463,84 @@ Reason: mypy error blocking progress
 
 Should we fix this first? (Recommended: Yes)
 ```
+
+---
+
+### Example 4: Use Case 2 Status (Automation Project)
+
+**User**: "Show status"
+
+**Project Context**: Home automation project with user directives active
+
+**Returns**:
+```json
+{
+  "success": true,
+  "project": {
+    "name": "Home Automation",
+    "purpose": "Automated home controls via user directives",
+    "status": "active",
+    "user_directives_status": "active"
+  },
+  "project_type": "Use Case 2 - Automation Project",
+  "project_phase": "RUN MODE - Directives executing",
+  "user_directives": {
+    "total": 3,
+    "active": 3,
+    "inactive": 0,
+    "directives": [
+      {
+        "name": "lights_off_5pm",
+        "status": "active",
+        "executions_today": 1,
+        "last_execution": "2025-10-30 17:00:00",
+        "success_rate": "100%"
+      },
+      {
+        "name": "stove_alert",
+        "status": "active",
+        "executions_today": 0,
+        "last_check": "2025-10-30 18:45:00",
+        "success_rate": "100%"
+      },
+      {
+        "name": "door_lock_check",
+        "status": "active",
+        "executions_today": 2,
+        "last_execution": "2025-10-30 18:30:00",
+        "success_rate": "100%"
+      }
+    ],
+    "errors_last_24h": 0
+  },
+  "focus": "Monitor directive execution, check health, handle errors",
+  "recommendations": [
+    "All directives running healthy",
+    "Check logs if any execution failures occur"
+  ]
+}
+```
+
+**AI presents**:
+```
+🏠 Home Automation Status
+Project Type: Use Case 2 (Automation)
+Phase: RUN MODE - Directives Executing
+
+Active Directives: 3/3
+  ✓ lights_off_5pm - Executed 1x today (last: 5:00 PM)
+  ✓ stove_alert - Monitoring (last check: 6:45 PM)
+  ✓ door_lock_check - Executed 2x today (last: 6:30 PM)
+
+Health: All directives running normally
+Errors (24h): 0
+
+→ Directives are executing as expected. Use "show directive logs" for details.
+```
+
+**Use Case 2 vs Use Case 1**:
+- **Use Case 1** (regular dev): Status shows code files, functions, tasks, completion paths
+- **Use Case 2** (automation): Status shows directive execution health, runs, errors, monitoring
 
 ---
 

@@ -46,13 +46,13 @@
             },
             "ai_decision_flow": [
               "1. Check: Is this a status/continuation request? \u2192 Call aifp_status",
-              "2. Check: project.user_directives_status='active'? \u2192 Include user directive context",
+              "2. Check project type: Query project.user_directives_status (NULL=Use Case 1, 'in_progress'/'active'/'disabled'=Use Case 2)",
               "3. Evaluate: Is this coding, project management, or user directive automation?",
               "4. Check: Do I have directives in memory?",
-              "5. If no directives: Call get_all_directives()",
+              "5. If no directives: Call get_all_directives() to load 120 directives",
               "6. If coding: Apply FP directives (how to code) + project directives (DB updates)",
               "7. If project management: Apply project directives",
-              "8. If user directive task (parse/validate/implement/activate): Apply user directive system directives",
+              "8. If user directive task (Use Case 2): Apply user directive system directives (parse/validate/implement/approve/activate pipeline)",
               "9. If simple discussion: No directives needed unless decision impacts project"
             ]
           }

@@ -64,18 +64,23 @@ After receiving guidance, AI evaluates:
    - **YES** → Call `aifp_status` first for context
    - **NO** → Proceed to step 2
 
-2. **What type of task is this?**
+2. **Check project type (Use Case 1 vs Use Case 2)**
+   - Query: `SELECT user_directives_status FROM project WHERE id = 1`
+   - **NULL** → Use Case 1 (regular software development)
+   - **'in_progress', 'active', 'disabled'** → Use Case 2 (automation project)
+
+3. **What type of task is this?**
    - **Coding** → Apply FP directives
    - **Project Management** → Apply Project directives
-   - **User Directives** → Apply User System directives
+   - **User Directives** (Use Case 2) → Apply User System directives
    - **Git Operations** → Apply Git directives
    - **Discussion** → No directives unless decision made
 
-3. **Do I have directives in memory?**
-   - **NO** → Call `get_all_directives()` to load 108 directives
+4. **Do I have directives in memory?**
+   - **NO** → Call `get_all_directives()` to load 120 directives
    - **YES** → Use cached directives
 
-4. **Which directives apply?**
+5. **Which directives apply?**
    - Match user intent to directive keywords
    - Check confidence threshold (>0.7)
    - Execute matching directives
@@ -128,7 +133,21 @@ aifp_run routes to: project_init
   ├─ Checks get_project_status()
   ├─ Creates .aifp-project/
   ├─ Initializes project.db
+  ├─ Sets user_directives_status (NULL for Use Case 1, 'in_progress' for Use Case 2)
   └─ Creates ProjectBlueprint.md
+```
+
+**Pattern 4: User Directive Automation (Use Case 2)**
+```
+User: "Parse my directive file at /path/to/directives.yaml"
+  ↓
+aifp_run checks: project.user_directives_status
+  ├─ If NULL → Set to 'in_progress' (first directive)
+  └─ Routes to: user_directive_parse
+      ↓
+  user_directive_parse → validate → implement → approve → activate
+  ↓
+  When activated: project.user_directives_status = 'active'
 ```
 
 ---
