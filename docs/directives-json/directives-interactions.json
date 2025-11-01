@@ -696,6 +696,14 @@
     "active": true
   },
   {
+    "source": "aifp_run",
+    "target": "aifp_help",
+    "relation_type": "triggers",
+    "description": "aifp_run triggers aifp_help when user requests help or documentation for a specific directive",
+    "weight": 1,
+    "active": true
+  },
+  {
     "source": "user_directive_parse",
     "target": "user_directive_validate",
     "relation_type": "triggers",

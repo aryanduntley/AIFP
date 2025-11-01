@@ -26,6 +26,8 @@ This directive generates wrappers for:
 
 **Wrapper principle**: Convert stateful methods to pure functions with explicit state.
 
+**Real-world examples**: See [examples/wrappers/](../../../examples/wrappers/) for working wrapper implementations. As AIFP develops, this folder will contain reference implementations for common libraries.
+
 ---
 
 ## When to Apply
@@ -743,6 +745,7 @@ This directive updates the following tables:
 - [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
 - [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#anti_oop)
 - [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
+- [Wrapper Examples](../../../examples/wrappers/) - Real-world wrapper implementations (populated during development)
 
 ---
 

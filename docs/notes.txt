@@ -1,6 +1,16 @@
 Read:
 README.md
 sys-prompt/aifp_system_prompt.txt
+src/aifp/database/schemas/user_preferences.sql
+src/aifp/database/schemas/aifp_core.sql
+src/aifp/database/schemas/project.sql
+src/aifp/database/schemas/user_directives.sql
+docs/sync-directives.py
+docs/implementation-plans/phase-1-mcp-server-bootstrap.md
+docs/implementation-plans/overview-all-phases.md
+
+docs/helper-functions-reference.md
+
 docs/db-schema/schemaExampleMCP.sql
 docs/db-schema/schemaExampleProject.sql
 docs/db-schema/schemaExampleSettings.sql
@@ -15,19 +25,8 @@ docs/directive-md-mapping.csv
 
 The blueprints/context for the project are located in docs/blueprints and the directive json files are located in docs/directives-json. 
 
-guides
-src/aifp/reference/guides/project-structure.md
-src/aifp/reference/guides/automation-projects.md
-src/aifp/reference/guides/directive-interactions.md
-src/aifp/reference/guides/git-integration.md
-
 .aifp is our project management folder and we have project blueprint in it as well as our database to track progress. Please review all that is necessary. We are working on creating the directives md files. please ensure to review any necessary or useful blueprint files in docs/blueprints/ for additional context if needed when creating the directives md files. We are following the FP coding style and managing the project through the project database in .aifp to ensure consistent and updated status. After every batch of completions, update the database to reflect the completed work.
 
 Notes are md examples and init structuring are the idea evolution files
 docs/directiveNotes/*
 docs/initialStructuring/*
-
-PY script to create the .aipm folder, database(s) and empty Project Blueprint file (maybe a note in it that states blueprint needs to be discussed with user and built accordingly). 
-
-need language agnostic oop wraper examples for FP
-are we handling oop wrapping appropriately with our directives. Probably some example files.

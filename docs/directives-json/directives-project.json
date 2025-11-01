@@ -2900,5 +2900,95 @@
       "next milestone"
     ],
     "confidence_threshold": 0.8
+  },
+  {
+    "name": "aifp_help",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "aifp_run",
+    "category": {
+      "name": "orchestration",
+      "description": "Documentation and guidance access for AIFP directives"
+    },
+    "description": "Loads detailed documentation for a specific directive. Uses get_directive_content helper to retrieve full markdown documentation including purpose, workflow, examples, edge cases, and related directives. Provides comprehensive guidance beyond basic directive metadata.",
+    "md_file_path": "directives/aifp_help.md",
+    "workflow": {
+      "trunk": "load_directive_documentation",
+      "branches": [
+        {
+          "if": "directive_name_provided",
+          "then": "call_helper",
+          "details": {
+            "helper": "get_directive_content",
+            "parameters": [
+              "directive_name"
+            ],
+            "returns": "Full markdown documentation from MD file"
+          }
+        },
+        {
+          "if": "documentation_loaded",
+          "then": "display_to_user",
+          "details": {
+            "format": "markdown",
+            "sections": [
+              "Purpose",
+              "When to Apply",
+              "Workflow",
+              "Examples",
+              "Edge Cases",
+              "Related Directives",
+              "Helper Functions",
+              "Database Operations"
+            ]
+          }
+        },
+        {
+          "if": "no_directive_specified",
+          "then": "show_available_directives",
+          "details": {
+            "helper": "search_directives",
+            "prompt": "Which directive do you need help with? (name, keyword, or category)"
+          }
+        },
+        {
+          "if": "directive_not_found",
+          "then": "suggest_similar",
+          "details": {
+            "use": "search_directives",
+            "fuzzy_match": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Please specify a directive name (e.g., 'fp_purity', 'project_file_write')"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "show_directive_list",
+        "retry": "max 2 attempts"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "directive_not_found",
+        "resolution": "Use search_directives to find similar directives"
+      },
+      {
+        "issue": "md_file_missing",
+        "resolution": "Fall back to basic directive metadata from database"
+      }
+    ],
+    "intent_keywords_json": [
+      "help with directive",
+      "show documentation",
+      "explain directive",
+      "how does",
+      "what is",
+      "directive info"
+    ],
+    "confidence_threshold": 0.7
   }
 ]

@@ -1,0 +1,396 @@
+[
+  {
+    "name": "get_all_directives",
+    "file_path": "src/aifp/helpers/mcp.py",
+    "purpose": "Retrieve all directives from aifp_core.db with self-assessment questions. Returns approximately 89 directives (FP + Project + User System) for AI context loading.",
+    "parameters": null,
+    "error_handling": "Return empty list and prompt user if database inaccessible.",
+    "used_by": "`aifp_run`, AI session initialization"
+  },
+  {
+    "name": "get_directive",
+    "file_path": "src/aifp/helpers/mcp.py",
+    "purpose": "Retrieve specific directive details by name.",
+    "parameters": "[\"name\"]",
+    "error_handling": "Return None and log warning if directive not found.",
+    "used_by": "Directive lookup during execution"
+  },
+  {
+    "name": "search_directives",
+    "file_path": "src/aifp/helpers/mcp.py",
+    "purpose": "Search and filter directives based on criteria.",
+    "parameters": "[\"keyword\", \"category\", \"type\"]",
+    "error_handling": "Return empty list if no matches, log search failure.",
+    "used_by": "Directive discovery, intent matching"
+  },
+  {
+    "name": "find_directive_by_intent",
+    "file_path": "src/aifp/helpers/mcp.py",
+    "purpose": "Map user requests to directives using intent_keywords_json and description matching. Returns ranked list with confidence scores.",
+    "parameters": "[\"user_request\", \"confidence_threshold\"]",
+    "error_handling": "On failure or no matches, prompt user to manually select from available directives. Optionally log to user_preferences.db if helper_function_logging enabled.",
+    "used_by": "`aifp_run`, user preference mapping"
+  },
+  {
+    "name": "query_mcp_db",
+    "file_path": "src/aifp/helpers/mcp.py",
+    "purpose": "Execute read-only SQL queries on aifp_core.db.",
+    "parameters": "[\"sql\"]",
+    "error_handling": "Validate SQL is read-only (SELECT only), reject write operations. Log errors and return empty list.",
+    "used_by": "Advanced directive queries"
+  },
+  {
+    "name": "get_directive_interactions",
+    "file_path": "src/aifp/helpers/mcp.py",
+    "purpose": "Query directive relationships from directives_interactions table. Returns all directives that this directive depends_on, triggers, escalates_to, cross_links with, or references (fp_reference).",
+    "parameters": "[\"directive_name\"]",
+    "error_handling": "Return empty dict with empty lists if directive not found. Log warning.",
+    "used_by": "`aifp_status`, directive execution planning, workflow visualization"
+  },
+  {
+    "name": "get_directive_content",
+    "file_path": "src/aifp/helpers/mcp.py",
+    "purpose": "Load full markdown documentation for a directive on-demand. Reads the directive's MD file from `src/aifp/reference/directives/{name}.md` to provide detailed guidance including workflows, examples, edge cases, and related directives.",
+    "parameters": "[\"directive_name\"]",
+    "error_handling": "Return dict with `exists: false` and empty content if MD file not found. Log warning.",
+    "used_by": "AI assistance system (load detailed directive guidance when needed), documentation tools, `aifp_help` commands"
+  },
+  {
+    "name": "create_project_directory",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Create `.aifp-project/` directory structure with necessary subdirectories.",
+    "parameters": "[\"target_path\"]",
+    "error_handling": "Returns Failure if directory already exists or insufficient permissions.",
+    "used_by": "`project_init` directive (create_project_structure step), standalone CLI"
+  },
+  {
+    "name": "initialize_project_db",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Create and initialize `project.db` with schema and populate project metadata.",
+    "parameters": "[\"aifp_dir\", \"project_metadata\"]",
+    "error_handling": "Returns Failure if schema load fails, database creation fails, or validation fails.",
+    "used_by": "`project_init` directive (initialize_databases step), standalone CLI"
+  },
+  {
+    "name": "initialize_user_preferences_db",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Create `user_preferences.db` with schema only (no initial data).",
+    "parameters": "[\"aifp_dir\"]",
+    "error_handling": "Returns Failure if schema load fails, database creation fails, or validation fails.",
+    "used_by": "`project_init` directive (initialize_databases step), standalone CLI"
+  },
+  {
+    "name": "validate_initialization",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Validate that project initialization is complete and correct.",
+    "parameters": "[\"aifp_dir\"]",
+    "error_handling": "Returns Failure with specific validation error message.",
+    "used_by": "`project_init` directive (validate_initialization step), standalone CLI, tests"
+  },
+  {
+    "name": "init_project_db",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Create project.db and initialize the project table with default schemas. Sets up initial completion path stages.",
+    "parameters": "[\"name\", \"purpose\", \"goals_json\", \"project_id\"]",
+    "error_handling": "On failure, prompt user for manual setup. Optionally log to user_preferences.db if helper_function_logging enabled.",
+    "used_by": "`project_init` directive"
+  },
+  {
+    "name": "get_project_status",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Check if project is initialized by verifying .aifp/ folder and project.db exist and contain valid data.",
+    "parameters": null,
+    "error_handling": "Return `{\"initialized\": false}` if project not found.",
+    "used_by": "`aifp_run`, `aifp_status`, `project_init`"
+  },
+  {
+    "name": "get_project_context",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Retrieve structured project overview from project.db for AI context loading.",
+    "parameters": "[\"type\"]",
+    "error_handling": "Return partial context with error note if some tables inaccessible.",
+    "used_by": "Session initialization, `aifp_status`"
+  },
+  {
+    "name": "get_project_files",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "List all files tracked in project.db, optionally filtered by language.",
+    "parameters": "[\"language\"]",
+    "error_handling": "Return empty list if no files found, log database errors.",
+    "used_by": "File management directives, code analysis"
+  },
+  {
+    "name": "get_project_functions",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "List functions tracked in project.db.",
+    "parameters": "[\"file_id\"]",
+    "error_handling": "Return empty list if no functions found.",
+    "used_by": "Code analysis, FP compliance checking"
+  },
+  {
+    "name": "get_project_tasks",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "List tasks and subtasks from project.db.",
+    "parameters": "[\"status\"]",
+    "error_handling": "Return empty list if no tasks found.",
+    "used_by": "`aifp_status`, task management directives"
+  },
+  {
+    "name": "get_status_tree",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Build hierarchical status tree with historical context for task continuation. Uses priority-based system: sidequests (highest) \u2192 subtasks \u2192 tasks. Loads parent context and historical items from previous tasks when current focus has no completed items.",
+    "parameters": "[\"project_id\", \"context_limit\"]",
+    "error_handling": "Return `{\"priority\": None, \"message\": \"No open tasks\"}` if no work items.",
+    "used_by": "`aifp_status` directive"
+  },
+  {
+    "name": "create_project_blueprint",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Generate ProjectBlueprint.md from template and metadata. The metadata dict contains: project_name, project_purpose, goals_json, language, build_tool, fp_strictness_level, existing_structure, use_case. Flexible function - accepts all project details in single metadata object.",
+    "parameters": "[\"aifp_dir\", \"metadata\"]",
+    "error_handling": "On failure, prompt user for manual creation.",
+    "used_by": "`project_init` directive"
+  },
+  {
+    "name": "read_project_blueprint",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Parse ProjectBlueprint.md and return structured data (name, version, goals, themes, flows, completion path).",
+    "parameters": "[\"blueprint_path\"]",
+    "error_handling": "Fall back to database if blueprint file missing. Warn user about blueprint/DB desync if checksum mismatch.",
+    "used_by": "`aifp_status`, `project_evolution`"
+  },
+  {
+    "name": "update_project_blueprint_section",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Update specific section of ProjectBlueprint.md, backup current version, optionally increment project version and add evolution history entry.",
+    "parameters": "[\"section_number\", \"section_content\", \"increment_version\"]",
+    "error_handling": "Restore from backup on write failure and prompt user.",
+    "used_by": "`project_evolution`, `project_blueprint_update`"
+  },
+  {
+    "name": "scan_existing_files",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Scan project directory for existing code files and return structure map. Used during initialization to document existing project layout in ProjectBlueprint.md.",
+    "parameters": "[\"project_root\"]",
+    "error_handling": "Return empty structure if scan fails, log warning.",
+    "used_by": "`project_init` directive"
+  },
+  {
+    "name": "infer_architecture",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Analyze existing code patterns to detect architectural style (MVC, microservices, monolithic, functional, etc.). Returns architecture description for ProjectBlueprint.md.",
+    "parameters": "[\"project_root\"]",
+    "error_handling": "Return `{\"style\": \"Unknown\", \"confidence\": 0.0}` if analysis fails.",
+    "used_by": "`project_init` directive"
+  },
+  {
+    "name": "detect_and_init_project",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Handle uninitialized projects during `aifp_status` calls. Checks for `.aifp-project/` existence, optionally restores from `.git/.aifp/` backup, or routes to `project_init`.",
+    "parameters": null,
+    "error_handling": "Return error message if restoration/initialization fails.",
+    "used_by": "`aifp_status` directive (when project not initialized)"
+  },
+  {
+    "name": "query_project_db",
+    "file_path": "src/aifp/helpers/project.py",
+    "purpose": "Execute SQL queries on project.db.",
+    "parameters": "[\"sql\"]",
+    "error_handling": "Validate SQL safety, reject dangerous operations. Log errors.",
+    "used_by": "Advanced project queries"
+  },
+  {
+    "name": "get_current_commit_hash",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "Get current Git HEAD commit hash for external change detection.",
+    "parameters": "[\"project_root\"]",
+    "error_handling": "Return None if Git unavailable or not a Git repository.",
+    "used_by": "`git_init`, `git_sync_state`, `git_detect_external_changes`"
+  },
+  {
+    "name": "get_current_branch",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "Get current Git branch name.",
+    "parameters": "[\"project_root\"]",
+    "error_handling": "Return None if Git unavailable.",
+    "used_by": "`git_create_branch`, `git_sync_state`, status reporting"
+  },
+  {
+    "name": "get_git_status",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "Convenience wrapper that combines multiple Git status queries into a single call. Returns comprehensive Git state including current branch, commit hash, uncommitted changes, and external change detection.",
+    "parameters": "[\"project_root\"]",
+    "error_handling": "Returns dict with git_available=False if Git unavailable. Gracefully handles missing project.db.",
+    "used_by": "`git_sync_state`, `aifp_status`, any directive needing comprehensive Git state snapshot"
+  },
+  {
+    "name": "detect_external_changes",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "Compare current Git HEAD with project.last_known_git_hash to detect external code modifications.",
+    "parameters": "[\"project_root\"]",
+    "error_handling": "Return empty changes if Git unavailable or hash missing.",
+    "used_by": "`git_detect_external_changes` directive, `aifp_status`"
+  },
+  {
+    "name": "create_user_branch",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "Create new work branch following naming convention `aifp-{user}-{number}`.",
+    "parameters": "[\"user\", \"purpose\", \"project_root\"]",
+    "error_handling": "Increment number if branch exists, prompt user if Git fails.",
+    "used_by": "`git_create_branch` directive"
+  },
+  {
+    "name": "detect_conflicts_before_merge",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "FP-powered conflict analysis before merging. Queries project.db from both branches to analyze function purity, dependencies, and tests.",
+    "parameters": "[\"source_branch\", \"project_root\"]",
+    "error_handling": "Fall back to file-level conflicts if DB query fails.",
+    "used_by": "`git_detect_conflicts`, `git_merge_branch` directives"
+  },
+  {
+    "name": "merge_with_fp_intelligence",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "Perform Git merge with FP-powered conflict resolution. Auto-resolves high-confidence conflicts (>0.8) using purity analysis.",
+    "parameters": "[\"source_branch\", \"project_root\"]",
+    "error_handling": "Abort merge (`git merge --abort`) if unresolvable conflicts.",
+    "used_by": "`git_merge_branch` directive"
+  },
+  {
+    "name": "get_user_name_for_branch",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "Detect user name for branch creation from multiple sources.",
+    "parameters": null,
+    "error_handling": "Never fail - always return a valid username.",
+    "used_by": "`git_create_branch` directive"
+  },
+  {
+    "name": "sync_git_state",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "Update `project.last_known_git_hash` with current Git HEAD. Called after commits and during session boot.",
+    "parameters": "[\"project_root\"]",
+    "error_handling": "Log warning if Git unavailable, continue with cached hash.",
+    "used_by": "`git_sync_state` directive, `aifp_status`"
+  },
+  {
+    "name": "list_active_branches",
+    "file_path": "src/aifp/helpers/git.py",
+    "purpose": "List all active AIFP work branches from `work_branches` table.",
+    "parameters": null,
+    "error_handling": "Return empty list if table doesn't exist.",
+    "used_by": "Status reporting, collaboration coordination"
+  },
+  {
+    "name": "get_directive_preference",
+    "file_path": "src/aifp/helpers/preferences.py",
+    "purpose": "Retrieve user preference override for specific directive.",
+    "parameters": "[\"directive_name\", \"preference_key\"]",
+    "error_handling": "Return None if preference not found.",
+    "used_by": "All directives that support user overrides",
+    "is_sub_helper": true
+  },
+  {
+    "name": "set_directive_preference",
+    "file_path": "src/aifp/helpers/preferences.py",
+    "purpose": "Set user preference override for directive behavior.",
+    "parameters": "[\"directive_name\", \"preference_key\", \"preference_value\"]",
+    "error_handling": "Prompt user if invalid value.",
+    "used_by": "`user_preferences_set` directive",
+    "is_sub_helper": true
+  },
+  {
+    "name": "get_tracking_settings",
+    "file_path": "src/aifp/helpers/preferences.py",
+    "purpose": "Retrieve all tracking feature flags (fp_flow_tracking, issue_reports, ai_interaction_log, helper_function_logging).",
+    "parameters": null,
+    "error_handling": "Return all features as disabled if table empty.",
+    "used_by": "Tracking-related directives"
+  },
+  {
+    "name": "toggle_tracking_feature",
+    "file_path": "src/aifp/helpers/preferences.py",
+    "purpose": "Toggle tracking features on/off. Shows estimated token overhead before enabling.",
+    "parameters": "[\"feature_name\", \"enabled\"]",
+    "error_handling": "Warn user about cost implications before enabling.",
+    "used_by": "`user_preferences_tracking_toggle` directive"
+  },
+  {
+    "name": "parse_directive_file",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Parse user directive file and extract directives with ambiguity detection. Identifies missing parameters, unclear triggers, and required dependencies.",
+    "parameters": "[\"file_path\", \"file_format\"]",
+    "error_handling": "Log parse errors to `.aifp/logs/errors/` and prompt user for manual correction.",
+    "used_by": "`user_directive_parse` directive"
+  },
+  {
+    "name": "validate_user_directive",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Validate directive through interactive Q&A to resolve ambiguities. Presents clarifying questions, stores answers, and generates validated configuration.",
+    "parameters": "[\"directive\", \"interactive\"]",
+    "error_handling": "Log validation errors and retry with simpler questions.",
+    "used_by": "`user_directive_validate` directive"
+  },
+  {
+    "name": "generate_implementation_code",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Generate FP-compliant implementation code from directive and template. Applies FP directives for purity, immutability, and side effect isolation.",
+    "parameters": "[\"directive\", \"template\"]",
+    "error_handling": "Log generation errors and rollback any partial writes.",
+    "used_by": "`user_directive_implement` directive"
+  },
+  {
+    "name": "detect_dependencies",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Detect required dependencies (Python packages, APIs, environment variables) from directive configuration.",
+    "parameters": "[\"directive\"]",
+    "error_handling": "Return empty list on error, log warning.",
+    "used_by": "`user_directive_implement` directive"
+  },
+  {
+    "name": "install_dependency",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Install Python package dependency with user confirmation. Updates directive_dependencies table with installation status.",
+    "parameters": "[\"package\", \"version\", \"prompt_user\"]",
+    "error_handling": "Log installation errors to `.aifp/logs/errors/` and mark dependency as failed in user_directives.db.",
+    "used_by": "`user_directive_implement` directive"
+  },
+  {
+    "name": "activate_directive",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Deploy and activate directive implementation for real-time execution. Starts schedulers, background services, or event handlers. Initializes logging and execution tracking.",
+    "parameters": "[\"directive_id\"]",
+    "error_handling": "Rollback activation, stop any started services, log error.",
+    "used_by": "`user_directive_activate` directive"
+  },
+  {
+    "name": "monitor_directive_execution",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Track directive execution statistics, rotate logs, and handle errors. Monitors running services, checks health, and maintains execution/error counts.",
+    "parameters": "[\"directive_id\"]",
+    "error_handling": "Log monitoring errors but continue monitoring (resilient design).",
+    "used_by": "`user_directive_monitor` directive"
+  },
+  {
+    "name": "get_user_directive_status",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Build comprehensive status report for all user directives with execution statistics, active/paused/error counts, and log paths.",
+    "parameters": null,
+    "error_handling": "Return partial status with error note if full status cannot be retrieved.",
+    "used_by": "`user_directive_status`, `aifp_status`"
+  },
+  {
+    "name": "update_directive",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Handle directive updates when source file changes. Re-parses, re-validates, and re-implements. Deactivates if active, resets approval status.",
+    "parameters": "[\"directive_id\", \"changes\"]",
+    "error_handling": "Rollback to previous version and reactivate old implementation on failure.",
+    "used_by": "`user_directive_update` directive"
+  },
+  {
+    "name": "deactivate_directive",
+    "file_path": "src/aifp/helpers/user_directives.py",
+    "purpose": "Stop directive execution and clean up resources. Gracefully stops services (SIGTERM), force kills if necessary (SIGKILL). Preserves execution statistics.",
+    "parameters": "[\"directive_id\"]",
+    "error_handling": "Force kill processes if graceful shutdown fails.",
+    "used_by": "`user_directive_deactivate` directive"
+  }
+]

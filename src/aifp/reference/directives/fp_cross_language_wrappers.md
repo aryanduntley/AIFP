@@ -20,6 +20,8 @@ Cross-language wrappers provide **purity preservation**, enabling:
 
 This directive acts as an **adapter layer** between pure functional code and impure external libraries.
 
+**Real-world examples**: See [examples/wrappers/](../../../examples/wrappers/) for working wrapper implementations. As AIFP develops, this folder will contain reference implementations for common libraries.
+
 ---
 
 ## When to Apply
@@ -726,6 +728,7 @@ How to verify this directive is working:
 - [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-cross-language-wrappers)
 - [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#language-adaptation)
 - [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
+- [Wrapper Examples](../../../examples/wrappers/) - Real-world wrapper implementations (populated during development)
 
 ---
 

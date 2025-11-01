@@ -24,8 +24,8 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 
 ### Success Criteria
 
-- All 124 directives implemented and functional
-- 50 helper functions working across 4 databases
+- All ~125 directives implemented and functional
+- ~50 helper functions working across 4 databases
 - Test coverage >90% with property-based testing
 - Zero OOP violations, complete FP compliance
 - Successful PyPI package release
@@ -62,8 +62,8 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 **Standalone MCP Server** (`src/aifp/` - installable via pip):
 - `core/` - Immutable types and Result type definitions
 - `database/` - Schemas, query builders, effect functions
-- `helpers/` - 50 helper functions organized by database
-- `directives/` - 124 directive implementations
+- `helpers/` - ~50 helper functions organized into 5 modules
+- `directives/` - ~125 directive implementations
 - `mcp_server/` - MCP protocol handlers and tool registration
 - `scripts/` - Standalone scripts (init_aifp_project.py)
 - `templates/` - Database templates for new projects
@@ -84,12 +84,12 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
    - Purpose: Pure query builders + isolated effects for 4 databases
    - Files: src/aifp/database/
 
-2. **Helper Functions** (50 functions)
+2. **Helper Functions** (~50 functions)
    - Purpose: 7 MCP helpers, 19 Project helpers, 10 Git helpers, 4 User Prefs helpers, 10 User Directives helpers
    - Files: src/aifp/helpers/{mcp,project,git,preferences,user_directives}/
 
-3. **Directive System** (124 directives)
-   - Purpose: FP enforcement (66) + Project management (36) + User preferences (7) + User systems (9) + Git integration (6)
+3. **Directive System** (125 directives)
+   - Purpose: FP enforcement (66) + Project management (37) + User preferences (7) + User systems (9) + Git integration (6)
    - Files: src/aifp/directives/{fp,project,user_system,git}/
 
 4. **MCP Server Framework**
@@ -204,6 +204,40 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 ---
 
 ## 5. Evolution History
+
+### Version 1.2 - 2025-11-01
+
+- **Change**: Added helper classification system and complete directive-helper mappings
+- **Details**:
+  - Added `is_sub_helper` field to aifp_core helper_functions (marks sub-helpers called only by other helpers)
+  - Created `directive-helper-interactions.json` with 63 helper-directive mappings
+  - Helper classification: is_tool (MCP tools), is_sub_helper (internal), or directive-callable
+  - 48 of 49 helpers mapped to directives (only query_mcp_db and query_project_db unmapped - pending classification)
+  - Generated from directive JSON workflows + helper-functions-reference.md "Used By" sections
+- **Rationale**:
+  - Clear distinction between MCP tools, sub-helpers, and directive helpers
+  - Prevents confusion: is_sub_helper more descriptive than "is_internal"
+  - Ensures AI knows which helpers to call via directives vs via MCP tools
+  - Complete mapping enables validation and dependency tracking
+- **Documentation**: `docs/directive-helper-interactions.json`, updated README.md and system prompt
+- **Files**: `src/aifp/database/schemas/aifp_core.sql`, `docs/directive-helper-interactions.json`
+
+### Version 1.1 - 2025-11-01
+
+- **Change**: Added many-to-many helper-directive relationship schema
+- **Details**:
+  - Created `directive_helpers` junction table in both `aifp_core.sql` and `user_directives.sql`
+  - Added execution metadata: execution_context, sequence_order, parameters_mapping
+  - Added `is_tool` field to aifp_core helper_functions (marks MCP tools)
+  - Added `implementation_status` field to user_directives helper_functions (tracks AI generation lifecycle)
+  - Enables flexible helper reuse across multiple directives
+  - Schema version updated to 1.4 (aifp_core) and 1.0 (user_directives)
+- **Rationale**:
+  - Single helper function can serve multiple directives (DRY principle)
+  - Clear mapping of which helpers each directive uses
+  - Execution metadata for sequencing and parameter passing
+  - User directive helpers tracked through implementation lifecycle
+- **Documentation**: `docs/HELPER_DIRECTIVE_SCHEMA_DESIGN.md`
 
 ### Version 1 - 2025-10-26
 

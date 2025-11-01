@@ -100,9 +100,34 @@ CREATE TABLE IF NOT EXISTS helper_functions (
     parameters JSON,                         -- e.g., '["name", "purpose", "goals_json"]'
     purpose TEXT,
     error_handling TEXT,                     -- e.g., 'Prompt user; optionally log to user_preferences.db if helper_function_logging enabled'
+    is_tool BOOLEAN DEFAULT 0,               -- TRUE if exposed as MCP tool (AI can call directly via MCP)
+    is_sub_helper BOOLEAN DEFAULT 0,         -- TRUE if sub-helper (only called by other helpers, no directive mapping)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ===============================================================
+-- Directive-Helper Mapping: Many-to-many relationship
+-- ===============================================================
+
+CREATE TABLE IF NOT EXISTS directive_helpers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    directive_id INTEGER NOT NULL,
+    helper_function_id INTEGER NOT NULL,
+    execution_context TEXT,                  -- e.g., 'workflow_step_3', 'error_handler', 'validation'
+    sequence_order INTEGER DEFAULT 0,        -- Order of execution if multiple helpers in workflow
+    is_required BOOLEAN DEFAULT 1,           -- TRUE if helper must execute, FALSE if optional/conditional
+    parameters_mapping JSON,                 -- Optional: maps directive workflow params to helper params
+    description TEXT,                        -- Brief note on why this helper is used
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(directive_id, helper_function_id, execution_context),
+    FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE,
+    FOREIGN KEY (helper_function_id) REFERENCES helper_functions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_directive_helpers_directive ON directive_helpers (directive_id);
+CREATE INDEX IF NOT EXISTS idx_directive_helpers_helper ON directive_helpers (helper_function_id);
 
 -- ===============================================================
 -- Tools: Mapping MCP tools to Directives

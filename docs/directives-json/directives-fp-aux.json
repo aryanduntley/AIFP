@@ -739,7 +739,7 @@
       "name": "language_adaptation",
       "description": "Creates unified FP wrappers for cross-language interoperability."
     },
-    "description": "Automatically generates pure wrapper functions around language-specific libraries for consistent AIFP compliance. Maintains FP compliance across mixed-language projects.",
+    "description": "Automatically generates pure wrapper functions around language-specific libraries for consistent AIFP compliance. Maintains FP compliance across mixed-language projects. See examples/wrappers/ for reference implementations.",
     "md_file_path": "directives/fp_cross_language_wrappers.md",
     "workflow": {
       "trunk": "detect_foreign_imports",

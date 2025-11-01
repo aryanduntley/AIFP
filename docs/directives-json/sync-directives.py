@@ -38,37 +38,38 @@ from typing import List, Dict, Any
 # ===================================
 
 # Database path - configurable via environment variable
-# Default: .aifp/aifp_core.db (relative to script location)
+# Default: ../testdb/aifp_core.db (relative to script location - for testing)
 # For production: Set AIFP_CORE_DB_PATH to MCP server's database location
-DB_PATH = os.environ.get("AIFP_CORE_DB_PATH", ".aifp/aifp_core.db")
+DB_PATH = os.environ.get("AIFP_CORE_DB_PATH", "../testdb/aifp_core.db")
 
 FP_DIRECTIVE_FILES = [
-    "directives-json/directives-fp-core.json",
-    "directives-json/directives-fp-aux.json"
+    "directives-fp-core.json",
+    "directives-fp-aux.json"
 ]
 
 PROJECT_DIRECTIVE_FILES = [
-    "directives-json/directives-project.json"
+    "directives-project.json"
 ]
 
 USER_PREFERENCE_FILES = [
-    "directives-json/directives-user-pref.json"
+    "directives-user-pref.json"
 ]
 
 USER_SYSTEM_FILES = [
-    "directives-json/directives-user-system.json"
+    "directives-user-system.json"
 ]
 
 GIT_DIRECTIVE_FILES = [
-    "directives-json/directives-git.json"
+    "directives-git.json"
 ]
 
-DIRECTIVE_INTERACTIONS_FILE = "directives-json/directives-interactions.json"
+DIRECTIVE_INTERACTIONS_FILE = "directives-interactions.json"
+DIRECTIVE_HELPER_INTERACTIONS_FILE = "directive-helper-interactions.json"
 
 # Deprecated - kept for backward compatibility
-DIRECTIVE_GRAPH_FILE = "directives-json/project_directive_graph.json"
+DIRECTIVE_GRAPH_FILE = "project_directive_graph.json"
 
-MIGRATIONS_DIR = "directives-json/migrations"
+MIGRATIONS_DIR = "migrations"
 SYNC_REPORT_FILE = "logs/sync_report.json"
 
 CURRENT_SCHEMA_VERSION = "1.4"
@@ -86,110 +87,24 @@ def get_conn(db_path: str) -> sqlite3.Connection:
 
 
 def ensure_schema(conn: sqlite3.Connection):
-    """Ensures the entire v1.3 schema (directives, categories, helpers, tools, notes) exists."""
-    cur = conn.cursor()
+    """Load and execute schema from external SQL file (source of truth)."""
+    # Path to schema file relative to this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    schema_path = os.path.join(script_dir, '..', '..', 'src', 'aifp', 'database', 'schemas', 'aifp_core.sql')
 
-    cur.executescript("""
-    -- ===============================================
-    -- Directives and Relationships
-    -- ===============================================
-    CREATE TABLE IF NOT EXISTS directives (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        type TEXT NOT NULL,
-        level INTEGER DEFAULT NULL,
-        parent_directive TEXT REFERENCES directives(name),
-        description TEXT,
-        workflow JSON NOT NULL,
-        md_file_path TEXT,
-        roadblocks_json TEXT,
-        intent_keywords_json TEXT,
-        confidence_threshold REAL DEFAULT 0.5,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    if not os.path.exists(schema_path):
+        print(f"❌ Schema file not found: {schema_path}")
+        print(f"   Please ensure src/aifp/database/schemas/aifp_core.sql exists")
+        raise FileNotFoundError(f"Schema file missing: {schema_path}")
 
-    CREATE TABLE IF NOT EXISTS categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        description TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    print(f"📄 Loading schema from: {schema_path}")
 
-    CREATE TABLE IF NOT EXISTS directive_categories (
-        directive_id INTEGER NOT NULL,
-        category_id INTEGER NOT NULL,
-        PRIMARY KEY (directive_id, category_id),
-        FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE,
-        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-    );
+    with open(schema_path, 'r', encoding='utf-8') as f:
+        schema_sql = f.read()
 
-    CREATE TRIGGER IF NOT EXISTS enforce_level_on_fp
-    BEFORE INSERT ON directives
-    FOR EACH ROW
-    WHEN NEW.type = 'fp' AND NEW.level IS NOT NULL
-    BEGIN
-        SELECT RAISE(ABORT, 'FP directives cannot have a level value.');
-    END;
-
-    CREATE TABLE IF NOT EXISTS directives_interactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        source_directive_id INTEGER NOT NULL,
-        target_directive_id INTEGER NOT NULL,
-        relation_type TEXT NOT NULL CHECK (relation_type IN (
-            'triggers','depends_on','escalates_to','cross_link','fp_reference'
-        )),
-        weight INTEGER DEFAULT 1,
-        description TEXT,
-        active BOOLEAN DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (source_directive_id) REFERENCES directives(id),
-        FOREIGN KEY (target_directive_id) REFERENCES directives(id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_interactions_source ON directives_interactions (source_directive_id);
-    CREATE INDEX IF NOT EXISTS idx_interactions_target ON directives_interactions (target_directive_id);
-    CREATE INDEX IF NOT EXISTS idx_interactions_relation_type ON directives_interactions (relation_type);
-
-    -- ===============================================
-    -- Helper Functions and Tools
-    -- ===============================================
-    CREATE TABLE IF NOT EXISTS helper_functions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        file_path TEXT,
-        parameters JSON,
-        purpose TEXT,
-        error_handling TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS tools (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        maps_to_directive_id INTEGER,
-        description TEXT,
-        FOREIGN KEY (maps_to_directive_id) REFERENCES directives(id)
-    );
-
-    -- ===============================================
-    -- Notes: Persistent reasoning and audit trail
-    -- ===============================================
-    CREATE TABLE IF NOT EXISTS notes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        content TEXT NOT NULL,
-        reference_table TEXT,
-        reference_id INTEGER,
-        ai_generated BOOLEAN DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-    """)
-
+    conn.executescript(schema_sql)
     conn.commit()
+    print("✅ Schema loaded successfully")
 
 
 # ===================================
@@ -306,7 +221,15 @@ def load_json_file(filepath: str) -> List[Dict[str, Any]]:
     with open(filepath, "r", encoding="utf-8") as f:
         try:
             data = json.load(f)
-            return data if isinstance(data, list) else [data]
+            # Handle different JSON structures:
+            # - Direct array of directives: [...]
+            # - Wrapper object with 'directives' key: {"directives": [...], ...}
+            if isinstance(data, list):
+                return data
+            elif isinstance(data, dict) and 'directives' in data:
+                return data['directives']
+            else:
+                return [data]
         except Exception as e:
             print(f"❌ Error parsing {filepath}: {e}")
             return []
@@ -387,6 +310,229 @@ def insert_interaction(conn, src_id, tgt_id, relation_type, desc=""):
 
 
 # ===================================
+# HELPER FUNCTIONS SYNC
+# ===================================
+
+def sync_helper_functions(conn):
+    """
+    Load helper functions from helpers_parsed.json and populate helper_functions table.
+
+    Populates table with complete helper data:
+    - name, file_path, parameters, purpose, error_handling
+    - is_tool: Default to 0 (FALSE) - will be updated as MCP tools are implemented
+
+    Source: docs/helpers_parsed.json (49 helpers organized into 5 module files)
+    """
+    print("\n🔧 Syncing helper functions from JSON...")
+
+    # Load helpers from JSON file
+    helpers_json_path = os.path.join(os.path.dirname(__file__), 'helpers_parsed.json')
+
+    if not os.path.exists(helpers_json_path):
+        print(f"⚠️  Helper functions file not found: {helpers_json_path}")
+        print("   Run parse_helpers.py to generate helpers_parsed.json")
+        return
+
+    helpers = load_json_file(helpers_json_path)
+
+    if not helpers:
+        print("⚠️  No helpers found in helpers_parsed.json")
+        return
+
+    print(f"📋 Loaded {len(helpers)} helper functions from JSON")
+
+    # Insert helper functions into table
+    cur = conn.cursor()
+    inserted = 0
+    updated = 0
+
+    for helper in helpers:
+        name = helper.get('name')
+        if not name:
+            continue
+
+        # Check if helper already exists
+        cur.execute("SELECT id FROM helper_functions WHERE name=?", (name,))
+        existing = cur.fetchone()
+
+        if existing:
+            # Update existing helper with latest data from JSON
+            cur.execute("""
+                UPDATE helper_functions
+                SET file_path = ?,
+                    parameters = ?,
+                    purpose = ?,
+                    error_handling = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE name = ?
+            """, (
+                helper.get('file_path'),
+                helper.get('parameters'),  # Already JSON string
+                helper.get('purpose'),
+                helper.get('error_handling'),
+                name
+            ))
+            updated += 1
+        else:
+            # Insert new helper with all available data
+            cur.execute("""
+                INSERT INTO helper_functions
+                (name, file_path, parameters, purpose, error_handling, is_tool)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                name,
+                helper.get('file_path'),
+                helper.get('parameters'),  # Already JSON string
+                helper.get('purpose'),
+                helper.get('error_handling'),
+                0  # is_tool defaults to FALSE, will be set manually
+            ))
+            inserted += 1
+
+    conn.commit()
+    print(f"✅ Helper functions synced: {inserted} new, {updated} updated")
+
+    # Show module organization summary
+    cur.execute("""
+        SELECT file_path, COUNT(*) as count
+        FROM helper_functions
+        GROUP BY file_path
+        ORDER BY file_path
+    """)
+    print("   Module organization:")
+    for row in cur.fetchall():
+        print(f"     {row['count']:2d} helpers → {row['file_path']}")
+
+
+def sync_directive_helper_interactions(conn):
+    """
+    Load directive-helper mappings from directive-helper-interactions.json
+    and populate directive_helpers junction table.
+
+    Populates table with:
+    - directive_id, helper_function_id (foreign keys)
+    - execution_context, sequence_order, is_required
+    - parameters_mapping (optional), description
+
+    Source: docs/directive-helper-interactions.json (63 mappings)
+    """
+    print("\n🔗 Syncing directive-helper interactions...")
+
+    interactions_path = os.path.join(os.path.dirname(__file__), DIRECTIVE_HELPER_INTERACTIONS_FILE)
+
+    if not os.path.exists(interactions_path):
+        print(f"⚠️  Directive-helper interactions file not found: {interactions_path}")
+        print("   Run generate-directive-helper-interactions.py to generate this file")
+        return
+
+    # Load JSON directly (not using load_json_file since this has different structure)
+    with open(interactions_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    if not data or 'mappings' not in data:
+        print("⚠️  No mappings found in directive-helper-interactions.json")
+        return
+
+    mappings = data['mappings']
+    print(f"📋 Loaded {len(mappings)} helper-directive mappings")
+
+    cur = conn.cursor()
+    inserted = 0
+    skipped = 0
+    errors = 0
+
+    for mapping in mappings:
+        directive_name = mapping.get('directive_name')
+        helper_name = mapping.get('helper_name')
+
+        if not directive_name or not helper_name:
+            skipped += 1
+            continue
+
+        # Look up directive_id
+        cur.execute("SELECT id FROM directives WHERE name=?", (directive_name,))
+        directive_row = cur.fetchone()
+
+        if not directive_row:
+            print(f"   ⚠️  Directive not found: {directive_name}")
+            errors += 1
+            continue
+
+        directive_id = directive_row['id']
+
+        # Look up helper_function_id
+        cur.execute("SELECT id FROM helper_functions WHERE name=?", (helper_name,))
+        helper_row = cur.fetchone()
+
+        if not helper_row:
+            print(f"   ⚠️  Helper not found: {helper_name}")
+            errors += 1
+            continue
+
+        helper_id = helper_row['id']
+
+        # Check if mapping already exists
+        cur.execute("""
+            SELECT id FROM directive_helpers
+            WHERE directive_id=? AND helper_function_id=? AND execution_context=?
+        """, (directive_id, helper_id, mapping.get('execution_context', '')))
+
+        existing = cur.fetchone()
+
+        if existing:
+            # Update existing mapping
+            cur.execute("""
+                UPDATE directive_helpers
+                SET sequence_order = ?,
+                    is_required = ?,
+                    description = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (
+                mapping.get('sequence_order', 0),
+                1 if mapping.get('is_required', True) else 0,
+                mapping.get('description', ''),
+                existing['id']
+            ))
+        else:
+            # Insert new mapping
+            cur.execute("""
+                INSERT INTO directive_helpers
+                (directive_id, helper_function_id, execution_context, sequence_order,
+                 is_required, parameters_mapping, description)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                directive_id,
+                helper_id,
+                mapping.get('execution_context', ''),
+                mapping.get('sequence_order', 0),
+                1 if mapping.get('is_required', True) else 0,
+                None,  # parameters_mapping not in current JSON format
+                mapping.get('description', '')
+            ))
+            inserted += 1
+
+    conn.commit()
+    print(f"✅ Directive-helper interactions synced: {inserted} new")
+    if errors > 0:
+        print(f"   ⚠️  {errors} mappings had errors (directive or helper not found)")
+    if skipped > 0:
+        print(f"   ⚠️  {skipped} mappings skipped (missing required fields)")
+
+    # Show summary statistics
+    cur.execute("""
+        SELECT COUNT(*) as total_mappings,
+               COUNT(DISTINCT directive_id) as unique_directives,
+               COUNT(DISTINCT helper_function_id) as unique_helpers
+        FROM directive_helpers
+    """)
+    stats = cur.fetchone()
+    print(f"   Total mappings in database: {stats['total_mappings']}")
+    print(f"   Directives with helpers: {stats['unique_directives']}")
+    print(f"   Helpers mapped to directives: {stats['unique_helpers']}")
+
+
+# ===================================
 # SYNC EXECUTION
 # ===================================
 
@@ -438,10 +584,13 @@ def sync_directives():
     for entry in all_entries:
         if entry.get("parent_directive"):
             cur.execute("""
-                UPDATE directives SET parent_directive=? 
+                UPDATE directives SET parent_directive=?
                 WHERE name=? AND parent_directive IS NULL
             """, (entry["parent_directive"], entry["name"]))
     conn.commit()
+
+    # Sync helper functions from JSON file
+    sync_helper_functions(conn)
 
     # Directive relationships from directives-interactions.json
     if os.path.exists(DIRECTIVE_INTERACTIONS_FILE):
@@ -450,11 +599,11 @@ def sync_directives():
 
         # Handle both old graph format and new interactions format
         for item in interactions_data:
-            # New format: direct interactions list
-            if "source_directive" in item and "target_directive" in item:
-                cur.execute("SELECT id FROM directives WHERE name=?", (item["source_directive"],))
+            # New format: direct interactions list with 'source' and 'target' keys
+            if "source" in item and "target" in item:
+                cur.execute("SELECT id FROM directives WHERE name=?", (item["source"],))
                 src = cur.fetchone()
-                cur.execute("SELECT id FROM directives WHERE name=?", (item["target_directive"],))
+                cur.execute("SELECT id FROM directives WHERE name=?", (item["target"],))
                 tgt = cur.fetchone()
 
                 if src and tgt:
@@ -466,6 +615,12 @@ def sync_directives():
                         item.get("description", "")
                     )
                     report["interactions"] += 1
+                else:
+                    # Log missing directive references
+                    if not src:
+                        print(f"   ⚠️ Source directive not found: {item['source']}")
+                    if not tgt:
+                        print(f"   ⚠️ Target directive not found: {item['target']}")
 
             # Old graph format: node with relationship lists
             elif "name" in item:
@@ -503,6 +658,9 @@ def sync_directives():
                                            relation_type_map(rel_type),
                                            f"{node['name']} {rel_type} {target}")
                         report["interactions"] += 1
+
+    # Sync directive-helper interactions (junction table mappings)
+    sync_directive_helper_interactions(conn)
 
     if DRY_RUN:
         conn.rollback()
@@ -581,19 +739,9 @@ def validate_integrity(conn):
     for row in cur.fetchall():
         issues.append(f"❌ Tool '{row['name']}' references non-existent directive_id={row['maps_to_directive_id']}")
 
-    # 7. Verify helper_functions referenced in workflows exist
-    cur.execute("SELECT id, name, workflow FROM directives;")
-    for row in cur.fetchall():
-        try:
-            workflow = json.loads(row['workflow']) if isinstance(row['workflow'], str) else row['workflow']
-            helper_refs = extract_helper_references(workflow)
-
-            for helper_name in helper_refs:
-                cur.execute("SELECT name FROM helper_functions WHERE name=?", (helper_name,))
-                if not cur.fetchone():
-                    issues.append(f"⚠️ Directive '{row['name']}' references undefined helper_function '{helper_name}'")
-        except (json.JSONDecodeError, TypeError):
-            issues.append(f"⚠️ Directive '{row['name']}' has invalid workflow JSON")
+    # 7. Verify helper_functions (loaded from JSON, not extracted from workflows)
+    # Note: Helper validation now done via helpers_parsed.json
+    # Future: Validate directive_helpers junction table references
 
     # 8. Verify all directives have valid workflow structure
     cur.execute("SELECT name, workflow FROM directives;")
@@ -608,9 +756,15 @@ def validate_integrity(conn):
     # 9. Verify MD file paths exist for all directives
     cur.execute("SELECT name, md_file_path FROM directives WHERE md_file_path IS NOT NULL;")
     md_files_checked = 0
+
+    # Use absolute path resolution
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.join(script_dir, '..', '..')  # Two levels up: directives-json -> docs -> project root
+    reference_dir = os.path.join(project_root, 'src', 'aifp', 'reference')
+
     for row in cur.fetchall():
-        # Construct path relative to project root
-        md_path = os.path.join("../src/aifp/reference", row['md_file_path'])
+        # Construct absolute path
+        md_path = os.path.join(reference_dir, row['md_file_path'])
         if not os.path.exists(md_path):
             issues.append(f"❌ Directive '{row['name']}' references missing MD file: {row['md_file_path']}")
         md_files_checked += 1
@@ -619,11 +773,12 @@ def validate_integrity(conn):
         print(f"   ✓ Verified {md_files_checked} MD file paths")
 
     # 10. Verify guide files have been removed (should not exist)
+    guides_dir = os.path.join(reference_dir, 'guides')
     guide_files_to_check = [
-        "../src/aifp/reference/guides/automation-projects.md",
-        "../src/aifp/reference/guides/project-structure.md",
-        "../src/aifp/reference/guides/git-integration.md",
-        "../src/aifp/reference/guides/directive-interactions.md"
+        os.path.join(guides_dir, "automation-projects.md"),
+        os.path.join(guides_dir, "project-structure.md"),
+        os.path.join(guides_dir, "git-integration.md"),
+        os.path.join(guides_dir, "directive-interactions.md")
     ]
     for guide_file in guide_files_to_check:
         if os.path.exists(guide_file):
@@ -639,39 +794,6 @@ def validate_integrity(conn):
         print("✅ Database passed all integrity checks cleanly.")
 
     print("🔍 Integrity validation complete.\n")
-
-
-def extract_helper_references(workflow: dict, refs: set = None) -> set:
-    """
-    Recursively extract helper function references from workflow JSON.
-    Looks for common patterns like 'helper', 'call', 'function' keys.
-    """
-    if refs is None:
-        refs = set()
-
-    if isinstance(workflow, dict):
-        # Check for helper references in common patterns
-        for key in ['helper', 'call', 'function', 'helper_function']:
-            if key in workflow and isinstance(workflow[key], str):
-                refs.add(workflow[key])
-
-        # Check 'details' which often contains helper calls
-        if 'details' in workflow and isinstance(workflow['details'], dict):
-            for value in workflow['details'].values():
-                if isinstance(value, str) and value.startswith('helper:'):
-                    refs.add(value.replace('helper:', ''))
-
-        # Recurse into nested structures
-        for value in workflow.values():
-            if isinstance(value, (dict, list)):
-                extract_helper_references(value, refs)
-
-    elif isinstance(workflow, list):
-        for item in workflow:
-            if isinstance(item, (dict, list)):
-                extract_helper_references(item, refs)
-
-    return refs
 
 
 # ===================================

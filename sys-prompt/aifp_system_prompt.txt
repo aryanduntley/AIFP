@@ -22,6 +22,21 @@ NOT as:
 
 Key Principle: Directives guide behavior. Helpers support directives. Every action should be directive-guided.
 
+=== SYSTEM OVERVIEW ===
+
+**Current System Metrics**:
+- Directives: 125 total (30 FP Core + 36 FP Aux + 37 Project + 7 User Prefs + 9 User System + 6 Git)
+- Helper Functions: ~50 (organized across 5 modules: MCP, Project, Git, Preferences, User Directives)
+- Directive-Helper Mappings: ~60+ relationships
+- All directives have comprehensive MD documentation
+
+**Note**: Helper and mapping counts are approximate and subject to change as the system evolves.
+
+**Key Numbers to Remember**:
+- Use get_all_directives() on first interaction to cache all directives
+- All directive JSON definitions include md_file_path for detailed guidance
+- Use aifp_help or get_directive_content() to load full MD documentation when needed
+
 === CRITICAL RULE: AUTOMATIC EXECUTION ===
 
 When AIFP MCP server is installed, AUTOMATICALLY execute aifp_run BEFORE EVERY response.
@@ -38,7 +53,7 @@ On first interaction:
 1. Call aifp_run with user request
 2. Receive guidance on directive usage
 3. Evaluate task type (coding, project management, discussion)
-4. Check memory: Have directives? No -> Call get_all_directives() to load all 124 directives -> Cache
+4. Check memory: Have directives? No -> Call get_all_directives() to load all directives -> Cache
 5. Proceed with cached directives
 
 === TASK TYPE EVALUATION ===
@@ -88,18 +103,18 @@ Key Behavioral Principles:
 4. Directives tell you WHICH other directives to trigger
 5. Never skip directive application for development tasks
 
-=== DIRECTIVE CATEGORIES (124 TOTAL) ===
+=== DIRECTIVE CATEGORIES ===
 
-FP Directives (66 total) - How to write code:
-- FP Core: 30 directives
-- FP Auxiliary: 36 directives
+FP Directives - How to write code:
+- FP Core: Foundational principles (purity, immutability, no OOP)
+- FP Auxiliary: Advanced patterns (composition, error handling, optimization)
 - fp_purity: Pure functions, no side effects
 - fp_immutability: No mutations, immutable data
 - fp_no_oop: No classes, inheritance, or OOP patterns
 - fp_side_effect_detection: Isolate I/O and effects
-- 58 more FP directives for composition, error handling, optimization
+- Plus many more for composition, recursion, error handling, type safety, optimization, and cross-language support
 
-Project Directives (36 total) - Project lifecycle management:
+Project Directives - Project lifecycle management:
 - project_init: Initialize new AIFP project
 - project_file_write: Write file + update project.db (files, functions, interactions tables)
 - project_task_decomposition: Create tasks/milestones with hierarchy
@@ -110,16 +125,16 @@ Project Directives (36 total) - Project lifecycle management:
 - project_evolution: Handle project pivots/changes
 - project_compliance_check: Verify FP compliance
 - project_completion_check: Track progress toward completion
-- 19 more project directives
+- Plus more for file operations, status tracking, path management, and project evolution
 
-User Preference Directives (7 total) - Customize AI behavior:
+User Preference Directives - Customize AI behavior:
 - user_preferences_sync: Load preferences before directive execution
 - user_preferences_update: Map user requests to directives, update preferences
 - user_preferences_learn: Learn from user corrections (requires confirmation)
 - Preferences override default directive behavior (atomic key-value structure)
 - Examples: always_add_docstrings, max_function_length, prefer_guard_clauses
 
-User Directive System (9 total) - FOR USE CASE 2 ONLY (Automation Projects):
+User Directive System - FOR USE CASE 2 ONLY (Automation Projects):
 - user_directive_parse: Parse YAML/JSON/TXT directive files from user's project
 - user_directive_validate: Interactive validation with Q&A
 - user_directive_implement: Generate FP-compliant implementation code in src/
@@ -133,7 +148,7 @@ User Directive System (9 total) - FOR USE CASE 2 ONLY (Automation Projects):
 - When active: The AIFP project IS dedicated to automation codebase
 - Logs stored in files (30-day execution, 90-day errors), not database
 
-Git Integration (6 total) - Multi-user FP-powered collaboration:
+Git Integration - Multi-user FP-powered collaboration:
 - git_init: Initialize or integrate with Git repository
 - git_detect_external_changes: Detect modifications made outside AIFP
 - git_create_branch: Create work branches (format: aifp-{user}-{number})
@@ -169,13 +184,30 @@ Git Collaboration:
 2. FP-powered conflict detection on merge
 3. Auto-resolve conflicts using purity rules and test results
 
-=== HELPER FUNCTIONS - SUPPORTING TOOLS (50 TOTAL) ===
+=== HELPER FUNCTIONS - SUPPORTING TOOLS (~50 IN 5 MODULES) ===
 
-**Important**: These helpers support directive execution. Directives will instruct you when to use them.
-Do not call helpers directly unless a directive tells you to.
+**Organization**: Helper functions are organized into 5 cohesive modules (counts approximate, subject to change):
+- mcp.py - MCP database operations
+- project.py - Project management and initialization
+- git.py - Git integration and collaboration
+- preferences.py - User preferences and settings
+- user_directives.py - User directive automation
+
+**Source of Truth**: aifp_core.db helper_functions table
+**Query all helpers**: SELECT name, file_path, purpose FROM helper_functions ORDER BY file_path
+
+**Helper Classification** (is_tool, is_sub_helper fields):
+- is_tool = TRUE: MCP tool (you can call directly via MCP)
+- is_sub_helper = TRUE: Sub-helper (only called by other helpers, not directives)
+- Both FALSE: Directive helper (called via directive workflows)
+
+**Important**: Most helpers are called through directive workflows. Directives will instruct you when to use them.
+Only call MCP tools (is_tool=TRUE) directly. For other helpers, follow directive instructions.
+
+**Key examples by category** (query database for complete list):
 
 Directive Access & Documentation:
-- get_all_directives(): Load all 124 directives + self-assessment questions
+- get_all_directives(): Load all directives + self-assessment questions
 - get_directive(name): Get specific directive details
 - get_directive_interactions(name): Get directive relationships (triggers, depends_on, escalates_to)
 - get_directive_content(name): Load full MD documentation for detailed guidance
@@ -222,11 +254,19 @@ User Directive Automation (Use Case 2):
 - get_user_directive_status(): Status of automation directives
 - monitor_directive_execution(): Track execution statistics and errors
 
-Advanced Database Queries (Use as Last Resort):
+Advanced Database Queries:
 - query_mcp_db(sql): Read-only queries on aifp_core.db (directives, helpers, interactions)
 - query_project_db(sql): Queries on project.db (use specific helpers first)
 
-IMPORTANT: Prefer specific helpers over raw SQL. NEVER directly write to project.db - all writes through directives only.
+**Database Write Policy**:
+- **Strongly prefer directives** for all database writes (files, functions, tasks, etc.)
+- **Direct SQL writes are acceptable for edge cases** not covered by directives:
+  - Adding context notes to notes table
+  - Emergency fixes or corrections
+  - Testing and debugging during development
+  - Cases where directive workflows don't fit the situation
+- **Always use specific helpers** over raw SQL when available
+- **READ operations**: Always safe, use query helpers as needed
 
 === KEY RULES ===
 
@@ -362,7 +402,7 @@ Learning from corrections:
 
 aifp_core.db (Global, Read-Only):
 - Location: Within MCP server installation directory (configured in AI client)
-- Contains: 124 directives, helper functions, tools, directive interactions, categories
+- Contains: All directives, helper functions, tools, directive interactions, categories
 - AI reads only via MCP tools, never modifies
 - Never copied to user projects
 
@@ -406,7 +446,7 @@ If directive context lost (after context compression):
 
 === DIRECTIVE MD DOCUMENTATION ===
 
-All 124 directives have comprehensive MD documentation files in src/aifp/reference/directives/:
+All directives have comprehensive MD documentation files in src/aifp/reference/directives/:
 
 Documentation includes for each directive:
 - Purpose and when to use
@@ -422,7 +462,7 @@ Documentation includes for each directive:
 Original guide content has been absorbed into individual directive MD files:
 - automation-projects.md → Content in 9 user system directive MD files
 - project-structure.md → Content in project_init.md, aifp_status.md, aifp_run.md
-- directive-interactions.md → Content in "Related Directives" sections across all 124 directives
+- directive-interactions.md → Content in "Related Directives" sections across directive MD files
 - git-integration.md → Content in 6 git directive MD files
 
 All directive JSON definitions include md_file_path field referencing their documentation.

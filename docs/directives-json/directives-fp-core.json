@@ -473,7 +473,7 @@
       "name": "anti_oop",
       "description": "Automatically creates wrappers for OOP libraries."
     },
-    "description": "Detects OOP library imports and generates pure functional wrappers for AI-safe usage. Maintains FP purity across legacy OOP dependencies.",
+    "description": "Detects OOP library imports and generates pure functional wrappers for AI-safe usage. Maintains FP purity across legacy OOP dependencies. See examples/wrappers/ for reference implementations.",
     "md_file_path": "directives/fp_wrapper_generation.md",
     "workflow": {
       "trunk": "detect_oop_libraries",
