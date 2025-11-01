@@ -838,5 +838,101 @@
     "description": "user_directive_implement triggers project_update_db to track implementation in directive_implementations table",
     "weight": 1,
     "active": true
+  },
+  {
+    "source": "project_task_update",
+    "target": "project_task_complete",
+    "relation_type": "triggers",
+    "description": "project_task_update delegates to project_task_complete when task status changes to completed",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_update",
+    "target": "project_subtask_complete",
+    "relation_type": "triggers",
+    "description": "project_task_update delegates to project_subtask_complete when subtask status changes to completed",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_update",
+    "target": "project_sidequest_complete",
+    "relation_type": "triggers",
+    "description": "project_task_update delegates to project_sidequest_complete when sidequest status changes to completed",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_complete",
+    "target": "project_milestone_complete",
+    "relation_type": "triggers",
+    "description": "project_task_complete triggers project_milestone_complete when all tasks in milestone are done",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_complete",
+    "target": "aifp_status",
+    "relation_type": "triggers",
+    "description": "project_task_complete calls aifp_status (brief mode) to get project context for next-step planning",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_task_complete",
+    "target": "project_task_create",
+    "relation_type": "triggers",
+    "description": "project_task_complete triggers project_task_create when user opts to create new task",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_subtask_complete",
+    "target": "aifp_status",
+    "relation_type": "triggers",
+    "description": "project_subtask_complete calls aifp_status (brief mode) after parent task resumes",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_sidequest_complete",
+    "target": "project_task_create",
+    "relation_type": "triggers",
+    "description": "project_sidequest_complete triggers project_task_create when sidequest findings warrant new task",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_sidequest_complete",
+    "target": "project_evolution",
+    "relation_type": "triggers",
+    "description": "project_sidequest_complete escalates to project_evolution when sidequest reveals project pivot",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_milestone_complete",
+    "target": "aifp_status",
+    "relation_type": "triggers",
+    "description": "project_milestone_complete calls aifp_status (brief mode) to show overall project progress",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_milestone_complete",
+    "target": "project_task_create",
+    "relation_type": "triggers",
+    "description": "project_milestone_complete triggers project_task_create to create first task for next milestone",
+    "weight": 1,
+    "active": true
+  },
+  {
+    "source": "project_milestone_complete",
+    "target": "project_completion_check",
+    "relation_type": "triggers",
+    "description": "project_milestone_complete triggers project_completion_check when all completion_paths are done",
+    "weight": 1,
+    "active": true
   }
 ]

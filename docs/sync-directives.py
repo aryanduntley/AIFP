@@ -22,7 +22,7 @@ Updated: 2025-10-29
 - Added MD file existence validation
 - Added guide file removal verification
 
-Total Directives: 120 (30 FP Core + 36 FP Aux + 32 Project + 7 User Pref + 9 User System + 6 Git)
+Total Directives: 124 (30 FP Core + 36 FP Aux + 36 Project + 7 User Pref + 9 User System + 6 Git)
 
 This version aligns with the full schema (v1.4) for aifp_core.db.
 """
@@ -37,7 +37,10 @@ from typing import List, Dict, Any
 # CONFIGURATION
 # ===================================
 
-DB_PATH = "aifp_core.db"
+# Database path - configurable via environment variable
+# Default: .aifp/aifp_core.db (relative to script location)
+# For production: Set AIFP_CORE_DB_PATH to MCP server's database location
+DB_PATH = os.environ.get("AIFP_CORE_DB_PATH", ".aifp/aifp_core.db")
 
 FP_DIRECTIVE_FILES = [
     "directives-json/directives-fp-core.json",
@@ -390,6 +393,13 @@ def insert_interaction(conn, src_id, tgt_id, relation_type, desc=""):
 def sync_directives():
     print("🔄 Starting Full AIFP Directive Sync (Schema v1.4)")
     print("📦 Including: FP Core, FP Aux, Project, User Prefs, User System, Git Integration")
+
+    # Ensure database directory exists
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+        print(f"📁 Created database directory: {db_dir}")
+
     conn = get_conn(DB_PATH)
     ensure_schema(conn)
 

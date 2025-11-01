@@ -179,32 +179,65 @@ def execute(context):
         return ExecutionResult(success=False, error=str(e))
 ```
 
-#### Pattern C: Cascading Update (Hierarchical)
+#### Pattern C: Completion Delegation (Hierarchical)
 
 ```python
-# project_task_update with cascade
+# project_task_update delegates to completion directives
 def execute(context):
     task_id = context['task_id']
-    conn.execute("UPDATE tasks SET status = 'completed' WHERE id = ?", (task_id,))
+    new_status = context['new_status']
 
-    # Check if all tasks in milestone are completed
-    milestone_id = conn.execute("SELECT milestone_id FROM tasks WHERE id = ?", (task_id,)).fetchone()[0]
+    # Validate and update status
+    conn.execute("UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                 (new_status, task_id))
 
-    all_completed = conn.execute("""
-        SELECT COUNT(*) = 0 FROM tasks
-        WHERE milestone_id = ? AND status != 'completed'
-    """, (milestone_id,)).fetchone()[0]
-
-    if all_completed:
-        # Cascade: Mark milestone as completed
-        conn.execute("UPDATE milestones SET status = 'completed' WHERE id = ?", (milestone_id,))
-
-        # Check completion_path progress
-        completion_path_id = conn.execute("SELECT completion_path_id FROM milestones WHERE id = ?", (milestone_id,)).fetchone()[0]
-        # ... update completion_path if all milestones done
+    # Delegate to appropriate completion directive
+    if new_status == 'completed':
+        # Delegation: Call project_task_complete
+        return trigger_directive('project_task_complete', {'task_id': task_id})
 
     return ExecutionResult(success=True)
+
+# project_task_complete handles post-completion workflow
+def execute(context):
+    task_id = context['task_id']
+
+    # Mark task and items complete
+    conn.execute("UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?", (task_id,))
+    conn.execute("UPDATE items SET status = 'completed' WHERE reference_table = 'tasks' AND reference_id = ?", (task_id,))
+
+    # Check milestone status
+    milestone_id = conn.execute("SELECT milestone_id FROM tasks WHERE id = ?", (task_id,)).fetchone()[0]
+    remaining_tasks = conn.execute("""
+        SELECT COUNT(*) FROM tasks
+        WHERE milestone_id = ? AND status NOT IN ('completed', 'cancelled')
+    """, (milestone_id,)).fetchone()[0]
+
+    if remaining_tasks == 0:
+        # Milestone complete - delegate to project_milestone_complete
+        return trigger_directive('project_milestone_complete', {'milestone_id': milestone_id})
+    else:
+        # Milestone not complete - engage user for next steps
+        return review_next_steps(milestone_id)
+
+    return ExecutionResult(success=True)
+
+# project_milestone_complete handles next-milestone transition
+def execute(context):
+    milestone_id = context['milestone_id']
+
+    # Mark milestone complete
+    conn.execute("UPDATE milestones SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?", (milestone_id,))
+
+    # Move to next milestone, create first task (with user input)
+    return move_to_next_milestone(milestone_id)
 ```
+
+**Benefits of Delegation**:
+- Explicit separation: state management vs post-completion workflows
+- User engagement built into completion directives
+- Better error handling and traceability
+- Easier to test each directive independently
 
 ---
 

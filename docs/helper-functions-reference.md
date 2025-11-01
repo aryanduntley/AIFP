@@ -1617,6 +1617,7 @@ Each helper function should have:
 | `init_project_db` | `project_init` |
 | `get_project_status` | `aifp_run`, `aifp_status`, `project_init` |
 | `get_project_context` | Session initialization |
+| `get_project_tasks` | `project_task_complete`, `aifp_status` |
 | `get_status_tree` | `aifp_status` |
 | `create_project_blueprint` | `project_init` |
 | `read_project_blueprint` | `aifp_status`, `project_evolution` |

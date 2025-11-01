@@ -29,11 +29,5 @@ docs/initialStructuring/*
 
 PY script to create the .aipm folder, database(s) and empty Project Blueprint file (maybe a note in it that states blueprint needs to be discussed with user and built accordingly). 
 
-before db input of directives, ensure md paths are correct. ensure all paths (what else besides md's? referece/guides/?)
-
 need language agnostic oop wraper examples for FP
 are we handling oop wrapping appropriately with our directives. Probably some example files.
-
-verify directives md files.
-
-ensure we update sys prompt to define mcp usage as directive based not just tooling

@@ -317,7 +317,7 @@ aifp run "Initialize project for calculator"
 1. Calls `aifp_run` → receives guidance
 2. Evaluates: "Project initialization = project management action"
 3. Checks memory: "Do I have directives? No."
-4. Calls `get_all_directives()` → receives all 120 directives (30 FP Core + 36 FP Aux + 32 Project + 7 User Prefs + 9 User System + 6 Git)
+4. Calls `get_all_directives()` → receives all 124 directives (30 FP Core + 36 FP Aux + 36 Project + 7 User Prefs + 9 User System + 6 Git)
 5. Reviews directives: "This matches `project_init`"
 6. Checks prerequisites: "Should run `project_status` first?"
 7. Executes `project_init` directive workflow:
@@ -759,7 +759,7 @@ AI: ✅ Preference learned: project_file_write
 ### Reference Documents
 
 - **[Helper Functions Reference](docs/helper-functions-reference.md)** - Comprehensive catalog of all 50 helper functions organized by database (MCP, Project, Git, Preferences, User Directives). Includes 7 MCP helpers, 19 Project helpers (5 initialization + 14 management), 10 Git integration helpers, 4 User Preferences helpers, and 10 User Directives helpers with full specifications, parameters, return types, error handling, and usage by directives.
-- **[Directive MD Files](src/aifp/reference/directives/)** - Complete **self-contained** documentation for all 120 directives in individual MD files. Each directive MD file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, database operations, and testing scenarios. All original guide content has been absorbed into directive MD files for comprehensive self-documentation.
+- **[Directive MD Files](src/aifp/reference/directives/)** - Complete **self-contained** documentation for all 124 directives in individual MD files. Each directive MD file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, database operations, and testing scenarios. All original guide content has been absorbed into directive MD files for comprehensive self-documentation.
 - **[Directives Markdown Reference](docs/directives-markdown-reference.md)** - Template and standards for creating directive MD files.
 - **[Directive Documentation Status](docs/directive-documentation-status.md)** - Tracking document for directive MD file completion status.
 
@@ -775,7 +775,7 @@ All directives are defined in JSON with corresponding MD documentation files:
 - **[Git Integration Directives](docs/directives-json/directives-git.json)** - Git collaboration directives (6) - [MD Files](src/aifp/reference/directives/)
 - **[System Directives](docs/directives-json/)** - aifp_run, aifp_status (2) - [MD Files](src/aifp/reference/directives/)
 
-**Total**: 120 directives, each with JSON definition and comprehensive MD documentation including workflows, examples, edge cases, database operations, FP compliance notes, and cross-directive relationships.
+**Total**: 124 directives, each with JSON definition and comprehensive MD documentation including workflows, examples, edge cases, database operations, FP compliance notes, and cross-directive relationships.
 
 ---
 
@@ -830,7 +830,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 - ✅ Complete documentation:
   - 9 comprehensive blueprints
   - 50 helper functions fully specified
-  - 120 directive MD files with workflows, examples, and cross-references
+  - 124 directive MD files with workflows, examples, and cross-references
   - All guide content absorbed into directive MD files
 - ✅ Cost-conscious tracking (all features opt-in by default)
 

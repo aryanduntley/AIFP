@@ -38,7 +38,7 @@ On first interaction:
 1. Call aifp_run with user request
 2. Receive guidance on directive usage
 3. Evaluate task type (coding, project management, discussion)
-4. Check memory: Have directives? No -> Call get_all_directives() to load all 120 directives -> Cache
+4. Check memory: Have directives? No -> Call get_all_directives() to load all 124 directives -> Cache
 5. Proceed with cached directives
 
 === TASK TYPE EVALUATION ===
@@ -88,7 +88,7 @@ Key Behavioral Principles:
 4. Directives tell you WHICH other directives to trigger
 5. Never skip directive application for development tasks
 
-=== DIRECTIVE CATEGORIES (120 TOTAL) ===
+=== DIRECTIVE CATEGORIES (124 TOTAL) ===
 
 FP Directives (66 total) - How to write code:
 - FP Core: 30 directives
@@ -99,10 +99,14 @@ FP Directives (66 total) - How to write code:
 - fp_side_effect_detection: Isolate I/O and effects
 - 58 more FP directives for composition, error handling, optimization
 
-Project Directives (32 total) - Project lifecycle management:
+Project Directives (36 total) - Project lifecycle management:
 - project_init: Initialize new AIFP project
 - project_file_write: Write file + update project.db (files, functions, interactions tables)
 - project_task_decomposition: Create tasks/milestones with hierarchy
+- project_task_complete: Handle task completion and next-step planning
+- project_milestone_complete: Handle milestone completion and next-milestone transition
+- project_subtask_complete: Handle subtask completion and parent resumption
+- project_sidequest_complete: Handle sidequest completion and lessons learned
 - project_evolution: Handle project pivots/changes
 - project_compliance_check: Verify FP compliance
 - project_completion_check: Track progress toward completion
@@ -171,7 +175,7 @@ Git Collaboration:
 Do not call helpers directly unless a directive tells you to.
 
 Directive Access & Documentation:
-- get_all_directives(): Load all 120 directives + self-assessment questions
+- get_all_directives(): Load all 124 directives + self-assessment questions
 - get_directive(name): Get specific directive details
 - get_directive_interactions(name): Get directive relationships (triggers, depends_on, escalates_to)
 - get_directive_content(name): Load full MD documentation for detailed guidance
@@ -358,7 +362,7 @@ Learning from corrections:
 
 aifp_core.db (Global, Read-Only):
 - Location: Within MCP server installation directory (configured in AI client)
-- Contains: 120 directives, helper functions, tools, directive interactions, categories
+- Contains: 124 directives, helper functions, tools, directive interactions, categories
 - AI reads only via MCP tools, never modifies
 - Never copied to user projects
 
@@ -402,7 +406,7 @@ If directive context lost (after context compression):
 
 === DIRECTIVE MD DOCUMENTATION ===
 
-All 120 directives have comprehensive MD documentation files in src/aifp/reference/directives/:
+All 124 directives have comprehensive MD documentation files in src/aifp/reference/directives/:
 
 Documentation includes for each directive:
 - Purpose and when to use
@@ -418,7 +422,7 @@ Documentation includes for each directive:
 Original guide content has been absorbed into individual directive MD files:
 - automation-projects.md → Content in 9 user system directive MD files
 - project-structure.md → Content in project_init.md, aifp_status.md, aifp_run.md
-- directive-interactions.md → Content in "Related Directives" sections across all 120 directives
+- directive-interactions.md → Content in "Related Directives" sections across all 124 directives
 - git-integration.md → Content in 6 git directive MD files
 
 All directive JSON definitions include md_file_path field referencing their documentation.

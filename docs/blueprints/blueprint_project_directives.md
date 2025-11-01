@@ -209,15 +209,34 @@ Common issues and their resolutions:
 6. If all pass → commit; else → rollback
 ```
 
-**Cascading Updates**:
+**Completion Delegation Pattern** (Updated):
 ```python
-# project_task_update workflow
-1. Update task status
-2. Check if all subtasks completed
-3. If yes → auto-complete parent task
-4. If milestone tasks all done → mark milestone complete
-5. Update completion_path progress
+# project_task_update workflow (delegating to completion directives)
+1. Validate and update task/subtask/sidequest status
+2. If status changed to 'completed':
+   - Task complete → delegate to project_task_complete
+   - Subtask complete → delegate to project_subtask_complete
+   - Sidequest complete → delegate to project_sidequest_complete
+
+# project_task_complete workflow
+1. Mark task and items complete
+2. Check milestone status
+3. If milestone not complete → Review next steps with user
+4. If milestone complete → delegate to project_milestone_complete
+
+# project_milestone_complete workflow
+1. Mark milestone complete
+2. Check completion_path status
+3. Move to next milestone
+4. Create first task for next milestone (with user input)
+5. If all paths complete → trigger project_completion_check
 ```
+
+**Benefits of Delegation Pattern**:
+- Separate responsibilities (state management vs post-completion workflows)
+- Explicit user engagement for next-step planning
+- Less prone to skipping completion logic
+- Better traceability in notes table
 
 ---
 

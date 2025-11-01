@@ -24,8 +24,8 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 
 ### Success Criteria
 
-- All 108 directives implemented and functional
-- 44+ helper functions working across 4 databases
+- All 124 directives implemented and functional
+- 50 helper functions working across 4 databases
 - Test coverage >90% with property-based testing
 - Zero OOP violations, complete FP compliance
 - Successful PyPI package release
@@ -62,8 +62,8 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 **Standalone MCP Server** (`src/aifp/` - installable via pip):
 - `core/` - Immutable types and Result type definitions
 - `database/` - Schemas, query builders, effect functions
-- `helpers/` - 44+ helper functions organized by database
-- `directives/` - 108 directive implementations
+- `helpers/` - 50 helper functions organized by database
+- `directives/` - 124 directive implementations
 - `mcp_server/` - MCP protocol handlers and tool registration
 - `scripts/` - Standalone scripts (init_aifp_project.py)
 - `templates/` - Database templates for new projects
@@ -84,13 +84,13 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
    - Purpose: Pure query builders + isolated effects for 4 databases
    - Files: src/aifp/database/
 
-2. **Helper Functions** (44+ functions)
-   - Purpose: 11 MCP helpers, 11 Project helpers, 9 Git helpers, 4 User Prefs helpers, 10 User Directives helpers
+2. **Helper Functions** (50 functions)
+   - Purpose: 7 MCP helpers, 19 Project helpers, 10 Git helpers, 4 User Prefs helpers, 10 User Directives helpers
    - Files: src/aifp/helpers/{mcp,project,git,preferences,user_directives}/
 
-3. **Directive System** (108 directives)
-   - Purpose: FP enforcement (62) + Project management (25) + User systems (21)
-   - Files: src/aifp/directives/{fp,project,user_system}/
+3. **Directive System** (124 directives)
+   - Purpose: FP enforcement (66) + Project management (36) + User preferences (7) + User systems (9) + Git integration (6)
+   - Files: src/aifp/directives/{fp,project,user_system,git}/
 
 4. **MCP Server Framework**
    - Purpose: Protocol handlers, tool registration, request routing
@@ -170,9 +170,11 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 **Status**: pending
 
 **Key Milestones**:
-- All 60 FP directives (30 core + 30 auxiliary)
-- All 22 Project directives
+- All 66 FP directives (30 core + 36 auxiliary)
+- All 36 Project directives (includes 4 completion directives: task, subtask, sidequest, milestone)
 - User preference system (7 directives)
+- User system directives (9 directives)
+- Git integration directives (6 directives)
 - Directive workflow execution engine
 - Comprehensive directive tests
 

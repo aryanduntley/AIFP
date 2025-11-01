@@ -2228,33 +2228,80 @@
       "name": "task_management",
       "description": "Task lifecycle state management"
     },
-    "description": "Central task state manager for updating status, priority, and metadata. Handles completion logic, resumes paused tasks, maintains roadmap integrity, and triggers downstream actions.",
+    "description": "Central task state manager for updating status, priority, and metadata. Delegates completion workflows to specialized completion directives. Maintains roadmap integrity and triggers downstream actions.",
     "md_file_path": "directives/project_task_update.md",
     "workflow": {
       "trunk": "identify_update_type",
       "branches": [
         {
           "if": "status_update_requested",
-          "then": "update_task_status"
+          "then": "update_task_status",
+          "details": {
+            "validate_transition": true,
+            "update_timestamp": true
+          }
         },
         {
-          "if": "task_completed",
-          "then": "handle_completion"
+          "if": "task_status_changed_to_completed",
+          "then": "delegate_to_project_task_complete",
+          "details": {
+            "delegate_to": "project_task_complete",
+            "pass_task_id": true,
+            "pass_milestone_id": true
+          }
         },
         {
-          "if": "subtask_completed_parent_paused",
-          "then": "resume_parent_task"
+          "if": "subtask_status_changed_to_completed",
+          "then": "delegate_to_project_subtask_complete",
+          "details": {
+            "delegate_to": "project_subtask_complete",
+            "pass_subtask_id": true,
+            "pass_parent_task_id": true
+          }
+        },
+        {
+          "if": "sidequest_status_changed_to_completed",
+          "then": "delegate_to_project_sidequest_complete",
+          "details": {
+            "delegate_to": "project_sidequest_complete",
+            "pass_sidequest_id": true,
+            "pass_paused_task_id": true
+          }
         },
         {
           "if": "priority_update_requested",
-          "then": "update_task_priority"
+          "then": "update_task_priority",
+          "details": {
+            "validate_priority": true,
+            "log_change": true
+          }
         },
         {
-          "fallback": "prompt_user"
+          "if": "description_update_requested",
+          "then": "update_description",
+          "details": {
+            "log_change": true
+          }
+        },
+        {
+          "if": "task_cancelled",
+          "then": "cancel_task",
+          "details": {
+            "mark_items_cancelled": true,
+            "log_reason": true,
+            "do_not_resume_parent": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "What aspect of the task needs updating?"
+          }
         }
       ],
       "error_handling": {
-        "on_failure": "prompt_user"
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
       }
     },
     "roadblocks_json": [
@@ -2444,5 +2491,414 @@
       "interruption"
     ],
     "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_task_complete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_update",
+    "category": {
+      "name": "task_management",
+      "description": "Post-task completion workflow and next-step planning"
+    },
+    "description": "Handles post-task completion workflow: marks task and items complete, checks milestone progress, reviews completion_path, and engages user to plan next task. Ensures continuous forward progress by automatically reviewing roadmap status after each task completion.",
+    "md_file_path": "directives/project_task_complete.md",
+    "workflow": {
+      "trunk": "mark_task_complete",
+      "branches": [
+        {
+          "if": "task_valid_for_completion",
+          "then": "mark_complete_and_items",
+          "details": {
+            "update_task_status": "completed",
+            "mark_all_items_complete": true,
+            "log_completion_time": true
+          }
+        },
+        {
+          "if": "task_completed",
+          "then": "check_milestone_status",
+          "details": {
+            "query": "SELECT COUNT(*) FROM tasks WHERE milestone_id = ? AND status NOT IN ('completed', 'cancelled')",
+            "check_all_tasks_complete": true
+          }
+        },
+        {
+          "if": "milestone_complete",
+          "then": "call_project_milestone_complete",
+          "details": {
+            "delegate_to": "project_milestone_complete",
+            "pass_milestone_id": true
+          }
+        },
+        {
+          "if": "milestone_not_complete",
+          "then": "review_next_steps",
+          "details": {
+            "call_aifp_status": true,
+            "brief": true,
+            "show_completion_path_progress": true,
+            "show_milestone_progress": true,
+            "query_pending_tasks": "SELECT id, name, description FROM tasks WHERE milestone_id = ? AND status = 'pending' ORDER BY priority DESC LIMIT 5",
+            "discuss_with_user": true,
+            "prompt_template": "Task '[task_name]' completed successfully! Milestone '[milestone_name]' progress: [X/Y tasks complete]. Next steps?",
+            "offer_options": [
+              "Continue with next task",
+              "Create new task",
+              "Pivot to different milestone",
+              "Review completion path"
+            ]
+          }
+        },
+        {
+          "if": "user_chooses_next_task",
+          "then": "set_next_task_in_progress",
+          "details": {
+            "update_task_status": "in_progress",
+            "helper": "get_project_tasks"
+          }
+        },
+        {
+          "if": "user_chooses_create_task",
+          "then": "call_project_task_create",
+          "details": {
+            "delegate_to": "project_task_create",
+            "auto_create_items": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "What would you like to work on next?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "active_subtasks_blocking",
+        "resolution": "Cannot complete task with active subtasks - complete or cancel them first"
+      },
+      {
+        "issue": "no_pending_tasks",
+        "resolution": "Offer to create new task or move to next milestone"
+      },
+      {
+        "issue": "user_unavailable",
+        "resolution": "Log completion and defer next-step planning to next session"
+      }
+    ],
+    "intent_keywords_json": [
+      "complete task",
+      "finish task",
+      "task done",
+      "mark complete"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_subtask_complete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_update",
+    "category": {
+      "name": "task_management",
+      "description": "Post-subtask completion workflow and parent resumption"
+    },
+    "description": "Handles post-subtask completion workflow: marks subtask complete, checks all subtasks for parent task, resumes parent task when all subtasks complete. Ensures parent task automatically resumes when blocking subtasks are finished.",
+    "md_file_path": "directives/project_subtask_complete.md",
+    "workflow": {
+      "trunk": "mark_subtask_complete",
+      "branches": [
+        {
+          "if": "subtask_valid_for_completion",
+          "then": "mark_complete",
+          "details": {
+            "update_subtask_status": "completed",
+            "log_completion_time": true
+          }
+        },
+        {
+          "if": "subtask_completed",
+          "then": "check_parent_subtasks",
+          "details": {
+            "query": "SELECT COUNT(*) FROM subtasks WHERE parent_task_id = ? AND status NOT IN ('completed', 'cancelled')",
+            "check_all_subtasks_complete": true
+          }
+        },
+        {
+          "if": "all_subtasks_complete",
+          "then": "resume_parent_task",
+          "details": {
+            "update_parent_status": "in_progress",
+            "log_resume": true,
+            "notify_user": "All subtasks complete for task '[parent_task_name]'. Parent task resumed.",
+            "call_aifp_status": true,
+            "brief": true
+          }
+        },
+        {
+          "if": "subtasks_remaining",
+          "then": "notify_remaining_work",
+          "details": {
+            "query": "SELECT id, name FROM subtasks WHERE parent_task_id = ? AND status = 'pending' ORDER BY priority DESC",
+            "show_remaining_subtasks": true,
+            "prompt_user": "Subtask '[subtask_name]' complete. [X] subtasks remaining for parent task."
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Subtask completion issue - manual intervention needed"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "parent_task_not_paused",
+        "resolution": "Log warning - parent should be paused when subtasks exist"
+      },
+      {
+        "issue": "parent_task_completed",
+        "resolution": "Cannot resume completed parent - this is a data integrity issue"
+      }
+    ],
+    "intent_keywords_json": [
+      "complete subtask",
+      "finish subtask",
+      "subtask done",
+      "resume parent"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_sidequest_complete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_update",
+    "category": {
+      "name": "task_management",
+      "description": "Post-sidequest completion workflow and work resumption"
+    },
+    "description": "Handles post-sidequest completion workflow: marks sidequest complete, logs outcome and lessons learned, optionally resumes paused task. Captures exploratory work results for future reference.",
+    "md_file_path": "directives/project_sidequest_complete.md",
+    "workflow": {
+      "trunk": "mark_sidequest_complete",
+      "branches": [
+        {
+          "if": "sidequest_valid_for_completion",
+          "then": "mark_complete_and_log",
+          "details": {
+            "update_sidequest_status": "completed",
+            "log_completion_time": true,
+            "prompt_for_outcome": true
+          }
+        },
+        {
+          "if": "sidequest_completed",
+          "then": "capture_lessons_learned",
+          "details": {
+            "prompt_user": "What did you learn from this sidequest?",
+            "log_to_notes": true,
+            "note_type": "sidequest_outcome",
+            "reference_table": "sidequests",
+            "source": "user",
+            "directive_name": "project_sidequest_complete"
+          }
+        },
+        {
+          "if": "linked_to_paused_task",
+          "then": "prompt_resume_work",
+          "details": {
+            "query": "SELECT task_id FROM sidequests WHERE id = ?",
+            "notify_user": "Sidequest '[sidequest_name]' complete. Resume paused task '[task_name]'?",
+            "offer_options": [
+              "Resume paused task",
+              "Continue with different work",
+              "Create new task based on sidequest findings"
+            ]
+          }
+        },
+        {
+          "if": "user_chooses_resume",
+          "then": "resume_paused_task",
+          "details": {
+            "update_task_status": "in_progress",
+            "log_resume": true
+          }
+        },
+        {
+          "if": "sidequest_revealed_new_work",
+          "then": "offer_task_creation",
+          "details": {
+            "prompt_user": "Should we create a new task based on sidequest findings?",
+            "delegate_to": "project_task_create"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Sidequest complete - what's next?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "sidequest_reveals_pivot",
+        "resolution": "Capture findings in notes, discuss with user if project direction should change"
+      },
+      {
+        "issue": "paused_task_no_longer_relevant",
+        "resolution": "Offer to cancel paused task instead of resuming"
+      }
+    ],
+    "intent_keywords_json": [
+      "complete sidequest",
+      "finish sidequest",
+      "sidequest done",
+      "exploratory work done"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_milestone_complete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_complete",
+    "category": {
+      "name": "task_management",
+      "description": "Post-milestone completion workflow and next-milestone planning"
+    },
+    "description": "Handles post-milestone completion workflow: marks milestone complete, updates completion_path progress, reviews overall project status, moves to next milestone, and creates first task. Ensures continuous project momentum by automatically planning next phase.",
+    "md_file_path": "directives/project_milestone_complete.md",
+    "workflow": {
+      "trunk": "mark_milestone_complete",
+      "branches": [
+        {
+          "if": "milestone_valid_for_completion",
+          "then": "mark_complete_and_update_path",
+          "details": {
+            "update_milestone_status": "completed",
+            "log_completion_time": true,
+            "query_completion_path": "SELECT id, status FROM completion_path WHERE id = (SELECT completion_path_id FROM milestones WHERE id = ?)",
+            "check_path_completion": true
+          }
+        },
+        {
+          "if": "completion_path_complete",
+          "then": "mark_path_complete",
+          "details": {
+            "update_completion_path_status": "completed",
+            "log_path_completion": true
+          }
+        },
+        {
+          "if": "completion_path_complete",
+          "then": "check_project_completion",
+          "details": {
+            "query": "SELECT COUNT(*) FROM completion_path WHERE project_id = ? AND status NOT IN ('completed')",
+            "check_all_paths_complete": true
+          }
+        },
+        {
+          "if": "project_complete",
+          "then": "call_project_completion_check",
+          "details": {
+            "delegate_to": "project_completion_check",
+            "trigger_final_review": true
+          }
+        },
+        {
+          "if": "project_not_complete",
+          "then": "move_to_next_milestone",
+          "details": {
+            "call_aifp_status": true,
+            "brief": true,
+            "show_completion_path_progress": true,
+            "query_next_milestone": "SELECT m.id, m.name, m.description FROM milestones m JOIN completion_path cp ON m.completion_path_id = cp.id WHERE cp.project_id = ? AND m.status = 'pending' ORDER BY cp.order_index, m.id LIMIT 1",
+            "prompt_template": "Milestone '[milestone_name]' completed! Project progress: [X/Y completion paths complete]. Moving to next milestone: '[next_milestone_name]'."
+          }
+        },
+        {
+          "if": "next_milestone_identified",
+          "then": "discuss_first_task",
+          "details": {
+            "discuss_with_user": true,
+            "prompt_user": "Next milestone: '[milestone_name]'. What should be the first task?",
+            "offer_options": [
+              "Let AI suggest first task based on milestone description",
+              "User defines first task",
+              "Review milestone details before deciding"
+            ]
+          }
+        },
+        {
+          "if": "user_chooses_ai_suggestion",
+          "then": "suggest_and_create_task",
+          "details": {
+            "analyze_milestone_description": true,
+            "suggest_task_name": true,
+            "suggest_task_items": true,
+            "prompt_user_approval": true,
+            "delegate_to": "project_task_create"
+          }
+        },
+        {
+          "if": "user_defines_task",
+          "then": "create_user_defined_task",
+          "details": {
+            "prompt_for_task_name": true,
+            "prompt_for_task_description": true,
+            "prompt_for_items": true,
+            "delegate_to": "project_task_create"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "How should we proceed with next milestone?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "no_next_milestone",
+        "resolution": "All milestones complete - trigger project completion check"
+      },
+      {
+        "issue": "next_milestone_unclear",
+        "resolution": "Review ProjectBlueprint.md with user to clarify roadmap"
+      },
+      {
+        "issue": "user_wants_pivot",
+        "resolution": "Call project_evolution to handle roadmap change"
+      }
+    ],
+    "intent_keywords_json": [
+      "complete milestone",
+      "finish milestone",
+      "milestone done",
+      "next milestone"
+    ],
+    "confidence_threshold": 0.8
   }
 ]
