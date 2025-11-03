@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AIFP Directive Sync Manager — Schema v1.4
+AIFP Directive Sync Manager — Schema v1.5
 ------------------------------------------
 Synchronizes all directive JSON definitions with the aifp_core.db database.
 
@@ -24,7 +24,8 @@ Updated: 2025-10-29
 
 Total Directives: 124 (30 FP Core + 36 FP Aux + 36 Project + 7 User Pref + 9 User System + 6 Git)
 
-This version aligns with the full schema (v1.4) for aifp_core.db.
+This version aligns with the full schema (v1.5) for aifp_core.db.
+Removed: tools table, notes table (not needed in read-only aifp_core.db)
 """
 
 import os
@@ -72,7 +73,7 @@ DIRECTIVE_GRAPH_FILE = "project_directive_graph.json"
 MIGRATIONS_DIR = "migrations"
 SYNC_REPORT_FILE = "logs/sync_report.json"
 
-CURRENT_SCHEMA_VERSION = "1.4"
+CURRENT_SCHEMA_VERSION = "1.5"
 DRY_RUN = False
 
 
@@ -319,9 +320,10 @@ def sync_helper_functions(conn):
 
     Populates table with complete helper data:
     - name, file_path, parameters, purpose, error_handling
-    - is_tool: Default to 0 (FALSE) - will be updated as MCP tools are implemented
+    - is_tool: Read from JSON (TRUE if exposed as MCP tool)
+    - is_sub_helper: Read from JSON (TRUE if internal helper only)
 
-    Source: docs/helpers_parsed.json (49 helpers organized into 5 module files)
+    Source: docs/directives-json/helpers_parsed.json (49 helpers organized into 5 module files)
     """
     print("\n🔧 Syncing helper functions from JSON...")
 
@@ -363,6 +365,8 @@ def sync_helper_functions(conn):
                     parameters = ?,
                     purpose = ?,
                     error_handling = ?,
+                    is_tool = ?,
+                    is_sub_helper = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE name = ?
             """, (
@@ -370,6 +374,8 @@ def sync_helper_functions(conn):
                 helper.get('parameters'),  # Already JSON string
                 helper.get('purpose'),
                 helper.get('error_handling'),
+                1 if helper.get('is_tool', False) else 0,
+                1 if helper.get('is_sub_helper', False) else 0,
                 name
             ))
             updated += 1
@@ -377,15 +383,16 @@ def sync_helper_functions(conn):
             # Insert new helper with all available data
             cur.execute("""
                 INSERT INTO helper_functions
-                (name, file_path, parameters, purpose, error_handling, is_tool)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (name, file_path, parameters, purpose, error_handling, is_tool, is_sub_helper)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 name,
                 helper.get('file_path'),
                 helper.get('parameters'),  # Already JSON string
                 helper.get('purpose'),
                 helper.get('error_handling'),
-                0  # is_tool defaults to FALSE, will be set manually
+                1 if helper.get('is_tool', False) else 0,
+                1 if helper.get('is_sub_helper', False) else 0
             ))
             inserted += 1
 
@@ -537,7 +544,7 @@ def sync_directive_helper_interactions(conn):
 # ===================================
 
 def sync_directives():
-    print("🔄 Starting Full AIFP Directive Sync (Schema v1.4)")
+    print("🔄 Starting Full AIFP Directive Sync (Schema v1.5)")
     print("📦 Including: FP Core, FP Aux, Project, User Prefs, User System, Git Integration")
 
     # Ensure database directory exists
@@ -723,27 +730,23 @@ def validate_integrity(conn):
     for row in cur.fetchall():
         issues.append(f"⚠️ Duplicate directive-category link for directive_id={row['directive_id']}.")
 
-    # 5. Verify notes table integrity
-    cur.execute("SELECT COUNT(*) as c FROM notes;")
-    note_count = cur.fetchone()["c"]
-    if note_count == 0:
-        issues.append("ℹ️ Notes table is empty — this may be fine, but consider adding documentation entries.")
+    # 5. Verify helper_functions loaded from JSON with is_tool and is_sub_helper
+    cur.execute("SELECT COUNT(*) as tool_count FROM helper_functions WHERE is_tool = 1;")
+    tool_count = cur.fetchone()["tool_count"]
+    cur.execute("SELECT COUNT(*) as sub_helper_count FROM helper_functions WHERE is_sub_helper = 1;")
+    sub_helper_count = cur.fetchone()["sub_helper_count"]
 
-    # 6. Verify tool entries have valid directive references
-    cur.execute("""
-        SELECT t.name, t.maps_to_directive_id
-        FROM tools t
-        WHERE t.maps_to_directive_id IS NOT NULL
-        AND t.maps_to_directive_id NOT IN (SELECT id FROM directives)
-    """)
-    for row in cur.fetchall():
-        issues.append(f"❌ Tool '{row['name']}' references non-existent directive_id={row['maps_to_directive_id']}")
+    if tool_count == 0:
+        issues.append("⚠️ No helpers marked as is_tool=1. MCP tools may not be properly configured.")
+    else:
+        print(f"   ✓ Found {tool_count} MCP tools (is_tool=1)")
 
-    # 7. Verify helper_functions (loaded from JSON, not extracted from workflows)
-    # Note: Helper validation now done via helpers_parsed.json
-    # Future: Validate directive_helpers junction table references
+    if sub_helper_count > 0:
+        print(f"   ✓ Found {sub_helper_count} sub-helpers (is_sub_helper=1)")
 
-    # 8. Verify all directives have valid workflow structure
+    # 6. Validate directive_helpers junction table references
+
+    # 7. Verify all directives have valid workflow structure
     cur.execute("SELECT name, workflow FROM directives;")
     for row in cur.fetchall():
         try:
@@ -753,7 +756,7 @@ def validate_integrity(conn):
         except (json.JSONDecodeError, TypeError):
             issues.append(f"❌ Directive '{row['name']}' has malformed workflow JSON")
 
-    # 9. Verify MD file paths exist for all directives
+    # 8. Verify MD file paths exist for all directives
     cur.execute("SELECT name, md_file_path FROM directives WHERE md_file_path IS NOT NULL;")
     md_files_checked = 0
 
@@ -772,7 +775,7 @@ def validate_integrity(conn):
     if md_files_checked > 0:
         print(f"   ✓ Verified {md_files_checked} MD file paths")
 
-    # 10. Verify guide files have been removed (should not exist)
+    # 9. Verify guide files have been removed (should not exist)
     guides_dir = os.path.join(reference_dir, 'guides')
     guide_files_to_check = [
         os.path.join(guides_dir, "automation-projects.md"),

@@ -1,6 +1,6 @@
 -- aifp_core.db Schema
--- Version: 1.4
--- Purpose: Defines MCP-level directives (read-only), helper functions, and tools
+-- Version: 1.5
+-- Purpose: Defines MCP-level directives (read-only) and helper functions
 -- This database is immutable once deployed; AI reads it but never modifies it.
 
 CREATE TABLE IF NOT EXISTS directives (
@@ -130,32 +130,6 @@ CREATE INDEX IF NOT EXISTS idx_directive_helpers_directive ON directive_helpers 
 CREATE INDEX IF NOT EXISTS idx_directive_helpers_helper ON directive_helpers (helper_function_id);
 
 -- ===============================================================
--- Tools: Mapping MCP tools to Directives
--- ===============================================================
-
-CREATE TABLE IF NOT EXISTS tools (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,               -- e.g., 'aifp_run_tool'
-    maps_to_directive_id INTEGER,            -- FK to directives.id
-    description TEXT,
-    FOREIGN KEY (maps_to_directive_id) REFERENCES directives(id)
-);
-
--- ===============================================================
--- Notes: Persistent reasoning and audit trail
--- ===============================================================
-
-CREATE TABLE IF NOT EXISTS notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    content TEXT NOT NULL,
-    reference_table TEXT,
-    reference_id INTEGER,
-    ai_generated BOOLEAN DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- ===============================================================
 -- Schema Version Tracking
 -- ===============================================================
 
@@ -165,4 +139,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.4');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.5');

@@ -1,6 +1,10 @@
 Read:
 README.md
 sys-prompt/aifp_system_prompt.txt
+.aifp/ProjectBlueprint.md
+
+dev blueprints are in docs/blueprints/{}.md and the directive json files are located in docs/directives-json/{}, production directive md files located in src/aifp/reference/directives/{}.md. .aifp/ is our project management folder for dev, our project management/tracking database is there. We are following the FP coding style and managing the project through the project database in .aifp to ensure consistent and updated status. After every batch of completions, update the database to reflect the completed work.
+
 src/aifp/database/schemas/user_preferences.sql
 src/aifp/database/schemas/aifp_core.sql
 src/aifp/database/schemas/project.sql
@@ -9,7 +13,7 @@ docs/sync-directives.py
 docs/implementation-plans/phase-1-mcp-server-bootstrap.md
 docs/implementation-plans/overview-all-phases.md
 
-docs/helper-functions-reference.md
+docs/helpers/helper-functions-reference.md
 
 docs/db-schema/schemaExampleMCP.sql
 docs/db-schema/schemaExampleProject.sql
@@ -17,16 +21,20 @@ docs/db-schema/schemaExampleSettings.sql
 docs/db-schema/schemaExampleUserDirectives.sql
 docs/blueprints/blueprint_system_prompt.md
 docs/blueprints/blueprint_aifp_project_structure.md
-docs/helper-functions-reference.md
 docs/directives-markdown-reference.md
 
 docs/directive-documentation-status.md
 docs/directive-md-mapping.csv
 
-The blueprints/context for the project are located in docs/blueprints and the directive json files are located in docs/directives-json. 
-
-.aifp is our project management folder and we have project blueprint in it as well as our database to track progress. Please review all that is necessary. We are working on creating the directives md files. please ensure to review any necessary or useful blueprint files in docs/blueprints/ for additional context if needed when creating the directives md files. We are following the FP coding style and managing the project through the project database in .aifp to ensure consistent and updated status. After every batch of completions, update the database to reflect the completed work.
-
 Notes are md examples and init structuring are the idea evolution files
 docs/directiveNotes/*
 docs/initialStructuring/*
+
+docs/directives-json/helpers_parsed.json
+update with new helpers, fix paths (tools/ subdir and file names)
+
+docs/directives-json/sync-directives.py
+docs/helpers/additional-helpers-user-directives.md
+docs/helpers/additional-helpers-mcp.md
+docs/helpers/additional-helpers-preferences.md
+docs/helpers/additional-helpers-project.md
