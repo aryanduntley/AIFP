@@ -34,7 +34,10 @@ docs/directives-json/helpers_parsed.json
 update with new helpers, fix paths (tools/ subdir and file names)
 
 docs/directives-json/sync-directives.py
+docs/helpers/helper-architecture.md
 docs/helpers/additional-helpers-user-directives.md
 docs/helpers/additional-helpers-mcp.md
 docs/helpers/additional-helpers-preferences.md
 docs/helpers/additional-helpers-project.md
+
+document flow ids json filed to tasks and sidequests tables in project db schema

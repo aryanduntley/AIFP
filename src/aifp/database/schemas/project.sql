@@ -1,6 +1,7 @@
 -- project.db Schema
--- Version: 1.1
+-- Version: 1.2
 -- Purpose: Track project-specific data, including files, functions, themes, flows, and completion paths
+-- Changelog v1.2: Added flow_ids (JSON array) to tasks and sidequests tables for flow-based work context linking
 
 -- Project Table: High-level project overview and evolution
 CREATE TABLE IF NOT EXISTS project (
@@ -158,6 +159,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     status TEXT DEFAULT 'pending',
     priority INTEGER DEFAULT 0,
     description TEXT,
+    flow_ids TEXT,                          -- JSON array: [1, 3, 5] - flows this task works on
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (milestone_id) REFERENCES milestones(id) ON DELETE CASCADE
@@ -185,6 +187,7 @@ CREATE TABLE IF NOT EXISTS sidequests (
     status TEXT DEFAULT 'pending',
     priority TEXT DEFAULT 'low', -- Sidequests default to low priority
     description TEXT,
+    flow_ids TEXT,                             -- JSON array: [1, 3, 5] - flows this sidequest works on
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (paused_task_id) REFERENCES tasks(id) ON DELETE CASCADE,
@@ -308,8 +311,8 @@ CREATE INDEX IF NOT EXISTS idx_notes_source ON notes(source);
 
 CREATE TABLE IF NOT EXISTS schema_version (
     id INTEGER PRIMARY KEY CHECK (id = 1),      -- Only one row allowed
-    version TEXT NOT NULL,                      -- e.g., '1.1'
+    version TEXT NOT NULL,                      -- e.g., '1.2'
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.1');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.2');

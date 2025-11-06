@@ -8,6 +8,10 @@
 
 **Status**: 🔵 Proposed (Not Yet Implemented)
 
+**MCP Tool Classification**: See [helper-tool-classification.md](./helper-tool-classification.md) for which helpers are exposed as MCP tools (`is_tool: true`) vs internal helpers (`is_tool: false`)
+
+**Generic Tools**: 4 high-level orchestrator functions documented in [generic-tools-mcp.md](./generic-tools-mcp.md)
+
 ---
 
 ## Table of Contents

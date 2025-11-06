@@ -8,6 +8,10 @@
 
 **Status**: 🔵 Proposed (Not Yet Implemented)
 
+**MCP Tool Classification**: See [helper-tool-classification.md](./helper-tool-classification.md) for which helpers are exposed as MCP tools (`is_tool: true`) vs internal helpers (`is_tool: false`)
+
+**Generic Tools**: 5 high-level orchestrator functions documented in [generic-tools-project.md](./generic-tools-project.md)
+
 ---
 
 ## Table of Contents
@@ -135,6 +139,71 @@
 **Returns**: `{"success": true, "previous_version": 1, "new_version": 2}`
 
 **Use Case**: `project_evolution` directive
+
+---
+
+### Blueprint Sync Helpers (Convenience)
+
+#### `blueprint_has_changed()`
+**Purpose**: Quick boolean check if ProjectBlueprint.md differs from stored checksum.
+
+**Returns**: Boolean (true = out of sync, false = in sync)
+
+**Use Case**: Pre-flight check before directive execution, session initialization
+
+**Efficiency**: Single O(1) comparison instead of multi-step fetch/compute/compare
+
+**Example**:
+```python
+if blueprint_has_changed():
+    print("Warning: ProjectBlueprint.md has been modified outside AIFP")
+    # Trigger resync or user prompt
+```
+
+---
+
+#### `check_blueprint_sync()`
+**Purpose**: Get detailed sync status with checksums and timestamps.
+
+**Returns**:
+```json
+{
+  "in_sync": false,
+  "stored_checksum": "abc123...",
+  "current_checksum": "def456...",
+  "last_updated": "2025-11-02T10:00:00",
+  "blueprint_path": ".aifp/ProjectBlueprint.md"
+}
+```
+
+**Use Case**: When AI needs details about desync for reporting or decision-making
+
+**Note**: More detailed than `blueprint_has_changed()`, use when context matters
+
+---
+
+#### `sync_blueprint_checksum()`
+**Purpose**: Convenience wrapper - read file, compute hash, update DB in single call.
+
+**Returns**:
+```json
+{
+  "success": true,
+  "checksum": "def456...",
+  "previous_checksum": "abc123...",
+  "updated_at": "2025-11-02T10:15:00"
+}
+```
+
+**Use Case**: After ProjectBlueprint.md modifications, quick sync without manual steps
+
+**Workflow**:
+1. Read `.aifp/ProjectBlueprint.md`
+2. Compute SHA-256 checksum
+3. Update `project.blueprint_checksum` field
+4. Return result
+
+**Efficiency**: Reduces 3 operations to 1 helper call
 
 ---
 
@@ -605,6 +674,388 @@
 
 ---
 
+## Flow-Based Work Context Tools
+
+**Purpose**: Link tasks/sidequests to flows and retrieve complete work context for AI session resumption
+
+**Schema**: Uses `flow_ids TEXT` field (JSON array) in tasks and sidequests tables
+
+**Key Insight**: Tasks→Flows→Files→Functions chain enables efficient context retrieval without junction tables
+
+**Note**: All helpers listed below work for both **tasks** and **sidequests** unless specified otherwise. Sidequests have equivalent functions (e.g., `link_sidequest_to_flows()`, `get_flows_for_sidequest()`). Subtasks inherit parent task's flow_ids.
+
+---
+
+### Flow Linking
+
+#### `link_task_to_flows(task_id: int, flow_ids: list[int])`
+**Purpose**: Set flow associations for task (replaces any existing flows).
+
+**Parameters**:
+- `task_id` (int): Task ID
+- `flow_ids` (list[int]): List of flow IDs, e.g., [1, 3, 5]
+
+**Returns**:
+```json
+{
+  "success": true,
+  "task_id": 5,
+  "flow_ids": [1, 3, 5],
+  "previous_flow_ids": [1]
+}
+```
+
+**Implementation**: Updates `tasks.flow_ids` with JSON array
+
+**Validation**: Checks that all flow_ids exist in flows table
+
+**Use Case**: When creating/updating task, associate with flows it will modify
+
+---
+
+#### `add_flow_to_task(task_id: int, flow_id: int)`
+**Purpose**: Append single flow to task's existing flow list.
+
+**Parameters**:
+- `task_id` (int): Task ID
+- `flow_id` (int): Flow ID to add
+
+**Returns**: `{"success": true, "flow_ids": [1, 3, 5, 7]}`
+
+**Behavior**:
+- If flow_ids is null, creates array [flow_id]
+- If flow_id already in array, no-op (idempotent)
+- Otherwise appends to array
+
+**Use Case**: Task expands to touch additional flow
+
+---
+
+#### `remove_flow_from_task(task_id: int, flow_id: int)`
+**Purpose**: Remove single flow from task's flow list.
+
+**Returns**: `{"success": true, "flow_ids": [1, 5]}`
+
+**Behavior**:
+- Removes flow_id from array
+- If array becomes empty, sets flow_ids to null
+
+**Use Case**: Task no longer touches specific flow
+
+---
+
+#### `get_flows_for_task(task_id: int)`
+**Purpose**: Get all flows associated with task.
+
+**Returns**:
+```json
+{
+  "task_id": 5,
+  "task_name": "Implement matrix operations",
+  "flows": [
+    {
+      "id": 1,
+      "name": "Matrix Computation",
+      "stage": "development",
+      "description": "Core matrix math operations"
+    },
+    {
+      "id": 3,
+      "name": "UI Display",
+      "stage": "planning",
+      "description": "Render matrices in UI"
+    }
+  ],
+  "flow_count": 2
+}
+```
+
+**Query**:
+```sql
+SELECT f.*
+FROM flows f
+JOIN json_each((SELECT flow_ids FROM tasks WHERE id = ?)) je
+WHERE f.id = je.value;
+```
+
+**Use Case**: Display task context, understand scope
+
+---
+
+#### `get_tasks_by_flow(flow_id: int)`
+**Purpose**: Get all tasks working on specific flow.
+
+**Returns**:
+```json
+{
+  "flow_id": 1,
+  "flow_name": "Matrix Computation",
+  "tasks": [
+    {
+      "id": 5,
+      "name": "Implement matrix operations",
+      "status": "in_progress",
+      "priority": "high"
+    },
+    {
+      "id": 7,
+      "name": "Optimize matrix multiplication",
+      "status": "pending",
+      "priority": "medium"
+    }
+  ],
+  "task_count": 2
+}
+```
+
+**Query**:
+```sql
+SELECT t.*
+FROM tasks t
+WHERE EXISTS (
+    SELECT 1
+    FROM json_each(t.flow_ids)
+    WHERE value = ?
+);
+```
+
+**Use Case**: See all work related to flow, dependency analysis
+
+---
+
+### Work Context Retrieval
+
+#### `get_work_context(work_item_type: str, work_item_id: int)`
+**Purpose**: Get complete context for resuming work - single call retrieves task/sidequest + flows + files + functions.
+
+**Parameters**:
+- `work_item_type` (str): "task", "subtask", "sidequest"
+- `work_item_id` (int): ID of work item
+
+**Returns**:
+```json
+{
+  "work_item": {
+    "type": "task",
+    "id": 5,
+    "name": "Implement matrix operations",
+    "status": "in_progress",
+    "priority": "high",
+    "milestone": {
+      "id": 1,
+      "name": "MVP Release",
+      "completion_path_stage": "Development"
+    }
+  },
+  "flows": [
+    {
+      "id": 1,
+      "name": "Matrix Computation",
+      "themes": ["Core Math Operations"]
+    },
+    {
+      "id": 3,
+      "name": "UI Display",
+      "themes": ["User Interface"]
+    }
+  ],
+  "files": [
+    {
+      "id": 1,
+      "path": "src/matrix.py",
+      "language": "Python",
+      "created_at": "2025-11-01T08:00:00",
+      "updated_at": "2025-11-02T10:15:00",
+      "action": "modified"
+    },
+    {
+      "id": 2,
+      "path": "src/ui/display.py",
+      "language": "Python",
+      "created_at": "2025-11-02T10:20:00",
+      "updated_at": "2025-11-02T10:20:00",
+      "action": "created"
+    }
+  ],
+  "functions": [
+    {
+      "id": 1,
+      "name": "matrix_multiply",
+      "file_path": "src/matrix.py",
+      "signature": "matrix_multiply(a: Matrix, b: Matrix) -> Matrix",
+      "is_pure": true,
+      "created_at": "2025-11-02T10:15:00",
+      "updated_at": "2025-11-02T10:15:00",
+      "action": "created"
+    },
+    {
+      "id": 3,
+      "name": "render_matrix",
+      "file_path": "src/ui/display.py",
+      "signature": "render_matrix(matrix: Matrix) -> str",
+      "is_pure": true,
+      "created_at": "2025-11-02T10:20:00",
+      "updated_at": "2025-11-02T10:20:00",
+      "action": "created"
+    }
+  ],
+  "recent_interactions": [
+    {
+      "source": "matrix_multiply",
+      "target": "validate_dimensions",
+      "type": "call"
+    }
+  ]
+}
+```
+
+**Query Chain**:
+1. Get work item details (task/subtask/sidequest) with milestone
+2. Get flows from flow_ids JSON array
+3. Get themes for flows via flow_themes junction
+4. Get files for flows via file_flows junction (sorted by updated_at DESC)
+5. Get functions in those files with file_path JOINed (sorted by updated_at DESC)
+6. Get function interactions for context
+
+**Action Inference**: Automatically determines "created" vs "modified" by comparing created_at with updated_at
+
+**Use Case**:
+- **Session resumption**: AI gets everything needed to continue work
+- **Status reporting**: Complete context for where work stands
+- **Context switching**: Quickly understand what files/functions are relevant
+
+**Efficiency**: Single helper call replaces 6+ separate queries
+
+---
+
+#### `get_recent_files_for_task(task_id: int, limit: int = 10)`
+**Purpose**: Get files associated with task (via flows), sorted by recency.
+
+**Parameters**:
+- `task_id` (int): Task ID
+- `limit` (int): Max files to return
+
+**Returns**:
+```json
+{
+  "task_id": 5,
+  "files": [
+    {
+      "path": "src/matrix.py",
+      "updated_at": "2025-11-02T10:15:00",
+      "action": "modified"
+    },
+    {
+      "path": "tests/test_matrix.py",
+      "updated_at": "2025-11-02T10:10:00",
+      "action": "created"
+    }
+  ],
+  "file_count": 2
+}
+```
+
+**Query**:
+```sql
+WITH task_flows AS (
+    SELECT je.value as flow_id
+    FROM json_each((SELECT flow_ids FROM tasks WHERE id = ?)) je
+)
+SELECT DISTINCT fi.*,
+    CASE
+        WHEN fi.created_at = fi.updated_at THEN 'created'
+        ELSE 'modified'
+    END as action
+FROM files fi
+JOIN file_flows ff ON fi.id = ff.file_id
+WHERE ff.flow_id IN (SELECT flow_id FROM task_flows)
+ORDER BY fi.updated_at DESC
+LIMIT ?;
+```
+
+**Use Case**: Quick file list without full context
+
+---
+
+#### `get_recent_functions_for_task(task_id: int, limit: int = 20)`
+**Purpose**: Get functions in task's flow files, sorted by recency, with file paths.
+
+**Parameters**:
+- `task_id` (int): Task ID
+- `limit` (int): Max functions to return
+
+**Returns**:
+```json
+{
+  "task_id": 5,
+  "functions": [
+    {
+      "name": "matrix_multiply",
+      "file_path": "src/matrix.py",
+      "is_pure": true,
+      "updated_at": "2025-11-02T10:15:00",
+      "action": "created"
+    },
+    {
+      "name": "validate_dimensions",
+      "file_path": "src/matrix.py",
+      "is_pure": true,
+      "updated_at": "2025-11-01T14:20:00",
+      "action": "modified"
+    }
+  ],
+  "function_count": 2
+}
+```
+
+**Query**: Chain task → flows → files → functions with file_path always JOINed
+
+**Use Case**: See what functions were recently worked on
+
+---
+
+### Utility Helpers
+
+#### `infer_action(created_at: str, updated_at: str)`
+**Purpose**: Determine if file/function was created or modified.
+
+**Parameters**:
+- `created_at` (str): ISO timestamp
+- `updated_at` (str): ISO timestamp
+
+**Returns**: String "created" or "modified"
+
+**Logic**:
+```python
+if created_at == updated_at:
+    return "created"
+else:
+    return "modified"
+```
+
+**Use Case**: Action type inference for display/reporting
+
+**Note**: Can be SQL expression or Python helper - used throughout context queries
+
+---
+
+#### `validate_flow_ids(flow_ids: list[int])`
+**Purpose**: Validate that all flow_ids exist in flows table before updating.
+
+**Returns**: `{"valid": true}` or `{"valid": false, "invalid_ids": [99]}`
+
+**Query**:
+```sql
+SELECT COUNT(*) as valid_count
+FROM flows
+WHERE id IN (?, ?, ?);
+-- Compare valid_count with len(flow_ids)
+```
+
+**Use Case**: Pre-validation before link_task_to_flows
+
+---
+
 ## Completion Tracking Tools
 
 **Tables**: `completion_path`, `milestones`
@@ -945,11 +1396,12 @@
 ```
 src/aifp/helpers/project/
 ├── tools/                          # is_tool=true (MCP-exposed)
-│   ├── project_meta_tools.py       # ~8 functions
+│   ├── project_meta_tools.py       # ~11 functions (includes 3 blueprint sync helpers)
 │   ├── file_tools.py               # ~6 functions
 │   ├── function_tools.py           # ~5 functions
 │   ├── theme_flow_tools.py         # ~9 functions
 │   ├── task_tools.py               # ~14 functions
+│   ├── flow_context_tools.py       # ~10 functions (NEW: flow linking + work context)
 │   ├── completion_tools.py         # ~7 functions
 │   ├── note_tools.py               # ~5 functions
 │   ├── git_tools.py                # ~7 functions
@@ -962,14 +1414,15 @@ src/aifp/helpers/project/
 ```
 
 **Current Project Helpers**: 18 functions (4 tools, 14 internal)
-**Proposed Project Tools**: ~66 functions (from this document)
-**Total Project Tools After Additions**: ~70 tools
+**Proposed Project Tools**: ~79 functions (from this document)
+**Total Project Tools After Additions**: ~83 tools
 
 **Breakdown**:
-- Project Metadata: 8 functions (4 getters + 4 setters)
+- Project Metadata: 11 functions (4 getters + 4 setters + 3 blueprint sync convenience)
 - Code Structure: 16 functions (11 getters + 5 setters)
 - Organization: 11 functions (7 getters + 4 setters)
 - Task Management: 14 functions (10 getters + 4 setters)
+- Flow-Based Work Context: 10 functions (5 flow linking + 3 context retrieval + 2 utilities)
 - Completion Tracking: 7 functions (5 getters + 2 setters)
 - Notes & Context: 5 functions (2 getters + 3 setters)
 - Git Integration: 7 functions (4 getters + 3 setters)
@@ -1005,33 +1458,46 @@ All functions return:
 ## Priority Implementation Order
 
 ### Phase 1: Critical (Core Workflow Support)
-**Essential for Directive Execution**
+**Essential for Directive Execution & Session Resumption**
 1. `get_project_metadata()` - Session context
-2. `get_task_by_id()` - Task operations
-3. `get_tasks_by_status()` - Task filtering
-4. `update_task_status()` - Task updates
-5. `create_task()` - Task creation
-6. `get_file_by_path()` - File operations
-7. `add_file()` - File registration
-8. `create_note()` - Context logging
+2. `blueprint_has_changed()` - Quick sync check (session initialization)
+3. `check_blueprint_sync()` - Detailed sync status
+4. `get_task_by_id()` - Task operations
+5. `get_tasks_by_status()` - Task filtering
+6. `update_task_status()` - Task updates
+7. `create_task()` - Task creation
+8. `get_file_by_path()` - File operations
+9. `add_file()` - File registration
+10. `create_note()` - Context logging
+11. `sync_blueprint_checksum()` - Convenience sync after blueprint edits
+12. **`link_task_to_flows()`** - Associate task with flows (NEW)
+13. **`get_flows_for_task()`** - Get task's flows (NEW)
+14. **`get_work_context()`** - Complete resume context in single call (NEW - CRITICAL)
+15. **`get_recent_files_for_task()`** - Quick file list (NEW)
 
 ### Phase 2: Important (Organization & Tracking)
 **Task Hierarchy & Organization**
-9. `get_subtasks()` - Task decomposition
-10. `get_task_hierarchy()` - Complete view
-11. `create_subtask()` - Subtask creation
-12. `get_all_themes()` - Organization
-13. `get_all_flows()` - Flow management
-14. `get_completion_path()` - Roadmap tracking
-15. `get_project_summary()` - Batch efficiency
+16. `get_subtasks()` - Task decomposition
+17. `get_task_hierarchy()` - Complete view
+18. `create_subtask()` - Subtask creation
+19. `get_all_themes()` - Organization
+20. `get_all_flows()` - Flow management
+21. `get_completion_path()` - Roadmap tracking
+22. `get_project_summary()` - Batch efficiency
+23. **`add_flow_to_task()`** - Append flow to task (NEW)
+24. **`get_recent_functions_for_task()`** - Function context (NEW)
+25. **`get_tasks_by_flow()`** - Find work by flow (NEW)
 
 ### Phase 3: Advanced (Analytics & Optimization)
-**Metrics & Git Integration**
-16. `get_project_metrics()` - Health metrics
-17. `get_bottlenecks()` - Optimization
-18. `get_active_branches()` - Git coordination
-19. `get_merge_history()` - Git tracking
-20. All remaining helpers
+**Metrics, Git Integration & Utilities**
+26. `get_project_metrics()` - Health metrics
+27. `get_bottlenecks()` - Optimization
+28. `get_active_branches()` - Git coordination
+29. `get_merge_history()` - Git tracking
+30. **`remove_flow_from_task()`** - Remove flow from task (NEW)
+31. **`validate_flow_ids()`** - Flow validation utility (NEW)
+32. **`infer_action()`** - Created vs modified utility (NEW)
+33. All remaining helpers
 
 ---
 
