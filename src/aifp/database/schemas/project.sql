@@ -20,6 +20,18 @@ CREATE TABLE IF NOT EXISTS project (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Infrastructure Table: Project setup
+CREATE TABLE IF NOT EXISTS infrastructure (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL,                    -- e.g., 'language', 'package', 'testing'
+    value TEXT,                            -- e.g., 'Python 3.12', 'numpy'
+    description TEXT,
+    project_id INTEGER NOT NULL,            -- Link to project
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES project(id)
+);
+
 -- Files Table: Project file inventory
 CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,18 +124,6 @@ CREATE TABLE IF NOT EXISTS file_flows (
     PRIMARY KEY (file_id, flow_id),
     FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE,
     FOREIGN KEY (flow_id) REFERENCES flows(id) ON DELETE CASCADE
-);
-
--- Infrastructure Table: Project setup
-CREATE TABLE IF NOT EXISTS infrastructure (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL,                    -- e.g., 'language', 'package', 'testing'
-    value TEXT,                            -- e.g., 'Python 3.12', 'numpy'
-    description TEXT,
-    project_id INTEGER NOT NULL,            -- Link to project
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES project(id)
 );
 
 -- Completion Path Table: High-level, standalone roadmap

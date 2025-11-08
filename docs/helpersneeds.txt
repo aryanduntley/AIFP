@@ -1,0 +1,33 @@
+MCP:
+
+PROJECT:
+project table entry is a singular entry that defines the broader scope of the project and the infrastructure table relates to it directly.
+
+there should be getter and setters for general update project details and update project infrastructure. These are pretty standalone and don't need very munch interconnection. Directives must show when/how to use these tools during changes.
+
+Themes and flows have to do with project categorization and organization.
+Themes are more broad categorization of the various parts of the project. Flows are more detailed strings of actions that are related more to code categorization. A theme could have several flows, but a flow could touch on several themese potentially. Checkout coudl be a theme and (shipping calculation, tax, payment selection type, payment processing, address entry, etc.) could all be themes that touch on checkout. Address entry could potentially also touch on User Registration as a theme for example.
+
+flow_themes
+
+files, functions, types. These all have to do with file and code tracking.
+
+file_flows
+
+interactions
+
+
+completion_path, milestones
+milestones fall under a certain step in the completion path. There could be many milestones before a step in the completion path can be marked as completed and the next step began. 
+
+tasks subtasks and sidequests. These all have to do with project progress tracking.
+subtasks are children to tasks so the milestone is inherited from parent task. sidequest is immediate need issues and is not necessarily related to milestone/task/subtask. It may fall under these but it's more a "there is a problem and we need to pause everything and fix this" or "we need to make adjustments and these adjustments (dependecies, organization, clarifications, issues, etc.) must be completed before continuing with reglar work.". So it should be treated in this manner.
+
+items are a series of task/subtask/sidequest items. The task/subtask/sidequest are high level descriptors of the set of "items" that must be accomplished. The items for that task/subtask/sidequest are created and must be fully completed before the task/subtask/sidequest can be marked as complete. This isn't a strict rule that should be forced however as a user can decide a task is complete and that certain items can be discarded. AI should discard accordingly, but this is normal user/AI interaction and doesn't need to be added to directives. We just don't want to make the directives too strict and so I'm clarifying my statemnt that "items.. must be fully complete before task/subtask/sidequest can be marked as complete" in order to show it as a generally obvious rule but not a strictly forced directive.
+
+notes 
+
+SETTINGS:
+
+USER DIRECTIVES:
+

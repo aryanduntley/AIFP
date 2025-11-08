@@ -40,4 +40,7 @@ docs/helpers/additional-helpers-mcp.md
 docs/helpers/additional-helpers-preferences.md
 docs/helpers/additional-helpers-project.md
 
+docs/helpers/generic-tools-project.md
+docs/helpers/generic-tools-mcp.md
+
 document flow ids json filed to tasks and sidequests tables in project db schema
