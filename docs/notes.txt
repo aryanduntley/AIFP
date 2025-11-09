@@ -43,4 +43,6 @@ docs/helpers/additional-helpers-project.md
 docs/helpers/generic-tools-project.md
 docs/helpers/generic-tools-mcp.md
 
+REVIEW ALL HELPER FUNCTIONS. AI made many mistakes, making up parameters, ommitting others, etc. Review all.
 document flow ids json filed to tasks and sidequests tables in project db schema
+remove project id, update documentation to reflect

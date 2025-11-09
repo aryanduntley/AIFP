@@ -5,14 +5,56 @@ project table entry is a singular entry that defines the broader scope of the pr
 
 there should be getter and setters for general update project details and update project infrastructure. These are pretty standalone and don't need very munch interconnection. Directives must show when/how to use these tools during changes.
 
+There is only one project per database. We should remove all project ID fields from the other tables as we do not need to waste processing by having to account for that field in all of the tables with every update. Either that or default the project ID to 1, which "should" be the actual project ID. But I recommend removing the project id field from all tables as even having them suggests that there could potentially be more than one project per database, which is not the case.
+
 Themes and flows have to do with project categorization and organization.
-Themes are more broad categorization of the various parts of the project. Flows are more detailed strings of actions that are related more to code categorization. A theme could have several flows, but a flow could touch on several themese potentially. Checkout coudl be a theme and (shipping calculation, tax, payment selection type, payment processing, address entry, etc.) could all be themes that touch on checkout. Address entry could potentially also touch on User Registration as a theme for example.
+Themes are more broad categorization of the various parts of the project. Flows are more detailed strings of actions that are related more to code categorization. A theme could have several flows, but a flow could touch on several themese potentially. Checkout could be a theme and (shipping calculation, tax, payment selection type, payment processing, address entry, etc.) could all be flows that touch on checkout. Address entry could potentially also touch on theme User Registration for example.
 
 flow_themes
+we should have a flow to theme relation setter and getter tools.
 
 files, functions, types. These all have to do with file and code tracking.
+should have an add_file tool and set_function tool to quickly and easily update the database after every file change. These will be used the most and should be very streamlined. 
+
+if modifying a file, funcitons will be modified, so no need for an update file tool, just a helper function (is_sub_helper = true). when updating function, code will call update file, pass file id and update the updated_at and checksum fields automatically. AI doesn't need to worry about this. File should have a has_changed function. Simply return true or fasle. Code evaluates checksum and returns appropriate answer. Parameters should allow for ID or path. I believe one was already created for project blueprint checksum?
+
+For all tables since we have both created at and updated at, we should have a check for setters and automatically add updated at if exists, automatically add created at if not exists and ignore other in both cases. AI should not have to worry about created at, updated at, checksums. These should be automated. 
+
+adding functions
+additional-helper-project.md:
+"#### `add_function(name: str, signature: str, file_id: int, is_pure: bool = false, dependencies: list = None)`"
+We do not have a signature field for functions. Necessary? Useful? Should we add to schema or remove from additional helpers?
+File ID would have to be looked up before adding to paramaters. Let's let the code handle this and not put the burden on AI. Parameter should be (file path) path: str. We do not have an is_pure field in functions table. Why is this here? Is it in directives? Or did you make this up out of thin air last session? Is it useful and needed? We should discuss.
+dependencies are in the interactions table. This function isn't correct at all. Needs to be rewritten and re-evaluated. If this is completely wrong, many others might also be completely wrong. All helper functions in all helper functions files need to be reviewed.
+add_function should take name, path (or file_path), purpose, parameters, interactions) should we add return data???
+created at field given current timestamp
+updated at filed not update.
+Are these updated by sqlite itself? Or do we have to manage ourselves?
+
+interactions should be a list or json or some data type that allows for inclusion of 
+source_function_id  target_function_id  interaction_type description. 
+so "source, target, type, descripton". 
+
+since this is function to add a new entry, we won't have an id for the function, so we pass empty string to source or target (depending on whether this function is source or target) and the function name for the other (depending on whether the interacting function is source or target). We don't want AI to have to run a separate call to functions table to get id. it can simply pass the existing function name. so add function will create the functions table entry, get an ID in return for the entry. either source or target will have an emtpy string and function will assing the ID return value of newly created function to that (interaction's source_function_id or target_function_id). Then function itself will look up functions table by name, get id, assign id to opposing interactions' source_function_id or target_function_id. Then function will add interaction to interactions database table. 
+
+Need to evaluate interactions table. How useful is it?
+
+updating functions
+update_function(name, purpose=none, parameters=none, interactions="") should we add return data???
+we will manage update at timestamp if sqlite doesn't do this automatically. Check purpose parameters and interactions for "none" or empty string (in case of interactions) to identify whether those fields need to be updated. we can update interactions from the update_function function. We can also have a separate update_interaction(id, source="none", target="none", type="none", descripton="none") for this, AI will have to use a get intereactions functions to get all interactions it's interested in (get_all_intereactions(limit, orderby), get_interactons_by_source(name, limit, orderby), get_interactions_by_target(name, limit, orderby), get_interactons_by_type(type, limit, orderby) get_interaction(id) and then pass the ID to update_interaction.
+
+
+additional-helpers-project.md "#### `update_function_purity(function_name: str, is_pure: bool)`
+**Purpose**: Mark function as pure/impure after FP compliance check.
+**Returns**: `{"success": true, "function": "...", "is_pure": true}`
+**Use Case**: FP directives update purity status"
+We don't have a purity field in the functions table. Review directives to check for any mention of this. If doesn't exist, explain use. I think we can remove this and will need to check for other useless helpers that have no database or directive mention.
+
+types
+
 
 file_flows
+like flow_themes we should have setter and getter tools for file flow relationships.
 
 interactions
 
@@ -21,11 +63,16 @@ completion_path, milestones
 milestones fall under a certain step in the completion path. There could be many milestones before a step in the completion path can be marked as completed and the next step began. 
 
 tasks subtasks and sidequests. These all have to do with project progress tracking.
-subtasks are children to tasks so the milestone is inherited from parent task. sidequest is immediate need issues and is not necessarily related to milestone/task/subtask. It may fall under these but it's more a "there is a problem and we need to pause everything and fix this" or "we need to make adjustments and these adjustments (dependecies, organization, clarifications, issues, etc.) must be completed before continuing with reglar work.". So it should be treated in this manner.
+subtasks are children to tasks so the milestone is inherited from parent task. sidequest is immediate need issues and is not necessarily related to milestone/task/subtask. It may fall under these but it's more a "there is a problem and we need to pause everything and fix this" or "we need to make adjustments and these adjustments (dependencies, organization, clarifications, issues, etc.) must be completed before continuing with reglar work.". So it should be treated in this manner. Should have a get tasks by count, date as well. Get 3 latest tasks for instance. Should have an option in that actually for status. get 3 latest tasks complete. get all tasks incomplete (0 or -1 value for count). or unset, get 3 latest tasks (any status). Should exted this tool with a parameter of type for task, subtask or sidequest. As all should have these/this tool.
+
+tasks have a flow_ids json table for related flows. We shouldn't have the need for getting tasks by flow as a general rule. tasks should be usually linear. Usually about one task at a time. Once items are complete, task is marked as complete and no real need for accessing that task in the future apart from general review for potential historical reference. But for task context, flows will be useful and therefore the flow_ids fields lists them. Should have a tool to update task flows and get task flows. These are separate from the general get tasks tool as they may probably be used more often. Subtasks inherit task flow(s). Sidequests are not necessarily flow specific. 
 
 items are a series of task/subtask/sidequest items. The task/subtask/sidequest are high level descriptors of the set of "items" that must be accomplished. The items for that task/subtask/sidequest are created and must be fully completed before the task/subtask/sidequest can be marked as complete. This isn't a strict rule that should be forced however as a user can decide a task is complete and that certain items can be discarded. AI should discard accordingly, but this is normal user/AI interaction and doesn't need to be added to directives. We just don't want to make the directives too strict and so I'm clarifying my statemnt that "items.. must be fully complete before task/subtask/sidequest can be marked as complete" in order to show it as a generally obvious rule but not a strictly forced directive.
 
 notes 
+reference table reference id
+
+appropriate git getters and setters
 
 SETTINGS:
 
