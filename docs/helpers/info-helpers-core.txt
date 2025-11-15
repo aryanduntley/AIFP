@@ -1,0 +1,6 @@
+# MCP:
+return notes should be added in as new filed in helper_functions table in MCP core database.
+return_statements. String, text or json. Not sure. All tools will query their own function by name and get the return statement before returning values. Return statement will be appending to return from helper functions. Should this be stored as json, text, string? All tools should return json so that this and any other data can be returned.
+
+internal helper function should be created to get this return statement and should be called with every tool. I think we should limit to tools as they will be the most called by AI and we can add additional direction and checks for AI with these return statment suggestions and notes. 
+

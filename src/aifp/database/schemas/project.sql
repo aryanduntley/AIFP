@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE TABLE IF NOT EXISTS notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
-    note_type TEXT NOT NULL,               -- e.g., 'clarification', 'pivot', 'research'
+    note_type TEXT NOT NULL,               -- e.g., 'clarification', 'pivot', 'research', 'entry_deletion'
     reference_table TEXT,                   -- e.g., 'items', 'files', 'completion_path'
     reference_id INTEGER,
     source TEXT DEFAULT 'user',             -- 'user', 'ai', 'directive' (who created this note)

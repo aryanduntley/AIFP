@@ -48,3 +48,12 @@ document flow ids json filed to tasks and sidequests tables in project db schema
 remove project id, update documentation to reflect
 
 return data from functions should always add notes for any directive/db/etc. chaining.
+
+- Triggers for timestamp updates
+CREATE TRIGGER IF NOT EXISTS update_project_timestamp
+AFTER UPDATE ON project
+FOR EACH ROW
+BEGIN
+    UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+what is "OLD.id" about?
