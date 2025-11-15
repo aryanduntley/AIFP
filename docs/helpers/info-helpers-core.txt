@@ -4,3 +4,4 @@ return_statements. String, text or json. Not sure. All tools will query their ow
 
 internal helper function should be created to get this return statement and should be called with every tool. I think we should limit to tools as they will be the most called by AI and we can add additional direction and checks for AI with these return statment suggestions and notes. 
 
+helper functions table should have 3 new feilds db_location (core, project, preferences, user_directives) requred, db_table (table name in defined db where helper function is used null/empty allowed), function_action (get, set, remove) can we think of any other possible options? Should we only add these if is_tool?
