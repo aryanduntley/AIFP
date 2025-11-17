@@ -16,12 +16,6 @@ HELPERS is_sub_helper=true
 project_update_git_status()
 No parameters needed. get's git data to update last_known_git_hash and last_git_sync 
 
-We must add a delete_entry(table:string, id:int, note_reason:text, note_severity:string , note_source:string"ai" or "user", note_type: "entry_deletion") helper function tool, so that we can easily remove anything. Note fields are forced because any removal of an entry should require a note. Is there anything to add to return_statements?
-
-TOOL
-delete_entry(table:string, id:int, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
-This tool/function must ensure that all associated entries are also removed. If file for example all file references, all file functions, etc. must be removed. We should consider this carefully and add instructions to AI to manage properly in directives (if not exists) and in return_statements. File is one of the most important because there are series of functions that are likely assocaited. TODO: Flesh out
-
 to avoid the repeat update/create timestap function calls for EVERY SINGLE DATABASE INTERACTION, we need to set triggers for these:
 
 CREATE TRIGGER update_timestamp
@@ -63,18 +57,106 @@ return_statements should include "verify flows are added, if necessary, for this
 checks if file actually exists in path, return "file does not exists, cannot add to database" not exists
 uses update_file_metadata(id)
 
+delete_file(file_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all file_flows with file_id. must get all functions id's with file_id. must delete all types with function_id and if exists must delete all types_functions with function_id. must delete all interactions with function_id as source or target. must delete all functions with file_id
+
 HELPER is_sub_helper=true
 update_file_metadata(id)
-automatically adds file metadata header to every file on create or update (where update modifies path).
-Header metadata should include file ID, file Path, and file language. This is for easy lookup since AI will be reding an modifying files all the time. No reason to review the database or think extra for file ID, path for the constant updates. So we will duplicate the data within each file and ensure it's maintained automatically with code. MUST READ "FUNCTION METADATA??" below. Same issue exists. comment syntax based on language. Follow same decision, once decided, for this and function docstring.
+I was going to add a header comment for each file, but there are so many different comment types based on language and file extension that I don't want to have to have a bunch of logic to do this. We could return the desired metadata to AI to figure out comment syntax and add the metadata itself, but I really want to keep AI from dealing with EVERYTHING and let code handle things that are very routine and shouldn't require much thinking (I don't want to write the logic). So, for file metadata I think this should happen:
+
+add file:
+file table entry id returned
+calls update_file_metadata(file_id)
+update_file_metadata 
+   calls get_flows_for_file(file_id)
+
+   IF WE WILL ADD FLOW NAMES:
+   get's flow id's array and calls
+   get_flow_names_by_ids(flow_ids:array)
+
+ 
+   with file id, flow name and flow id:
+   originalname-ID{file_id}-{flowname_flowid}-{flowname_flowid}.ext
+   checkout-ID42-payment_3-login_7-registration_1.json
+
+   OR
+
+   with file id and flow id:
+   originalname-ID{file_id}-{3_7_1}.json
+   checkout-ID42-3_7_1.json
+
+   finally, renames actual file and database path field using 
+   LOGIC::
+   update_file_name(file_id, new_name)
+      get_file(file_id) get's file data.
+      parses existing_name from path.
+      parses existing_name_id from existing_name
+      parses new_name_id from new_name
+
+      $path, $new_name, $new_name_id, $existing_name, $existing_name_id, $file_id, $notes;
+      if($existing_name_id && $new_name_id){
+         if($existing_name_id != $file_id && $new_name_id != $file_id){
+            return error("existing name with ID ${existing_name} and new name with ID ${new_name},  do not match actual file id ${file_id}. This needs to be investigated and resolved.");
+         }
+      }
+      if($new_name_id){
+         if($new_name_id != $file_id){
+            return error("new name with id ${new_name_id} does not match file id, ${file_id}. Something went wrong, please investigate.");
+         }else{
+            get actual file using $path, rename actual file with new_name.
+            if path is wrong, does not exist, return error with printed path for the file id and indicate the mismatch and that this problem should be investigated.
+            update file path with adjusted new_name for file_id in database
+            return array($new_name, $notes);
+         }
+      }else{
+         if($existing_name_id){
+            if($existing_name_id != $file_id){
+               $flow_string = parseFlowString($existing_name);
+               $err = "The new name was passed without the file id, which is ok, but the existing file name with id ${existing_name}, does not match the file id ${file_id}. There is a decrepancy here and it needs to be investigated before continuing. If you wish to bypass this error, add the file id to the new name manually ${new_name}-ID${file_id}";
+               if(!empty($flow_string)){
+                  $err .= "-${flow_string}. But please verify the related flows ${flow_string}. If the file id was incorrect, it's very possible that the flow data is also incorrect.";
+               }
+               return error($rr);
+            }
+         }
+         //no existing_name_id and no new_name_id
+         calls get_flows_for_file(file_id)
+         IF WE WILL ADD FLOW NAMES:
+         get's flow id's array and calls
+         get_flow_names_by_ids(flow_ids:array)
+
+         build new name with file_id and flows (with or without names depending on what we decide).
+         $flow_string = {build the flow string}
+         $new_name_with_meta = $new_name . "-ID" . $file_id . "-" . $flow_string;
+         
+         get actual file using $path, rename actual file with new_name_with_meta.
+         if path is wrong, does not exist, return error with printed path for the file id and indicate the mismatch and that this problem should be investigated.
+         update file path with adjusted new_name_with_meta for file_id in database
+
+         $notes = "For some reason the pre-existing file name (${existing_name}) did not have the file id, ${file_id}, metadata (-ID${file_id}). The new name passed also did not have it. The metadata was created and file name modified accordingly, but this omission is worrisome and should be investigated. This message is from update_file_name. Could be direct or via alias, rename_file.";
+         return array($new_name_with_meta, $notes);
+      }
+      
+      get's actual file
+      renames file with new_name
+      updates file path with adjusted new_name for file_id in database
+      MUST!!!! search all files for calls to this file. MUST DO SO CAREFULLy so that we aren't searching for a string that could potentially have differences. fileName.py replaced with fileName-ID312.py for example. It's possibe that we need to search for fileName (imports) but CAREFUL not to match fileNameTwo and end up with fileName-ID312Two. This MUST be avoided. So we should be careful and thorough with this search replace code. We must be sure to exclude anything outside of src as well. We do not want to be searching dependency files/folders etc. This could cause freezing and/or extreme time while the code gets stuck in some extensive, unnecessary search.
+
+
+
+Which do you think is best? The flow name is more accessible to AI and people than just a number. We know "what" flow it is. With just a number, we have to call get_flow_name_by_id(flow_id) to get the flow name or get_flow(flow_id) which will return all flow data. So the real question is whether having the name and id allow for fewer database queries as the information is available right in the file name. I don't want the file names to get ridiculously long though. A file shouldn't be related to too many flows though. Not sure about this.
 
 HELPER is_sub_helper=true
 update_file_timestamp(file_id) this is primarily for function updates. If a function is updated, the file last updated timestamp should be updated. checksum gets updates (since this call is automated after every function update). No need for a separate call by AI. 
+update_file_name(file_id, new_name) This function defined above under add_file at "LOGIC::"
 
-TOOL
-update_file_by_id(id, new_path:None, language:None)
-update_file_by_path(old_path, new_path:None, language:None)
-if path is changed must call update_file_metadata(id)
+TOOLS
+get_file(file_id)
+update_file(file_id, new_path:None, language:None) code should allow path change, but NOT file name change. This must be done with rename_file(file_id, new_name)
+
+rename_file(file_id, new_name) alias
+   calls update_file_name(file_id, new_name)
+
+update_file_by_path(old_path, new_path:None, language:None)code should allow path change, but NOT file name change. This must be done with rename_file(file_id, new_name)
 return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
 
 File should have a has_changed function. Simply return true or false. 
@@ -84,16 +166,57 @@ file_has_changed(file_id) creates checksum of file, then evaluates against curre
 
 For all tables since we have both created at and updated at, we should have a check for setters and automatically add updated at if exists, automatically add created at if not exists and ignore the other in both cases (if create then ignore update, if update then ignore create). AI should not have to worry about created at, updated at, checksums. These should be automated. 
 
-HELPER is_sub_helper=true
-get_function_by_id(id)
+HELPER is_sub_helper=false
+get_function(function_id)
+get_function_by_name(function_name)
 
 We have get_function_by_name but we should also have a get_function(id) that can be used for a quicker query by index id, if needed this will be used probably internally. If not needed now, it's handy to have already for any potential use case in the future or if AI has the ID but lost context or never had context regarding function entry table. Potentially a getter of a list of function ID's or some reference to function by ID and need to retrieve the rest of the function db data.
 
 FUNCTION NAMES UNIQUE!!!!
-Since this is FP, we do not have classes and therefore, function names cannot be duplicate??????? This is language agnostic so we don't know what language the use will be using and therefore we can't assume that the language will allow overloading. We should either make the name unique or create a function sig with name and params and force the sig to be unique. What do you think is best? Is overloading absolutely necessary? Our get_function for instance. We could have overloading get_function(id), and get_function(name). Or we could have get_function(id:None, name:None){if id and name are none, return error; one is required}. or we could just be very explicit like what we are doing with get_function_by_name(name) and get_function_by_id(id). So maybe we should make the function names unique. add function should throw errors when duplicate function names are used. 
+Since this is FP, we do not have classes and therefore, function names cannot be duplicate??????? This is language agnostic so we don't know what language the use will be using and therefore we can't assume that the language will allow overloading. We should either make the name unique in database table as flat or create a function sig with name and params and force the sig to be unique. What do you think is best? Is overloading absolutely necessary? Our get_function for instance. We could have overloading get_function(id), and get_function(name). Or we could have get_function(id:None, name:None){if id and name are none, return error; one is required}. or we could just be very explicit like what we are doing with get_function_by_name(name) and get_function(function_id). So maybe we should make the function names unique. add function should throw errors when duplicate function names are used.
 
 FUNCTION METADATA??
-We are adding a file header metadata section with file ID and file path. Automated on add_file calls and update_file calls where path is changed. Should we do something similar with functions? Should we, upon add/update functions, use code to get the file path, find the function, add a docstring to the function based on the database entry metadata? Including ID, parameters, return types, etc? If so, we will need a boilerplate for this so that variables can be replaced and string can be appended to function. Should check for existing docstring, verify it matches format, remove and replace if it does not. To make thinks easier, might add a lookup string "Docstring" and "/Docstring" for quicker verification. This may be difficult since comment syntax is different for each language. What do you think about this? Primary purpose is for adding the function ID to the file for easy lookup. secodary purpose is the obvious, easy reading of the function, knowing what it's all about without having to necessarily review the code in detail. Should we handle this with AI? If so, a return_statements additon for each add and update function helper/tool, informing AI to add the docstring if it has not. This allows AI to do the "thinking" instead of code to add the appropriate docstring. OR, we could provide the docstrings for each function in the return value, with a note to AI to add these, if not added, as docstring to the function(s), and note that the comment syntax should be adjusted based on language. 
+Should we, upon add/update functions, use code to get the file path, find the function, add a docstring to the function based on the database entry metadata? Including ID, parameters, return types, etc? If so, we will need a boilerplate for this so that variables can be replaced and string can be appended to function. Should check for existing docstring, verify it matches format, remove and replace if it does not. To make thinks easier, might add a lookup string "Docstring" and "/Docstring" for quicker verification. This runs into the same issue as header metadata for files. We don't know comment syntax for file/language type. We could write a bunch of logic and have a core db table with comment syntax (opening and closing) for each language. But that gets to be a mess. We could include in the return, the appropriate Docstring and let AI add it. Or we could modify the file name with the function ID. functionName-ID43(){}. This shouldn't be difficult with code. If we do this we would have to have some helper functions to automate this:
+
+TODO function name update helpers.
+HELPERS is_sub_helper=true
+update_function_metadata(function_id)
+update_function_name(function_id, new_name)
+
+update_function_metadata verifies function_id exists
+   creates new_name = existing_name + -ID{function_id}
+   calls update_function_name(function_id, new_name)
+      uses get_function(function_id) to get function file_id and function name
+      uses get_file(file_id) to get file path
+
+      variables $file_path, $existing_name, $new_name, $file_id, $function_id
+      compares existing function name to new function name.
+      if the same, prepare to return but first a sanity check:
+      Get's file and and searches for existing_name
+      if not found return error 
+      $err = "function name in database $existing_name with function table id function_id, was not found in the file it belongs to (path $path, file table id $file_id)."
+      if function names were the same
+      $err .= "existing function name is the same as the new function name"
+
+      if function was found in file and existing_name == new_name      
+      return "existing function name is the same as the new function name";
+
+      if function found and existing_name != new_name
+      replace function string existing_name with new_name. This needs to be coded carefully.
+      if existing function is parseValueForThing, or parse_value_for_thing or whatever, it's possible that string exists ParseValueForThing or parse_value_for_thing_by_name or something. Much run replacement carefully. All calls to this function should also be replaced. Must do a serch for calls to this function programatically and replace all. CAREFULLY.
+      
+
+      update_file_name(file_id, new_name)
+      get_file(file_id) get's file path from return data.
+      get's actual file
+         renames file with new_name
+      updates file path with adjusted new_name for file_id
+
+
+
+HELPERS is_sub_helper=false
+rename_function(function_id, new_name) alias
+   calls update_function_name(function_id, new_name)
 
 ## adding functions
 additional-helper-project.md:
@@ -105,9 +228,10 @@ dependencies are in the interactions table. This function isn't correct at all. 
 add_function should take name, file ID, purpose, parameters, returns? Should we add the function return values if exist? If so, then this should be a filed added to the functions table.
 ID is known by AI because it was working on the file before the update tool call and id is stored in file header metadata on file create automatically. 
 
-TOOL
+TOOLS
 add_function(name, file_id, purpose, params, returns)
-update_file_timestamp(file_id) called
+   update_function_metadata(function_id) called
+   update_file_timestamp(file_id) called
 
 created at field given current timestamp
 updated at filed not update.
@@ -119,12 +243,14 @@ helper/tool return must include function table new entry id and a note "Do any i
 These return notes should be added in as new filed in helper_functions table in MCP core database.
 return_statements. String, text or json. Not sure. All tools will query their own function by name and get the return statement before returning values. Return statement will be appending to return from helper functions.
 
+TOOL
+delete_function(function_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all types with function_id and if exists must delete all types_functions with function_id. must delete all interactions with function_id as source or target.
 
 ## Need to evaluate interactions table. How useful is it?
 
 ## updating functions
 TOOL
-update_function(name, purpose=None, parameters=None, returns=None)
+update_function(function_id, purpose=None, parameters=None, returns=None)
 we will manage updated_at timestamp if sqlite doesn't do this automatically. Check purpose, parameters and returns for None to identify whether those fields need to be updated. 
 
 return_statements should include "are there any interactoins with this function"
@@ -132,7 +258,7 @@ return_statements should include "are there any interactoins with this function"
 return data should include function ID and interaction data for that function. Use get_interactions and append to return data with a note "do interactions need updating?". AI will always get and read the return data, so if it includes the necessary data for potential chaining, AI doesn't have to execute additional commands which would be needed anyway. We can think ahead for this.
 
 HELPER is_sub_helper=false
-update_function_file_location(name, old_file_id, new_file_id) 
+update_function_file_location(function_id, old_file_id, new_file_id) 
 This will be a helper function, not a tool. available for use but file location parameter not included in standard update_function tool because it's seldom, if ever, to be changed. The file a function lives in, once set, should be pretty much static. But there are occasions where a function might need to be moved to another file (probably for organization purposes) and so we should have a helper function for this. Any three parameters not found in db, return error so AI knows it needs to check param values.
 update_file_timestamp(file_id) called 
 
@@ -200,35 +326,45 @@ add_interactions(aray of [(source, target, type, description),(source, target, t
 ## file_flows
 TOOLS
 add_file_flows(file_id, flow_id)
+   This calls update_file_metadata(id)
 get_files_by_flow(flow_id)
-get_flows_for_file(file_id)
+get_flows_for_file(file_id) This returns array of flow ids, then loops through flow id's to get
 NO update file_flows table. Just remove and add a new one with correct information.
 
 HELPERS
 get_all_file_flows()
+delete_file_flows(file_flows_id)
+calls update_file_metadata(file_id)
 
 ## themes
 name description ai_generated BOOLEAN confidence_score REAL DEFAULT 0.0
 
 TOOLS
 add_theme(name, description, ai_generated, confidence_score)
+get_theme(theme_id)
+get_theme_by_name(theme_name)
 get_all_themes()
-get_themes_by_confidence(greater_than) score must be greater than or equal to value passed
+update_theme(them_id, name:None, description:None, confidence_score:None) theme_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
 
 HELPERS
 get_themes_by_maker(who_generated) "ai" or "user"
-
+get_themes_by_confidence(greater_than) score must be greater than or equal to value passed
+get_theme_name_by_id(theme_id)
 
 ## flows
 name description ai_generated BOOLEAN confidence_score REAL DEFAULT 0.0
 
 TOOLS
 add_flow(name, description, ai_generated, confidence_score)
-get_flows_by_confidence(greater_than) score must be greater than or equal to value passed
+get_flow(flow_id)
+get_all_flows()
+update_flow(flow_id, name:None, descripton:None, confidence_score:None) flow_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
 
 HELPERS
-get_all_flows()
 get_flows_by_maker(who_generated) "ai" or "user"
+get_flows_by_confidence(greater_than) score must be greater than or equal to value passed
+get_flow_name_by_id(flow_id)
+get_flow_names_by_ids(flow_ids:array)
 
 ## completion_path
 name order_index -- For explicit ordering (1, 2, 3...) status -- pending, in_progress, complete description
@@ -259,6 +395,19 @@ subtasks are children to tasks so the milestone is inherited from parent task. s
 tasks have a flow_ids json table for related flows. We shouldn't have the need for getting tasks by flow as a general rule. tasks should be usually linear. Usually about one task at a time. Once items are complete, task is marked as complete and no real need for accessing that task in the future apart from general review for potential historical reference. But for task context, flows will be useful and therefore the flow_ids fields lists them. Should have a tool to update task flows and get task flows. These are separate from the general get tasks tool as they may probably be used more often. Subtasks inherit task flow(s). Sidequests are not necessarily flow specific. 
 
 items are a series of task/subtask/sidequest items. The task/subtask/sidequest are high level descriptors of the set of "items" that must be accomplished. The items for that task/subtask/sidequest are created and must be fully completed before the task/subtask/sidequest can be marked as complete. This isn't a strict rule that should be forced however as a user can decide a task is complete and that certain items can be discarded. AI should discard accordingly, but this is normal user/AI interaction and doesn't need to be added to directives. We just don't want to make the directives too strict and so I'm clarifying my statemnt that "items.. must be fully complete before task/subtask/sidequest can be marked as complete" in order to show it as a generally obvious rule but not a strictly forced directive.
+
+## Tasks
+tasks linked to flows. flows linked to files. this relationship for tasks to files is sufficent as tasks are very temporary. Once done, they are only there for potential historical reference, nothing more. So getting flows for task, then get_files_by_flow(flow_id). Can loop through flows for all related files if necessary. 
+
+TODO: code for loop above. code for getting status
+
+
+## Subtasks
+
+## Sidequests
+
+## Items
+
 
 ## notes 
 reference table reference id
