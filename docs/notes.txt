@@ -47,7 +47,7 @@ REVIEW ALL HELPER FUNCTIONS. AI made many mistakes, making up parameters, ommitt
 document flow ids json filed to tasks and sidequests tables in project db schema
 remove project id, update documentation to reflect
 
-return data from functions should always add notes for any directive/db/etc. chaining.
+return_statements for tools and other relevant helpers should always add notes for any directive/db/etc. chaining.
 
 add delete for each individual project table
 
@@ -73,4 +73,18 @@ database change:
 function names unique
 
 database change:
+functions table add returns filed to provide return values for function
+
+database change:
 add return_statements_helpers table to core db. This will map return statements to helper functions. We can add many statements for each helper function.
+
+database change:
+CREATE TABLE types_functions (
+    type_id INTEGER REFERENCES types(id),
+    function_id INTEGER REFERENCES functions(id),
+    role TEXT  -- e.g. 'constructor', 'method', 'operator', etc.
+);
+If useful. Discuss. Would there typically be a many to many relationship between types and functions? If so, should we add _idXXX to types like we do with functions? Potential logic detailed in info-helpers-project.txt
+
+database change:
+??? should we add file_id to types???

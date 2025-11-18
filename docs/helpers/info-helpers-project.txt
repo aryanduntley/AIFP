@@ -125,20 +125,24 @@ calls rename_file(file_id, name) name variable used, same as name var used for a
 
       get's actual file
       renames file with new_name
-      updates file path and file_name with adjusted normalized_new_name for file_id in database
+      updates file path and file_name with adjusted normalized_new_name for file_id in database.
       MUST!!!! search all files for calls to this file. MUST DO SO CAREFULLy so that we aren't searching for a string that could potentially have differences. fileName.py replaced with fileName-ID312.py for example. It's possibe that we need to search for fileName (imports) but CAREFUL not to match fileNameTwo and end up with fileName-ID312Two. This MUST be avoided. So we should be careful and thorough with this search replace code. We must be sure to exclude anything outside of src as well. We do not want to be searching dependency files/folders etc. This could cause freezing and/or extreme time while the code gets stuck in some extensive, unnecessary search.
+
+      If no triggers
+      calls update_file_timestamp(file_id)
+      but we really should have triggers so we don't have to do this
 
 HELPER is_sub_helper=true
 update_file_timestamp(file_id) this is primarily for function updates. If a function is updated, the file last updated timestamp should be updated. checksum gets updates (since this call is automated after every function update). No need for a separate call by AI. 
+
+HELPER is_sub_helper=false
+rename_file(file_id, new_name)
 
 TOOLS
 get_file(file_id)
 update_file(file_id, new_path(*Can Be Null), language(*Can Be Null))
    Code should allow path change, but NOT file name change.
    File name changes must be done with rename_file(file_id, new_name)
-
-HELPER is_sub_helper=false
-rename_file(file_id, new_name)
 
 update_file_by_path(old_path, new_path(*Can Be Null), language(*Can Be Null))code should allow path change, but NOT file name change. This must be done with rename_file(file_id, new_name)
 return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
@@ -148,7 +152,8 @@ File should have a has_changed function. Simply return true or false.
 TOOL
 file_has_changed(file_id) creates checksum of file, then evaluates against current checksum in db. returns true/false
 
-For all tables since we have both created at and updated at, we should have a check for setters and automatically add updated at if exists, automatically add created at if not exists and ignore the other in both cases (if create then ignore update, if update then ignore create). AI should not have to worry about created at, updated at, checksums. These should be automated. 
+IF TRIGGERS NOT DOABLE:
+For all tables since we have both created at and updated at, we should have a check for setters and automatically add updated at if exists, automatically add created at if not exists and ignore the other in both cases (if create then ignore update, if update then ignore create). AI should not have to worry about created at, updated at, checksums. These should be automated. But if triggers for this can be done, we don't have to worry about it
 
 HELPER is_sub_helper=false
 get_function(function_id)
@@ -173,6 +178,7 @@ function_name_normalizer(function_name, function_id) simple function that append
       $function_data = get_function(function_id) to get function file_id and function name
          if failure because function_id does not exist in database, return error explaining issue
       $file_data =  get_file($function_data->file_id) to get file path and file name
+         if failure because file_id doesn't exist in db, return error explaining the issue
 
       $existing_name_validity = validate_function_name($function_data->name, $function_id);
       $new_name_validity = validate_function_name($new_name, $function_id);
@@ -246,7 +252,7 @@ we will manage updated_at timestamp if sqlite doesn't do this automatically. Che
 
 return_statements should include "are there any interactions with this function"
 
-return data should include function ID and interaction data for that function. Use get_interactions and append to return data with a note "do interactions need updating?". AI will always get and read the return data, so if it includes the necessary data for potential chaining, AI doesn't have to execute additional commands which would be needed anyway. We can think ahead for this.
+return data should include function ID and interaction data for that function. Use get_interactions and append to return data with return_statements "do interactions need updating?". AI will always get and read the return data, so if it includes the necessary data for potential chaining, AI doesn't have to execute additional commands which would be needed anyway. We can think ahead for this.
 
 HELPER is_sub_helper=false
 update_function_file_location(function_id, old_file_id, new_file_id) 
@@ -286,33 +292,94 @@ definition_json TEXT NOT NULL, -- JSON schema for ADT (e.g., {"type": "enum", "v
 description TEXT,
 linked_function_id INTEGER,                -- Optional: ADT associated with specific function
 
+HELPERS is_sub_helper = true
+validate_type_name($new_name, $type_id);
+type_name_normalizer($name $type_id);
+
 TOOLS:
-add_type(name, definition_json, description) (links if we won't migrate to types_functions table)
-add_types([(name, definition_json, description), (name, definition_json, description),... ])
-update_type(name, definition_json:CanBeNull, description(*Can Be Null))
-update_types([(name, definition_json(*Can Be Null), description(*Can Be Null)), (name, definition_json(*Can Be Null), description(*Can Be Null)), ...])
+add_type(name, definition_json, description, links:object, file_id?) links can be renamed to linked_function_id if we don't move to types_functions table, else it should be an object array containing the function_id and role for each array number. The type_id well be retrieved after db entry and then the types_functions table will be updated by use of add_type_function() just one or add_types_functions() several at a time
+if all changes are made, then this funciton also calls rename_type (to assign _idxxx to type name in file and database);
+update_type(id, definition_json:CanBeNull, description(*Can Be Null))
+delete_type(type_name, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all types with name.
+rename_type(type_id, new_name)
+
+      Discuss if this is useful
+      if we are to have likely many to many relationships between types and functions, then we should probably add _idxxx to types name in file as well?
+      If we do all this and add the rename_type and add _idxxx to types, we'll have to add file_id to types table as well
+      If we were to do this, the logic would look like this (pretty much exactly the same as functions):
+
+      if(empty(new_name)){
+         return error("there was no name parameter passed or it was an empty string. This parameter must be populated");
+      }
+      $type_data = get_type(type_id) to get type file_id and type name
+         if failure because type_id does not exist in database, return error explaining issue
+      $file_data =  get_file($type_data->file_id) to get file path and file name
+         if failure because file_id doesn't exist in db, return error explaining the issue
+
+      $existing_name_validity = validate_type_name($type_data->name, $type_id);
+      $new_name_validity = validate_type_name($new_name, $type_id);
+      $normalized_new_name = type_name_normalizer($new_name_validity->name, $type_id);
+      
+      Note: $existing_name_validity->valid == true assumes that $existing_name_validity->ID is not null. If ID was emtpy or null or None, $existing_name_validity->valid would be false.
+
+      if(validate_type_name->valid && validate_type_name->ID != $type_id){
+         $notes = "For some reason the pre-existing type name (${type_data->name}) had an incorrect type ID (${existing_name_validity->ID}). The type ID is (${type_id}). The new name has been cleaned and normalized, but this discrepancy is worrisome and should be investigated. This message is from rename_type."; 
+      }
+ 
+      $file_path = $file_data->path, $existing_name = type_data->name, $normalized_new_name, $type_data->file_id, $type_id
+
+      use $file_path and $file_data->name to get actual file
+      if file not found  
+      $err = "type name in database $existing_name with type table id $type_id, is listed in database with file id of $type_data->file_id. That file in the database has path $file_path abd file name $file_data->name, but the file was not found. This needs to be investigated and resolved."
+      return error($err);
+
+      get file and finds type. If type not found with $existing_name
+      return error("The existing type name is $existing_name, but when searching the file $file_path + $file_data->name from file table in database with id $type_data->file_id which is assigned to this type in the database, the type was not found in the file. Please investigate and resolve this issue");
+
+      if($existing_name == $normalized_new_name){
+         return ("File and type exist. No changes to name, nothing to change.");
+      }
+
+      replace type string existing_name with new_name. This needs to be coded carefully.
+      if existing type is parseValueForThing, or parse_value_for_thing or whatever, it's possible that string exists ParseValueForThing or parse_value_for_thing_by_name or something. Must run replacement carefully. All calls to this type should also be replaced. Must do a search for calls to this type programatically and replace all. CAREFULLY. no in-between string like variable parseValueForThingVar get's replaced with parseValueForThing_id32Var. Not good. Also, we must distiquish between a type and a variable if possible. If this is too complex programatically, then we can have AI handle this and add a directive. We'll provide the ID after adding to database and provide a return_statements with a list of added type names, their file paths, the type db entry id and the concat string for the type name (ie. _id32).
+      
+      updates the type name in the database with $normalized_new_name
+
+      return;
+
 
 ## types_functions
 TOOLS
-add_type_function(type_name, function_name, role)
-add_type_function_by_id(type_id function_id, role)
+add_type_function(type_id function_id, role)
 add_types_functions([(type_name, function_name, role),(type_name, function_name, role)...])
 
-get_type_function_by_id(id) is_sub_helper
-get_type_functions_by_function(function_name)
-get_type_functions_by_type(type_name)
+HELPERS is_sub_helper = false
+get_type_function_by_id(id)
+get_type_functions_by_function(function_id)
+get_type_functions_by_type(type_id)
 get_type_functions_by_role(role_name)
+delete_type_function(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
 
-update_type_function_role(type_name, function_name, role); updates only the role. No need to update other type_function entries. Instead, we can add a new and remove an old if necessary (remove tool is universal, takes table name and table entry id).
+update_type_function_role(type_id, function_id, role); updates only the role. No need to update other type_function entries. Instead, we can add a new and remove an old if necessary
 
 ## interactions
 Need to evaluate interactions table. How useful is it?
 
 TOOLS
-get_all_intereactions(limit=None, orderby=None), get_interactons_by_source(name, limit=None, orderby=None), get_interactions_by_target(name, limit=None, orderby=None), get_interactons_by_type(type, limit=None, orderby=None), get_interactions(source, target), get_interaction_by_name(name, limit=None, orderby=None)- gets all interactions where function name is source or target, get_interaction(id)
-update_interaction(id, source=None, target=None, type=None, descripton=None). 
+get_interaction(id)
 add_interaction(source, target, type, description)
 add_interactions(aray of [(source, target, type, description),(source, target, type, description),...])
+update_interaction(id, source=None, target=None, type=None, descripton=None). 
+
+HELPERS is_sub_helper = false
+get_all_intereactions(limit=None, orderby=None)
+get_interactons_by_source(name, limit=None, orderby=None)
+get_interactions_by_target(name, limit=None, orderby=None)
+get_interactons_by_type(type, limit=None, orderby=None)
+get_interactions(source, target)
+get_interaction_by_name(name, limit=None, orderby=None)- gets all interactions where function name is source or target
+delete_interaction(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
 
 ## file_flows
 TOOLS
@@ -322,10 +389,12 @@ get_files_by_flow(flow_id)
 get_flows_for_file(file_id) This returns array of flow ids, then loops through flow id's to get
 NO update file_flows table. Just remove and add a new one with correct information.
 
-HELPERS
+HELPERS is_sub_helper = false
 get_all_file_flows()
 delete_file_flows(file_flows_id)
 calls update_file_metadata(file_id)
+delete_file_flow(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
 
 ## themes
 name description ai_generated BOOLEAN confidence_score REAL DEFAULT 0.0
@@ -337,10 +406,14 @@ get_theme_by_name(theme_name)
 get_all_themes()
 update_theme(them_id, name(*Can Be Null), description(*Can Be Null), confidence_score(*Can Be Null)) theme_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
 
-HELPERS
+HELPERS is_sub_helper = false
 get_themes_by_maker(who_generated) "ai" or "user"
 get_themes_by_confidence(greater_than) score must be greater than or equal to value passed
 get_theme_name_by_id(theme_id)
+
+TODO:
+delete_theme(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
 
 ## flows
 name description ai_generated BOOLEAN confidence_score REAL DEFAULT 0.0
@@ -351,16 +424,25 @@ get_flow(flow_id)
 get_all_flows()
 update_flow(flow_id, name(*Can Be Null), descripton(*Can Be Null), confidence_score(*Can Be Null)) flow_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
 
-HELPERS
+HELPERS is_sub_heper = false
 get_flows_by_maker(who_generated) "ai" or "user"
 get_flows_by_confidence(greater_than) score must be greater than or equal to value passed
 get_flow_name_by_id(flow_id)
 get_flow_names_by_ids(flow_ids:dict/array)
 
+TODO:
+delete_flow(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
+
 ## completion_path
 name order_index -- For explicit ordering (1, 2, 3...) status -- pending, in_progress, complete description
 
 TOOLS
+
+HELPERS is_sub_helper = false
+
+TODO:
+delete_completion_path_step(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
 
 
 ## milestones
@@ -369,6 +451,8 @@ milestones relate to a certain step in the completion path. There could be many 
 
 TOOLS
 
+HELPERS is_sub_helper = false
+
 ## flow_themes
 TOOLS
 add_flow_themes(flow_id, theme_id)
@@ -376,8 +460,11 @@ get_flows_for_theme(theme_id)
 get_themes_for_flow(flow_id)
 NO update flow_themes table. Just remove and add a new one with correct information.
 
-HELPER
+HELPERS is_sub_helper = false
 get_all_flow_themes()
+
+delete_flow_themes(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
 
 ## tasks, subtasks, sidequests and items. 
 These all have to do with project progress tracking.
@@ -392,16 +479,53 @@ tasks linked to flows. flows linked to files. this relationship for tasks to fil
 
 TODO: code for loop above. code for getting status
 
+TOOLS
+
+HELPERS is_sub_helper = false
+
+TODO
+delete_task(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
 
 ## Subtasks
 
+TOOLS
+
+HELPERS is_sub_helper = false
+
+TODO
+delete_subtask(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
+
 ## Sidequests
 
+TOOLS
+
+HELPERS is_sub_helper = false
+
+TODO
+delete_sidequest(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
 ## Items
+
+TOOLS
+
+HELPERS is_sub_helper = false
+
+TODO
+delete_item(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
 
 
 ## notes 
 reference table reference id
+
+TOOLS
+
+HELPERS is_sub_helper = false
+
+TODO
+delete_note(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
 
 ## appropriate git getters and setters
 
