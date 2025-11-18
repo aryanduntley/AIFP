@@ -70,10 +70,10 @@ I was going to add a header comment for each file, but there are so many differe
 
 add file:
 file table entry id returned, name var available already
-calls update_file_name(file_id, name) name variable used, same as name var used for add_file
+calls rename_file(file_id, name) name variable used, same as name var used for add_file. function defined below
 
    LOGIC::
-   update_file_name(file_id, new_name)
+   rename_file(file_id, new_name)
       if(empty(new_name)){
          return error("there was no name parameter passed or it was an empty string. This parameter must be populated");
       }
@@ -112,7 +112,7 @@ calls update_file_name(file_id, name) name variable used, same as name var used 
       Note: $existing_name_validity->valid == true assumes that $existing_name_validity->ID is not null. If ID was emtpy or null or None, $existing_name_validity->valid would be false.
 
       if($existing_name_validity->valid && $existing_name_validity->ID != $file_id){
-        $notes = "For some reason the pre-existing file name (${existing_name}) had an incorrect file ID (${existing_name_validity->ID}). The file ID is (${file_id}). The new name has been cleaned and normalized, but this discrepancy is worrisome and should be investigated. This message is from update_file_name. Could be direct or via the alias rename_file.";
+        $notes = "For some reason the pre-existing file name (${existing_name}) had an incorrect file ID (${existing_name_validity->ID}). The file ID is (${file_id}). The new name has been cleaned and normalized, but this discrepancy is worrisome and should be investigated. This message is from rename_name.";
       }
 
       get actual file from row_data->path and row_data->name
@@ -130,15 +130,15 @@ calls update_file_name(file_id, name) name variable used, same as name var used 
 
 HELPER is_sub_helper=true
 update_file_timestamp(file_id) this is primarily for function updates. If a function is updated, the file last updated timestamp should be updated. checksum gets updates (since this call is automated after every function update). No need for a separate call by AI. 
-update_file_name(file_id, new_name) This function defined above under add_file at "LOGIC::"
 
 TOOLS
 get_file(file_id)
 update_file(file_id, new_path(*Can Be Null), language(*Can Be Null))
    Code should allow path change, but NOT file name change.
    File name changes must be done with rename_file(file_id, new_name)
-rename_file(file_id, new_name) alias
-   calls update_file_name(file_id, new_name)
+
+HELPER is_sub_helper=false
+rename_file(file_id, new_name)
 
 update_file_by_path(old_path, new_path(*Can Be Null), language(*Can Be Null))code should allow path change, but NOT file name change. This must be done with rename_file(file_id, new_name)
 return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
@@ -163,11 +163,10 @@ FUNCTION METADATA
 Will add function ID to function name. so it's always readily available. could be placed in docstring, but trying to account for all language syntax becomes a problem.
 
 HELPERS is_sub_helper=true
-update_function_name(function_id, new_name) defined below
 validate_function_name(function_name, function_id) checks if function name contains function ID and returns true or false and an object or dic with function_name parsed into parts (function_name->name, function_name->ID)
 function_name_normalizer(function_name, function_id) simple function that appends the function id to function name (function_name_id32 ) we'll keep id lower case for function names to ensure cross compatibility with all languages. AI can name functions in whatever way it wants, but we'll append with _idXXXX lower case and underscore to ensure compatibility since we will be doing this with code and not AI.
 
-   update_function_name(function_id, new_name)
+   rename_function(function_id, new_name)
       if(empty(new_name)){
          return error("there was no name parameter passed or it was an empty string. This parameter must be populated");
       }
@@ -182,7 +181,7 @@ function_name_normalizer(function_name, function_id) simple function that append
       Note: $existing_name_validity->valid == true assumes that $existing_name_validity->ID is not null. If ID was emtpy or null or None, $existing_name_validity->valid would be false.
 
       if(validate_function_name->valid && validate_function_name->ID != $function_id){
-         $notes = "For some reason the pre-existing function name (${function_data->name}) had an incorrect function ID (${existing_name_validity->ID}). The function ID is (${function_id}). The new name has been cleaned and normalized, but this discrepancy is worrisome and should be investigated. This message is from update_function_name. Could be direct or via the alias rename_function."; 
+         $notes = "For some reason the pre-existing function name (${function_data->name}) had an incorrect function ID (${existing_name_validity->ID}). The function ID is (${function_id}). The new name has been cleaned and normalized, but this discrepancy is worrisome and should be investigated. This message is from rename_function."; 
       }
  
       $file_path = $file_data->path, $existing_name = function_data->name, $normalized_new_name, $function_data->file_id, $function_id
@@ -207,12 +206,8 @@ function_name_normalizer(function_name, function_id) simple function that append
 
       return;
 
-
-
-
 HELPERS is_sub_helper=false
-rename_function(function_id, new_name) alias
-   calls update_function_name(function_id, new_name)
+rename_function(function_id, new_name)
 
 ## adding functions
 additional-helper-project.md:
@@ -226,7 +221,7 @@ ID is known by AI because it was working on the file before the update tool call
 
 TOOLS
 add_function(name, file_id, purpose, params, returns)
-   update_function_name(function_id, name) called
+   rename_function(function_id, name) called
    update_file_timestamp(file_id) called
 
 created at field given current timestamp
@@ -249,7 +244,7 @@ TOOL
 update_function(function_id, purpose=None, parameters=None, returns=None)
 we will manage updated_at timestamp if sqlite doesn't do this automatically. Check purpose, parameters and returns for None to identify whether those fields need to be updated. 
 
-return_statements should include "are there any interactoins with this function"
+return_statements should include "are there any interactions with this function"
 
 return data should include function ID and interaction data for that function. Use get_interactions and append to return data with a note "do interactions need updating?". AI will always get and read the return data, so if it includes the necessary data for potential chaining, AI doesn't have to execute additional commands which would be needed anyway. We can think ahead for this.
 
