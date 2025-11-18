@@ -200,7 +200,7 @@ function_name_normalizer(function_name, function_id) simple function that append
       }
 
       replace function string existing_name with new_name. This needs to be coded carefully.
-      if existing function is parseValueForThing, or parse_value_for_thing or whatever, it's possible that string exists ParseValueForThing or parse_value_for_thing_by_name or something. Must run replacement carefully. All calls to this function should also be replaced. Must do a search for calls to this function programatically and replace all. CAREFULLY. no in-between string like variable parseValueForThingVar get's replaced with parseValueForThing_id32Var. Not good. Also, we must distiquish between a function and a variable if possible. If this is too complex programatically, then we can have AI handle this and add a directive. We'll provide the ID after adding to database and provide a return_statement with a list of added function names, their file paths, the function db entry id and the concat string for the function name (ie. _id32).
+      if existing function is parseValueForThing, or parse_value_for_thing or whatever, it's possible that string exists ParseValueForThing or parse_value_for_thing_by_name or something. Must run replacement carefully. All calls to this function should also be replaced. Must do a search for calls to this function programatically and replace all. CAREFULLY. no in-between string like variable parseValueForThingVar get's replaced with parseValueForThing_id32Var. Not good. Also, we must distiquish between a function and a variable if possible. If this is too complex programatically, then we can have AI handle this and add a directive. We'll provide the ID after adding to database and provide a return_statements with a list of added function names, their file paths, the function db entry id and the concat string for the function name (ie. _id32).
       
 
       updates the function name in the database with $normalized_new_name
@@ -235,7 +235,7 @@ TRIGGERS NEED TO BE SET FOR THESE SO WE DON"T HAVE TO MANAGE MANUALLY WITH EVERY
 
 return_statements should include "are there any interactoins with this function"
 
-helper/tool return must include function table new entry id and a note "Do any interactions need to be added for this new function? Does the file database entry need to be updated?".
+helper/tool return must include function table new entry id and a return_statements "Do any interactions need to be added for this new function? Does the file database entry need to be updated?".
 These return notes should be added in as new filed in helper_functions table in MCP core database.
 return_statements. String, text or json. Not sure. All tools will query their own function by name and get the return statement before returning values. Return statement will be appending to return from helper functions.
 

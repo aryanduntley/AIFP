@@ -49,6 +49,11 @@ remove project id, update documentation to reflect
 
 return data from functions should always add notes for any directive/db/etc. chaining.
 
+add delete for each individual project table
+
+database change:
+TRIGGERS
+
 - Triggers for timestamp updates
 CREATE TRIGGER IF NOT EXISTS update_project_timestamp
 AFTER UPDATE ON project
@@ -57,3 +62,15 @@ BEGIN
     UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 what is "OLD.id" about?
+
+database change:
+add name to file table. Not just path. If name is there, should path NOT include name? name filed helps with updating name and appending id without having to parse path.
+
+database change:
+remove project field (or project_id) from all tables except project table.
+
+database change:
+function names unique
+
+database change:
+add return_statements_helpers table to core db. This will map return statements to helper functions. We can add many statements for each helper function.
