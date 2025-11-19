@@ -88,3 +88,6 @@ If useful. Discuss. Would there typically be a many to many relationship between
 
 database change:
 ??? should we add file_id to types???
+
+database change:
+add is_reserved field to tables files, functions and types. AI must first reserve to get id's then make files / write functions (or types) with appropriate naming -IDxxx for files _idxxx for functions and types. Once made and written to, AI can finalize the entries with the real data and mare is_reserved as false.

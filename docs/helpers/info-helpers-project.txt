@@ -54,98 +54,47 @@ should have an add_file tool and set_function tool to quickly and easily update 
 WE SHOULD ADD file_name to files table. After doing so, should we include file name in path?
 
 TOOL
-add_file(path, language)
+reserve_file(name, path, language)
+reserve_files([(name,path,language), (name,path,language),...])
+finalize_file(file_id, name, path, language) acts as an update, but automtically removes the is_reserved flag
+finalize_files([(file_id, name, path, language), (file_id, name, path, language), ...])
 checksum automated with code (created_at automated with trigger)
 return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
-checks if file actually exists in path, return "file does not exists, cannot add to database" not exists
-uses update_file_metadata(id)
+checks if file actually exists in path. If not exists return "file does not exists, cannot add to database"
 
 delete_file(file_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all file_flows with file_id. must get all functions id's with file_id. must delete all types with function_id and if exists must delete all types_functions with function_id. must delete all interactions with function_id as source or target. must delete all functions with file_id
 
-HELPER is_sub_helper=true
-validate_file_name(file_name, file_id, flow_string) checks if file name contains file ID and returns an object or dict with true or false and with file_name parsed into parts (file_name->name, the file_name->ID, and a subobject with the file_name->flows whether they're id's only or name:id pairs depending on what we dicide is best only one way should be used)
-file_name_normalizer(file_name, file_id, flow_string) what this does listed below
-
+NOTE: DIRECTIVES UPDATE NEEDED
 I was going to add a header comment for each file, but there are so many different comment types based on language and file extension that I don't want to have to have a bunch of logic to do this. We could return the desired metadata to AI to figure out comment syntax and add the metadata itself, but I really want to keep AI from dealing with EVERYTHING and let code handle things that are very routine and shouldn't require much thinking (I don't want to write the logic). So, for file metadata I think this should happen:
+I have made another modification. I was going to automatically with rename_file and rename_function programmatically change the file names with -IDxxx and function names with _idxxx called after every add_file or update_file. But is could be VERY error prone. Instead, we'll make a reserve system. AI will first have to reserve_file/reserve_files or reserve_function/reserve_functions to get reserved ID's. These tables that will have associated file/function/type id's must have an is_reserved filed added to the tables. This will return the ID's for proper naming. After create/write, AI can then call finalize functions to populate the data correctly.
 
-add file:
-file table entry id returned, name var available already
-calls rename_file(file_id, name) name variable used, same as name var used for add_file. function defined below
+remove ALL add_file or similar. Must reserve and then finalize instead of simply "add".
 
-   LOGIC::
-   rename_file(file_id, new_name)
-      if(empty(new_name)){
-         return error("there was no name parameter passed or it was an empty string. This parameter must be populated");
-      }
-      row_data = get_file(file_id) get's file data.
-
-      $new_name_id, $existing_name = row_data->file_name, $existing_name_id, $file_id, $notes;
-
-      flow_ids = get_flows_for_file(file_id)
-
-         IF WE WILL ADD FLOW NAMES:
-         flow_names = get_flow_names_by_ids(flow_ids:dict/array)
-
-            with file id, flow name and flow id:
-            originalname-ID{file_id}-{flowname_flowid}-{flowname_flowid}.ext
-            checkout-ID42-payment_3-login_7-registration_1.json
-
-            OR
-
-            with file id and flow id:
-            originalname-ID{file_id}-{3_7_1}.json
-            checkout-ID42-3_7_1.json
-
-            Which do you think is best? The flow name is more accessible to AI and people than just a number. We know "what" flow it is. With just a number, we have to call get_flow_name_by_id(flow_id) to get the flow name or get_flow(flow_id) which will return all flow data. So the real question is whether having the name and id allow for fewer database queries as the information is available right in the file name. I don't want the file names to get ridiculously long though. A file shouldn't be related to too many flows though. Not sure about this.
-
-      flow_string = make flow string from above
-      
-      existing_name_validity = validate_file_name(existing_name, file_id, flow_string);
-      new_name_validity = validate_file_name(new_name, file_id, flow_string);
-      
-      clean up the new name, even if it's correct. Instead of checking, we'll just ensure it's correct.
-      $normalized_new_name = file_name_normalizer(new_name_validity->name, file_id, flow_string)
-
-      existing_name_id = existing_name_validity->ID
-      new_name_id = new_name_validity->ID
-
-      Note: $existing_name_validity->valid == true assumes that $existing_name_validity->ID is not null. If ID was emtpy or null or None, $existing_name_validity->valid would be false.
-
-      if($existing_name_validity->valid && $existing_name_validity->ID != $file_id){
-        $notes = "For some reason the pre-existing file name (${existing_name}) had an incorrect file ID (${existing_name_validity->ID}). The file ID is (${file_id}). The new name has been cleaned and normalized, but this discrepancy is worrisome and should be investigated. This message is from rename_name.";
-      }
-
-      get actual file from row_data->path and row_data->name
-      if file not exists
-      return error("Unable to find file listed in datbase with file id $file_id and path $row_data->path. Please investigate and make sure the file exists.)
-
-      if($existing_name == $normalized_new_name){
-         return ("File exist. No changes to name, nothing to change." + $notes);
-      }
-
-      get's actual file
-      renames file with new_name
-      updates file path and file_name with adjusted normalized_new_name for file_id in database.
-      MUST!!!! search all files for calls to this file. MUST DO SO CAREFULLy so that we aren't searching for a string that could potentially have differences. fileName.py replaced with fileName-ID312.py for example. It's possibe that we need to search for fileName (imports) but CAREFUL not to match fileNameTwo and end up with fileName-ID312Two. This MUST be avoided. So we should be careful and thorough with this search replace code. We must be sure to exclude anything outside of src as well. We do not want to be searching dependency files/folders etc. This could cause freezing and/or extreme time while the code gets stuck in some extensive, unnecessary search.
-
-      If no triggers
-      calls update_file_timestamp(file_id)
-      but we really should have triggers so we don't have to do this
+reserve_file(name, path, language)
+reserve_files() array of parameters
+   name, path and language aren't extremely necessary, but it's ok to put useful or expected data here
+   simply add to database the values. Triggers set created_at. No checksum created. is_reserved is set to 1/true
+   returns reserved id or id's for use in file name
+   FILE NAMING CONVENTION is name-IDxxx (-ID1 or -ID32, etc)
+   return_statements should include "Use the returned id(s) for file naming. File names should be suffixed with -IDxx. Once created, call finalize_file(s) to update file name and any other data.'
+finalize_file(file_id, name, path, language)
+finalize_files() array of parameters
+   name, path and language updated with real values (name definitely update since new name will contain the entry id, others are optional since it's possible there were no changes to the data from reserving)
+   checks if file actually exists in path. If not exists return "file does not exists, cannot add to database"
+   checksum created
+   triggers set updated_at
+   is_reserved set to 0/false
+   return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
 
 HELPER is_sub_helper=true
 update_file_timestamp(file_id) this is primarily for function updates. If a function is updated, the file last updated timestamp should be updated. checksum gets updates (since this call is automated after every function update). No need for a separate call by AI. 
 
-HELPER is_sub_helper=false
-rename_file(file_id, new_name)
-
 TOOLS
 get_file(file_id)
-update_file(file_id, new_path(*Can Be Null), language(*Can Be Null))
-   Code should allow path change, but NOT file name change.
-   File name changes must be done with rename_file(file_id, new_name)
-
-update_file_by_path(old_path, new_path(*Can Be Null), language(*Can Be Null))code should allow path change, but NOT file name change. This must be done with rename_file(file_id, new_name)
-return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
+update_file(file_id, new_name(*Can Be Null), new_path(*Can Be Null), language(*Can Be Null))
+   null means do not update this field.
+   checksum must be updated automatically here
+   return_statements should include "verify flows are added, if necessary, for this file in file_flows table", "Ensure that any name or path changes are thoroughly changed in the code base as well"
 
 File should have a has_changed function. Simply return true or false. 
 
@@ -159,61 +108,26 @@ HELPER is_sub_helper=false
 get_function(function_id)
 get_function_by_name(function_name)
 
-We have get_function_by_name but we should also have a get_function(id) that can be used for a quicker query by index id, if needed this will be used probably internally. If not needed now, it's handy to have already for any potential use case in the future or if AI has the ID but lost context or never had context regarding function entry table. Potentially a getter of a list of function ID's or some reference to function by ID and need to retrieve the rest of the function db data.
-
 FUNCTION NAMES UNIQUE!!!!
 Since this is FP, we do not have classes and therefore, function names cannot be duplicate??????? This is language agnostic so we don't know what language the use will be using and therefore we can't assume that the language will allow overloading. We should either make the name unique in database table as flat or create a function sig with name and params and force the sig to be unique. What do you think is best? Is overloading absolutely necessary? Our get_function for instance. We could have overloading get_function(id), and get_function(name). Or we could have get_function(id(*Can Be Null), name(*Can Be Null)){if id and name are none, return error; one is required}. or we could just be very explicit like what we are doing with get_function_by_name(name) and get_function(function_id). So maybe we should make the function names unique. add function should throw errors when duplicate function names are used.
 
+NOTE: DIRECTIVES UPDATE NEEDED
 FUNCTION METADATA
-Will add function ID to function name. so it's always readily available. could be placed in docstring, but trying to account for all language syntax becomes a problem.
+Will add function ID to function name. so it's always readily available. could be placed in docstring, but trying to account for all language syntax becomes a problem. NAMING CONVENTION _idxxx (_id1 or _id32, etc.) as suffix
 
-HELPERS is_sub_helper=true
-validate_function_name(function_name, function_id) checks if function name contains function ID and returns true or false and an object or dic with function_name parsed into parts (function_name->name, function_name->ID)
-function_name_normalizer(function_name, function_id) simple function that appends the function id to function name (function_name_id32 ) we'll keep id lower case for function names to ensure cross compatibility with all languages. AI can name functions in whatever way it wants, but we'll append with _idXXXX lower case and underscore to ensure compatibility since we will be doing this with code and not AI.
-
-   rename_function(function_id, new_name)
-      if(empty(new_name)){
-         return error("there was no name parameter passed or it was an empty string. This parameter must be populated");
-      }
-      $function_data = get_function(function_id) to get function file_id and function name
-         if failure because function_id does not exist in database, return error explaining issue
-      $file_data =  get_file($function_data->file_id) to get file path and file name
-         if failure because file_id doesn't exist in db, return error explaining the issue
-
-      $existing_name_validity = validate_function_name($function_data->name, $function_id);
-      $new_name_validity = validate_function_name($new_name, $function_id);
-      $normalized_new_name = function_name_normalizer($new_name_validity->name, $function_id);
-      
-      Note: $existing_name_validity->valid == true assumes that $existing_name_validity->ID is not null. If ID was emtpy or null or None, $existing_name_validity->valid would be false.
-
-      if(validate_function_name->valid && validate_function_name->ID != $function_id){
-         $notes = "For some reason the pre-existing function name (${function_data->name}) had an incorrect function ID (${existing_name_validity->ID}). The function ID is (${function_id}). The new name has been cleaned and normalized, but this discrepancy is worrisome and should be investigated. This message is from rename_function."; 
-      }
- 
-      $file_path = $file_data->path, $existing_name = function_data->name, $normalized_new_name, $function_data->file_id, $function_id
-
-      use $file_path and $file_data->name to get actual file
-      if file not found  
-      $err = "function name in database $existing_name with function table id $function_id, is listed in database with file id of $function_data->file_id. That file in the database has path $file_path abd file name $file_data->name, but the file was not found. This needs to be investigated and resolved."
-      return error($err);
-
-      get file and finds function. If function not found with $existing_name
-      return error("The existing function name is $existing_name, but when searching the file $file_path + $file_data->name from file table in database with id $function_data->file_id which is assigned to this function in the database, the function was not found in the file. Please investigate and resolve this issue");
-
-      if($existing_name == $normalized_new_name){
-         return ("File and function exist. No changes to name, nothing to change.");
-      }
-
-      replace function string existing_name with new_name. This needs to be coded carefully.
-      if existing function is parseValueForThing, or parse_value_for_thing or whatever, it's possible that string exists ParseValueForThing or parse_value_for_thing_by_name or something. Must run replacement carefully. All calls to this function should also be replaced. Must do a search for calls to this function programatically and replace all. CAREFULLY. no in-between string like variable parseValueForThingVar get's replaced with parseValueForThing_id32Var. Not good. Also, we must distiquish between a function and a variable if possible. If this is too complex programatically, then we can have AI handle this and add a directive. We'll provide the ID after adding to database and provide a return_statements with a list of added function names, their file paths, the function db entry id and the concat string for the function name (ie. _id32).
-      
-
-      updates the function name in the database with $normalized_new_name
-
-      return;
-
-HELPERS is_sub_helper=false
-rename_function(function_id, new_name)
+   reserve_function(name, file_id, purpose, params, returns)
+   reserve_functions() array of parameters
+      name, file_id, purpose, params, returns aren't extremely necessary, but it's ok to put useful or expected data here
+      simply add to database the values. is_reserved is set to 1/true
+      returns reserved id or id's for use in function name
+      FUNCTION NAMING CONVENTION is name_idxxx (_id1 or _id32, etc)
+      return_statements should include "Use the returned id(s) for function naming. Function names should be suffixed with _idxx. Once created, call finalize_function(s) to update file name and any other data.'
+   finalize_function(function_id, name, file_id, purpose, params, returns)
+   finalize_functions() array of parameters
+      name, file_id, purpose, params, returns updated with real values (name definitely update since new name will contain the entry id, others are optional since it's possible there were no changes to the data from reserving)
+      call update_file_timestamp(file_id) (for each unique file_id). This updates the tiemstamp and checksum
+      is_reserved set to 0/false 
+      return_statements should include "verify whether any interactions need to be added to the database for this new function."
 
 ## adding functions
 additional-helper-project.md:
@@ -222,19 +136,20 @@ We do not have a signature field for functions. Necessary? Useful? Should we add
 We do not have an is_pure field in functions table. Why is this here? Is it in directives? Or did you make this up out of thin air last session? Is it useful and needed? We should discuss.
 dependencies are in the interactions table. This function isn't correct at all. Needs to be rewritten and re-evaluated. If this is completely wrong, many others might also be completely wrong. All helper functions in all helper functions files need to be reviewed.
 
-add_function should take name, file ID, purpose, parameters, returns? Should we add the function return values if exist? If so, then this should be a filed added to the functions table.
-ID is known by AI because it was working on the file before the update tool call and id is stored in file header metadata on file create automatically. 
+remove ALL add_function or similar. Must reserve and then finalize instead of simply "add".
 
 TOOLS
-add_function(name, file_id, purpose, params, returns)
-   rename_function(function_id, name) called
-   update_file_timestamp(file_id) called
+reserve_function(name, file_id, purpose, params, returns)
+   id returned for use in actual function naming. sets is_reserved to true
+reserve_functions() array of parameters
+   id's returned for use in actual function names. is_reserved set to true for each
+Created_at should be triggered
 
-created at field given current timestamp
-updated at filed not update.
-TRIGGERS NEED TO BE SET FOR THESE SO WE DON"T HAVE TO MANAGE MANUALLY WITH EVERY FUNCTION CALL
-
-return_statements should include "are there any interactoins with this function"
+finalize_function(function_id, name, file_id, purpose, params, returns)
+   is_reserved set to false/0
+finalize_functions() array of parameters
+   is_reserved set to false/0
+Updated_at should be triggered
 
 helper/tool return must include function table new entry id and a return_statements "Do any interactions need to be added for this new function? Does the file database entry need to be updated?".
 These return notes should be added in as new filed in helper_functions table in MCP core database.
@@ -242,8 +157,6 @@ return_statements. String, text or json. Not sure. All tools will query their ow
 
 TOOL
 delete_function(function_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all types with function_id and if exists must delete all types_functions with function_id. must delete all interactions with function_id as source or target.
-
-## Need to evaluate interactions table. How useful is it?
 
 ## updating functions
 TOOL
@@ -257,7 +170,8 @@ return data should include function ID and interaction data for that function. U
 HELPER is_sub_helper=false
 update_function_file_location(function_id, old_file_id, new_file_id) 
 This will be a helper function, not a tool. available for use but file location parameter not included in standard update_function tool because it's seldom, if ever, to be changed. The file a function lives in, once set, should be pretty much static. But there are occasions where a function might need to be moved to another file (probably for organization purposes) and so we should have a helper function for this. Any three parameters not found in db, return error so AI knows it needs to check param values.
-update_file_timestamp(file_id) called 
+return_statements should include "make sure that any calls or references to this function have updated paths"
+update_file_timestamp(file_id) should be called for each file (from and to)
 
 additional-helpers-project.md "#### `update_function_purity(function_name: str, is_pure: bool)`
 **Purpose**: Mark function as pure/impure after FP compliance check.
@@ -266,16 +180,15 @@ additional-helpers-project.md "#### `update_function_purity(function_name: str, 
 We don't have a purity field in the functions table. Review directives to check for any mention of this. If doesn't exist, explain use. I think we can remove this and will need to check for other useless helpers that have no database or directive mention.
 
 TOOL:
-add_functions(file_id, [(name,purpose,params,returns),(name,purpose,params,returns)...])
-update_file_timestamp(file_id) called with every add_functions using file id . For this function, it's possible that add_functions() is used as a one-shot, meaning that adding all functions done at once. File must already exist. If not exists return error informing AI that file must first be added to database.
-
-TOOL:
-update_functions_for_file(file_id,[(name, purpose=None, parameters=None, returns=None), (name, purpose=None, parameters=None, returns=None), ...])
-We will NOT have a generic update_functions (no fil ID needed). This enforces that functions in mass can only be updated for ONE file at a time. This prevents potential errors in attempting to update multiple functions accross multiple files. AI can probably handle this just fine, but it's very error prone when doing that. So if many files were modified, it can call update_functions_for_file multiple times, once for each file. It's just safer.
+update_functions_for_file(file_id,[(name=None, purpose=None, parameters=None, returns=None), (name=None, purpose=None, parameters=None, returns=None), ...])
+We will NOT have a generic update_functions (where no file ID set). This enforces that functions in mass can only be updated for ONE file at a time. This prevents potential errors in attempting to update multiple functions accross multiple files. AI can probably handle this just fine, but it's very error prone when doing that. So if many files were modified, it can call update_functions_for_file multiple times, once for each file. It's just safer.
+return_statements should include "if name changed, ensure that the prefix _idxxx is retained and if anything but purpose is updated, ensure that all references/calls in code are also updated".
 update_file_timestamp(file_id) called
 
 
 ## types
+remove ALL add_type or similar. Must reserve and then finalize instead of simply "add".
+
 linked_function_id INTEGER,                -- Optional: ADT associated with specific function
 So why the single linked_function_id?
 If your design is recording the origin or defining function of a type (not every function that can operate on it), then one function makes sense:
@@ -308,44 +221,8 @@ rename_type(type_id, new_name)
       If we do all this and add the rename_type and add _idxxx to types, we'll have to add file_id to types table as well
       If we were to do this, the logic would look like this (pretty much exactly the same as functions):
 
-      if(empty(new_name)){
-         return error("there was no name parameter passed or it was an empty string. This parameter must be populated");
-      }
-      $type_data = get_type(type_id) to get type file_id and type name
-         if failure because type_id does not exist in database, return error explaining issue
-      $file_data =  get_file($type_data->file_id) to get file path and file name
-         if failure because file_id doesn't exist in db, return error explaining the issue
-
-      $existing_name_validity = validate_type_name($type_data->name, $type_id);
-      $new_name_validity = validate_type_name($new_name, $type_id);
-      $normalized_new_name = type_name_normalizer($new_name_validity->name, $type_id);
-      
-      Note: $existing_name_validity->valid == true assumes that $existing_name_validity->ID is not null. If ID was emtpy or null or None, $existing_name_validity->valid would be false.
-
-      if(validate_type_name->valid && validate_type_name->ID != $type_id){
-         $notes = "For some reason the pre-existing type name (${type_data->name}) had an incorrect type ID (${existing_name_validity->ID}). The type ID is (${type_id}). The new name has been cleaned and normalized, but this discrepancy is worrisome and should be investigated. This message is from rename_type."; 
-      }
- 
-      $file_path = $file_data->path, $existing_name = type_data->name, $normalized_new_name, $type_data->file_id, $type_id
-
-      use $file_path and $file_data->name to get actual file
-      if file not found  
-      $err = "type name in database $existing_name with type table id $type_id, is listed in database with file id of $type_data->file_id. That file in the database has path $file_path abd file name $file_data->name, but the file was not found. This needs to be investigated and resolved."
-      return error($err);
-
-      get file and finds type. If type not found with $existing_name
-      return error("The existing type name is $existing_name, but when searching the file $file_path + $file_data->name from file table in database with id $type_data->file_id which is assigned to this type in the database, the type was not found in the file. Please investigate and resolve this issue");
-
-      if($existing_name == $normalized_new_name){
-         return ("File and type exist. No changes to name, nothing to change.");
-      }
-
-      replace type string existing_name with new_name. This needs to be coded carefully.
-      if existing type is parseValueForThing, or parse_value_for_thing or whatever, it's possible that string exists ParseValueForThing or parse_value_for_thing_by_name or something. Must run replacement carefully. All calls to this type should also be replaced. Must do a search for calls to this type programatically and replace all. CAREFULLY. no in-between string like variable parseValueForThingVar get's replaced with parseValueForThing_id32Var. Not good. Also, we must distiquish between a type and a variable if possible. If this is too complex programatically, then we can have AI handle this and add a directive. We'll provide the ID after adding to database and provide a return_statements with a list of added type names, their file paths, the type db entry id and the concat string for the type name (ie. _id32).
-      
-      updates the type name in the database with $normalized_new_name
-
-      return;
+NOTE: DIRECTIVES UPDATE NEEDED
+      TODO: reserve and finalize types
 
 
 ## types_functions
@@ -384,7 +261,6 @@ delete_interaction(id, note_reason:text, note_severit:string, note_source:string
 ## file_flows
 TOOLS
 add_file_flows(file_id, flow_id)
-   This calls update_file_metadata(id)
 get_files_by_flow(flow_id)
 get_flows_for_file(file_id) This returns array of flow ids, then loops through flow id's to get
 NO update file_flows table. Just remove and add a new one with correct information.
@@ -392,7 +268,6 @@ NO update file_flows table. Just remove and add a new one with correct informati
 HELPERS is_sub_helper = false
 get_all_file_flows()
 delete_file_flows(file_flows_id)
-calls update_file_metadata(file_id)
 delete_file_flow(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
 
 
