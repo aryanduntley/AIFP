@@ -1,4 +1,6 @@
 # PROJECT:
+NOTE: reference to (*Can Be Null) or =None is there to in indcate that the parameter is optional. Usually added to update functions so that the code can decide if passing empty value to clear value in db or passing null to skip any update to this field.
+
 remove project ID fields from all but project table. Should only be one project per database. Should enforce this.
 
 project table entry is a singular entry that defines the broader scope of the project and the infrastructure table relates to it directly.
@@ -76,7 +78,7 @@ reserve_files() array of parameters
    simply add to database the values. Triggers set created_at. No checksum created. is_reserved is set to 1/true
    returns reserved id or id's for use in file name
    FILE NAMING CONVENTION is name-IDxxx (-ID1 or -ID32, etc)
-   return_statements should include "Use the returned id(s) for file naming. File names should be suffixed with -IDxx. Once created, call finalize_file(s) to update file name and any other data.'
+   return_statements should include "Use the returned id(s) for file naming. File names should be suffixed with -IDxx. Once created, call finalize_file(s) to update file name and any other data'
 finalize_file(file_id, name, path, language)
 finalize_files() array of parameters
    name, path and language updated with real values (name definitely update since new name will contain the entry id, others are optional since it's possible there were no changes to the data from reserving)
@@ -118,16 +120,17 @@ Will add function ID to function name. so it's always readily available. could b
    reserve_function(name, file_id, purpose, params, returns)
    reserve_functions() array of parameters
       name, file_id, purpose, params, returns aren't extremely necessary, but it's ok to put useful or expected data here
-      simply add to database the values. is_reserved is set to 1/true
+      simply add to database the values
+      is_reserved is set to 1/true
       returns reserved id or id's for use in function name
       FUNCTION NAMING CONVENTION is name_idxxx (_id1 or _id32, etc)
-      return_statements should include "Use the returned id(s) for function naming. Function names should be suffixed with _idxx. Once created, call finalize_function(s) to update file name and any other data.'
+      return_statements should include "Use the returned id(s) for function naming. Function names should be suffixed with _idxx. Once created, call finalize_function(s) to update file name and any other data'
    finalize_function(function_id, name, file_id, purpose, params, returns)
    finalize_functions() array of parameters
-      name, file_id, purpose, params, returns updated with real values (name definitely update since new name will contain the entry id, others are optional since it's possible there were no changes to the data from reserving)
+      name, file_id, purpose, params, returns, are updated with real values (name required since new name will contain the entry id, others are optional since it's possible there were no changes to the data from reserving)
       call update_file_timestamp(file_id) (for each unique file_id). This updates the tiemstamp and checksum
       is_reserved set to 0/false 
-      return_statements should include "verify whether any interactions need to be added to the database for this new function."
+      return_statements should include "Do any database interactions need to be added for this function"
 
 ## adding functions
 additional-helper-project.md:
@@ -151,7 +154,6 @@ finalize_functions() array of parameters
    is_reserved set to false/0
 Updated_at should be triggered
 
-helper/tool return must include function table new entry id and a return_statements "Do any interactions need to be added for this new function? Does the file database entry need to be updated?".
 These return notes should be added in as new filed in helper_functions table in MCP core database.
 return_statements. String, text or json. Not sure. All tools will query their own function by name and get the return statement before returning values. Return statement will be appending to return from helper functions.
 
@@ -159,18 +161,19 @@ TOOL
 delete_function(function_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all types with function_id and if exists must delete all types_functions with function_id. must delete all interactions with function_id as source or target.
 
 ## updating functions
+file_id should be returned after any update so that update_file_timestamp can be called
 TOOL
-update_function(function_id, purpose=None, parameters=None, returns=None)
+update_function(function_id, name=None, purpose=None, parameters=None, returns=None)
 we will manage updated_at timestamp if sqlite doesn't do this automatically. Check purpose, parameters and returns for None to identify whether those fields need to be updated. 
 
-return_statements should include "are there any interactions with this function"
+return_statements should include "are there any interactions with this function" and "Ensure that you have updated ay and all references to this funtion if the name, parameters or returns have been changed", "Do any database interactions need to be added for this function"
 
-return data should include function ID and interaction data for that function. Use get_interactions and append to return data with return_statements "do interactions need updating?". AI will always get and read the return data, so if it includes the necessary data for potential chaining, AI doesn't have to execute additional commands which would be needed anyway. We can think ahead for this.
+return data should include function ID and interaction data for that function. Use get_interactions and append to return data with interactions return_statements. AI will always get and read the return data, so if it includes the necessary data for potential chaining, AI doesn't have to execute additional commands which would be needed anyway. We can think ahead for this.
 
 HELPER is_sub_helper=false
 update_function_file_location(function_id, old_file_id, new_file_id) 
 This will be a helper function, not a tool. available for use but file location parameter not included in standard update_function tool because it's seldom, if ever, to be changed. The file a function lives in, once set, should be pretty much static. But there are occasions where a function might need to be moved to another file (probably for organization purposes) and so we should have a helper function for this. Any three parameters not found in db, return error so AI knows it needs to check param values.
-return_statements should include "make sure that any calls or references to this function have updated paths"
+return_statements should include "make sure that any calls or references to this function have updated paths", "Do any database interactions need to be added for this function"
 update_file_timestamp(file_id) should be called for each file (from and to)
 
 additional-helpers-project.md "#### `update_function_purity(function_name: str, is_pure: bool)`
@@ -182,7 +185,7 @@ We don't have a purity field in the functions table. Review directives to check 
 TOOL:
 update_functions_for_file(file_id,[(name=None, purpose=None, parameters=None, returns=None), (name=None, purpose=None, parameters=None, returns=None), ...])
 We will NOT have a generic update_functions (where no file ID set). This enforces that functions in mass can only be updated for ONE file at a time. This prevents potential errors in attempting to update multiple functions accross multiple files. AI can probably handle this just fine, but it's very error prone when doing that. So if many files were modified, it can call update_functions_for_file multiple times, once for each file. It's just safer.
-return_statements should include "if name changed, ensure that the prefix _idxxx is retained and if anything but purpose is updated, ensure that all references/calls in code are also updated".
+return_statements should include "if name changed, ensure that the prefix _idxxx is retained and if anything but purpose is updated, ensure that all references/calls in code are also updated", "Do any database interactions need to be added for this function"
 update_file_timestamp(file_id) called
 
 
@@ -205,29 +208,45 @@ definition_json TEXT NOT NULL, -- JSON schema for ADT (e.g., {"type": "enum", "v
 description TEXT,
 linked_function_id INTEGER,                -- Optional: ADT associated with specific function
 
-HELPERS is_sub_helper = true
-validate_type_name($new_name, $type_id);
-type_name_normalizer($name $type_id);
-
 TOOLS:
-add_type(name, definition_json, description, links:object, file_id?) links can be renamed to linked_function_id if we don't move to types_functions table, else it should be an object array containing the function_id and role for each array number. The type_id well be retrieved after db entry and then the types_functions table will be updated by use of add_type_function() just one or add_types_functions() several at a time
-if all changes are made, then this funciton also calls rename_type (to assign _idxxx to type name in file and database);
-update_type(id, definition_json:CanBeNull, description(*Can Be Null))
-delete_type(type_name, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all types with name.
-rename_type(type_id, new_name)
+reserve_type(name, definition_json, description, links:object, file_id)
+   id returned for use in actual type naming
+   sets is_reserved to true
+reserve_types() array of parameters
+   id's returned for use in actual type names
+   is_reserved set to true for each
+Created_at should be triggered
+TYPE NAMING CONVENTION is name_idxxx (_id1 or _id32, etc)
+return_statements should include "Use the returned id(s) for type naming. Type names should be suffixed with _idxx. Once created, call finalize_typ(s) to update file name and any other data'
+
+finalize_type(type_id, name, definition_json, description, links:object, file_id)
+   is_reserved set to false/0
+   all values except name are optional (possibly set correctly in reserve_type)
+finalize_types() array of parameters
+   is_reserved set to false/0
+Updated_at should be triggered
+return_statements should include "verify whether any type_functions relationships need to be added to the database for this new type", "should any functions be linked in the types_functions table for this type"
+
+update_type(id, name(*Can Be Null), file_id(&Can Be Null), definition_json:CanBeNull, description(*Can Be Null))
+file_id should be returned after update so that:
+update_file_timestamp(file_id) called
+return_statements should include "are there any types_functions relationships that should be added" and "Ensure that you have updated ay and all references to this type if the name has been changed"
 
       Discuss if this is useful
       if we are to have likely many to many relationships between types and functions, then we should probably add _idxxx to types name in file as well?
-      If we do all this and add the rename_type and add _idxxx to types, we'll have to add file_id to types table as well
-      If we were to do this, the logic would look like this (pretty much exactly the same as functions):
+      and we should add file_id to types for quick file reference and updated_at call whenever a type is modified.
+      If we were to do this, the logic would look pretty much exactly the same as functions
+
+delete_type(type_name, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all types with name.
 
 NOTE: DIRECTIVES UPDATE NEEDED
-      TODO: reserve and finalize types
+TYPE METADATA
+Will add type ID to type name in code. so it's always readily available. NAMING CONVENTION _idxxx (_id1 or _id32, etc.) as suffix. Types table should have file_id filed added to track types file it belongs to.
 
 
 ## types_functions
 TOOLS
-add_type_function(type_id function_id, role)
+add_type_function(type_id, function_id, role)
 add_types_functions([(type_name, function_name, role),(type_name, function_name, role)...])
 
 HELPERS is_sub_helper = false
@@ -254,50 +273,46 @@ get_interactons_by_source(name, limit=None, orderby=None)
 get_interactions_by_target(name, limit=None, orderby=None)
 get_interactons_by_type(type, limit=None, orderby=None)
 get_interactions(source, target)
-get_interaction_by_name(name, limit=None, orderby=None)- gets all interactions where function name is source or target
+get_interaction_by_name(name, limit=None, orderby=None)
+   gets all interactions where function name is source or target
 delete_interaction(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
 
 
-## file_flows
-TOOLS
-add_file_flows(file_id, flow_id)
-get_files_by_flow(flow_id)
-get_flows_for_file(file_id) This returns array of flow ids, then loops through flow id's to get
-NO update file_flows table. Just remove and add a new one with correct information.
-
-HELPERS is_sub_helper = false
-get_all_file_flows()
-delete_file_flows(file_flows_id)
-delete_file_flow(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
-
-
 ## themes
-name description ai_generated BOOLEAN confidence_score REAL DEFAULT 0.0
-
 TOOLS
 add_theme(name, description, ai_generated, confidence_score)
+   return_statements should include "Are there any flows that should be added in flow_themes?"
 get_theme(theme_id)
 get_theme_by_name(theme_name)
 get_all_themes()
-update_theme(them_id, name(*Can Be Null), description(*Can Be Null), confidence_score(*Can Be Null)) theme_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
+
+update_theme(them_id, name(*Can Be Null), description(*Can Be Null), confidence_score(*Can Be Null))
+   theme_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
+
+IMPORTANT CONSIDER:
+delete_theme(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   A theme might have namy flows that relate to it. If a theme is deleted, there will be orphaned flows. You cannot remove flows without considering file_flow relationships. You do not want files without flows. So maybe we should have a check that ensures a theme has no flows associated to it before deletion. Otherwise, return error("flows are still assigned to theme. You must re-assign all flows in flow_themes table before deleting a theme.) This should probably also list all flows that are still assigned to the theme. This will prevent orphaned flows without any flow_themes table entries.
 
 HELPERS is_sub_helper = false
 get_themes_by_maker(who_generated) "ai" or "user"
 get_themes_by_confidence(greater_than) score must be greater than or equal to value passed
 get_theme_name_by_id(theme_id)
 
-TODO:
-delete_theme(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
-
-
 ## flows
 name description ai_generated BOOLEAN confidence_score REAL DEFAULT 0.0
 
 TOOLS
 add_flow(name, description, ai_generated, confidence_score)
+   return_statements should include "Are there any files that should be linked in file_flows?"
 get_flow(flow_id)
 get_all_flows()
-update_flow(flow_id, name(*Can Be Null), descripton(*Can Be Null), confidence_score(*Can Be Null)) flow_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
+
+update_flow(flow_id, name(*Can Be Null), descripton(*Can Be Null), confidence_score(*Can Be Null))
+   flow_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
+
+IMPORTANT CONSIDER:
+delete_flow(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   A flow might have namy files that relate to it. If a flow is deleted, we would have to remove all references in file_flows, but we don't want to do this. We want to prevent any orphaned files that should be related to at least one flow having no relationship recorded. So we'll have a check that ensures a flow has no files associated to it before deletion. Otherwise, return error("files are still assigned to flow. You must re-assign all files or manage entries in file_flows table before deleting a flow.) 
 
 HELPERS is_sub_heper = false
 get_flows_by_maker(who_generated) "ai" or "user"
@@ -305,8 +320,28 @@ get_flows_by_confidence(greater_than) score must be greater than or equal to val
 get_flow_name_by_id(flow_id)
 get_flow_names_by_ids(flow_ids:dict/array)
 
-TODO:
-delete_flow(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+
+## flow_themes
+TOOLS
+add_flow_themes(flow_id, theme_id)
+get_flows_for_theme(theme_id)
+get_themes_for_flow(flow_id)
+delete_flow_themes(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+NO update flow_themes table. Just remove and add a new one with correct information.
+
+HELPERS is_sub_helper = false
+get_all_flow_themes()
+
+## file_flows
+TOOLS
+add_file_flows(file_id, flow_id)
+get_files_by_flow(flow_id)
+get_flows_for_file(file_id) This returns array of flow ids, then loops through flow id's to get
+delete_file_flow(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+NO update file_flows table. Just remove and add a new one with correct information.
+
+HELPERS is_sub_helper = false
+get_all_file_flows()
 
 
 ## completion_path
@@ -327,18 +362,6 @@ milestones relate to a certain step in the completion path. There could be many 
 TOOLS
 
 HELPERS is_sub_helper = false
-
-## flow_themes
-TOOLS
-add_flow_themes(flow_id, theme_id)
-get_flows_for_theme(theme_id)
-get_themes_for_flow(flow_id)
-NO update flow_themes table. Just remove and add a new one with correct information.
-
-HELPERS is_sub_helper = false
-get_all_flow_themes()
-
-delete_flow_themes(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
 
 
 ## tasks, subtasks, sidequests and items. 

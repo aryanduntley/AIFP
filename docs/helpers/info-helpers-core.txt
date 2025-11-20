@@ -1,5 +1,11 @@
 # MCP:
+add return_statements table.
+Return statement will be appended to return from helper functions as an object. Internal helper function should be created to get this return statement and should be called with every tool. Should we limit to tools as they will be the most called by AI, or should we add to every tool and helper (is_sub_helper =false)? We can add additional direction and checks for AI with these return statments including suggestions and notes. 
+
 return notes should be added in for helper_functions in MCP core database.
-return_statements_helpers table should be added. All helpers will query the return_statements_helpers table by helper_functions id and get the return statements before returning values. Return statement will be appending to return from helper functions as an object. Internal helper function should be created to get this return statement and should be called with every tool. I think we should limit to tools as they will be the most called by AI and we can add additional direction and checks for AI with these return statment suggestions and notes. 
+return_statements_helpers table should be added. All helpers will query the return_statements_helpers table by helper_functions id and get the return statements before returning values.
+
+directives_helpers table
+Instead of listing then in the directives text directly. Easier to maintain
 
 status get_files_by_flow get_flows_for_file

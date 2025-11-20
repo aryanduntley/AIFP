@@ -47,9 +47,11 @@ REVIEW ALL HELPER FUNCTIONS. AI made many mistakes, making up parameters, ommitt
 document flow ids json filed to tasks and sidequests tables in project db schema
 remove project id, update documentation to reflect
 
-return_statements for tools and other relevant helpers should always add notes for any directive/db/etc. chaining.
+return_statements for tools and other relevant helpers should always add notes for any directive/db/etc. chaining. return_statements might also include tools and helper functions for next steps after certain actions
 
-add delete for each individual project table
+--help add_function, add_file, add_type.. etc. any that require reservation.
+
+New directive requiring that files, functions types be reserved in database before writing to avoid potential cleanup aftermath if created before adding to database with many references. New additons of these types will require the id suffixed to the name, so reservation is important. After creation, the finalization functions must be called to update the name (at least) after write creations.
 
 database change:
 TRIGGERS
@@ -73,7 +75,7 @@ database change:
 function names unique
 
 database change:
-functions table add returns filed to provide return values for function
+functions table add returns field to provide return values for function
 
 database change:
 add return_statements_helpers table to core db. This will map return statements to helper functions. We can add many statements for each helper function.
@@ -90,4 +92,9 @@ database change:
 ??? should we add file_id to types???
 
 database change:
-add is_reserved field to tables files, functions and types. AI must first reserve to get id's then make files / write functions (or types) with appropriate naming -IDxxx for files _idxxx for functions and types. Once made and written to, AI can finalize the entries with the real data and mare is_reserved as false.
+add is_reserved field to tables (files, functions and types). AI must first reserve to get id's then make files / write functions (or types) with appropriate naming -IDxxx for files _idxxx for functions and types. Once made and written to, AI can finalize the entries with the real data and mare is_reserved as false.
+
+database change:
+directives_helpers table
+Instead of listing then in the directives text directly. Easier to maintain
+
