@@ -1,1 +1,21 @@
 # SETTINGS
+
+## user_settings
+setting_key setting_value description scope='project'
+
+## directive_preferences
+directive_name preference_key preference_value active description
+
+## ai_interaction_log
+interaction_type directive_context user_feedback ai_interpretation applied_to_preferences
+
+## fp_flow_tracking
+function_name file_path fp_directives_applied compliance_score issues_json user_overrides
+
+## issue_reports
+report_type title description directive_name context_log_ids status submitted_at
+With created_at and update_at, do we need submitted_at??? status values should be set options with CHECK as will all such fiels in all databases
+
+
+
+## tracking_settings

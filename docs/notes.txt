@@ -47,8 +47,6 @@ REVIEW ALL HELPER FUNCTIONS. AI made many mistakes, making up parameters, ommitt
 document flow ids json filed to tasks and sidequests tables in project db schema
 remove project id, update documentation to reflect
 
-return_statements for tools and other relevant helpers should always add notes for any directive/db/etc. chaining. return_statements might also include tools and helper functions for next steps after certain actions
-
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
 New directive requiring that files, functions types be reserved in database before writing to avoid potential cleanup aftermath if created before adding to database with many references. New additons of these types will require the id suffixed to the name, so reservation is important. After creation, the finalization functions must be called to update the name (at least) after write creations.
@@ -95,10 +93,6 @@ database change:
 add is_reserved field to tables (files, functions and types). AI must first reserve to get id's then make files / write functions (or types) with appropriate naming -IDxxx for files _idxxx for functions and types. Once made and written to, AI can finalize the entries with the real data and mare is_reserved as false.
 
 database change:
-directives_helpers table
-Instead of listing then in the directives text directly. Easier to maintain
-
-database change:
 status for "complete" or "completed" for all tables should be uniform. we should either use complete or completed. This should be forced if possible. We do not want to look for "complete" when "completed" exists or also exists or not know which to use for which table, etc. Need consistency for this. I suggest "completed"
 
 database change:
@@ -109,3 +103,7 @@ for all fields that have these types of options (including status, priority, etc
 
 database change:
 tasks priority field is int while subtask and sidequest priority fields are text. task 0,1,2,... while the others are "low","medium","high", etc. We should have consistency here. Which is more useful, text or int?
+
+database change:
+core database add return_statements field to helper_functions table
+return_statements for tools and other relevant helpers should always add notes for any directive/db/etc. chaining. return_statements might also include tool and helper function lists for next steps after certain actions

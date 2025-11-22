@@ -135,8 +135,8 @@ For all tables since we have both created at and updated at, we should have a ch
 FUNCTION NAMES UNIQUE!!!!
 Since this is FP, we do not have classes and therefore, function names cannot be duplicate??????? This is language agnostic so we don't know what language the use will be using and therefore we can't assume that the language will allow overloading. We should either make the name unique in database table as flat or create a function sig with name and params and force the sig to be unique. What do you think is best? Is overloading absolutely necessary? Our get_function for instance. We could have overloading get_function(id), and get_function(name). Or we could have get_function(id(*Can Be Null), name(*Can Be Null)){if id and name are none, return error; one is required}. or we could just be very explicit like what we are doing with get_function_by_name(name) and get_function(function_id). So maybe we should make the function names unique. add function should throw errors when duplicate function names are used.
 
-Return notes should be added in as new filed in helper_functions table in MCP core database.
-return_statements. String, text or json. Not sure. All tools will query their own function by name and get the return statement before returning values. Return statement will be appended to return from helper functions.
+Return return_statements should be added in as new filed in helper_functions table in MCP core database.
+return_statements json.
 
 NOTE: DIRECTIVES UPDATE NEEDED
 FUNCTION METADATA

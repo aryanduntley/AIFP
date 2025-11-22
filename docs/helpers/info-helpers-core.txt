@@ -1,14 +1,8 @@
 # MCP:
-add return_statements table.
-Return statement will be appended to return from helper functions as an object. Internal helper function should be created to get this return statement and should be called with every tool. Should we limit to tools as they will be the most called by AI, or should we add to every tool and helper (is_sub_helper =false)? We can add additional direction and checks for AI with these return statments including suggestions and notes. 
+add return_statements field to helper_functions.
+Return statement will be appended to return from helper functions as an object. We can add additional direction and checks for AI with these return statments including suggestions and notes.
 
-return notes should be added in for helper_functions in MCP core database.
-return_statements_helpers table should be added. All helpers will query the return_statements_helpers table by helper_functions id and get the return statements before returning values.
-
-directives_helpers table
-Instead of listing then in the directives text directly. Easier to maintain
-
-status
+get_status could potentially:
 get tasks complete last 2 or 3 for reference
 get tasks incomplete and
 get_task_files(task_id) for list of files to be worked on for incomplete tasks
@@ -17,3 +11,80 @@ get_incomplete_tasks()
    calls get_incomplete_subtasks()
    calls get_incomplete_sidequests()
    returns list of all that exists so that AI/user can have all information at once.
+Or we could do this for a get_next_steps() or something
+
+## directives
+name type('fp', 'project', etc) level( 0–4 for 'project' only) parent_directive(d-name optional) description workflow(JSON with trunk/branches/error_handling) md_file_path roadblocks_json(JSON array of issues/resolutions) intent_keywords_json(Optional keywords for intent detection) confidence_threshold(0–1 threshold for matching/escalation)
+
+TOOLS
+get_directive(directive_id)
+get_directive_by_name(directive_name)
+get_directives(directive_id array)
+get_directives_by_name(directive_name array)
+No need to fine tune the getters too much as all data can be retrieved by one call, it's not too extensive.
+
+HELPERS
+get_directive_md(directive_name)
+get_directive_confidence(directive_name)
+get_directive_workflow(directive_name)
+get_directive_id(directive_name)
+get_directive_name(directive_id)
+
+## categories
+TOOLS
+get_categories()
+
+HELPERS
+get_category_id(category_name)
+get_category_name(category_id)
+get_category_description()
+
+## directive_categories
+TOOLS
+get_directives_by_category(category_id)
+   return_statements should include reference to get_directives(directive_id array)
+get_categories_by_directive(directive_id)
+
+## directive_interactions
+source_directive_id target_directive_id relation_type('triggers' 'depends_on' 'escalates_to' 'cross_link' 'fp_reference') weight description active
+
+TOOLS
+get_interactions_for_directive(source_directive_id)
+   return_statements should include reference to get_directives(directive_id array)
+get_interactions_for_directive_as_target(target_directive_id)
+** active=1 should always be added to all these queries
+
+HELPERS
+get_interactions_by_weight(source_directive_id, less_or_greater:String-"less|greater", weight:Real/Float)
+   less will get less than or equal to, greater will get greater than or equal to
+get_interactions_for_directive_with_relationship(source_directive_id, relation_type)
+get_inactive_interactions_for_directive(source_directive_id)
+
+## helper_functions
+name file_path parameters purpose error_handling is_tool is_sub_helper return_statements(JSON)
+
+TOOLS
+get_helper_by_id(helper_id)
+get_helper_by_name(helper_name)
+get_helpers_by_id(helper_id array)
+get_helpers_by_name(helper_name array)
+get_helpers_are_tool()
+get_helpers_not_tool_not_sub()
+get_helpers_are_sub()
+get_helper_statements(helper_name)
+
+HELPERS
+get_helper_statements_by_id(helper_id)
+
+## directive_helpers
+directive_id helper_function_id execution_context('workflow_step_3', 'error_handler', 'validation') sequence_order is_required parameters_mapping(JSON) description
+
+TOOLS
+get_helpers_for_directive(directive_id, include_helpers_data=false)
+   include_helpers_data=false return all directive_helpers data for matches
+   include_helpers_data=true calls get_helpers_by_id(helper_id array)
+      returns all directive_helpers data AND helper_functions data for matches
+get_directives_for_helper(helper_function_id, include_directives_data=false)
+   include_directives_data=false return all directive_helpers data for matches
+   include_directives_data=true calls get_directives(directive_id array)
+      returns all directive_helpers data AND directives data for matches
