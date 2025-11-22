@@ -98,3 +98,14 @@ database change:
 directives_helpers table
 Instead of listing then in the directives text directly. Easier to maintain
 
+database change:
+status for "complete" or "completed" for all tables should be uniform. we should either use complete or completed. This should be forced if possible. We do not want to look for "complete" when "completed" exists or also exists or not know which to use for which table, etc. Need consistency for this. I suggest "completed"
+
+database change:
+severity TEXT 
+    CHECK (severity IN ('info', 'warning', 'error'))
+    DEFAULT 'info'
+for all fields that have these types of options (including status, priority, etc.) we should set checks to ensure we have standards. When searching by severity or status or any others we don't want some arbitrary entries that we would never know to check for. It also prevents issues like status = complete vs status = completed.
+
+database change:
+tasks priority field is int while subtask and sidequest priority fields are text. task 0,1,2,... while the others are "low","medium","high", etc. We should have consistency here. Which is more useful, text or int?

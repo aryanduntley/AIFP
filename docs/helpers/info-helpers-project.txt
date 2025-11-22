@@ -3,21 +3,6 @@ NOTE: reference to (*Can Be Null) or =None is there to in indcate that the param
 
 remove project ID fields from all but project table. Should only be one project per database. Should enforce this.
 
-project table entry is a singular entry that defines the broader scope of the project and the infrastructure table relates to it directly.
-
-there should be getter and setters for general update project details and update project infrastructure. These are pretty standalone and don't need very munch interconnection. Directives must show when/how to use these tools during changes.
-
-TOOLS
-create_project(name, purpose, goals, status, version, user_directives_status(*Can Be Null))
-last_known_git_hash and last_git_sync fields initial values populated automatically.
-update_project(name(*Can Be Null), purpose(*Can Be Null), goals(*Can Be Null), status(*Can Be Null), version(*Can Be Null), user_directives_status(*Can Be Null))
-add_infrastructure(type, value, description)
-update_infrastructure(id, type(*Can Be Null), value(*Can Be Null), description(*Can Be Null))
-
-HELPERS is_sub_helper=true
-project_update_git_status()
-No parameters needed. get's git data to update last_known_git_hash and last_git_sync 
-
 to avoid the repeat update/create timestap function calls for EVERY SINGLE DATABASE INTERACTION, we need to set triggers for these:
 
 CREATE TRIGGER update_timestamp
@@ -41,30 +26,80 @@ BEGIN
    WHERE rowid = NEW.rowid;
 END;
 
-TOOL
-blueprint_has_changed() creates checksum of project blueprint, then evaluates against current checksum in db. returns true or false.
-
 There is only one project per database. We should remove all project ID fields from the other tables as we do not need to waste processing by having to account for that field in all of the tables with every update. Either that or default the project ID to 1, which "should" be the actual project ID. But I recommend removing the project id field from all tables as even having them suggests that there could potentially be more than one project per database, which is not the case.
 
 Themes and flows have to do with project categorization and organization.
 Themes are more broad categorization of the various parts of the project. Flows are more detailed strings of actions that are related more to code categorization. A theme could have several flows, but a flow could touch on several themese potentially. Checkout could be a theme and (shipping calculation, tax, payment selection type, payment processing, address entry, etc.) could all be flows that touch on checkout. Address entry could potentially also touch on theme User Registration for example.
 
+## project
+project table entry is a singular entry that defines the broader scope of the project and the infrastructure table relates to it directly.
+
+name purpose goals_json status version blueprint_checksum user_directives_status last_known_git_hash last_git_sync
+
+TOOLS
+create_project(name, purpose, goals, status, version, user_directives_status(*Can Be Null))
+   last_known_git_hash and last_git_sync fields initial values populated automatically.
+get_project()
+   only one entry, so no need for special getters. Just return whole result set
+update_project(name(*Can Be Null), purpose(*Can Be Null), goals(*Can Be Null), status(*Can Be Null), version(*Can Be Null), user_directives_status(*Can Be Null))
+
+There should be no delete_project... at all
+
+HELPERS is_sub_helper=false
+project_update_git_status()
+   No parameters needed. get's git data to update last_known_git_hash and last_git_sync 
+
+## infrastructure
+TOOLS
+add_infrastructure(type, value, description)
+get_infrastructure(id)
+get_insfrastructure_by_type(type)
+get_insfrastructure_by_value(value)
+get_infrastructure_by_type_value(type, value)
+update_infrastructure(id, type(*Can Be Null), value(*Can Be Null), description(*Can Be Null))
+blueprint_has_changed()
+   creates checksum of project blueprint, then evaluates against current checksum in db. returns true or false.
+delete_infrastructure(infrastructure_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") 
+
+
 ## files, functions, types. These all have to do with file and code tracking.
 should have an add_file tool and set_function tool to quickly and easily update the database after every file change. These will be used the most and should be very streamlined. 
 
 ## files
-WE SHOULD ADD file_name to files table. After doing so, should we include file name in path?
+WE SHOULD ADD file_name to files table. After doing so, should we include file name in path? I think not. 
 
-TOOL
+TOOLS
 reserve_file(name, path, language)
 reserve_files([(name,path,language), (name,path,language),...])
-finalize_file(file_id, name, path, language) acts as an update, but automtically removes the is_reserved flag
+finalize_file(file_id, name, path, language)
+   acts as an update, but automtically removes the is_reserved flag
 finalize_files([(file_id, name, path, language), (file_id, name, path, language), ...])
-checksum automated with code (created_at automated with trigger)
-return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
-checks if file actually exists in path. If not exists return "file does not exists, cannot add to database"
+   checksum automated with code (created_at automated with trigger)
+   return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
+   checks if file actually exists in path. If not exists return "file does not exists, cannot add to database"
+get_file(file_id)
+get_files([(file_id), (file_id), ...])
+update_file(file_id, new_name(*Can Be Null), new_path(*Can Be Null), language(*Can Be Null))
+   null means do not update this field.
+   checksum must be updated automatically here
+   return_statements should include "verify flows are added, if necessary, for this file in file_flows table", "Ensure that any name or path changes are thoroughly changed in the code base as well"
+file_has_changed(file_id)
+   creates checksum of file, then evaluates against current checksum in db. returns true/false
+delete_file(file_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") 
+   returns error if file_flows has entry(ies), functions exist with file_id or types exist with file_id
+   get_flows_for_file(file_id)
+   get_functions_by_file(file_id)
+   get_types_by_file(file_id)
+   error should note that file_flows entries and functions should be managed before the file can be deleted. To prevent issues, we will force this to be intentionally handled instead of a blanket delete of all references.
+   Should return all file_flows entries, all functions entries and all type entries for evaluation
+   if no results from functions, flows or types, can safely delete.
 
-delete_file(file_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all file_flows with file_id. must get all functions id's with file_id. must delete all types with function_id and if exists must delete all types_functions with function_id. must delete all interactions with function_id as source or target. must delete all functions with file_id
+HELPERS is_sub_helper = false
+   get_file_by_name(file_name)
+   get_files_by_name(array of file names)
+   get_file_by_path(file_path)
+   get_files_by_path(array of file paths)
+   get_file_by_checksum(checksum)
 
 NOTE: DIRECTIVES UPDATE NEEDED
 I was going to add a header comment for each file, but there are so many different comment types based on language and file extension that I don't want to have to have a bunch of logic to do this. We could return the desired metadata to AI to figure out comment syntax and add the metadata itself, but I really want to keep AI from dealing with EVERYTHING and let code handle things that are very routine and shouldn't require much thinking (I don't want to write the logic). So, for file metadata I think this should happen:
@@ -89,29 +124,19 @@ finalize_files() array of parameters
    return_statements should include "verify flows are added, if necessary, for this file in file_flows table"
 
 HELPER is_sub_helper=true
-update_file_timestamp(file_id) this is primarily for function updates. If a function is updated, the file last updated timestamp should be updated. checksum gets updates (since this call is automated after every function update). No need for a separate call by AI. 
-
-TOOLS
-get_file(file_id)
-update_file(file_id, new_name(*Can Be Null), new_path(*Can Be Null), language(*Can Be Null))
-   null means do not update this field.
-   checksum must be updated automatically here
-   return_statements should include "verify flows are added, if necessary, for this file in file_flows table", "Ensure that any name or path changes are thoroughly changed in the code base as well"
-
-File should have a has_changed function. Simply return true or false. 
-
-TOOL
-file_has_changed(file_id) creates checksum of file, then evaluates against current checksum in db. returns true/false
+update_file_timestamp(file_id)
+   this is primarily for function updates. If a function is updated, the file last updated timestamp should be updated. checksum gets updates (since this call is automated after every function update). No need for a separate call by AI. 
 
 IF TRIGGERS NOT DOABLE:
 For all tables since we have both created at and updated at, we should have a check for setters and automatically add updated at if exists, automatically add created at if not exists and ignore the other in both cases (if create then ignore update, if update then ignore create). AI should not have to worry about created at, updated at, checksums. These should be automated. But if triggers for this can be done, we don't have to worry about it
 
-HELPER is_sub_helper=false
-get_function(function_id)
-get_function_by_name(function_name)
+## functions
 
 FUNCTION NAMES UNIQUE!!!!
 Since this is FP, we do not have classes and therefore, function names cannot be duplicate??????? This is language agnostic so we don't know what language the use will be using and therefore we can't assume that the language will allow overloading. We should either make the name unique in database table as flat or create a function sig with name and params and force the sig to be unique. What do you think is best? Is overloading absolutely necessary? Our get_function for instance. We could have overloading get_function(id), and get_function(name). Or we could have get_function(id(*Can Be Null), name(*Can Be Null)){if id and name are none, return error; one is required}. or we could just be very explicit like what we are doing with get_function_by_name(name) and get_function(function_id). So maybe we should make the function names unique. add function should throw errors when duplicate function names are used.
+
+Return notes should be added in as new filed in helper_functions table in MCP core database.
+return_statements. String, text or json. Not sure. All tools will query their own function by name and get the return statement before returning values. Return statement will be appended to return from helper functions.
 
 NOTE: DIRECTIVES UPDATE NEEDED
 FUNCTION METADATA
@@ -146,48 +171,44 @@ reserve_function(name, file_id, purpose, params, returns)
    id returned for use in actual function naming. sets is_reserved to true
 reserve_functions() array of parameters
    id's returned for use in actual function names. is_reserved set to true for each
-Created_at should be triggered
+   *Created_at should be triggered
 
 finalize_function(function_id, name, file_id, purpose, params, returns)
    is_reserved set to false/0
 finalize_functions() array of parameters
    is_reserved set to false/0
-Updated_at should be triggered
-
-These return notes should be added in as new filed in helper_functions table in MCP core database.
-return_statements. String, text or json. Not sure. All tools will query their own function by name and get the return statement before returning values. Return statement will be appending to return from helper functions.
-
-TOOL
-delete_function(function_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all types with function_id and if exists must delete all types_functions with function_id. must delete all interactions with function_id as source or target.
-
-## updating functions
-file_id should be returned after any update so that update_file_timestamp can be called
-TOOL
+   **after finalize update_file_timestamp should be called (file_id should be returned for this)
+get_function(function_id)
+get_function_by_name(function_name)
+get_functions([(function_id), (function_id), ...])
+get_functions_by_file(file_id)
+   **return data for function getters should include function ID and interaction data for that function. Use get_interactions and append to return data with interactions return_statements. AI will always get and read the return data, so if it includes the necessary data for potential chaining, AI doesn't have to execute additional commands which would be needed anyway. We can think ahead for this.
 update_function(function_id, name=None, purpose=None, parameters=None, returns=None)
-we will manage updated_at timestamp if sqlite doesn't do this automatically. Check purpose, parameters and returns for None to identify whether those fields need to be updated. 
+   we will manage updated_at timestamp if sqlite doesn't do this automatically. Check purpose, parameters and returns for None to identify whether those fields need to be updated.
+   should include file_id in return
+   update_file_timestamp(file_id) called
+   return_statements should include "are there any interactions with this function" and "Ensure that you have updated ay and all references to this funtion if the name, parameters or returns have been changed", "Do any database interactions need to be added for this function"
+update_functions_for_file(file_id,[(name=None, purpose=None, parameters=None, returns=None), (name=None, purpose=None, parameters=None, returns=None), ...])
+   We will NOT have a generic update_functions (where no file ID set). This enforces that functions in mass can only be updated for ONE file at a time. This prevents potential errors in attempting to update multiple functions accross multiple files. AI can probably handle this just fine, but it's very error prone when doing that. So if many files were modified, it can call update_functions_for_file multiple times, once for each file. It's just safer.
+   return_statements should include "if name changed, ensure that the prefix _idxxx is retained and if anything but purpose is updated, ensure that all references/calls in code are also updated", "Do any database interactions need to be added for this function"
+   update_file_timestamp(file_id) called
 
-return_statements should include "are there any interactions with this function" and "Ensure that you have updated ay and all references to this funtion if the name, parameters or returns have been changed", "Do any database interactions need to be added for this function"
-
-return data should include function ID and interaction data for that function. Use get_interactions and append to return data with interactions return_statements. AI will always get and read the return data, so if it includes the necessary data for potential chaining, AI doesn't have to execute additional commands which would be needed anyway. We can think ahead for this.
+   ** file_id should be returned after any update so that update_file_timestamp can be called
+delete_function(function_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   must delete all types with function_id and if exists must delete all types_functions with function_id. must delete all interactions with function_id as source or target.
+   update_file_timestamp should be called (file_id should be returned for this)
 
 HELPER is_sub_helper=false
 update_function_file_location(function_id, old_file_id, new_file_id) 
-This will be a helper function, not a tool. available for use but file location parameter not included in standard update_function tool because it's seldom, if ever, to be changed. The file a function lives in, once set, should be pretty much static. But there are occasions where a function might need to be moved to another file (probably for organization purposes) and so we should have a helper function for this. Any three parameters not found in db, return error so AI knows it needs to check param values.
-return_statements should include "make sure that any calls or references to this function have updated paths", "Do any database interactions need to be added for this function"
-update_file_timestamp(file_id) should be called for each file (from and to)
+   This will be a helper function, not a tool. available for use but file location parameter not included in standard update_function tool because it's seldom, if ever, to be changed. The file a function lives in, once set, should be pretty much static. But there are occasions where a function might need to be moved to another file (probably for organization purposes) and so we should have a helper function for this. Any three parameters not found in db, return error so AI knows it needs to check param values.
+   return_statements should include "make sure that any calls or references to this function have updated paths", "Do any database interactions need to be added for this function"
+   update_file_timestamp(file_id) should be called for each file (from and to)
 
 additional-helpers-project.md "#### `update_function_purity(function_name: str, is_pure: bool)`
 **Purpose**: Mark function as pure/impure after FP compliance check.
 **Returns**: `{"success": true, "function": "...", "is_pure": true}`
 **Use Case**: FP directives update purity status"
 We don't have a purity field in the functions table. Review directives to check for any mention of this. If doesn't exist, explain use. I think we can remove this and will need to check for other useless helpers that have no database or directive mention.
-
-TOOL:
-update_functions_for_file(file_id,[(name=None, purpose=None, parameters=None, returns=None), (name=None, purpose=None, parameters=None, returns=None), ...])
-We will NOT have a generic update_functions (where no file ID set). This enforces that functions in mass can only be updated for ONE file at a time. This prevents potential errors in attempting to update multiple functions accross multiple files. AI can probably handle this just fine, but it's very error prone when doing that. So if many files were modified, it can call update_functions_for_file multiple times, once for each file. It's just safer.
-return_statements should include "if name changed, ensure that the prefix _idxxx is retained and if anything but purpose is updated, ensure that all references/calls in code are also updated", "Do any database interactions need to be added for this function"
-update_file_timestamp(file_id) called
-
 
 ## types
 remove ALL add_type or similar. Must reserve and then finalize instead of simply "add".
@@ -215,34 +236,40 @@ reserve_type(name, definition_json, description, links:object, file_id)
 reserve_types() array of parameters
    id's returned for use in actual type names
    is_reserved set to true for each
-Created_at should be triggered
-TYPE NAMING CONVENTION is name_idxxx (_id1 or _id32, etc)
-return_statements should include "Use the returned id(s) for type naming. Type names should be suffixed with _idxx. Once created, call finalize_typ(s) to update file name and any other data'
+   Created_at should be triggered
+   TYPE NAMING CONVENTION is name_idxxx (_id1 or _id32, etc)
+   return_statements should include "Use the returned id(s) for type naming. Type names should be suffixed with _idxx. Once created, call finalize_typ(s) to update file name and any other data'
 
 finalize_type(type_id, name, definition_json, description, links:object, file_id)
    is_reserved set to false/0
    all values except name are optional (possibly set correctly in reserve_type)
 finalize_types() array of parameters
    is_reserved set to false/0
-Updated_at should be triggered
-return_statements should include "verify whether any type_functions relationships need to be added to the database for this new type", "should any functions be linked in the types_functions table for this type"
-
+   Updated_at should be triggered
+   return_statements should include "verify whether any type_functions relationships need to be added to the database for this new type", "should any functions be linked in the types_functions table for this type"
+   **after finalize update_file_timestamp should be called (file_id should be returned for this)
+get_type(type_id)
+get_types([(type_id), (type_id), ...])
+get_types_by_file(file_id)
 update_type(id, name(*Can Be Null), file_id(&Can Be Null), definition_json:CanBeNull, description(*Can Be Null))
-file_id should be returned after update so that:
-update_file_timestamp(file_id) called
-return_statements should include "are there any types_functions relationships that should be added" and "Ensure that you have updated ay and all references to this type if the name has been changed"
+   file_id should be returned after update so that:
+   update_file_timestamp(file_id) called
+   return_statements should include "are there any types_functions relationships that should be added" and "Ensure that you have updated ay and all references to this type if the name has been changed"
 
       Discuss if this is useful
       if we are to have likely many to many relationships between types and functions, then we should probably add _idxxx to types name in file as well?
       and we should add file_id to types for quick file reference and updated_at call whenever a type is modified.
       If we were to do this, the logic would look pretty much exactly the same as functions
 
-delete_type(type_name, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") must delete all types with name.
+delete_type(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   check types_functions table to find any interactions get_type_functions_by_type(type_id)
+   if exists, return error with note that all type_functions entries/links must first be removed or unlinked (functions linked to another type) before the type can be deleted.
+   update_file_timestamp should be called (file_id should be returned for this)
+   
 
 NOTE: DIRECTIVES UPDATE NEEDED
 TYPE METADATA
 Will add type ID to type name in code. so it's always readily available. NAMING CONVENTION _idxxx (_id1 or _id32, etc.) as suffix. Types table should have file_id filed added to track types file it belongs to.
-
 
 ## types_functions
 TOOLS
@@ -305,8 +332,9 @@ TOOLS
 add_flow(name, description, ai_generated, confidence_score)
    return_statements should include "Are there any files that should be linked in file_flows?"
 get_flow(flow_id)
+get_flows([(flow_id), (flow_id), ..])
 get_all_flows()
-
+get_file_ids_from_flows([(flow_id), (flow_id), ...])
 update_flow(flow_id, name(*Can Be Null), descripton(*Can Be Null), confidence_score(*Can Be Null))
    flow_id and at least one other parameter required, else throw error "must have a value to change (name, description, confidence_score)"
 
@@ -336,7 +364,8 @@ get_all_flow_themes()
 TOOLS
 add_file_flows(file_id, flow_id)
 get_files_by_flow(flow_id)
-get_flows_for_file(file_id) This returns array of flow ids, then loops through flow id's to get
+get_flows_for_file(file_id) 
+   This returns array of flow ids, then loops through flow id's to get
 delete_file_flow(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
 NO update file_flows table. Just remove and add a new one with correct information.
 
@@ -345,85 +374,180 @@ get_all_file_flows()
 
 
 ## completion_path
-name order_index -- For explicit ordering (1, 2, 3...) status -- pending, in_progress, complete description
 
 TOOLS
+add_completion_path(name, status, description, order_index)
+get_all_conmpletion_paths() 
+   orderby order_index
+get_completion_path_by_order(order_index)
+get_completion_path_by_id(id)
+get_next_completion_path() 
+   lowest order_index that does NOT have status completed
+get_completion_paths_by_status(status:String)
+   orderby order_index
+get_incomplete_completion_paths()
+   status != completed orderby order_index
+update_completion_path(id, name:None, status:None, description:None)
+delete_completion_path(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   checks milestones get_milestones_by_path(path_id)
+      if milestones exist, return error with list of milestones that are assigned to this completion path
+      error should include note about this describing that all milestones must first be re-assigned or removed before deletion allowed
+   calls reorder_all_completion_paths()
+   returns all completion paths, orderby order_index
 
 HELPERS is_sub_helper = false
-
-TODO:
-delete_completion_path_step(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
-
+get_completion_paths([(id1), (id1), ...])
+reorder_completion_path(id, new_order_index) 
+   if new_order_index exists, return
+reorder_completion_paths([(id, new_order_index), (id, new_order_index), ...])
+reorder_all_completion_paths()
+   gets all completion paths to check for order_index consistency (no breaks in order like 1, 2, 4, 5 .. missing 3) also checks for duplicates (1, 2, 3, 3, 4)
+   if gaps exist, loop through completion paths by order_index, re-assigning order_index in series, no gaps.
+   updates all completion paths where order_index is different from original. could use reorder_completion_path(id, new_order_index) or reorder_completion_paths([(id, new_order_index), (id, new_order_index)])
+   if duplicates exist, notes duplicates in separate array, reorders duplicates arbitrarily to be consecutive, starting from 1. returns notes on duplicates with id, name, previous order_index and new_order_index so that AI has the duplicate information and can swap if necessary.
+swap_completion_paths_order(id_1, id_2)
+   gets completion paths, extracts order_index, swaps order index, assigns new order index with reorder_completion_path(id, new_order_index). 
+   NOTE: order_index is not unique so we can duplicate for the purpose of swapping (2, and 3 need to swap. sets 2 to 3, creating duplicate 3's temporarily until 3 is changed to 2. Otherwise we would either have to set to 0 or some large arbitrary number for the swap).
 
 ## milestones
-completion_path_id name status description
 milestones relate to a certain step in the completion path. There could be many milestones before a step in the completion path can be marked as completed and the next step began. 
 
 TOOLS
+add_milestone(name, completion_path_id, status, description)
+get_milestones_by_path(path_id)
+get_milestones_by_status(status:String)
+get_incomplete_milestones()
+   all milestones that do not have status == completed
+update_milestone(id, name:None, completion_path_id:None, status:None, desription:None)
 
-HELPERS is_sub_helper = false
-
+delete_milestone(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   tasks are assigned milestone ID so error returned if tasks that are not marked as completed exist with milestone ID
+      uses get_incomplete_tasks_by_milestone(milestone_id)
+      if not empty, return list of open tasks and note describing that tasks must be re-assigned milestone or marked completed before deleting milestone
 
 ## tasks, subtasks, sidequests and items. 
 These all have to do with project progress tracking.
-subtasks are children to tasks so the milestone is inherited from parent task. sidequest is immediate need issues and is not necessarily related to milestone/task/subtask. It may fall under these but it's more a "there is a problem and we need to pause everything and fix this" or "we need to make adjustments and these adjustments (dependencies, organization, clarifications, issues, etc.) must be completed before continuing with reglar work.". So it should be treated in this manner. Should have a get tasks by count, date as well. Get 3 latest tasks for instance. Should have an option in that actually for status. get 3 latest tasks complete. get all tasks incomplete (0 or -1 value for count). or unset, get 3 latest tasks (any status). Should exted this tool with a parameter of type for task, subtask or sidequest. As all should have these/this tool.
+subtasks are children to tasks so the milestone is inherited from parent task. sidequest is immediate need issues and is not necessarily related to milestone/task/subtask. It may fall under these but it's more a "there is a problem and we need to pause everything and fix this" or "we need to make adjustments and these adjustments (dependencies, organization, clarifications, issues, etc.) must be completed before continuing with reglar work.". So it should be treated in this manner.
 
-tasks have a flow_ids json table for related flows. We shouldn't have the need for getting tasks by flow as a general rule. tasks should be usually linear. Usually about one task at a time. Once items are complete, task is marked as complete and no real need for accessing that task in the future apart from general review for potential historical reference. But for task context, flows will be useful and therefore the flow_ids fields lists them. Should have a tool to update task flows and get task flows. These are separate from the general get tasks tool as they may probably be used more often. Subtasks inherit task flow(s). Sidequests are not necessarily flow specific. 
+tasks have a flow_ids json table for related flows. We shouldn't have the need for getting tasks by flow as a general rule. tasks should be usually linear. Usually about one task at a time. Once items are completed, task is marked as completed and no real need for accessing that task in the future apart from general review for potential historical reference. But for task context, flows will be useful and therefore the flow_ids fields lists them.
 
-items are a series of task/subtask/sidequest items. The task/subtask/sidequest are high level descriptors of the set of "items" that must be accomplished. The items for that task/subtask/sidequest are created and must be fully completed before the task/subtask/sidequest can be marked as complete. This isn't a strict rule that should be forced however as a user can decide a task is complete and that certain items can be discarded. AI should discard accordingly, but this is normal user/AI interaction and doesn't need to be added to directives. We just don't want to make the directives too strict and so I'm clarifying my statemnt that "items.. must be fully complete before task/subtask/sidequest can be marked as complete" in order to show it as a generally obvious rule but not a strictly forced directive.
+items are a series of task/subtask/sidequest items. The task/subtask/sidequest are high level descriptors of the set of "items" that must be accomplished. The items for that task/subtask/sidequest are created and must be fully completed before the task/subtask/sidequest can be marked as completed. This isn't a strict rule that should be forced however as a user can decide a task is completed and that certain items can be discarded. AI should discard accordingly, but this is normal user/AI interaction and doesn't need to be added to directives. We just don't want to make the directives too strict and so I'm clarifying my statemnt that "items.. must be fully completed before task/subtask/sidequest can be marked as completed" in order to show it as a generally obvious rule but not a strictly forced directive.
 
 ## Tasks
-tasks linked to flows. flows linked to files. this relationship for tasks to files is sufficent as tasks are very temporary. Once done, they are only there for potential historical reference, nothing more. So getting flows for task, then get_files_by_flow(flow_id). Can loop through flows for all related files if necessary. 
+tasks linked to flows. flows linked to files. this relationship for tasks to files is sufficent as tasks are very temporary. Once done, they are only there for potential historical reference, nothing more. 
 
-TODO: code for loop above. code for getting status
+Should have a tool to update task flows and get task flows. These are separate from the general get tasks tool as they may probably be used more often. Subtasks inherit task flow(s). Sidequests are not necessarily flow specific. 
 
 TOOLS
+add_task(name, milestone_id, status, description, flow_ids:JsonArray, priority={default})
+get_incomplete_tasks_by_milestone(milestone_id, skip_pending=false)
+   all tasks with milestone_id having status != completed (if skip_pending=false && status !=pending)
+      ensures we get open milestones with status = in_progress
+      in truth, there should not be any tasks when a milestone has not yet been started, but you never know....
+   calls get_incomplete_subtasks_by_task(task_id)
+   calls get_incomplete_sidequests()
+      we will get all incomplete sidequests instead of get_sidequests_by_paused_task(task_id) because sidequests are typically important and we don't want any falling through the cracks.
+   returns list of all that exists so that AI/user can have all information at once.
+get_incomplete_tasks()
+   all tasks with milestone_id having status != completed
+   calls get_incomplete_subtasks()
+   calls get_incomplete_sidequests()
+   returns list of all that exists so that AI/user can have all information at once.
+   should be used by status
+get_tasks_by_milestone(milestone_id)
+get_tasks_comprehensive(status:None, limit:None, date_range_created:None, date_range_updated:None, milestone_id:None, priority:None)
+get_task_flows(task_id)
+   return flows_id's for task
+get_task_files(task_id)
+   calls get_task_flows to get flow id's
+   then calls get_file_ids_from_flows passes flow id's gets file id's
+   then calls get_files passes file id's gets full list of files and all data for files
+update_task(id, name:None, milestone_id:None, status:None, description:None, flow_ids:None, priority:None);
+
+delete_task(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   If task has get_items_for_task(task_id) **Leave status out because we want all results** and some or all items have status == "completed" or "in_progress", then return error and indicate that task cannot be deleted. Pending items must be deleted instead and task should be marked as completed. And if task had issues, make a note regarding the task after removing pending items and marking as completed.
+   If task does not have any "completed" or "in_progress" items but has pending items, return error with list of items and inform in the result notes that items for task must be removed before task can be deleted.
+   if there are no items for task, it can safely be removed.
 
 HELPERS is_sub_helper = false
-
-TODO
-delete_task(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
-
+get_tasks_by_flow(flow_id)
+   This requires searching the text field flow_ids json for the passed flow_id. A bit more work and a less useful function, but we'll make it available just in case AI feels it's a needed query. Just to reduce the need for AI to use custom queries.   
 
 ## Subtasks
 
 TOOLS
+add_subtask(name, parent_task_id, status, description, priority={default})
+get_incomplete_subtasks()
+   return all subtasks where status != completed
+get_incomplete_subtasks_by_task(task_id)
+   all subtasks of task_id having status != completed
+get_subtasks_by_task(task_id, status:None)
+get_subtasks_comprehensive(status:None, limit:None, date_range_created:None, date_range_updated:None, task_id:None, priority:None)
+update_subtask(id, name:None, task_id:None, status:None, description:None, priority:None);
 
-HELPERS is_sub_helper = false
-
-TODO
 delete_subtask(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
-
+   If subtask has get_items_for_subtask(subtask_id) **Leave status out because we want all results** and some or all items have status == "completed" or "in_progress", then return error and indicate that subtask cannot be deleted. Pending items must be deleted instead and subtask should be marked as completed. And if subtask had issues, make a note regarding the subtask after removing pending items and marking as completed.
+   If subtask does not have any "completed" or "in_progress" items but has pending items, return error with list of items and inform in the result notes that items for subtask must be removed before subtask can be deleted.
+   if there are no items for subtask, it can safely be removed.
 
 ## Sidequests
 
 TOOLS
+add_sidequest(name, paused_task_id, paused_subtask_id:None, status, description, flow_ids:JsonArray, priority={default})
+   paused_subtask_id is optional. If this sidequest comes during a subtask, then we must include both the paused task id as well as the paused subtask id
+get_incomplete_sidequests()
+   get's all incomplete sidequests where status != completed
+get_sidequests_comprehensive(status:None, limit:None, date_range_created:None, date_range_updated:None, task_id:None, subtask_id:None, priority:None)
+get_sidequest_flows(sidequest_id)
+   return flows_id's for sidequest
+get_sidequest_files(sidequest_id)
+   calls get_sidequest_flows to get flow id's
+   then calls get_file_ids_from_flows passes flow id's gets file id's
+   then calls get_files passes file id's gets full list of files and all data for files
+update_sidequest(id, name:None, paused_task_id:None, paused_subtask_id:None, status:None, description:None, flow_ids:None, priority:None);
+
+delete_sidequest(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   If sidequest has get_items_for_sidequest(sidequest_id) **Leave status out because we want all results** and some or all items have status == "completed" or "in_progress", then return error and indicate that sidequest cannot be deleted. Pending items must be deleted instead and sidequest should be marked as completed. And if sidequest had issues, make a note regarding the sidequest after removing pending items and marking as completed.
+   If sidequest does not have any "completed" or "in_progress" items but has pending items, return error with list of items and inform in the result notes that items for sidequest must be removed before sidequest can be deleted.
+   if there are no items for sidequest, it can safely be removed.
 
 HELPERS is_sub_helper = false
-
-TODO
-delete_sidequest(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+get_sidequests_by_flow(flow_id)
+   This requires searching the text field flow_ids json for the passed flow_id. A bit more work and a less useful function, but we'll make it available just in case AI feels it's a needed query. Just to reduce the need for AI to use custom queries. 
 
 ## Items
 
 TOOLS
-
-HELPERS is_sub_helper = false
+get_items_for_task(task_id, status:None)
+get_items_for_subtask(subtask_id, status:None)
+get_items_for_sidequest(sidequest_id, status:None)
+get_incomplete_items(for_table:String, for_id:Int)
+   for_table can be "tasks", "subtasks" or "sidequests"
+      should have a check for singular "task", "subtask", "sidequest" will map to the plural which are the actual table names
+   status != completed
 
 TODO
 delete_item(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   If item status is "complteted" or "in_progress", return error. Item cannot be removed. It is related to a task and has already begun. It can only be marked as "complete" and a note can be made about it if necessary
+   Only items that are "pending" can be safely removed.
 
 
 ## notes 
-reference table reference id
 
 TOOLS
+add_note(content, note_type, reference_table, reference_id, source="ai", severity="info", directive_name:None)
+get_note(note_id)
+get_notes([(note_id), (note_id), ...])
+get_notes_comprehensive(note_type:None, reference_table:None, reference_id:None, source:None, severity:None, directive_name:None)
+update_note(id, content:None, note_type:None, reference_table:None, reference_id:None, source:None, severity:None, directive_name:None);
 
 HELPERS is_sub_helper = false
-
-TODO
+get_notes_content_contains(search:String)
+   in case we need to search notes content filed for a specific string or match. Can/should use regex???
 delete_note(id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion")
+   return deleted note data
+   return_statements should include "You have deleted a note. This is not usual and may remove access to important information. The deleted field is available in the return data so you can add it back in case this was not really the best options. Please consider whether this deletion was correct."
 
 
 ## appropriate git getters and setters
-
+manage this appropriately.

@@ -8,4 +8,12 @@ return_statements_helpers table should be added. All helpers will query the retu
 directives_helpers table
 Instead of listing then in the directives text directly. Easier to maintain
 
-status get_files_by_flow get_flows_for_file
+status
+get tasks complete last 2 or 3 for reference
+get tasks incomplete and
+get_task_files(task_id) for list of files to be worked on for incomplete tasks
+get_incomplete_tasks()
+   all tasks with milestone_id having status != completed
+   calls get_incomplete_subtasks()
+   calls get_incomplete_sidequests()
+   returns list of all that exists so that AI/user can have all information at once.

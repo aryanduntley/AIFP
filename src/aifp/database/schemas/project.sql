@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS completion_path (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,                    -- e.g., 'setup', 'core dev', 'finish'
     order_index INTEGER NOT NULL,           -- For explicit ordering (1, 2, 3...)
-    status TEXT DEFAULT 'pending',          -- pending, in_progress, complete
+    status TEXT DEFAULT 'pending',          -- pending, in_progress, completed
     description TEXT,
     project_id INTEGER NOT NULL,            -- Link to project
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS notes (
     note_type TEXT NOT NULL,               -- e.g., 'clarification', 'pivot', 'research', 'entry_deletion'
     reference_table TEXT,                   -- e.g., 'items', 'files', 'completion_path'
     reference_id INTEGER,
-    source TEXT DEFAULT 'user',             -- 'user', 'ai', 'directive' (who created this note)
+    source TEXT DEFAULT 'ai',             -- 'ai', 'user', 'directive' (who created this note)
     directive_name TEXT,                    -- Optional: directive context if note relates to directive execution
     severity TEXT DEFAULT 'info',           -- 'info', 'warning', 'error'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
