@@ -23,7 +23,7 @@ get_directives(directive_id array)
 get_directives_by_name(directive_name array)
 No need to fine tune the getters too much as all data can be retrieved by one call, it's not too extensive.
 
-HELPERS
+HELPERS is_sub_helper=false
 get_directive_md(directive_name)
 get_directive_confidence(directive_name)
 get_directive_workflow(directive_name)
@@ -34,12 +34,13 @@ get_directive_name(directive_id)
 TOOLS
 get_categories()
 
-HELPERS
+HELPERS is_sub_helper=false
 get_category_id(category_name)
 get_category_name(category_id)
 get_category_description()
 
 ## directive_categories
+This table has no id field
 TOOLS
 get_directives_by_category(category_id)
    return_statements should include reference to get_directives(directive_id array)
@@ -54,7 +55,7 @@ get_interactions_for_directive(source_directive_id)
 get_interactions_for_directive_as_target(target_directive_id)
 ** active=1 should always be added to all these queries
 
-HELPERS
+HELPERS is_sub_helper=false
 get_interactions_by_weight(source_directive_id, less_or_greater:String-"less|greater", weight:Real/Float)
    less will get less than or equal to, greater will get greater than or equal to
 get_interactions_for_directive_with_relationship(source_directive_id, relation_type)
@@ -73,7 +74,7 @@ get_helpers_not_tool_not_sub()
 get_helpers_are_sub()
 get_helper_statements(helper_name)
 
-HELPERS
+HELPERS is_sub_helper=false
 get_helper_statements_by_id(helper_id)
 
 ## directive_helpers
