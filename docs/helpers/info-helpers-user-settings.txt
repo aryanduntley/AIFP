@@ -32,20 +32,57 @@ delete_directive_preference(preference_id)
 
 ## ai_interaction_log
 interaction_type directive_context user_feedback ai_interpretation applied_to_preferences
+disabled by default. Where is it's active status toggled?
+"directive_context" field. Renamed to directive_name
 
-TOOLS
+HELPERS is_sub_helper=false
+add_ai_interaction(interaction_type, directive_name, user_feedback, ai_interpretation, applied_to_preferences)
+get_ai_interaction(interaction_id)
+get_ai_interactions_by_type(interaction_type)
+get_ai_ineractions_by_directive(directive_name)
+update_ai_interaction(interaction_id, interaction_type:None, directive_name:None, user_feedback:None, ai_interpretation:None, applied_to_preferences:None)
+delete_ai_interaction(interaction_id)
 
 ## fp_flow_tracking
 function_name file_path fp_directives_applied compliance_score issues_json user_overrides
+disabled by default. Where is it's active status toggled?
 
-TOOLS
+HELPERS is_sub_helper=false
+add_fp_tracking(function_name, file_path, fp_directives_applied:text/json, compliance_score, issues_json, user_overrides)
+get_fp_tracking(id)
+get_fp_tracking_by_function(function_name)
+get_fp_tracking_by_functions(function_name array)
+get_fp_tracking_by_file(file_path)
+get_fp_tracking_by_score_range(less_or_greater:String, score)
+	"less" or "greater" string passed will get <= or >= score
+update_fp_tracking(id, function_name:None, file_path:None, fp_directives_applied:None, compliance_score:None, issues_json:None, user_overrides:None)
+delete_fp_tracking(id)
 
 ## issue_reports
 report_type title description directive_name context_log_ids status submitted_at
 With created_at and update_at, do we need submitted_at??? status values should be set options with CHECK as will all such fiels in all databases
 
-TOOLS
-
+HELPERS is_sub_helper=false
+add_issues_report(report_type, title, description, directive_name, context_log_id, status)
+	don't know whether to add submitted at here. I expect submitted at and created at are the same??? 
+get_issues_report(id)
+get_issues_reports_by_type(report_type)
+get_issues_report_by_title(title)
+get_issues_reports_by_directive(directive_name)
+get_issues_reports_by_status(status)
+update_issues_report(id, report_type:None, title:None, descripton:None, directive_name:None, context_log_id:None, status:None)
+delete_issues_report(id)
 
 
 ## tracking_settings
+feature_name enabled description estimated_token_overhead
+"(Feature Flags for Opt-In Tracking)" this is a potetial future feature? Like others, disabled by default, where is active status for tracking toggled?
+
+HELPERS is_sub_helper=false
+add_tracking_setting(feature_name, enabled, description, estimated_token_overhead)
+get_tracking_setting(id)
+get_tracking_settings_enabled()
+	returns all enabled tracking settings
+get_tracking_setting_by_name(feature_name)
+update_tracking_setting(id, feature_name:None, enabled:None, description:None, esitimated_token_overhead:None)
+delete_tracking_setting(id)

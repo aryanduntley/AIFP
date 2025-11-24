@@ -62,13 +62,14 @@ get_interactions_for_directive_with_relationship(source_directive_id, relation_t
 get_inactive_interactions_for_directive(source_directive_id)
 
 ## helper_functions
-name file_path parameters purpose error_handling is_tool is_sub_helper return_statements(JSON)
+name file_path parameters purpose error_handling is_tool is_sub_helper return_statements(JSON) target_database
 
 TOOLS
 get_helper_by_id(helper_id)
 get_helper_by_name(helper_name)
 get_helpers_by_id(helper_id array)
 get_helpers_by_name(helper_name array)
+get_helpers_by_database(target_database)
 get_helpers_are_tool()
 get_helpers_not_tool_not_sub()
 get_helpers_are_sub()

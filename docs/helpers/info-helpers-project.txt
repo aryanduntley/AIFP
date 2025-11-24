@@ -539,6 +539,8 @@ add_note(content, note_type, reference_table, reference_id, source="ai", severit
 get_note(note_id)
 get_notes([(note_id), (note_id), ...])
 get_notes_comprehensive(note_type:None, reference_table:None, reference_id:None, source:None, severity:None, directive_name:None)
+search_notes(s:String, reference_table:None, reference_id:None, sourece:None, severity:None, directive_name:None)
+   searches notes content for string. table and/or table field id, etc. are optionally set for more fine tuned searching
 update_note(id, content:None, note_type:None, reference_table:None, reference_id:None, source:None, severity:None, directive_name:None);
 
 HELPERS is_sub_helper = false

@@ -105,5 +105,18 @@ database change:
 tasks priority field is int while subtask and sidequest priority fields are text. task 0,1,2,... while the others are "low","medium","high", etc. We should have consistency here. Which is more useful, text or int?
 
 database change:
+core database
+add target_database field to helper_functions table.
+
+database change:
 core database add return_statements field to helper_functions table
 return_statements for tools and other relevant helpers should always add notes for any directive/db/etc. chaining. return_statements might also include tool and helper function lists for next steps after certain actions
+
+database change:
+user preferences database
+table ai_interactions filed "directive_context" rename to "directive_name"
+
+database change:
+user preferences database
+issues_reports table
+submitted_at field. Is it useful? What/how would be different from created_at? If no real benefit and no real distiction from created_at, we should remove submitted at.
