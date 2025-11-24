@@ -73,7 +73,6 @@ get_issues_reports_by_status(status)
 update_issues_report(id, report_type:None, title:None, descripton:None, directive_name:None, context_log_id:None, status:None)
 delete_issues_report(id)
 
-
 ## tracking_settings
 feature_name enabled description estimated_token_overhead
 "(Feature Flags for Opt-In Tracking)" this is a potetial future feature? Like others, disabled by default, where is active status for tracking toggled?

@@ -2,225 +2,133 @@
 AI is encouraged to use custom queries here if helper functions do not satisfy needs. The user directives is AI territory for management and follow-through. It can use the way AIFP works separate from user directives as a guide on how to manage user directives if useful. 
 
 ## user_directives
-name TEXT NOT NULL UNIQUE,                      -- e.g., 'turn_off_lights_5pm', 'monitor_stove'
-    source_file TEXT NOT NULL,                      -- e.g., 'directives/home_automation.yaml'
-    source_format TEXT NOT NULL CHECK (source_format IN ('yaml', 'json', 'txt')),
-    domain TEXT,                                    -- e.g., 'home_automation', 'aws_infrastructure', 'custom'
-    description TEXT,                               -- Human-readable description
-    raw_content TEXT NOT NULL,                      -- Original user-provided directive text
-    validated_content JSON NOT NULL,                -- AI-validated and structured directive
+name source_file source_format domain description raw_content validated_content trigger_type trigger_config action_type action_config status implementation_status implementation_file_path validation_questions validation_answers validated_at validated_by approved approved_at priority activated_at last_modified_at
 
-    -- Trigger information
-    trigger_type TEXT NOT NULL CHECK (trigger_type IN ('time', 'event', 'condition', 'manual')),
-    trigger_config JSON NOT NULL,                   -- e.g., {"time": "17:00", "timezone": "America/New_York"}
+last_modified is for source file
+activated_at is when directive became active
 
-    -- Action information
-    action_type TEXT NOT NULL,                      -- e.g., 'api_call', 'script_execution', 'function_call'
-    action_config JSON NOT NULL,                    -- e.g., {"api": "homeassistant", "endpoint": "/lights/off"}
-
-    -- Status and lifecycle
-    status TEXT DEFAULT 'pending_validation' CHECK (status IN (
-        'pending_validation',   -- Initial state, needs AI validation
-        'validated',            -- AI validated, ready for implementation
-        'implementing',         -- AI generating implementation code
-        'implemented',          -- Code generated, not yet active
-        'active',              -- Running and monitoring
-        'paused',              -- Temporarily disabled
-        'error',               -- Execution error occurred
-        'deprecated'           -- No longer in use
-    )),
-
-    -- Implementation tracking
-    implementation_status TEXT DEFAULT 'not_started' CHECK (implementation_status IN (
-        'not_started',
-        'in_progress',
-        'completed',
-        'failed'
-    )),
-    implementation_file_path TEXT,                  -- e.g., '.aifp-project/generated/handlers/lights_5pm.py'
-
-    -- Validation tracking
-    validation_questions JSON,                      -- Questions asked during validation
-    validation_answers JSON,                        -- User's answers
-    validated_at DATETIME,
-    validated_by TEXT DEFAULT 'ai',
-
-    -- Approval tracking (user testing and approval)
-    approved BOOLEAN DEFAULT 0,                     -- User has tested and approved implementation
-    approved_at DATETIME,                           -- When user approved
-
-    -- Metadata
-    priority INTEGER DEFAULT 0,                     -- Higher = more important
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    activated_at DATETIME,                          -- When directive became active
-    last_modified_at DATETIME                       -- When source file was last modified
+HELPERS is_sub_helper=false
+add_user_directive(name, source_file, source_format, domain, description, raw_content, validated_content, trigger_type, trigger_config, action_type, action_config, status, implementation_status, implementation_file_path, validation_questions, validation_answers, validated_by, approved, priority, activated_at:None, last_modified_at:None, validated_at:None, approved_at:None)
+get_user_directive(id)
+get_user_directives(id array)
+get_user_directive_by_name(name)
+get_user_directives_by_name(name array)
+get_user_directives_by_action_type(action_type)
+get_user_directives_by_trigger_type(trigger_type)
+get_user_directives_by_status(status)
+get_user_directives_by_implementation_status(implementation_status)
+set_user_directive_approved(id, approve_at)
+set_user_directive_validated(id, validated_at, validated_content:None, validation_questions:None, validation_ansers:None, validated_by:None)
+set_user_directive_modified(id, last_modified_at)
+set_user_directive_activate(id, active, activated_at:None)
+update_user_directive(id:None, name:None, source_file:None, source_format:None, domain:None, description:None, raw_content:None, validated_content:None, trigger_type:None, trigger_config:None, action_type:None, action_config:None, status:None, implementation_status:None, implementation_file_paht:None, validation_questions:None, validation_answers:None, validated_by:None, approved:None, priority:None, activated_at:None, last_modified_at:None, validated_at:None, approved_at:None)
+delete_user_directive(id)
 
 ## directive_executions
-directive_id INTEGER NOT NULL,
+directive_id last_execution_time next_scheduled_time total_executions success_count  error_count last_error_time last_error_type last_error_message avg_execution_time_ms max_execution_time_ms
 
-    -- Summary statistics only (detailed logs in files)
-    last_execution_time DATETIME,
-    next_scheduled_time DATETIME,                   -- For time-based triggers
-    total_executions INTEGER DEFAULT 0,
-    success_count INTEGER DEFAULT 0,
-    error_count INTEGER DEFAULT 0,
-
-    -- Last error info (for quick status checks)
-    last_error_time DATETIME,
-    last_error_type TEXT,                           -- e.g., 'connection_error', 'timeout', 'validation_error'
-    last_error_message TEXT,                        -- Brief error message (full details in error log file)
-
-    -- Performance metrics
-    avg_execution_time_ms REAL,                     -- Average execution time in milliseconds
-    max_execution_time_ms REAL,
+HELPERS is_sub_helper=false
+add_user_directive_execution(directive_id, last_execution_time, next_scheduled_time, total_executions, success_count, error_count, last_error_time, last_error_type, last_error_message, avg_execution_time_ms, max_execution_time_ms)
+get_user_directive_execution(id)
+get_user_directive_executions_by_directive(user_directive_id)
+get_user_directive_executions_by_avg_execution_time(less_or_greater, avg_execution_time_ms)
+    less_or_greater is string "less" or "greater", code will get <= or >= avg_execution_time_ms specified
+get_user_directive_executions_by_max_execution_time(less_or_greater, max_execution_time_ms)
+    less_or_greater is string "less" or "greater", code will get <= or >= max_execution_time_ms specified
+get_user_directive_executions_by_error_count(less_or_greater, error_count)
+get_user_directive_executions_by_total_executions(less_or_greater, total_executions)
+get_user_directive_executions_by_future_schedule(between_start, between_end)
+    will parse current time and get all directive executions that are scheduled between the specified times
+get_user_directive_executions_by_past_schedule(between_start, between_end)
+    will parse current time and get all directive executions that were already executed between the specified times
+update_user_directive_execution(id, directive_id:None, last_execution_time:None, next_scheduled_time:None, total_executions:None, success_count:None, error_count:None, last_error_time:None, last_error_type:None, last_error_message:None, avg_execution_time_ms:None, max_execution_time_ms:None)
+delete_user_directive_execution(id)
 
 ## directive_dependencies
-directive_id INTEGER NOT NULL,
+directive_id dependency_type dependency_name dependency_version status install_command user_confirmed confirmed_at  installed_at required description
 
-    -- Dependency information
-    dependency_type TEXT NOT NULL CHECK (dependency_type IN (
-        'python_package',       -- Python package (pip install)
-        'system_package',       -- System package (apt, brew, etc.)
-        'api_service',          -- External API (Home Assistant, AWS, etc.)
-        'file',                 -- File or directory dependency
-        'environment_variable', -- Required environment variable
-        'hardware'             -- Hardware dependency (e.g., specific sensor)
-    )),
-    dependency_name TEXT NOT NULL,                  -- e.g., 'boto3', 'homeassistant-api', 'GPIO'
-    dependency_version TEXT,                        -- e.g., '>=1.20.0', '2.0.1'
-
-    -- Installation status
-    status TEXT DEFAULT 'not_installed' CHECK (status IN (
-        'not_installed',
-        'pending_confirmation',     -- AI detected, waiting for user confirmation
-        'installing',
-        'installed',
-        'failed',
-        'not_available'
-    )),
-
-    -- Installation details
-    install_command TEXT,                           -- e.g., 'pip install boto3>=1.20.0'
-    user_confirmed BOOLEAN DEFAULT 0,               -- User approved installation
-    confirmed_at DATETIME,
-    installed_at DATETIME,
-
-    -- Metadata
-    required BOOLEAN DEFAULT 1,                     -- Is this dependency required or optional?
-    description TEXT,
+HELPERS is_sub_helper=false
+add_user_directive_dependency(directive_id, dependency_type, dependency_name, dependecy_version, status, install_command, user_confirmed, confirmed_at, installed_at, required, descripton)
+get_user_directive_dependecy(id)
+get_user_directive_dependencies_by_directive(user_directive_id)
+get_user_directive_dependencies_by_type(dependency_type)
+get_user_directive_dependencies_by_status(status)
+get_user_directive_dependencies_by_required(required)
+get_user_directive_dependencies_by_directive_required(user_directive_id, required)
+update_user_directive_dependency(id, directive_id:None, dependency_type:None, dependency_name:None, dependecy_version:None, status:None, install_command:None, user_confirmed:None, confirmed_at:None, installed_at:None, required:None, descripton:None)
+delete_user_directive_dependency(id)
 
 ## directive_implementations
-directive_id INTEGER NOT NULL,
+directive_id implementation_type file_path function_name language framework entry_point deployed deployed_at process_id file_checksum
 
-    -- Implementation details
-    implementation_type TEXT NOT NULL CHECK (implementation_type IN (
-        'event_handler',        -- Event-driven handler
-        'scheduler',            -- Time-based scheduler (cron job)
-        'service',             -- Long-running background service
-        'function',            -- Simple function call
-        'script'               -- Standalone script
-    )),
-    file_path TEXT NOT NULL,                        -- e.g., 'src/handlers/lights_5pm.py'
-    function_name TEXT,                             -- e.g., 'handle_lights_5pm'
-
-    -- Code metadata
-    language TEXT DEFAULT 'python',
-    framework TEXT,                                 -- e.g., 'asyncio', 'celery', 'apscheduler'
-    entry_point TEXT,                               -- How to execute (e.g., 'python handlers/lights_5pm.py')
-
-    -- Deployment status
-    deployed BOOLEAN DEFAULT 0,
-    deployed_at DATETIME,
-    process_id INTEGER,                             -- PID if running as background service
-
-    -- File tracking
-    file_checksum TEXT,                             -- MD5/SHA256 checksum for change detection
+HELPERS is_sub_helper=false
+add_user_directive_implementation(directive_id, implementation_type, file_path, function_name, language, framework, entry_point, deployed, deployed_at, process_id, file_checksum)
+get_user_directive_dependecy(id)
+get_user_directive_dependencies_by_directive(user_directive_id)
+get_user_directive_dependencies_by_function_name(function_name)
+get_user_directive_dependencies_by_file_path(file_path)
+get_user_directive_dependencies_by_implementation_type(implementation_type)
+update_user_directive_implementation(id, directive_id:None, implementation_type:None, file_path:None, function_name:None, language:None, framework:None, entry_point:None, deployed:None, deployed_at:None, process_id:None, file_checksum:None)
+delete_user_directive_implementation(id)
 
 ## directive_relationships
-source_directive_id INTEGER NOT NULL,
-    target_directive_id INTEGER NOT NULL,
+source_directive_id target_directive_id relationship_type description active
 
-    relationship_type TEXT NOT NULL CHECK (relationship_type IN (
-        'depends_on',           -- Source depends on target completing first
-        'triggers',            -- Source triggers target
-        'conflicts_with',      -- Source and target cannot both be active
-        'enhances'             -- Source enhances target's functionality
-    )),
-
-    description TEXT,
-    active BOOLEAN DEFAULT 1,
+HELPERS is_sub_helper=false
+add_user_directive_relationship(source_id, target_id, relationship, description, active)
+get_user_directive_relationship(id)
+get_user_directive_relationships_by_source(source_id, active=true)
+get_user_directive_relationships_by_target(target_id, active=true)
+get_user_directive_relationships_by_relationship(relationship, active=true)
+    active=true default, but can be specified as false to get inactive relationships
+update_user_directive_relationship(id, source_id:None, target_id:None, relationship:None, description:None, active:None)
+delete_user_directive_relationship(id)
 
 ## helper_functions
-name TEXT NOT NULL UNIQUE,               -- e.g., 'check_lights_status', 'send_aws_notification'
-    file_path TEXT,                          -- e.g., 'src/helpers/check_lights.py'
-    parameters JSON,                         -- e.g., '["room_id", "threshold"]'
-    purpose TEXT,
-    error_handling TEXT,
+name file_path parameters purpose error_handling function_signature return_type is_pure implementation_status
 
-    -- Code tracking (AI-generated implementation functions)
-    function_signature TEXT,                 -- e.g., 'def check_lights_status(room_id: str) -> bool:'
-    return_type TEXT,                        -- e.g., 'bool', 'dict', 'Result[str, Error]'
-    is_pure BOOLEAN DEFAULT 1,               -- Is this a pure function (FP compliance)
-
-    -- Status tracking
-    implementation_status TEXT DEFAULT 'not_implemented' CHECK (implementation_status IN (
-        'not_implemented',                   -- Function defined but code not yet generated
-        'generated',                         -- Code generated by AI
-        'tested',                            -- User has tested
-        'approved'                           -- User approved and active
-    )),
+HELPERS is_sub_helper=false
+add_user_helper_function(name, file_path, parameters, purpose, erro_handling, function_sig, return_type, is_pure, implementaiton_status)
+get_user_helper_function(id)
+get_user_helper_functions(id array)
+get_user_helper_function_by_name(name)
+get_user_helper_functions_by_name(name array)
+get_user_helper_functions_by_path(file_path)
+get_user_helper_functions_by_implementation_status(implementation_status)
+get_user_helper_functions_by_purity(is_pure)
+update_user_helper_function(id, name:None, file_path:None, parameters:None, purpose:None, erro_handling:None, function_sig:None, return_type:None, is_pure:None, implementaiton_status:None)
+delete_user_helper_function(id)
 
 ## directive_helpers
-directive_id INTEGER NOT NULL,
-    helper_function_id INTEGER NOT NULL,
-    execution_context TEXT,                  -- e.g., 'validation', 'execution', 'error_handler'
-    sequence_order INTEGER DEFAULT 0,        -- Order of execution if multiple helpers
-    is_required BOOLEAN DEFAULT 1,           -- TRUE if helper must execute
-    parameters_mapping JSON,                 -- Maps directive params to helper params
-    description TEXT,                        -- Brief note on why this helper is used
+directive_id helper_function_id execution_context sequence_order is_required parameters_mapping  description 
+
+HELPERS is_sub_helper=false
+add_user_directive_helper(directive_id, function_id, exec_context, order, required, param_mapping, description)
+get_user_directive_helper(id)
+get_user_directive_helpers(id array)
+get_user_directive_helpers_by_directive(user_directive_id, is_required)
+get_user_directive_helpers_by_function(function_id, is_required)
+    for all getters ordby sequence_order.
+update_user_directive_helper(id, directive_id:None, function_id:None, exec_context:None, order:None, required:None, param_mapping:None, description:None)
+delete_user_directive_helper(id)
 
 ## source_files
-file_path TEXT NOT NULL UNIQUE,                 -- e.g., 'directives/home_automation.yaml'
-    file_format TEXT NOT NULL CHECK (file_format IN ('yaml', 'json', 'txt')),
-    file_checksum TEXT NOT NULL,                    -- MD5/SHA256 checksum for change detection
+file_path file_format file_checksum last_parsed_at parse_status parse_error_message directive_count active_directive_count
 
-    -- Parsing status
-    last_parsed_at DATETIME,
-    parse_status TEXT DEFAULT 'not_parsed' CHECK (parse_status IN (
-        'not_parsed',
-        'parsing',
-        'parsed_successfully',
-        'parse_error'
-    )),
-    parse_error_message TEXT,
-
-    -- Directive count
-    directive_count INTEGER DEFAULT 0,
-    active_directive_count INTEGER DEFAULT 0,
+HELPERS is_sub_helper=false
+add_user_source_file(file_path, format, checksum, last_parsed, parse_status, parse_error_message, directive_count, active_directive_count)
+get_user_source_file(id)
+get_user_source_file_by_path(file_path)
+get_user_source_files_by_parse_status(status)
+update_user_source_file(id, file_path:None, format:None, checksum:None, last_parsed:None, parse_status:None, parse_error_message:None, directive_count:None, active_directive_count"None)
+delete_user_source_file(id)
 
 ## logging_config
-execution_logs_enabled BOOLEAN DEFAULT 1,
-    execution_log_rotation TEXT DEFAULT 'daily' CHECK (execution_log_rotation IN ('daily', 'weekly', 'size')),
-    execution_log_retention_days INTEGER DEFAULT 30,
-    execution_log_compress_after_days INTEGER DEFAULT 7,
-    execution_log_max_size_mb INTEGER DEFAULT 100,  -- For size-based rotation
+execution_logs_enabled execution_log_rotation execution_log_retention_days execution_log_compress_after_days execution_log_max_size_mb error_logs_enabled error_log_rotation error_log_retention_days error_log_max_size_mb error_log_format store_execution_statistics store_last_error_only store_execution_history execution_log_dir error_log_dir lifecycle_log_path
 
-    -- Error logging (file-based)
-    error_logs_enabled BOOLEAN DEFAULT 1,
-    error_log_rotation TEXT DEFAULT 'size' CHECK (error_log_rotation IN ('daily', 'weekly', 'size')),
-    error_log_retention_days INTEGER DEFAULT 90,    -- Keep errors longer
-    error_log_max_size_mb INTEGER DEFAULT 10,
-    error_log_format TEXT DEFAULT 'json' CHECK (error_log_format IN ('json', 'text')),
-
-    -- Database logging (statistics only)
-    store_execution_statistics BOOLEAN DEFAULT 1,   -- Store summary stats in directive_executions
-    store_last_error_only BOOLEAN DEFAULT 1,        -- Only keep last error in DB, rest in files
-    store_execution_history BOOLEAN DEFAULT 0,      -- DO NOT store full history in DB (use files)
-
-    -- Log file paths
-    execution_log_dir TEXT DEFAULT '.aifp-project/logs/execution/',
-    error_log_dir TEXT DEFAULT '.aifp-project/logs/errors/',
-    lifecycle_log_path TEXT DEFAULT '.aifp-project/logs/user-directives.log',
-
-## 
+HELPERS is_sub_helper=false
+add_user_logging_config(execution_logs_enabled, execution_log_rotation, execution_log_retention_days, execution_log_compress_after_days, execution_log_max_size_mb, error_logs_enabled, error_log_rotation, error_log_retention_days, error_log_max_size_mb, error_log_format, store_execution_statistics, store_last_error_only, store_execution_history, execution_log_dir, error_log_dir, lifecycle_log_path)
+get_user_logging_config(id)
+get_all_user_logging_config()
+update_user_logging_config(id, execution_logs_enabled:None, execution_log_rotation:None, execution_log_retention_days:None, execution_log_compress_after_days:None, execution_log_max_size_mb:None, error_logs_enabled:None, error_log_rotation:None, error_log_retention_days:None, error_log_max_size_mb:None, error_log_format:None, store_execution_statistics:None, store_last_error_only:None, store_execution_history:None, execution_log_dir:None, error_log_dir:None, lifecycle_log_path:None)
+delete_user_logging_config(id)
