@@ -2,8 +2,39 @@ Read:
 README.md
 sys-prompt/aifp_system_prompt.txt
 .aifp/ProjectBlueprint.md
+docs/notes.txt
 
 dev blueprints are in docs/blueprints/{}.md and the directive json files are located in docs/directives-json/{}, production directive md files located in src/aifp/reference/directives/{}.md. .aifp/ is our project management folder for dev, our project management/tracking database is there. We are following the FP coding style and managing the project through the project database in .aifp to ensure consistent and updated status. After every batch of completions, update the database to reflect the completed work.
+
+
+we were working on additional helpers to expand on the original:
+docs/directives-json/directive-helper
+docs/directives-json/helpers_parsed.json
+
+These are the files we were working on:
+docs/helpers/helper-functions-reference.md
+docs/helpers/helper-architecture.md
+docs/helpers/helper-tool-classification.md
+docs/helpers/generic-tools-mcp.md
+docs/helpers/generic-tools-project.md
+docs/helpers/additional-helpers-mcp.md
+docs/helpers/additional-helpers-project.md
+docs/helpers/additional-helpers-preferences.md
+docs/helpers/additional-helpers-user-directives.md
+
+however, I noticed several issues. places with parameters that were not in the schema and places where schema fields were not in the helpers. I decided to map out the helpers in my own way. This is them:
+docs/helpers/info-helpers-project.txt
+docs/helpers/info-helpers-core.txt
+docs/helpers/info-helpers-user-settings.txt
+docs/helpers/info-helpers-user-custom.txt
+
+We have several things to do. First, review the old and my new files. add to my new files any useful helpers that exist in the old "additional-helpers" files and the remove the "additional-helpers" files. Review all notes in my new helpers files and the database changes in notes.txt. Make any/all appropriate and useful database changes. 
+
+Then we have to review all existing directives. We don't want to move ahead too quicly on one thing and play catchup later on. Based on the new schema changes and any new processes (like file/function/type reservations), directives and their matchin md files need to be modified to reflect the new information. We should avoid adding too many helper/tool references to the directive files/data to prevent having all sorts of updates and edits to this data whenever helpers are modified or reworked. For directives to helpers, the core database table directive_helpers should be used. Much easier to maintain and update than scattered references throughout the directives.
+
+We will be using the return_statements (new additon I made that needs to be analyzed and evaluated) field added to the helper_function core database table for assisting AI with next steps and suggestion. Including code FP "purity"/verification, etc. We can use these for directive chaining suggestions and so on. This allows us more fine control and constant reminders to AI with every helper/tool function call in the return data.
+
+After our directives are updated and clean, we need to then evaluate the helper functions. We will need to make a json out of them and make sure we include parameters, return values, return_statements (we need to flesh these out and make sure we have as much useful detail and suggestions as possibe for AI guidance), tool/helper/sub_helper, etc. 
 
 src/aifp/database/schemas/user_preferences.sql
 src/aifp/database/schemas/aifp_core.sql
