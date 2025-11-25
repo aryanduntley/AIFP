@@ -1,12 +1,12 @@
 -- aifp_core.db Schema
--- Version: 1.5
+-- Version: 1.6
 -- Purpose: Defines MCP-level directives (read-only) and helper functions
 -- This database is immutable once deployed; AI reads it but never modifies it.
 
 CREATE TABLE IF NOT EXISTS directives (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,                      -- e.g., 'aifp_run', 'init_project'
-    type TEXT NOT NULL,                             -- 'fp' or 'project'
+    type TEXT NOT NULL CHECK (type IN ('fp', 'project', 'git', 'user_system', 'user_preference')),
     level INTEGER DEFAULT NULL,                     -- 0–4 for 'project' directives only
     parent_directive TEXT REFERENCES directives(name), -- Optional link for hierarchy
     description TEXT,
@@ -14,9 +14,7 @@ CREATE TABLE IF NOT EXISTS directives (
     md_file_path TEXT,                              -- e.g., 'directives/aifp_run.md'
     roadblocks_json TEXT,                           -- JSON array of issues/resolutions
     intent_keywords_json TEXT,                      -- Optional keywords for intent detection
-    confidence_threshold REAL DEFAULT 0.5,          -- 0–1 threshold for matching/escalation
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    confidence_threshold REAL DEFAULT 0.5           -- 0–1 threshold for matching/escalation
 );
 
 -- ===============================================================
@@ -27,9 +25,7 @@ CREATE TABLE IF NOT EXISTS directives (
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,                       -- e.g., 'purity', 'immutability', 'task_management'
-    description TEXT,                                -- Optional human-readable explanation
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    description TEXT                                 -- Optional human-readable explanation
 );
 
 -- Linking Table (many-to-many)
@@ -78,8 +74,6 @@ CREATE TABLE IF NOT EXISTS directives_interactions (
 
     -- For internal reasoning or graph traversal
     active BOOLEAN DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (source_directive_id) REFERENCES directives(id),
     FOREIGN KEY (target_directive_id) REFERENCES directives(id)
@@ -102,8 +96,8 @@ CREATE TABLE IF NOT EXISTS helper_functions (
     error_handling TEXT,                     -- e.g., 'Prompt user; optionally log to user_preferences.db if helper_function_logging enabled'
     is_tool BOOLEAN DEFAULT 0,               -- TRUE if exposed as MCP tool (AI can call directly via MCP)
     is_sub_helper BOOLEAN DEFAULT 0,         -- TRUE if sub-helper (only called by other helpers, no directive mapping)
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    return_statements JSON,                  -- JSON array of guidance/suggestions for AI after execution
+    target_database TEXT                     -- 'core', 'project', 'user_preferences', 'user_directives' - which database this helper operates on
 );
 
 -- ===============================================================
@@ -119,8 +113,6 @@ CREATE TABLE IF NOT EXISTS directive_helpers (
     is_required BOOLEAN DEFAULT 1,           -- TRUE if helper must execute, FALSE if optional/conditional
     parameters_mapping JSON,                 -- Optional: maps directive workflow params to helper params
     description TEXT,                        -- Brief note on why this helper is used
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(directive_id, helper_function_id, execution_context),
     FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE,
     FOREIGN KEY (helper_function_id) REFERENCES helper_functions(id) ON DELETE CASCADE
@@ -135,8 +127,8 @@ CREATE INDEX IF NOT EXISTS idx_directive_helpers_helper ON directive_helpers (he
 
 CREATE TABLE IF NOT EXISTS schema_version (
     id INTEGER PRIMARY KEY CHECK (id = 1),      -- Only one row allowed
-    version TEXT NOT NULL,                      -- e.g., '1.4'
+    version TEXT NOT NULL,                      -- e.g., '1.6'
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.5');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.6');

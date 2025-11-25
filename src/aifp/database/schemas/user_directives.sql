@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS user_directives (
     trigger_config JSON NOT NULL,                   -- e.g., {"time": "17:00", "timezone": "America/New_York"}
 
     -- Action information
-    action_type TEXT NOT NULL,                      -- e.g., 'api_call', 'script_execution', 'function_call'
+    action_type TEXT NOT NULL CHECK (action_type IN ('api_call', 'script_execution', 'function_call', 'command', 'notification')),
     action_config JSON NOT NULL,                    -- e.g., {"api": "homeassistant", "endpoint": "/lights/off"}
 
     -- Status and lifecycle

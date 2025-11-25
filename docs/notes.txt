@@ -2,39 +2,14 @@ Read:
 README.md
 sys-prompt/aifp_system_prompt.txt
 .aifp/ProjectBlueprint.md
-docs/notes.txt
+
+docs/directives-project-updates-needed.md
+docs/directive-review-master-checklist.md
+docs/schema-updates-decisions.md
+docs/directive-review-plan.md
+docs/directive-json-schema-alignment-analysis.md
 
 dev blueprints are in docs/blueprints/{}.md and the directive json files are located in docs/directives-json/{}, production directive md files located in src/aifp/reference/directives/{}.md. .aifp/ is our project management folder for dev, our project management/tracking database is there. We are following the FP coding style and managing the project through the project database in .aifp to ensure consistent and updated status. After every batch of completions, update the database to reflect the completed work.
-
-
-we were working on additional helpers to expand on the original:
-docs/directives-json/directive-helper
-docs/directives-json/helpers_parsed.json
-
-These are the files we were working on:
-docs/helpers/helper-functions-reference.md
-docs/helpers/helper-architecture.md
-docs/helpers/helper-tool-classification.md
-docs/helpers/generic-tools-mcp.md
-docs/helpers/generic-tools-project.md
-docs/helpers/additional-helpers-mcp.md
-docs/helpers/additional-helpers-project.md
-docs/helpers/additional-helpers-preferences.md
-docs/helpers/additional-helpers-user-directives.md
-
-however, I noticed several issues. places with parameters that were not in the schema and places where schema fields were not in the helpers. I decided to map out the helpers in my own way. This is them:
-docs/helpers/info-helpers-project.txt
-docs/helpers/info-helpers-core.txt
-docs/helpers/info-helpers-user-settings.txt
-docs/helpers/info-helpers-user-custom.txt
-
-We have several things to do. First, review the old and my new files. add to my new files any useful helpers that exist in the old "additional-helpers" files and the remove the "additional-helpers" files. Review all notes in my new helpers files and the database changes in notes.txt. Make any/all appropriate and useful database changes. 
-
-Then we have to review all existing directives. We don't want to move ahead too quicly on one thing and play catchup later on. Based on the new schema changes and any new processes (like file/function/type reservations), directives and their matchin md files need to be modified to reflect the new information. We should avoid adding too many helper/tool references to the directive files/data to prevent having all sorts of updates and edits to this data whenever helpers are modified or reworked. For directives to helpers, the core database table directive_helpers should be used. Much easier to maintain and update than scattered references throughout the directives.
-
-We will be using the return_statements (new additon I made that needs to be analyzed and evaluated) field added to the helper_function core database table for assisting AI with next steps and suggestion. Including code FP "purity"/verification, etc. We can use these for directive chaining suggestions and so on. This allows us more fine control and constant reminders to AI with every helper/tool function call in the return data.
-
-After our directives are updated and clean, we need to then evaluate the helper functions. We will need to make a json out of them and make sure we include parameters, return values, return_statements (we need to flesh these out and make sure we have as much useful detail and suggestions as possibe for AI guidance), tool/helper/sub_helper, etc. 
 
 src/aifp/database/schemas/user_preferences.sql
 src/aifp/database/schemas/aifp_core.sql
@@ -66,88 +41,49 @@ update with new helpers, fix paths (tools/ subdir and file names)
 
 docs/directives-json/sync-directives.py
 docs/helpers/helper-architecture.md
-docs/helpers/additional-helpers-user-directives.md
-docs/helpers/additional-helpers-mcp.md
-docs/helpers/additional-helpers-preferences.md
-docs/helpers/additional-helpers-project.md
-
 docs/helpers/generic-tools-project.md
 docs/helpers/generic-tools-mcp.md
-
-REVIEW ALL HELPER FUNCTIONS. AI made many mistakes, making up parameters, ommitting others, etc. Review all.
-document flow ids json filed to tasks and sidequests tables in project db schema
-remove project id, update documentation to reflect
 
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
 New directive requiring that files, functions types be reserved in database before writing to avoid potential cleanup aftermath if created before adding to database with many references. New additons of these types will require the id suffixed to the name, so reservation is important. After creation, the finalization functions must be called to update the name (at least) after write creations.
+docs/schema-updates-decisions.md
 
-database change:
-TRIGGERS
+docs/directives-json/sync-directives.py
+review available_helpers in directives json files. can remove completely? We must match helpers to directives in directive_helpers table. also directive_interactions and categories with directive_categories. All directive schema data should be available in directives json files as well as all interactions and helper function relationships.
+docs/directive-json-schema-alignment-analysis.md
+in this analysis, it's conforming to docs/directives-json/sync-directives.py. We can have a better structure for categories, etc. if needed, but I don't know if we need separate files for the linking/relationships. 
 
-- Triggers for timestamp updates
-CREATE TRIGGER IF NOT EXISTS update_project_timestamp
-AFTER UPDATE ON project
-FOR EACH ROW
-BEGIN
-    UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-what is "OLD.id" about?
+If I were to write this myself, I would create one sync-directives.py file that reads the directive json. Fore each json directive entry, it would make the directive table entry. read any categories check existing (get id if so) else add to categories table, then add the directive_categories entry. 
 
-database change:
-add name to file table. Not just path. If name is there, should path NOT include name? name filed helps with updating name and appending id without having to parse path.
+separate file for directive_interactions. This would have to be ran after directives entered to get directives by name, return id, so that entries into directive_interactions can happen using ID
 
-database change:
-remove project field (or project_id) from all tables except project table.
+separate file for helpers. Each helper json should have directives association by name(s). As a helper is entered into database, gets all listed directives from db by name, retrieves ID, adds directive_helpers relationship to database.
 
-database change:
-function names unique
+So with this flow, directives don't need to list helper functions. AI should have only a reference to helpers and can use the helpers/tools:
+docs/helpers/info-helpers-core.txt :
+get_helpers_for_directive(directive_id, include_helpers_data=false)
+   include_helpers_data=false return all directive_helpers data for matches
+   include_helpers_data=true calls get_helpers_by_id(helper_id array)
+      returns all directive_helpers data AND helper_functions data for matches
+get_directives_for_helper(helper_function_id, include_directives_data=false)
+   include_directives_data=false return all directive_helpers data for matches
+   include_directives_data=true calls get_directives(directive_id array)
+      returns all directive_helpers data AND directives data for matches
 
-database change:
-functions table add returns field to provide return values for function
+let's make these source of truth:
+docs/helpers/info-helpers-user-settings.txt
+docs/helpers/info-helpers-project.txt
+docs/helpers/info-helpers-core.txt
+docs/helpers/info-helpers-user-custom.txt
 
-database change:
-add return_statements_helpers table to core db. This will map return statements to helper functions. We can add many statements for each helper function.
+need to consolidate all helpers to avoid confusion:
+docs/helpers/helper-architecture.md
+docs/helpers/helper-tool-classification.md
+docs/helpers/generic-tools-mcp.md
+docs/helpers/generic-tools-project.md
+docs/helpers/helper-functions-reference.md
+docs/directives-json/directive-helper-interactions.json
+docs/directives-json/helpers_parsed.json
 
-database change:
-CREATE TABLE types_functions (
-    type_id INTEGER REFERENCES types(id),
-    function_id INTEGER REFERENCES functions(id),
-    role TEXT  -- e.g. 'constructor', 'method', 'operator', etc.
-);
-If useful. Discuss. Would there typically be a many to many relationship between types and functions? If so, should we add _idXXX to types like we do with functions? Potential logic detailed in info-helpers-project.txt
-
-database change:
-??? should we add file_id to types???
-
-database change:
-add is_reserved field to tables (files, functions and types). AI must first reserve to get id's then make files / write functions (or types) with appropriate naming -IDxxx for files _idxxx for functions and types. Once made and written to, AI can finalize the entries with the real data and mare is_reserved as false.
-
-database change:
-status for "complete" or "completed" for all tables should be uniform. we should either use complete or completed. This should be forced if possible. We do not want to look for "complete" when "completed" exists or also exists or not know which to use for which table, etc. Need consistency for this. I suggest "completed"
-
-database change:
-severity TEXT 
-    CHECK (severity IN ('info', 'warning', 'error'))
-    DEFAULT 'info'
-for all fields that have these types of options (including status, priority, etc.) we should set checks to ensure we have standards. When searching by severity or status or any others we don't want some arbitrary entries that we would never know to check for. It also prevents issues like status = complete vs status = completed.
-
-database change:
-tasks priority field is int while subtask and sidequest priority fields are text. task 0,1,2,... while the others are "low","medium","high", etc. We should have consistency here. Which is more useful, text or int?
-
-database change:
-core database
-add target_database field to helper_functions table.
-
-database change:
-core database add return_statements field to helper_functions table
-return_statements for tools and other relevant helpers should always add notes for any directive/db/etc. chaining. return_statements might also include tool and helper function lists for next steps after certain actions
-
-database change:
-user preferences database
-table ai_interactions filed "directive_context" rename to "directive_name"
-
-database change:
-user preferences database
-issues_reports table
-submitted_at field. Is it useful? What/how would be different from created_at? If no real benefit and no real distiction from created_at, we should remove submitted at.
+need to flesh out return statements

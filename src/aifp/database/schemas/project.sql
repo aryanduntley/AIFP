@@ -1,6 +1,18 @@
 -- project.db Schema
--- Version: 1.2
+-- Version: 1.3
 -- Purpose: Track project-specific data, including files, functions, themes, flows, and completion paths
+-- Changelog v1.3:
+--   - Added reservation system: is_reserved field to files, functions, types
+--   - Added file_name to files table
+--   - Added file_id to types table for file tracking
+--   - Added returns field to functions table
+--   - Made function names UNIQUE (FP flat namespace - no overloading)
+--   - Removed linked_function_id from types table (use types_functions junction instead)
+--   - Removed project_id from all tables (1 project per database)
+--   - Added types_functions junction table for many-to-many type-function relationships
+--   - Added comprehensive timestamp triggers for all mutable tables
+--   - Added CHECK constraints to all status/priority/select fields
+--   - Standardized priority fields from INTEGER to TEXT ('low', 'medium', 'high', 'critical')
 -- Changelog v1.2: Added flow_ids (JSON array) to tasks and sidequests tables for flow-based work context linking
 
 -- Project Table: High-level project overview and evolution
@@ -9,7 +21,7 @@ CREATE TABLE IF NOT EXISTS project (
     name TEXT NOT NULL UNIQUE,              -- e.g., 'MatrixCalculator'
     purpose TEXT NOT NULL,                  -- e.g., 'Build a pure functional matrix math library'
     goals_json TEXT NOT NULL,               -- JSON array, e.g., '["Fast computation", "No OOP"]'
-    status TEXT DEFAULT 'active',           -- active, paused, completed, abandoned
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed', 'abandoned')),
     version INTEGER DEFAULT 1,              -- Tracks idea evolution
     blueprint_checksum TEXT,                -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
     user_directives_status TEXT DEFAULT NULL CHECK (user_directives_status IN (NULL, 'in_progress', 'active', 'disabled')),
@@ -20,54 +32,65 @@ CREATE TABLE IF NOT EXISTS project (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Infrastructure Table: Project setup
+-- Infrastructure Table: Project setup (no project_id needed - 1 project per database)
 CREATE TABLE IF NOT EXISTS infrastructure (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL,                    -- e.g., 'language', 'package', 'testing'
     value TEXT,                            -- e.g., 'Python 3.12', 'numpy'
     description TEXT,
-    project_id INTEGER NOT NULL,            -- Link to project
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES project(id)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Files Table: Project file inventory
+-- Files Table: Project file inventory with reservation system
 CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    path TEXT NOT NULL UNIQUE,
+    name TEXT,                              -- File name (e.g., 'calculator-ID42.py')
+    path TEXT NOT NULL UNIQUE,              -- Full file path
     language TEXT,                          -- Guessed or set (e.g., 'Python')
     checksum TEXT,                          -- For change detection
-    project_id INTEGER NOT NULL,            -- Link to project
+    is_reserved BOOLEAN DEFAULT 0,          -- TRUE during reservation, FALSE after finalization
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES project(id)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Functions Table: Per-file details
+-- Functions Table: Per-file details with reservation system
 CREATE TABLE IF NOT EXISTS functions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,              -- Unique across entire project (FP flat namespace)
     file_id INTEGER NOT NULL,
     purpose TEXT,
     parameters JSON,                        -- e.g., '["param1: str", "param2: int"]'
+    returns JSON,                           -- e.g., '{"type": "int", "description": "Sum of inputs"}'
+    is_reserved BOOLEAN DEFAULT 0,          -- TRUE during reservation, FALSE after finalization
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
--- Types Table: For algebraic data types (directive_fp_adt)
+-- Types Table: For algebraic data types (directive_fp_adt) with reservation system
 CREATE TABLE IF NOT EXISTS types (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    definition_json TEXT NOT NULL, -- JSON schema for ADT (e.g., {"type": "enum", "variants": ["A", "B"]})
+    file_id INTEGER,                            -- File where type is defined
+    definition_json TEXT NOT NULL,              -- JSON schema for ADT (e.g., {"type": "enum", "variants": ["A", "B"]})
     description TEXT,
-    linked_function_id INTEGER,                -- Optional: ADT associated with specific function
-    project_id INTEGER NOT NULL,
+    is_reserved BOOLEAN DEFAULT 0,              -- TRUE during reservation, FALSE after finalization
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES project(id),
-    FOREIGN KEY (linked_function_id) REFERENCES functions(id) ON DELETE SET NULL
+    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
+);
+
+-- Types-Functions Junction Table: Many-to-many relationships between types and functions
+CREATE TABLE IF NOT EXISTS types_functions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type_id INTEGER NOT NULL,
+    function_id INTEGER NOT NULL,
+    role TEXT CHECK (role IN ('factory', 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(type_id, function_id, role),
+    FOREIGN KEY (type_id) REFERENCES types(id) ON DELETE CASCADE,
+    FOREIGN KEY (function_id) REFERENCES functions(id) ON DELETE CASCADE
 );
 
 -- Interactions Table: For function dependencies and chaining (directive_fp_dependency_tracking, directive_fp_chaining)
@@ -75,7 +98,7 @@ CREATE TABLE IF NOT EXISTS interactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     source_function_id INTEGER NOT NULL,
     target_function_id INTEGER NOT NULL,
-    interaction_type TEXT NOT NULL, -- e.g., 'call', 'chain', 'borrow'
+    interaction_type TEXT NOT NULL CHECK (interaction_type IN ('call', 'chain', 'borrow', 'compose', 'pipe')),
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -83,30 +106,26 @@ CREATE TABLE IF NOT EXISTS interactions (
     FOREIGN KEY (target_function_id) REFERENCES functions(id) ON DELETE CASCADE
 );
 
--- Themes Table: AI-generated groupings
+-- Themes Table: AI-generated groupings (no project_id needed - 1 project per database)
 CREATE TABLE IF NOT EXISTS themes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     description TEXT,
     ai_generated BOOLEAN DEFAULT 1,
     confidence_score REAL DEFAULT 0.0,      -- 0-1
-    project_id INTEGER NOT NULL,            -- Link to project
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES project(id)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Flows Table: Sequences within themes
+-- Flows Table: Sequences within themes (no project_id needed - 1 project per database)
 CREATE TABLE IF NOT EXISTS flows (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
     ai_generated BOOLEAN DEFAULT 1,
     confidence_score REAL DEFAULT 0.0,
-    project_id INTEGER NOT NULL,            -- Link to project
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES project(id)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Junction Tables for Many-to-Many
@@ -126,17 +145,15 @@ CREATE TABLE IF NOT EXISTS file_flows (
     FOREIGN KEY (flow_id) REFERENCES flows(id) ON DELETE CASCADE
 );
 
--- Completion Path Table: High-level, standalone roadmap
+-- Completion Path Table: High-level, standalone roadmap (no project_id needed - 1 project per database)
 CREATE TABLE IF NOT EXISTS completion_path (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,                    -- e.g., 'setup', 'core dev', 'finish'
     order_index INTEGER NOT NULL,           -- For explicit ordering (1, 2, 3...)
-    status TEXT DEFAULT 'pending',          -- pending, in_progress, completed
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
     description TEXT,
-    project_id INTEGER NOT NULL,            -- Link to project
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES project(id)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Milestones Table: Standalone overviews under completion_path
@@ -144,7 +161,7 @@ CREATE TABLE IF NOT EXISTS milestones (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     completion_path_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'blocked')),
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -156,8 +173,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     milestone_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
-    priority INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'blocked')),
+    priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
     description TEXT,
     flow_ids TEXT,                          -- JSON array: [1, 3, 5] - flows this task works on
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -170,8 +187,8 @@ CREATE TABLE IF NOT EXISTS subtasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     parent_task_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
-    priority TEXT DEFAULT 'high', -- Subtasks default to high priority
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'blocked')),
+    priority TEXT DEFAULT 'high' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -184,8 +201,8 @@ CREATE TABLE IF NOT EXISTS sidequests (
     paused_task_id INTEGER NOT NULL,
     paused_subtask_id INTEGER,                 -- Optional: for finer-grained interruption tracking
     name TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
-    priority TEXT DEFAULT 'low', -- Sidequests default to low priority
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
+    priority TEXT DEFAULT 'critical' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
     description TEXT,
     flow_ids TEXT,                             -- JSON array: [1, 3, 5] - flows this sidequest works on
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -200,7 +217,7 @@ CREATE TABLE IF NOT EXISTS items (
     reference_table TEXT NOT NULL CHECK (reference_table IN ('tasks', 'subtasks', 'sidequests')),
     reference_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -210,12 +227,12 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE TABLE IF NOT EXISTS notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
-    note_type TEXT NOT NULL,               -- e.g., 'clarification', 'pivot', 'research', 'entry_deletion'
+    note_type TEXT NOT NULL CHECK (note_type IN ('clarification', 'pivot', 'research', 'entry_deletion', 'warning', 'error', 'info')),
     reference_table TEXT,                   -- e.g., 'items', 'files', 'completion_path'
     reference_id INTEGER,
-    source TEXT DEFAULT 'ai',             -- 'ai', 'user', 'directive' (who created this note)
+    source TEXT DEFAULT 'ai' CHECK (source IN ('ai', 'user', 'directive')),
     directive_name TEXT,                    -- Optional: directive context if note relates to directive execution
-    severity TEXT DEFAULT 'info',           -- 'info', 'warning', 'error'
+    severity TEXT DEFAULT 'info' CHECK (severity IN ('info', 'warning', 'error')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -233,7 +250,7 @@ CREATE TABLE IF NOT EXISTS work_branches (
     branch_name TEXT UNIQUE NOT NULL,           -- e.g., 'aifp-alice-001', 'aifp-ai-claude-001'
     user_name TEXT NOT NULL,                    -- e.g., 'alice', 'ai-claude'
     purpose TEXT NOT NULL,                      -- e.g., 'Implement matrix operations'
-    status TEXT DEFAULT 'active',               -- active, merged, abandoned
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'merged', 'abandoned')),
     created_from TEXT DEFAULT 'main',           -- Parent branch (usually 'main')
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     merged_at DATETIME NULL,                    -- When branch was merged
@@ -266,12 +283,110 @@ CREATE INDEX IF NOT EXISTS idx_merge_history_source ON merge_history(source_bran
 -- Triggers and Indexes
 -- ===============================================================
 
--- Triggers for timestamp updates
+-- Comprehensive Timestamp Triggers for All Tables
 CREATE TRIGGER IF NOT EXISTS update_project_timestamp
 AFTER UPDATE ON project
 FOR EACH ROW
 BEGIN
     UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_infrastructure_timestamp
+AFTER UPDATE ON infrastructure
+FOR EACH ROW
+BEGIN
+    UPDATE infrastructure SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_files_timestamp
+AFTER UPDATE ON files
+FOR EACH ROW
+BEGIN
+    UPDATE files SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_functions_timestamp
+AFTER UPDATE ON functions
+FOR EACH ROW
+BEGIN
+    UPDATE functions SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_types_timestamp
+AFTER UPDATE ON types
+FOR EACH ROW
+BEGIN
+    UPDATE types SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_interactions_timestamp
+AFTER UPDATE ON interactions
+FOR EACH ROW
+BEGIN
+    UPDATE interactions SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_themes_timestamp
+AFTER UPDATE ON themes
+FOR EACH ROW
+BEGIN
+    UPDATE themes SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_flows_timestamp
+AFTER UPDATE ON flows
+FOR EACH ROW
+BEGIN
+    UPDATE flows SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_completion_path_timestamp
+AFTER UPDATE ON completion_path
+FOR EACH ROW
+BEGIN
+    UPDATE completion_path SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_milestones_timestamp
+AFTER UPDATE ON milestones
+FOR EACH ROW
+BEGIN
+    UPDATE milestones SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_tasks_timestamp
+AFTER UPDATE ON tasks
+FOR EACH ROW
+BEGIN
+    UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_subtasks_timestamp
+AFTER UPDATE ON subtasks
+FOR EACH ROW
+BEGIN
+    UPDATE subtasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_sidequests_timestamp
+AFTER UPDATE ON sidequests
+FOR EACH ROW
+BEGIN
+    UPDATE sidequests SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_items_timestamp
+AFTER UPDATE ON items
+FOR EACH ROW
+BEGIN
+    UPDATE items SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_notes_timestamp
+AFTER UPDATE ON notes
+FOR EACH ROW
+BEGIN
+    UPDATE notes SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
 -- Triggers for items table cleanup (polymorphic orphan prevention)
@@ -311,8 +426,8 @@ CREATE INDEX IF NOT EXISTS idx_notes_source ON notes(source);
 
 CREATE TABLE IF NOT EXISTS schema_version (
     id INTEGER PRIMARY KEY CHECK (id = 1),      -- Only one row allowed
-    version TEXT NOT NULL,                      -- e.g., '1.2'
+    version TEXT NOT NULL,                      -- e.g., '1.3'
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.2');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.3');

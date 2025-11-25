@@ -1,7 +1,11 @@
 -- user_preferences.db Schema
--- Version: 1.0
+-- Version: 1.1
 -- Purpose: Store user-specific AI behavior preferences, customizations, and opt-in tracking
 -- Location: .aifp-project/user_preferences.db
+-- Changelog v1.1:
+--   - Renamed directive_context to directive_name in ai_interaction_log table
+--   - Added CHECK constraints for status fields
+--   - Added comprehensive timestamp triggers
 
 -- ===============================================================
 -- Core Settings
@@ -13,7 +17,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
     setting_key TEXT NOT NULL UNIQUE,           -- e.g., 'fp_strictness_level', 'prefer_explicit_returns'
     setting_value TEXT NOT NULL,                -- JSON value or simple string
     description TEXT,
-    scope TEXT DEFAULT 'project',               -- 'project' (future: 'global' for multi-project support)
+    scope TEXT DEFAULT 'project' CHECK (scope IN ('project', 'global')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -42,8 +46,8 @@ CREATE TABLE IF NOT EXISTS directive_preferences (
 -- AI Interaction Log: Track user corrections to learn preferences over time
 CREATE TABLE IF NOT EXISTS ai_interaction_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    interaction_type TEXT NOT NULL,             -- 'preference_learned', 'correction', 'clarification'
-    directive_context TEXT,                     -- Directive being executed
+    interaction_type TEXT NOT NULL CHECK (interaction_type IN ('preference_learned', 'correction', 'clarification')),
+    directive_name TEXT,                        -- Directive being executed (renamed from directive_context)
     user_feedback TEXT NOT NULL,                -- What user said/corrected
     ai_interpretation TEXT,                     -- How AI interpreted it
     applied_to_preferences BOOLEAN DEFAULT 0,   -- Whether this updated preferences
@@ -74,12 +78,12 @@ CREATE TABLE IF NOT EXISTS fp_flow_tracking (
 -- Issue Reports: Allow users to compile context and submit issues with full logs
 CREATE TABLE IF NOT EXISTS issue_reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    report_type TEXT NOT NULL,                  -- 'bug', 'feature_request', 'directive_issue'
+    report_type TEXT NOT NULL CHECK (report_type IN ('bug', 'feature_request', 'directive_issue')),
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     directive_name TEXT,                        -- Related directive if applicable
     context_log_ids TEXT,                       -- JSON array of ai_interaction_log IDs
-    status TEXT DEFAULT 'draft',                -- 'draft', 'submitted', 'resolved'
+    status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'resolved')),
     submitted_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -106,7 +110,7 @@ CREATE TABLE IF NOT EXISTS tracking_settings (
 
 CREATE INDEX IF NOT EXISTS idx_directive_preferences_directive ON directive_preferences(directive_name);
 CREATE INDEX IF NOT EXISTS idx_directive_preferences_active ON directive_preferences(active);
-CREATE INDEX IF NOT EXISTS idx_ai_interaction_log_directive ON ai_interaction_log(directive_context);
+CREATE INDEX IF NOT EXISTS idx_ai_interaction_log_directive ON ai_interaction_log(directive_name);
 CREATE INDEX IF NOT EXISTS idx_fp_flow_tracking_file ON fp_flow_tracking(file_path);
 CREATE INDEX IF NOT EXISTS idx_issue_reports_status ON issue_reports(status);
 
@@ -148,8 +152,8 @@ END;
 
 CREATE TABLE IF NOT EXISTS schema_version (
     id INTEGER PRIMARY KEY CHECK (id = 1),      -- Only one row allowed
-    version TEXT NOT NULL,                      -- e.g., '1.0'
+    version TEXT NOT NULL,                      -- e.g., '1.1'
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.0');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.1');

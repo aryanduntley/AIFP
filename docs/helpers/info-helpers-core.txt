@@ -90,3 +90,23 @@ get_directives_for_helper(helper_function_id, include_directives_data=false)
    include_directives_data=false return all directive_helpers data for matches
    include_directives_data=true calls get_directives(directive_id array)
       returns all directive_helpers data AND directives data for matches
+
+## Hierarchy Navigation Helpers
+NOTE: Added from additional-helpers-mcp.md review for efficient directive relationship traversal
+
+HELPERS is_sub_helper=false
+get_directive_tree(parent_name, max_depth=None)
+   Get complete directive tree/hierarchy recursively from a parent
+   returns: {"directive": string, "depth": int, "children": [recursive], "total_descendants": int}
+
+get_directive_branch(directive_name)
+   Get linear branch from directive to root (ancestors path/breadcrumbs)
+   returns: {"directive": string, "branch": [names from current to root], "depth": int, "root": string}
+
+get_directive_siblings(directive_name)
+   Get all directives that share the same parent
+   returns: {"directive": string, "parent": string, "siblings": [names], "sibling_count": int}
+
+get_directive_depth(directive_name)
+   Get depth level of directive in hierarchy (distance from root)
+   returns: {"directive": string, "depth": int, "ancestors": [names], "root": string}

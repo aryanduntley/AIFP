@@ -41,6 +41,8 @@ create_project(name, purpose, goals, status, version, user_directives_status(*Ca
    last_known_git_hash and last_git_sync fields initial values populated automatically.
 get_project()
    only one entry, so no need for special getters. Just return whole result set
+blueprint_has_changed()
+   creates checksum of project blueprint, then evaluates against current checksum in db. returns true or false.
 update_project(name(*Can Be Null), purpose(*Can Be Null), goals(*Can Be Null), status(*Can Be Null), version(*Can Be Null), user_directives_status(*Can Be Null))
 
 There should be no delete_project... at all
@@ -57,8 +59,6 @@ get_insfrastructure_by_type(type)
 get_insfrastructure_by_value(value)
 get_infrastructure_by_type_value(type, value)
 update_infrastructure(id, type(*Can Be Null), value(*Can Be Null), description(*Can Be Null))
-blueprint_has_changed()
-   creates checksum of project blueprint, then evaluates against current checksum in db. returns true or false.
 delete_infrastructure(infrastructure_id, note_reason:text, note_severit:string, note_source:string "ai" or "user", note_type: "entry_deletion") 
 
 
@@ -551,5 +551,121 @@ delete_note(id, note_reason:text, note_severit:string, note_source:string "ai" o
    return_statements should include "You have deleted a note. This is not usual and may remove access to important information. The deleted field is available in the return data so you can add it back in case this was not really the best options. Please consider whether this deletion was correct."
 
 
-## appropriate git getters and setters
-manage this appropriately.
+## Flow-Based Work Context Helpers
+NOTE: Added from additional-helpers-project.md review
+
+These helpers provide flow-aware context for AI to understand what files are currently being worked on.
+
+HELPERS is_sub_helper = false
+get_work_context()
+   Purpose: Get comprehensive work context including current task, flows, and related files
+   returns: {
+      "current_task": task_object,
+      "current_flows": [flow_objects],
+      "related_files": [file_objects],
+      "active_sidequests": [sidequest_objects]
+   }
+   Useful for AI to understand current work focus without multiple queries
+
+get_files_by_flow_context(flow_id)
+   Purpose: Get all files associated with a flow along with their current functions
+   returns: Array of file objects with embedded function arrays
+   Useful for understanding complete flow implementation
+
+## Git Helpers (is_sub_helper = false unless noted)
+NOTE: All git helpers from helpers_parsed.json. These manage git integration and state tracking.
+
+get_current_commit_hash(project_root)
+   Purpose: Get current Git HEAD commit hash for external change detection
+   returns: String commit hash or None if Git unavailable
+   error_handling: Return None if Git unavailable or not a Git repository
+   used_by: git_init, git_sync_state, git_detect_external_changes
+
+get_current_branch(project_root)
+   Purpose: Get current Git branch name
+   returns: String branch name or None if Git unavailable
+   error_handling: Return None if Git unavailable
+   used_by: git_create_branch, git_sync_state, status reporting
+
+get_git_status(project_root)
+   Purpose: Convenience wrapper combining multiple Git status queries. Returns comprehensive Git state including current branch, commit hash, uncommitted changes, and external change detection
+   returns: {
+      "git_available": boolean,
+      "current_branch": string,
+      "commit_hash": string,
+      "uncommitted_changes": boolean,
+      "external_changes_detected": boolean
+   }
+   error_handling: Returns dict with git_available=False if Git unavailable. Gracefully handles missing project.db
+   used_by: git_sync_state, aifp_status, any directive needing comprehensive Git state snapshot
+
+detect_external_changes(project_root)
+   Purpose: Compare current Git HEAD with project.last_known_git_hash to detect external code modifications
+   returns: {
+      "changes_detected": boolean,
+      "previous_hash": string,
+      "current_hash": string,
+      "files_changed": [array of file paths]
+   }
+   error_handling: Return empty changes if Git unavailable or hash missing
+   used_by: git_detect_external_changes directive, aifp_status
+
+create_user_branch(user, purpose, project_root)
+   Purpose: Create new work branch following naming convention aifp-{user}-{number}
+   parameters: user (string), purpose (string), project_root (string)
+   returns: {
+      "success": boolean,
+      "branch_name": string,
+      "branch_number": integer
+   }
+   error_handling: Increment number if branch exists, prompt user if Git fails
+   used_by: git_create_branch directive
+
+detect_conflicts_before_merge(source_branch, project_root)
+   Purpose: FP-powered conflict analysis before merging. Queries project.db from both branches to analyze function purity, dependencies, and tests
+   parameters: source_branch (string), project_root (string)
+   returns: {
+      "conflicts_detected": boolean,
+      "file_conflicts": [array],
+      "function_conflicts": [array],
+      "confidence_scores": object
+   }
+   error_handling: Fall back to file-level conflicts if DB query fails
+   used_by: git_detect_conflicts, git_merge_branch directives
+
+merge_with_fp_intelligence(source_branch, project_root)
+   Purpose: Perform Git merge with FP-powered conflict resolution. Auto-resolves high-confidence conflicts (>0.8) using purity analysis
+   parameters: source_branch (string), project_root (string)
+   returns: {
+      "success": boolean,
+      "auto_resolved_count": integer,
+      "manual_conflicts": [array],
+      "merge_aborted": boolean
+   }
+   error_handling: Abort merge (git merge --abort) if unresolvable conflicts
+   used_by: git_merge_branch directive
+
+get_user_name_for_branch()
+   Purpose: Detect user name for branch creation from multiple sources (git config, environment, system)
+   parameters: None
+   returns: String username (never None - always returns valid username)
+   error_handling: Never fail - always return a valid username (fallback to "user" if all else fails)
+   used_by: git_create_branch directive
+
+sync_git_state(project_root)
+   Purpose: Update project.last_known_git_hash with current Git HEAD. Called after commits and during session boot
+   parameters: project_root (string)
+   returns: {
+      "success": boolean,
+      "updated_hash": string,
+      "previous_hash": string
+   }
+   error_handling: Log warning if Git unavailable, continue with cached hash
+   used_by: git_sync_state directive, aifp_status
+
+list_active_branches()
+   Purpose: List all active AIFP work branches from work_branches table
+   parameters: None
+   returns: Array of branch objects with branch_name, created_at, purpose
+   error_handling: Return empty list if table doesn't exist
+   used_by: Status reporting, collaboration coordination
