@@ -105,4 +105,4 @@ is being split into separate files getters and setters. getters done
 docs/helpers/registry/helpers_registry_user_directives_getters.json
 setters needs to be created. We are using the docs/helpers/info-helpers-user-custom.txt file for this.
 
-
+for project must do something similar but need more than 2 files. There are over 200 project helpers I believe. Maybe helpers_registry_project_structure_getters.json helpers_registry_project_structure_setters.json helpers_registry_project_workflow_getters.json helpers_registry_project_workflow_setters.json structure will be files, functions, project infrastructure, etc. workflow would be themes, flow, taks, items, notes, etc.
