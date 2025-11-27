@@ -1,0 +1,701 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-11-27",
+    "description": "Project Database helpers - Structure READ operations (infrastructure, files, functions, types, interactions)",
+    "database": "project.db",
+    "target_database": "project",
+    "total_helpers": 38,
+    "schema_version": "1.0",
+    "notes": "This registry is for import into MCP database. AI uses get_helpers_by_database('project') to find these helpers."
+  },
+  "helper_schema": {
+    "description": "Schema definition for helper entries",
+    "fields": {
+      "name": "Function name",
+      "file_path": "Path to implementation file",
+      "database": "Which database this helper operates on",
+      "target_database": "CHECK constraint value for aifp_core.db",
+      "purpose": "Detailed description of what this helper does",
+      "parameters": "Array of parameter objects with name and type",
+      "return_statements": "Array of AI behavioral guidance - what to check/do next after calling this helper",
+      "error_handling": "How errors are handled",
+      "used_by_directives": "Array of directive names that use this helper",
+      "is_tool": "Boolean - exposed via MCP as tool",
+      "is_sub_helper": "Boolean - internal utility helper not directly called by AI/directives",
+      "calls_helpers": "Array of helper names this function calls"
+    }
+  },
+  "database": "project.db",
+  "file_location": "src/aifp/helpers/project/",
+  "helpers": [
+    {
+      "name": "get_infrastructure",
+      "file_path": "src/aifp/helpers/project/queries/infrastructure_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get infrastructure entry by ID.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns single infrastructure record or None if not found",
+        "Use returned type and value to understand project setup",
+        "Common types: 'database', 'api_endpoint', 'external_service', 'config_file'"
+      ],
+      "error_handling": "Returns None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_infrastructure_by_type",
+      "file_path": "src/aifp/helpers/project/queries/infrastructure_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all infrastructure entries of a specific type.",
+      "parameters": [
+        {"name": "type", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of infrastructure records matching type",
+        "Empty array if no matches found",
+        "Use to find all databases, all APIs, all external services, etc."
+      ],
+      "error_handling": "Returns empty array if type not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_infrastructure_by_value",
+      "file_path": "src/aifp/helpers/project/queries/infrastructure_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get infrastructure entries matching a specific value.",
+      "parameters": [
+        {"name": "value", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of infrastructure records matching value",
+        "Empty array if no matches found",
+        "Useful for finding infrastructure by name/URL/path"
+      ],
+      "error_handling": "Returns empty array if value not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_infrastructure_by_type_value",
+      "file_path": "src/aifp/helpers/project/queries/infrastructure_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get infrastructure entry matching both type and value.",
+      "parameters": [
+        {"name": "type", "type": "str", "required": true},
+        {"name": "value", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns single infrastructure record or None if not found",
+        "Use for exact lookup when you know both type and value"
+      ],
+      "error_handling": "Returns None if type/value combination not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_file",
+      "file_path": "src/aifp/helpers/project/queries/file_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get file record by ID.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns single file record with name, path, language, checksum, timestamps, is_reserved status",
+        "Returns None if file_id not found",
+        "If is_reserved=true, file is awaiting finalization",
+        "Use file_id for get_functions_by_file(), get_types_by_file(), get_flows_for_file()"
+      ],
+      "error_handling": "Returns None if file_id not found.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_files",
+      "file_path": "src/aifp/helpers/project/queries/file_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get multiple file records by ID array.",
+      "parameters": [
+        {"name": "file_ids", "type": "array", "required": true, "description": "Array of file IDs"}
+      ],
+      "return_statements": [
+        "Returns array of file records matching provided IDs",
+        "Empty array if no matches found",
+        "Skips invalid IDs silently",
+        "Useful for batch file lookups"
+      ],
+      "error_handling": "Returns empty array if no files found. Skips invalid IDs.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_file_by_name",
+      "file_path": "src/aifp/helpers/project/queries/file_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get file record by file name (exact match).",
+      "parameters": [
+        {"name": "file_name", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns single file record or None if not found",
+        "File names include -IDxxx suffix (e.g., 'matrix-ID5.py')",
+        "If multiple files have similar names, use get_file_by_path() for precision"
+      ],
+      "error_handling": "Returns None if file_name not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_files_by_name",
+      "file_path": "src/aifp/helpers/project/queries/file_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get multiple file records by name array.",
+      "parameters": [
+        {"name": "file_names", "type": "array", "required": true, "description": "Array of file names"}
+      ],
+      "return_statements": [
+        "Returns array of file records matching provided names",
+        "Empty array if no matches found",
+        "Skips invalid names silently"
+      ],
+      "error_handling": "Returns empty array if no files found. Skips invalid names.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_file_by_path",
+      "file_path": "src/aifp/helpers/project/queries/file_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get file record by file path (exact match).",
+      "parameters": [
+        {"name": "file_path", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns single file record or None if not found",
+        "Path is relative to project root",
+        "Most precise file lookup method"
+      ],
+      "error_handling": "Returns None if file_path not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_files_by_path",
+      "file_path": "src/aifp/helpers/project/queries/file_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get multiple file records by path array.",
+      "parameters": [
+        {"name": "file_paths", "type": "array", "required": true, "description": "Array of file paths"}
+      ],
+      "return_statements": [
+        "Returns array of file records matching provided paths",
+        "Empty array if no matches found",
+        "Skips invalid paths silently"
+      ],
+      "error_handling": "Returns empty array if no files found. Skips invalid paths.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_file_by_checksum",
+      "file_path": "src/aifp/helpers/project/queries/file_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get file record by checksum (detect duplicates or find by content hash).",
+      "parameters": [
+        {"name": "checksum", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns single file record or None if not found",
+        "Useful for detecting duplicate file content",
+        "Checksum is SHA-256 hash of file contents"
+      ],
+      "error_handling": "Returns None if checksum not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_function",
+      "file_path": "src/aifp/helpers/project/queries/function_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get function record by ID. Includes interaction data.",
+      "parameters": [
+        {"name": "function_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns function record with name, file_id, purpose, parameters, returns, timestamps",
+        "Includes interactions array showing dependencies (what this function calls)",
+        "Returns None if function_id not found",
+        "If is_reserved=true, function is awaiting finalization",
+        "Function names include _idxxx suffix (e.g., 'matrix_multiply_id12')"
+      ],
+      "error_handling": "Returns None if function_id not found.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_function_by_name",
+      "file_path": "src/aifp/helpers/project/queries/function_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get function record by function name (exact match). Includes interaction data.",
+      "parameters": [
+        {"name": "function_name", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns single function record or None if not found",
+        "Includes interactions array showing dependencies",
+        "Function names are unique across project (FP paradigm)",
+        "Function names include _idxxx suffix"
+      ],
+      "error_handling": "Returns None if function_name not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_functions",
+      "file_path": "src/aifp/helpers/project/queries/function_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get multiple function records by ID array. Includes interaction data.",
+      "parameters": [
+        {"name": "function_ids", "type": "array", "required": true, "description": "Array of function IDs"}
+      ],
+      "return_statements": [
+        "Returns array of function records matching provided IDs",
+        "Each record includes interactions array",
+        "Empty array if no matches found",
+        "Skips invalid IDs silently"
+      ],
+      "error_handling": "Returns empty array if no functions found. Skips invalid IDs.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_functions_by_file",
+      "file_path": "src/aifp/helpers/project/queries/function_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all functions in a specific file. Includes interaction data.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of function records for this file",
+        "Each record includes interactions array",
+        "Empty array if file has no functions",
+        "Ordered by created_at (oldest first)",
+        "Use to understand file's API surface"
+      ],
+      "error_handling": "Returns empty array if file_id not found or no functions in file.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_type",
+      "file_path": "src/aifp/helpers/project/queries/type_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get type (ADT) record by ID.",
+      "parameters": [
+        {"name": "type_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns type record with name, definition_json, description, file_id, timestamps",
+        "Returns None if type_id not found",
+        "If is_reserved=true, type is awaiting finalization",
+        "Type names include _idxxx suffix (e.g., 'Matrix_id3')",
+        "Use get_type_functions_by_type() to see associated functions"
+      ],
+      "error_handling": "Returns None if type_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_types",
+      "file_path": "src/aifp/helpers/project/queries/type_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get multiple type records by ID array.",
+      "parameters": [
+        {"name": "type_ids", "type": "array", "required": true, "description": "Array of type IDs"}
+      ],
+      "return_statements": [
+        "Returns array of type records matching provided IDs",
+        "Empty array if no matches found",
+        "Skips invalid IDs silently"
+      ],
+      "error_handling": "Returns empty array if no types found. Skips invalid IDs.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_types_by_file",
+      "file_path": "src/aifp/helpers/project/queries/type_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all types (ADTs) defined in a specific file.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of type records for this file",
+        "Empty array if file has no types",
+        "Ordered by created_at (oldest first)",
+        "Use to understand file's type definitions"
+      ],
+      "error_handling": "Returns empty array if file_id not found or no types in file.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_type_function_by_id",
+      "file_path": "src/aifp/helpers/project/queries/type_function_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get type-function association record by ID.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns type-function association with type_id, function_id, role",
+        "Returns None if ID not found",
+        "Role examples: 'constructor', 'method', 'operator', 'transformer'"
+      ],
+      "error_handling": "Returns None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_type_functions_by_function",
+      "file_path": "src/aifp/helpers/project/queries/type_function_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all type associations for a specific function.",
+      "parameters": [
+        {"name": "function_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of type-function associations for this function",
+        "Shows which types this function operates on",
+        "Empty array if function has no type associations",
+        "Use to understand function's type constraints"
+      ],
+      "error_handling": "Returns empty array if function_id not found or no associations.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_type_functions_by_type",
+      "file_path": "src/aifp/helpers/project/queries/type_function_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all function associations for a specific type.",
+      "parameters": [
+        {"name": "type_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of type-function associations for this type",
+        "Shows which functions operate on this type",
+        "Empty array if type has no function associations",
+        "Use to understand type's API"
+      ],
+      "error_handling": "Returns empty array if type_id not found or no associations.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_type_functions_by_role",
+      "file_path": "src/aifp/helpers/project/queries/type_function_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all type-function associations for a specific role.",
+      "parameters": [
+        {"name": "role_name", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of type-function associations with this role",
+        "Empty array if role not found",
+        "Common roles: 'constructor', 'method', 'operator', 'transformer'",
+        "Use to find all constructors, all transformers, etc."
+      ],
+      "error_handling": "Returns empty array if role not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_interaction",
+      "file_path": "src/aifp/helpers/project/queries/interaction_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get interaction record by ID.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns interaction with source_id, source_type, target_id, target_type, interaction_type, description",
+        "Returns None if ID not found",
+        "Interaction types: 'call', 'compose', 'data_dependency', 'conditional_call'"
+      ],
+      "error_handling": "Returns None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_interactions",
+      "file_path": "src/aifp/helpers/project/queries/interaction_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get interaction between specific source and target.",
+      "parameters": [
+        {"name": "source", "type": "str", "required": true, "description": "Source function name"},
+        {"name": "target", "type": "str", "required": true, "description": "Target function name"}
+      ],
+      "return_statements": [
+        "Returns interaction record or None if not found",
+        "Use to verify if dependency relationship exists",
+        "Both source and target are function names"
+      ],
+      "error_handling": "Returns None if interaction not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_interactions_by_target",
+      "file_path": "src/aifp/helpers/project/queries/interaction_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all interactions where specified function is the target (who calls this function).",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true, "description": "Target function name"},
+        {"name": "limit", "type": "int", "required": false, "default": null, "description": "Max results"},
+        {"name": "orderby", "type": "str", "required": false, "default": null, "description": "Sort field"}
+      ],
+      "return_statements": [
+        "Returns array of interactions where name is target",
+        "Shows which functions call/depend on this function",
+        "Empty array if no interactions found",
+        "Use to understand function's callers (reverse dependency)"
+      ],
+      "error_handling": "Returns empty array if no interactions found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_interactions_by_type",
+      "file_path": "src/aifp/helpers/project/queries/interaction_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all interactions of a specific type.",
+      "parameters": [
+        {"name": "type", "type": "str", "required": true, "description": "Interaction type"},
+        {"name": "limit", "type": "int", "required": false, "default": null},
+        {"name": "orderby", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "Returns array of interactions matching type",
+        "Empty array if no interactions of this type",
+        "Common types: 'call', 'compose', 'data_dependency', 'conditional_call'",
+        "Use to find all function calls, all compositions, etc."
+      ],
+      "error_handling": "Returns empty array if no interactions found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_interaction_by_name",
+      "file_path": "src/aifp/helpers/project/queries/interaction_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get interactions involving a function (as source or target).",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true, "description": "Function name"},
+        {"name": "limit", "type": "int", "required": false, "default": null},
+        {"name": "orderby", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "Returns array of interactions where name is source OR target",
+        "Shows all dependencies for this function (both directions)",
+        "Empty array if function has no interactions",
+        "Use to understand function's complete dependency graph"
+      ],
+      "error_handling": "Returns empty array if no interactions found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_file_ids_from_flows",
+      "file_path": "src/aifp/helpers/project/queries/file_flow_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get file IDs associated with multiple flows.",
+      "parameters": [
+        {"name": "flow_ids", "type": "array", "required": true, "description": "Array of flow IDs"}
+      ],
+      "return_statements": [
+        "Returns array of file IDs (deduplicated)",
+        "Empty array if flows have no files",
+        "Use to find all files involved in multiple flows",
+        "Follow with get_files() for full file details"
+      ],
+      "error_handling": "Returns empty array if flows not found or no files.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_files_by_flow",
+      "file_path": "src/aifp/helpers/project/queries/file_flow_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all files associated with a specific flow.",
+      "parameters": [
+        {"name": "flow_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of file records for this flow",
+        "Empty array if flow has no files",
+        "Files ordered by relevance/creation",
+        "Use to understand which files implement this flow"
+      ],
+      "error_handling": "Returns empty array if flow_id not found or no files.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_flows_for_file",
+      "file_path": "src/aifp/helpers/project/queries/file_flow_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all flows associated with a specific file.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of flow records for this file",
+        "Empty array if file has no flows",
+        "Use to understand which flows this file contributes to",
+        "Should add file_flows entry after creating/updating file if missing"
+      ],
+      "error_handling": "Returns empty array if file_id not found or no flows.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_all_file_flows",
+      "file_path": "src/aifp/helpers/project/queries/file_flow_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get all file-flow associations (entire table).",
+      "parameters": [],
+      "return_statements": [
+        "Returns array of all file-flow association records",
+        "Each record has file_id, flow_id",
+        "Empty array if no associations exist",
+        "Use for analytics, reporting, or full project understanding"
+      ],
+      "error_handling": "Returns empty array if no associations.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_files_by_flow_context",
+      "file_path": "src/aifp/helpers/project/queries/file_flow_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get files by flow with additional context (functions, types, interactions).",
+      "parameters": [
+        {"name": "flow_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns array of file records with embedded functions, types, interactions",
+        "Each file includes complete context for flow work",
+        "Empty array if flow has no files",
+        "Use for comprehensive flow understanding (replaces multiple queries)",
+        "This is an orchestrator-like helper that enriches file data"
+      ],
+      "error_handling": "Returns empty array if flow_id not found or no files.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_files_by_flow", "get_functions_by_file", "get_types_by_file"]
+    }
+  ]
+}

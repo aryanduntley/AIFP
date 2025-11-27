@@ -1,0 +1,855 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-11-27",
+    "description": "Project Database helpers - Structure WRITE operations (infrastructure, files, functions, types, interactions)",
+    "database": "project.db",
+    "target_database": "project",
+    "total_helpers": 38,
+    "schema_version": "1.0",
+    "notes": "This registry is for import into MCP database. Reserve/finalize pattern prevents ID conflicts in naming conventions."
+  },
+  "helper_schema": {
+    "description": "Schema definition for helper entries",
+    "fields": {
+      "name": "Function name",
+      "file_path": "Path to implementation file",
+      "database": "Which database this helper operates on",
+      "target_database": "CHECK constraint value for aifp_core.db",
+      "purpose": "Detailed description of what this helper does",
+      "parameters": "Array of parameter objects with name and type",
+      "return_statements": "Array of AI behavioral guidance - what to check/do next after calling this helper",
+      "error_handling": "How errors are handled",
+      "used_by_directives": "Array of directive names that use this helper",
+      "is_tool": "Boolean - exposed via MCP as tool",
+      "is_sub_helper": "Boolean - internal utility helper not directly called by AI/directives",
+      "calls_helpers": "Array of helper names this function calls"
+    }
+  },
+  "database": "project.db",
+  "file_location": "src/aifp/helpers/project/",
+  "helpers": [
+    {
+      "name": "add_infrastructure",
+      "file_path": "src/aifp/helpers/project/mutations/infrastructure_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new infrastructure entry (database, API, external service, config).",
+      "parameters": [
+        {"name": "type", "type": "str", "required": true, "description": "Infrastructure type (e.g., 'database', 'api_endpoint', 'external_service')"},
+        {"name": "value", "type": "str", "required": true, "description": "Infrastructure value (name, URL, path)"},
+        {"name": "description", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns infrastructure_id for reference",
+        "Common types: 'database', 'api_endpoint', 'external_service', 'config_file', 'environment_variable'",
+        "Use for tracking project dependencies and external integrations"
+      ],
+      "error_handling": "Returns error if type/value combination already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_infrastructure",
+      "file_path": "src/aifp/helpers/project/mutations/infrastructure_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update infrastructure entry. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "type", "type": "str", "required": false, "default": null},
+        {"name": "value", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_infrastructure",
+      "file_path": "src/aifp/helpers/project/mutations/infrastructure_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete infrastructure entry and create deletion note.",
+      "parameters": [
+        {"name": "infrastructure_id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "description": "'info', 'warning', 'error'"},
+        {"name": "note_source", "type": "str", "required": true, "description": "'ai' or 'user'"},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Deletion note created automatically in notes table",
+        "Verify no critical dependencies before deleting infrastructure"
+      ],
+      "error_handling": "Returns error if infrastructure_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["add_note"]
+    },
+    {
+      "name": "reserve_file",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Reserve file ID for naming convention. Returns ID to use in file name suffix (-IDxxx). Sets is_reserved=true.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true, "description": "Initial file name (without -IDxxx suffix)"},
+        {"name": "path", "type": "str", "required": true, "description": "File path relative to project root"},
+        {"name": "language", "type": "str", "required": true, "description": "Programming language"}
+      ],
+      "return_statements": [
+        "Returns file_id for use in naming: filename-IDxxx (e.g., 'matrix-ID5.py')",
+        "After file creation, call finalize_file() to complete registration",
+        "is_reserved flag prevents file from being used until finalized",
+        "Created_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if path already exists in database.",
+      "used_by_directives": ["project_file_write"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "reserve_files",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Reserve multiple file IDs in batch for naming convention.",
+      "parameters": [
+        {"name": "files", "type": "array", "required": true, "description": "Array of (name, path, language) tuples"}
+      ],
+      "return_statements": [
+        "Returns array of file_ids for batch naming",
+        "After all files created, call finalize_files() to complete registration",
+        "Faster than multiple reserve_file() calls"
+      ],
+      "error_handling": "Returns partial success with errors for duplicate paths.",
+      "used_by_directives": ["project_file_write"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "finalize_file",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Finalize file after creation. Updates with real name (including -IDxxx), verifies file exists, generates checksum, sets is_reserved=false.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": true, "description": "Final name with -IDxxx suffix"},
+        {"name": "path", "type": "str", "required": true, "description": "Final path"},
+        {"name": "language", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Verifies file exists at path before finalizing",
+        "Returns error if file not found at path",
+        "Checksum generated automatically (SHA-256)",
+        "After finalization, add file_flows entries if file belongs to flows",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if file doesn't exist at path or file_id not found.",
+      "used_by_directives": ["project_file_write"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "finalize_files",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Finalize multiple files in batch.",
+      "parameters": [
+        {"name": "files", "type": "array", "required": true, "description": "Array of (file_id, name, path, language) tuples"}
+      ],
+      "return_statements": [
+        "All files verified to exist before finalizing",
+        "Returns partial success with errors for missing files",
+        "After finalization, add file_flows entries for all files"
+      ],
+      "error_handling": "Returns partial success with errors for files not found.",
+      "used_by_directives": ["project_file_write"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_file",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update file metadata. All parameters except file_id are optional (null = don't update). Checksum updated automatically.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true},
+        {"name": "new_name", "type": "str", "required": false, "default": null, "description": "New file name (must retain -IDxxx suffix)"},
+        {"name": "new_path", "type": "str", "required": false, "default": null},
+        {"name": "language", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "Checksum recalculated automatically if file modified",
+        "If name or path changed, ensure code references are updated",
+        "After update, verify file_flows entries still valid",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if file_id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_file_checksum",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Recalculate and update file checksum (SHA-256 hash of contents).",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Call this after file content changes",
+        "Checksum used to detect external modifications",
+        "Returns new checksum value"
+      ],
+      "error_handling": "Returns error if file_id not found or file doesn't exist at path.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_file_timestamp",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update file updated_at timestamp and checksum. Called automatically after function/type updates.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "This is called automatically after function mutations",
+        "Updates both timestamp and checksum",
+        "AI doesn't need to call this directly - automatic via function updates"
+      ],
+      "error_handling": "Returns error if file_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": true,
+      "calls_helpers": ["update_file_checksum"]
+    },
+    {
+      "name": "delete_file",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete file entry. Requires all functions, types, and flows to be removed first.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true},
+        {"name": "note_source", "type": "str", "required": true},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "BEFORE deletion, must remove all functions via delete_function()",
+        "BEFORE deletion, must remove all types via delete_type()",
+        "BEFORE deletion, must remove all file_flows via delete_file_flow()",
+        "Returns error with list of dependent entries if any exist",
+        "This prevents orphaned functions/types/flows",
+        "Deletion note created automatically"
+      ],
+      "error_handling": "Returns error if functions, types, or file_flows entries exist. Lists all dependencies.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_functions_by_file", "get_types_by_file", "get_flows_for_file", "add_note"]
+    },
+    {
+      "name": "file_has_changed",
+      "file_path": "src/aifp/helpers/project/mutations/file_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Check if file content has changed by comparing current checksum to database checksum.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns true if file modified, false if unchanged",
+        "Use to detect external file modifications",
+        "If true, consider calling update_file_checksum()"
+      ],
+      "error_handling": "Returns error if file_id not found or file doesn't exist.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "reserve_function",
+      "file_path": "src/aifp/helpers/project/mutations/function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Reserve function ID for naming convention. Returns ID to use in function name suffix (_idxxx). Sets is_reserved=true.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true, "description": "Initial function name (without _idxxx suffix)"},
+        {"name": "file_id", "type": "int", "required": true},
+        {"name": "purpose", "type": "str", "required": true},
+        {"name": "params", "type": "str", "required": true, "description": "Function parameters"},
+        {"name": "returns", "type": "str", "required": true, "description": "Return type/description"}
+      ],
+      "return_statements": [
+        "Returns function_id for use in naming: function_name_idxxx (e.g., 'matrix_multiply_id12')",
+        "After function creation, call finalize_function() to complete registration",
+        "Function names are UNIQUE across project (FP paradigm)",
+        "Created_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if function name already exists (must be unique).",
+      "used_by_directives": ["project_function_write"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "reserve_functions",
+      "file_path": "src/aifp/helpers/project/mutations/function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Reserve multiple function IDs in batch for naming convention.",
+      "parameters": [
+        {"name": "functions", "type": "array", "required": true, "description": "Array of (name, file_id, purpose, params, returns) tuples"}
+      ],
+      "return_statements": [
+        "Returns array of function_ids for batch naming",
+        "After all functions created, call finalize_functions()",
+        "Faster than multiple reserve_function() calls"
+      ],
+      "error_handling": "Returns partial success with errors for duplicate names.",
+      "used_by_directives": ["project_function_write"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "finalize_function",
+      "file_path": "src/aifp/helpers/project/mutations/function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Finalize function after creation. Updates with real name (including _idxxx), sets is_reserved=false, updates file timestamp.",
+      "parameters": [
+        {"name": "function_id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": true, "description": "Final name with _idxxx suffix"},
+        {"name": "file_id", "type": "int", "required": true},
+        {"name": "purpose", "type": "str", "required": true},
+        {"name": "params", "type": "str", "required": true},
+        {"name": "returns", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "File timestamp and checksum updated automatically via update_file_timestamp()",
+        "After finalization, add interactions if function calls other functions",
+        "After finalization, add type_functions if function operates on types",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if function_id not found or name already exists.",
+      "used_by_directives": ["project_function_write"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp"]
+    },
+    {
+      "name": "finalize_functions",
+      "file_path": "src/aifp/helpers/project/mutations/function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Finalize multiple functions in batch. Updates file timestamp for each unique file_id.",
+      "parameters": [
+        {"name": "functions", "type": "array", "required": true, "description": "Array of (function_id, name, file_id, purpose, params, returns) tuples"}
+      ],
+      "return_statements": [
+        "File timestamps updated for all affected files",
+        "After finalization, add interactions and type_functions as needed",
+        "Returns array of finalized function_ids"
+      ],
+      "error_handling": "Returns partial success with errors for invalid function_ids or duplicate names.",
+      "used_by_directives": ["project_function_write"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp"]
+    },
+    {
+      "name": "update_function",
+      "file_path": "src/aifp/helpers/project/mutations/function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update function metadata. All parameters except function_id are optional (null = don't update). File timestamp updated automatically.",
+      "parameters": [
+        {"name": "function_id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null, "description": "New name (must retain _idxxx suffix)"},
+        {"name": "purpose", "type": "str", "required": false, "default": null},
+        {"name": "parameters", "type": "str", "required": false, "default": null},
+        {"name": "returns", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "File timestamp and checksum updated automatically via update_file_timestamp()",
+        "If name changed, ensure _idxxx suffix retained",
+        "If parameters or returns changed, update all call sites in code",
+        "If name/params/returns changed, update interactions if needed",
+        "After update, verify type_functions relationships still valid",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if function_id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp"]
+    },
+    {
+      "name": "update_functions_for_file",
+      "file_path": "src/aifp/helpers/project/mutations/function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update multiple functions in a single file (batch operation). Safer than generic batch update - enforces one file at a time.",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true},
+        {"name": "updates", "type": "array", "required": true, "description": "Array of (function_id, name, purpose, parameters, returns) tuples"}
+      ],
+      "return_statements": [
+        "File timestamp updated once for all function updates",
+        "If names changed, ensure _idxxx suffixes retained",
+        "If parameters/returns changed, update all call sites",
+        "After updates, review interactions for affected functions",
+        "This is safer than updating functions across multiple files"
+      ],
+      "error_handling": "Returns partial success with errors for invalid function_ids.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp"]
+    },
+    {
+      "name": "update_function_file_location",
+      "file_path": "src/aifp/helpers/project/mutations/function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Move function to different file. Rarely used - file location should be stable. Updates timestamps for both old and new files.",
+      "parameters": [
+        {"name": "function_id", "type": "int", "required": true},
+        {"name": "old_file_id", "type": "int", "required": true, "description": "Current file (for validation)"},
+        {"name": "new_file_id", "type": "int", "required": true, "description": "Destination file"}
+      ],
+      "return_statements": [
+        "Both old and new file timestamps updated via update_file_timestamp()",
+        "Ensure all imports/references updated in code",
+        "After move, verify interactions still valid",
+        "After move, verify type_functions relationships still valid",
+        "Use sparingly - file location should be stable"
+      ],
+      "error_handling": "Returns error if function_id not found or old_file_id doesn't match current file.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp"]
+    },
+    {
+      "name": "delete_function",
+      "file_path": "src/aifp/helpers/project/mutations/function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete function entry. Automatically deletes related types_functions and interactions. Updates file timestamp.",
+      "parameters": [
+        {"name": "function_id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true},
+        {"name": "note_source", "type": "str", "required": true},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "All types_functions entries deleted automatically",
+        "All interactions (source and target) deleted automatically",
+        "File timestamp updated via update_file_timestamp()",
+        "Deletion note created automatically",
+        "Ensure function removed from actual code file"
+      ],
+      "error_handling": "Returns error if function_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp", "add_note"]
+    },
+    {
+      "name": "reserve_type",
+      "file_path": "src/aifp/helpers/project/mutations/type_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Reserve type ID for naming convention. Returns ID to use in type name suffix (_idxxx). Sets is_reserved=true.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true, "description": "Initial type name (without _idxxx suffix)"},
+        {"name": "definition_json", "type": "str", "required": true, "description": "JSON schema for ADT"},
+        {"name": "description", "type": "str", "required": true},
+        {"name": "links", "type": "object", "required": false, "default": null, "description": "Optional links object"},
+        {"name": "file_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns type_id for use in naming: TypeName_idxxx (e.g., 'Matrix_id3')",
+        "After type definition in code, call finalize_type() to complete registration",
+        "Type names should be unique",
+        "Created_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if type name already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "reserve_types",
+      "file_path": "src/aifp/helpers/project/mutations/type_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Reserve multiple type IDs in batch for naming convention.",
+      "parameters": [
+        {"name": "types", "type": "array", "required": true, "description": "Array of (name, definition_json, description, links, file_id) tuples"}
+      ],
+      "return_statements": [
+        "Returns array of type_ids for batch naming",
+        "After all types defined, call finalize_types()",
+        "Faster than multiple reserve_type() calls"
+      ],
+      "error_handling": "Returns partial success with errors for duplicate names.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "finalize_type",
+      "file_path": "src/aifp/helpers/project/mutations/type_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Finalize type after definition. Updates with real name (including _idxxx), sets is_reserved=false, updates file timestamp.",
+      "parameters": [
+        {"name": "type_id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": true, "description": "Final name with _idxxx suffix"},
+        {"name": "definition_json", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null},
+        {"name": "links", "type": "object", "required": false, "default": null},
+        {"name": "file_id", "type": "int", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "File timestamp updated automatically via update_file_timestamp()",
+        "After finalization, add type_functions relationships for associated functions",
+        "Consider which functions should be linked: constructors, methods, operators, transformers",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if type_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp"]
+    },
+    {
+      "name": "finalize_types",
+      "file_path": "src/aifp/helpers/project/mutations/type_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Finalize multiple types in batch. Updates file timestamp for each unique file_id.",
+      "parameters": [
+        {"name": "types", "type": "array", "required": true, "description": "Array of (type_id, name, definition_json, description, links, file_id) tuples"}
+      ],
+      "return_statements": [
+        "File timestamps updated for all affected files",
+        "After finalization, add type_functions relationships as needed",
+        "Returns array of finalized type_ids"
+      ],
+      "error_handling": "Returns partial success with errors for invalid type_ids.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp"]
+    },
+    {
+      "name": "update_type",
+      "file_path": "src/aifp/helpers/project/mutations/type_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update type metadata. All parameters except id are optional (null = don't update). File timestamp updated automatically.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null, "description": "New name (must retain _idxxx suffix)"},
+        {"name": "file_id", "type": "int", "required": false, "default": null},
+        {"name": "definition_json", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "File timestamp updated automatically via update_file_timestamp()",
+        "If name changed, ensure _idxxx suffix retained and all references updated",
+        "After update, verify type_functions relationships still valid",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_file_timestamp"]
+    },
+    {
+      "name": "delete_type",
+      "file_path": "src/aifp/helpers/project/mutations/type_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete type entry. Requires all types_functions entries to be removed first. Updates file timestamp.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true},
+        {"name": "note_source", "type": "str", "required": true},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "BEFORE deletion, check types_functions via get_type_functions_by_type()",
+        "All type_functions entries must be removed or reassigned first",
+        "Returns error with list if type_functions entries exist",
+        "File timestamp updated via update_file_timestamp()",
+        "Deletion note created automatically"
+      ],
+      "error_handling": "Returns error if types_functions entries exist. Lists all associations.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_type_functions_by_type", "update_file_timestamp", "add_note"]
+    },
+    {
+      "name": "add_type_function",
+      "file_path": "src/aifp/helpers/project/mutations/type_function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Associate function with type and specify role (constructor, method, operator, transformer).",
+      "parameters": [
+        {"name": "type_id", "type": "int", "required": true},
+        {"name": "function_id", "type": "int", "required": true},
+        {"name": "role", "type": "str", "required": true, "description": "'constructor', 'method', 'operator', 'transformer'"}
+      ],
+      "return_statements": [
+        "Common roles: 'constructor' (creates type), 'method' (operates on type), 'operator' (type operation), 'transformer' (converts type)",
+        "Use to build type's API surface",
+        "Returns type_function_id for reference"
+      ],
+      "error_handling": "Returns error if type_id or function_id not found or if association already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "add_types_functions",
+      "file_path": "src/aifp/helpers/project/mutations/type_function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Associate multiple functions with types in batch.",
+      "parameters": [
+        {"name": "associations", "type": "array", "required": true, "description": "Array of (type_name, function_name, role) tuples"}
+      ],
+      "return_statements": [
+        "Uses type and function names for convenience",
+        "Returns array of type_function_ids",
+        "Faster than multiple add_type_function() calls"
+      ],
+      "error_handling": "Returns partial success with errors for invalid names or duplicate associations.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_type_function_role",
+      "file_path": "src/aifp/helpers/project/mutations/type_function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update role for type-function association. Only updates role field.",
+      "parameters": [
+        {"name": "type_id", "type": "int", "required": true},
+        {"name": "function_id", "type": "int", "required": true},
+        {"name": "role", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "If changing relationship significantly, consider delete + add instead",
+        "Role changes should be rare - typically only for clarification"
+      ],
+      "error_handling": "Returns error if association not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_type_function",
+      "file_path": "src/aifp/helpers/project/mutations/type_function_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Remove type-function association and create deletion note.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true},
+        {"name": "note_source", "type": "str", "required": true},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Use when function no longer operates on type",
+        "Deletion note created automatically",
+        "Type and function remain - only association removed"
+      ],
+      "error_handling": "Returns error if id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["add_note"]
+    },
+    {
+      "name": "add_interaction",
+      "file_path": "src/aifp/helpers/project/mutations/interaction_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Record function dependency (function A calls/uses function B).",
+      "parameters": [
+        {"name": "source", "type": "str", "required": true, "description": "Source function name"},
+        {"name": "target", "type": "str", "required": true, "description": "Target function name"},
+        {"name": "type", "type": "str", "required": true, "description": "'call', 'compose', 'data_dependency', 'conditional_call'"},
+        {"name": "description", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Interaction types: 'call' (direct call), 'compose' (function composition), 'data_dependency' (uses result), 'conditional_call' (maybe calls)",
+        "Use to build dependency graph",
+        "Returns interaction_id for reference"
+      ],
+      "error_handling": "Returns error if source or target function names not found or if interaction already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "add_interactions",
+      "file_path": "src/aifp/helpers/project/mutations/interaction_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Record multiple function dependencies in batch.",
+      "parameters": [
+        {"name": "interactions", "type": "array", "required": true, "description": "Array of (source, target, type, description) tuples"}
+      ],
+      "return_statements": [
+        "Returns array of interaction_ids",
+        "Faster than multiple add_interaction() calls",
+        "Use after finalizing multiple functions"
+      ],
+      "error_handling": "Returns partial success with errors for invalid function names or duplicates.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_interaction",
+      "file_path": "src/aifp/helpers/project/mutations/interaction_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update interaction metadata. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "source", "type": "str", "required": false, "default": null},
+        {"name": "target", "type": "str", "required": false, "default": null},
+        {"name": "type", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "Rarely needed - interactions usually stable",
+        "If changing source/target, consider delete + add instead",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_interaction",
+      "file_path": "src/aifp/helpers/project/mutations/interaction_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Remove function interaction and create deletion note.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true},
+        {"name": "note_source", "type": "str", "required": true},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Use when function no longer calls/depends on target",
+        "Deletion note created automatically",
+        "Functions remain - only dependency record removed"
+      ],
+      "error_handling": "Returns error if id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["add_note"]
+    },
+    {
+      "name": "add_file_flows",
+      "file_path": "src/aifp/helpers/project/mutations/file_flow_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Associate file with flow (categorize file's purpose).",
+      "parameters": [
+        {"name": "file_id", "type": "int", "required": true},
+        {"name": "flow_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Call after finalize_file() or update_file() if file belongs to flow",
+        "Files should be associated with at least one flow for organization",
+        "Returns file_flow_id for reference"
+      ],
+      "error_handling": "Returns error if file_id or flow_id not found or if association already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_file_flow",
+      "file_path": "src/aifp/helpers/project/mutations/file_flow_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Remove file-flow association and create deletion note.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true},
+        {"name": "note_source", "type": "str", "required": true},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Use when file no longer belongs to flow",
+        "Deletion note created automatically",
+        "Verify file still associated with at least one flow for organization"
+      ],
+      "error_handling": "Returns error if id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["add_note"]
+    }
+  ]
+}

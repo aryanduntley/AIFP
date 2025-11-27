@@ -89,15 +89,22 @@ CREATE INDEX IF NOT EXISTS idx_interactions_relation_type ON directives_interact
 
 CREATE TABLE IF NOT EXISTS helper_functions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,               -- e.g., 'init_project_db'
-    file_path TEXT,                          -- e.g., 'helpers/init_project_db.py'
-    parameters JSON,                         -- e.g., '["name", "purpose", "goals_json"]'
-    purpose TEXT,
-    error_handling TEXT,                     -- e.g., 'Prompt user; optionally log to user_preferences.db if helper_function_logging enabled'
-    is_tool BOOLEAN DEFAULT 0,               -- TRUE if exposed as MCP tool (AI can call directly via MCP)
-    is_sub_helper BOOLEAN DEFAULT 0,         -- TRUE if sub-helper (only called by other helpers, no directive mapping)
-    return_statements JSON,                  -- JSON array of guidance/suggestions for AI after execution
-    target_database TEXT                     -- 'core', 'project', 'user_preferences', 'user_directives' - which database this helper operates on
+    name TEXT NOT NULL UNIQUE,               -- e.g., 'init_project_db', 'get_task', 'get_current_progress'
+    file_path TEXT NOT NULL,                 -- e.g., 'helpers/project/task_tools.py'
+    parameters JSON,                         -- JSON array of parameter objects: [{"name": "task_id", "type": "int", "required": true}]
+    purpose TEXT NOT NULL,                   -- Clear description of what this helper does
+    error_handling TEXT,                     -- How errors are handled (e.g., 'Return None if not found', 'Raise ValidationError')
+    is_tool BOOLEAN NOT NULL DEFAULT 0,      -- TRUE if exposed as MCP tool (AI can call directly via MCP)
+    is_sub_helper BOOLEAN NOT NULL DEFAULT 0,-- TRUE if internal utility (only called by other helpers, no direct AI access)
+    return_statements JSON,                  -- JSON array of AI guidance after execution (e.g., next steps, validation checks)
+    target_database TEXT CHECK (target_database IN (
+        'core',              -- aifp_core.db (directives, helpers, interactions)
+        'project',           -- project.db (single-database CRUD operations)
+        'user_preferences',  -- user_preferences.db (settings and preferences)
+        'user_directives',   -- user_directives.db (user-defined automation)
+        'orchestrator',      -- Multi-database operations (AIFP orchestrators coordinate multiple databases)
+        'system'             -- Non-database operations (git, filesystem, validation utilities)
+    )) NOT NULL                              -- AI uses get_helpers_by_database(target_database) to find helpers, not custom SQL queries
 );
 
 -- ===============================================================
