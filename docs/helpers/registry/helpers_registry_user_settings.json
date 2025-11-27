@@ -1,0 +1,1447 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-11-26",
+    "description": "User Preferences Database helpers - User settings, preferences, tracking, and logging",
+    "database": "user_preferences.db",
+    "total_helpers": 40,
+    "schema_version": "1.0",
+    "notes": "This registry is for import into MCP database. Helpers reference directives (not vice versa)."
+  },
+  "helper_schema": {
+    "description": "Schema definition for helper entries",
+    "fields": {
+      "name": "Function name",
+      "file_path": "Path to implementation file",
+      "database": "Which database this helper operates on",
+      "purpose": "Detailed description of what this helper does",
+      "parameters": "Array of parameter objects with name and type",
+      "return_statements": "Array of AI behavioral guidance - what to check/do next after calling this helper",
+      "error_handling": "How errors are handled",
+      "used_by_directives": "Array of directive names that use this helper",
+      "is_tool": "Boolean - exposed via MCP as tool",
+      "is_sub_helper": "Boolean - internal utility helper not directly called by AI/directives",
+      "calls_helpers": "Array of helper names this function calls",
+      "category": "Functional category"
+    }
+  },
+  "database": "user_preferences.db",
+  "file_location": "src/aifp/helpers/preferences/",
+  "helpers": [
+    {
+      "name": "add_setting",
+      "file_path": "src/aifp/helpers/preferences/tools/settings_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Add new setting to user_settings table. Scope defaults to 'project'.",
+      "parameters": [
+        {
+          "name": "setting_key",
+          "type": "str",
+          "required": true,
+          "description": "Setting key identifier"
+        },
+        {
+          "name": "setting_value",
+          "type": "str",
+          "required": true,
+          "description": "Setting value"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": true,
+          "description": "Description of what this setting does"
+        }
+      ],
+      "return_statements": [
+        "After adding setting, it's immediately available for use",
+        "Setting key must be unique - if duplicate, operation will fail",
+        "Scope is automatically set to 'project' - no other scopes currently supported"
+      ],
+      "error_handling": "Return error if setting_key already exists.",
+      "used_by_directives": ["user_preferences_update"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "settings_management"
+    },
+    {
+      "name": "get_all_settings",
+      "file_path": "src/aifp/helpers/preferences/tools/settings_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve all settings from user_settings table.",
+      "parameters": [],
+      "return_statements": [
+        "Returns list of all setting objects with key, value, description, scope",
+        "Use this to understand all available user settings at session start",
+        "If empty list, no custom settings configured - all defaults will be used"
+      ],
+      "error_handling": "Return empty list if no settings found.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "settings_management"
+    },
+    {
+      "name": "get_setting",
+      "file_path": "src/aifp/helpers/preferences/tools/settings_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve single setting by key from user_settings table.",
+      "parameters": [
+        {
+          "name": "setting_key",
+          "type": "str",
+          "required": true,
+          "description": "Setting key identifier"
+        }
+      ],
+      "return_statements": [
+        "If None returned, setting key does not exist - use default value",
+        "Returned setting object includes value and description",
+        "Check setting value type and parse accordingly (string, int, bool, etc.)"
+      ],
+      "error_handling": "Return None if setting not found.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "settings_management"
+    },
+    {
+      "name": "get_settings",
+      "file_path": "src/aifp/helpers/preferences/tools/settings_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve multiple settings by array of keys.",
+      "parameters": [
+        {
+          "name": "setting_keys",
+          "type": "list[str]",
+          "required": true,
+          "description": "Array of setting key identifiers"
+        }
+      ],
+      "return_statements": [
+        "Returns list of setting objects for matching keys",
+        "Returned list may be shorter than input if some keys don't exist",
+        "Use this for bulk setting retrieval at initialization"
+      ],
+      "error_handling": "Return empty list if no settings found.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "settings_management"
+    },
+    {
+      "name": "update_setting",
+      "file_path": "src/aifp/helpers/preferences/tools/settings_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Update setting value or description. Key cannot be changed.",
+      "parameters": [
+        {
+          "name": "setting_key",
+          "type": "str",
+          "required": true,
+          "description": "Setting key identifier"
+        },
+        {
+          "name": "new_value",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New value (null means don't update)"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New description (null means don't update)"
+        }
+      ],
+      "return_statements": [
+        "At least one of new_value or description must be provided",
+        "Setting key cannot be changed - to change key, delete and re-add setting",
+        "After update, new value is immediately in effect",
+        "Confirm update with user showing old → new value"
+      ],
+      "error_handling": "Return error if setting_key not found or no update values provided.",
+      "used_by_directives": ["user_preferences_update"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "settings_management"
+    },
+    {
+      "name": "delete_setting",
+      "file_path": "src/aifp/helpers/preferences/tools/settings_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Delete setting from user_settings table.",
+      "parameters": [
+        {
+          "name": "setting_key",
+          "type": "str",
+          "required": true,
+          "description": "Setting key identifier"
+        }
+      ],
+      "return_statements": [
+        "After deletion, setting reverts to system default if one exists",
+        "Confirm deletion with user before proceeding",
+        "This action cannot be undone - setting must be re-added if needed later"
+      ],
+      "error_handling": "Return error if setting_key not found.",
+      "used_by_directives": ["user_preferences_update"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "settings_management"
+    },
+    {
+      "name": "add_directive_preference",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Add preference override for specific directive behavior.",
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": true,
+          "description": "Name of directive"
+        },
+        {
+          "name": "preference_key",
+          "type": "str",
+          "required": true,
+          "description": "Preference key"
+        },
+        {
+          "name": "preference_value",
+          "type": "any",
+          "required": true,
+          "description": "Preference value"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": true,
+          "description": "Description of preference"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": true,
+          "description": "Whether preference is active"
+        }
+      ],
+      "return_statements": [
+        "Preference overrides directive's default behavior when active=true",
+        "If active=false, preference is stored but not applied",
+        "Use this to customize directive behavior per user needs"
+      ],
+      "error_handling": "Return error if preference already exists for this directive/key combination.",
+      "used_by_directives": ["user_preferences_update"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "get_directive_preference",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve directive preference by preference_key. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "preference_key",
+          "type": "str",
+          "required": true,
+          "description": "Preference key"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "If None returned, no active preference exists for this key - use directive default",
+        "If active=false passed, returns inactive preferences for review",
+        "Apply returned preference_value to override directive behavior"
+      ],
+      "error_handling": "Return None if preference not found.",
+      "used_by_directives": ["user_preferences_sync"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "get_directive_preference_by_id",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve directive preference by ID. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "preference_id",
+          "type": "int",
+          "required": true,
+          "description": "Preference ID"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "If None returned, preference ID not found or not active",
+        "Use this when you have preference ID from other operations"
+      ],
+      "error_handling": "Return None if preference not found.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "get_directive_preferences",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve multiple directive preferences by array of keys. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "preference_keys",
+          "type": "list[str]",
+          "required": true,
+          "description": "Array of preference keys"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "Returns list of preference objects for matching keys",
+        "Useful for bulk preference retrieval at session start",
+        "Returned list may be shorter than input if some keys don't exist or aren't active"
+      ],
+      "error_handling": "Return empty list if no preferences found.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "get_directive_preferences_by_id",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve multiple directive preferences by array of IDs. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "preference_ids",
+          "type": "list[int]",
+          "required": true,
+          "description": "Array of preference IDs"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "Returns list of preference objects for matching IDs",
+        "Use this when you have preference IDs from other operations"
+      ],
+      "error_handling": "Return empty list if no preferences found.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "get_directive_preferences_by_directive",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Get all preferences for a specific directive. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": true,
+          "description": "Directive name"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "Returns all preference overrides for this directive",
+        "Use this before executing directive to apply all user customizations",
+        "If empty list, directive has no preference overrides - use defaults"
+      ],
+      "error_handling": "Return empty list if no preferences for directive.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "get_directive_preferences_by_directives",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Get all preferences for multiple directives. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "directive_names",
+          "type": "list[str]",
+          "required": true,
+          "description": "Array of directive names"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "Returns all preferences for all specified directives",
+        "Useful for bulk preference loading when executing multiple related directives",
+        "Group returned preferences by directive_name for application"
+      ],
+      "error_handling": "Return empty list if no preferences for any directives.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "update_settings_directive_preference",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Update directive preference. Any null parameter is not updated.",
+      "parameters": [
+        {
+          "name": "preference_key",
+          "type": "str",
+          "required": true,
+          "description": "Preference key to update"
+        },
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New directive name (null = don't update)"
+        },
+        {
+          "name": "preference_value",
+          "type": "any",
+          "required": false,
+          "default": null,
+          "description": "New preference value (null = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New description (null = don't update)"
+        }
+      ],
+      "return_statements": [
+        "At least one non-null parameter must be provided for update",
+        "After update, new preference value takes effect immediately",
+        "Confirm update with user showing old → new values"
+      ],
+      "error_handling": "Return error if preference_key not found or no update values provided.",
+      "used_by_directives": ["user_preferences_update"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "delete_directive_preference",
+      "file_path": "src/aifp/helpers/preferences/tools/preference_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Delete directive preference by ID.",
+      "parameters": [
+        {
+          "name": "preference_id",
+          "type": "int",
+          "required": true,
+          "description": "Preference ID"
+        }
+      ],
+      "return_statements": [
+        "After deletion, directive reverts to default behavior for this preference",
+        "Confirm deletion with user before proceeding",
+        "This action cannot be undone - preference must be re-added if needed"
+      ],
+      "error_handling": "Return error if preference_id not found.",
+      "used_by_directives": ["user_preferences_update"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "preference_management"
+    },
+    {
+      "name": "add_ai_interaction",
+      "file_path": "src/aifp/helpers/preferences/tools/ai_interaction_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Log AI interaction to ai_interaction_log table. Disabled by default - only logs if ai_interaction_log tracking enabled.",
+      "parameters": [
+        {
+          "name": "interaction_type",
+          "type": "str",
+          "required": true,
+          "description": "Type of interaction"
+        },
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": true,
+          "description": "Directive context"
+        },
+        {
+          "name": "user_feedback",
+          "type": "str",
+          "required": true,
+          "description": "User feedback text"
+        },
+        {
+          "name": "ai_interpretation",
+          "type": "str",
+          "required": true,
+          "description": "AI's interpretation of feedback"
+        },
+        {
+          "name": "applied_to_preferences",
+          "type": "bool",
+          "required": true,
+          "description": "Whether this was applied to user preferences"
+        }
+      ],
+      "return_statements": [
+        "Check if ai_interaction_log tracking is enabled before calling this",
+        "Use this to learn from user feedback and improve directive matching",
+        "If applied_to_preferences=true, this interaction influenced preference updates"
+      ],
+      "error_handling": "Silently skip if tracking disabled. Log error if database write fails.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "ai_interaction_logging"
+    },
+    {
+      "name": "get_ai_interaction",
+      "file_path": "src/aifp/helpers/preferences/tools/ai_interaction_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve single AI interaction by ID.",
+      "parameters": [
+        {
+          "name": "interaction_id",
+          "type": "int",
+          "required": true,
+          "description": "Interaction ID"
+        }
+      ],
+      "return_statements": [
+        "Returns full interaction log entry with all fields",
+        "Use this to review specific past interactions for debugging or analysis"
+      ],
+      "error_handling": "Return None if interaction_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "ai_interaction_logging"
+    },
+    {
+      "name": "get_ai_interactions_by_type",
+      "file_path": "src/aifp/helpers/preferences/tools/ai_interaction_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve AI interactions filtered by type.",
+      "parameters": [
+        {
+          "name": "interaction_type",
+          "type": "str",
+          "required": true,
+          "description": "Interaction type"
+        }
+      ],
+      "return_statements": [
+        "Returns list of interactions of this type",
+        "Use this to analyze patterns in specific interaction types",
+        "If empty list, no interactions of this type logged"
+      ],
+      "error_handling": "Return empty list if no interactions found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "ai_interaction_logging"
+    },
+    {
+      "name": "get_ai_ineractions_by_directive",
+      "file_path": "src/aifp/helpers/preferences/tools/ai_interaction_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve AI interactions for specific directive.",
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": true,
+          "description": "Directive name"
+        }
+      ],
+      "return_statements": [
+        "Returns all logged interactions for this directive",
+        "Use this to understand user feedback patterns for directive improvement",
+        "Review applied_to_preferences field to see which interactions influenced preferences"
+      ],
+      "error_handling": "Return empty list if no interactions for directive.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "ai_interaction_logging"
+    },
+    {
+      "name": "update_ai_interaction",
+      "file_path": "src/aifp/helpers/preferences/tools/ai_interaction_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Update AI interaction log entry. Any null parameter is not updated.",
+      "parameters": [
+        {
+          "name": "interaction_id",
+          "type": "int",
+          "required": true,
+          "description": "Interaction ID"
+        },
+        {
+          "name": "interaction_type",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New interaction type (null = don't update)"
+        },
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New directive name (null = don't update)"
+        },
+        {
+          "name": "user_feedback",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New user feedback (null = don't update)"
+        },
+        {
+          "name": "ai_interpretation",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New AI interpretation (null = don't update)"
+        },
+        {
+          "name": "applied_to_preferences",
+          "type": "bool",
+          "required": false,
+          "default": null,
+          "description": "New applied status (null = don't update)"
+        }
+      ],
+      "return_statements": [
+        "Typically used to correct or enhance logged interactions",
+        "At least one non-null parameter must be provided"
+      ],
+      "error_handling": "Return error if interaction_id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "ai_interaction_logging"
+    },
+    {
+      "name": "delete_ai_interaction",
+      "file_path": "src/aifp/helpers/preferences/tools/ai_interaction_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Delete AI interaction log entry.",
+      "parameters": [
+        {
+          "name": "interaction_id",
+          "type": "int",
+          "required": true,
+          "description": "Interaction ID"
+        }
+      ],
+      "return_statements": [
+        "Use this to remove incorrect or irrelevant interaction logs",
+        "This action cannot be undone"
+      ],
+      "error_handling": "Return error if interaction_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "ai_interaction_logging"
+    },
+    {
+      "name": "add_fp_tracking",
+      "file_path": "src/aifp/helpers/preferences/tools/fp_tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Add FP compliance tracking entry for function. Disabled by default - only logs if fp_flow_tracking enabled.",
+      "parameters": [
+        {
+          "name": "function_name",
+          "type": "str",
+          "required": true,
+          "description": "Function name"
+        },
+        {
+          "name": "file_path",
+          "type": "str",
+          "required": true,
+          "description": "File path"
+        },
+        {
+          "name": "fp_directives_applied",
+          "type": "str",
+          "required": true,
+          "description": "JSON/text of FP directives applied"
+        },
+        {
+          "name": "compliance_score",
+          "type": "float",
+          "required": true,
+          "description": "FP compliance score (0.0-1.0)"
+        },
+        {
+          "name": "issues_json",
+          "type": "str",
+          "required": true,
+          "description": "JSON array of FP compliance issues"
+        },
+        {
+          "name": "user_overrides",
+          "type": "str",
+          "required": true,
+          "description": "User override settings"
+        }
+      ],
+      "return_statements": [
+        "Check if fp_flow_tracking is enabled before calling this",
+        "Use compliance_score to measure FP adherence - aim for > 0.8",
+        "Review issues_json to understand what FP violations exist",
+        "Respect user_overrides - user may intentionally allow non-FP patterns"
+      ],
+      "error_handling": "Silently skip if tracking disabled. Log error if database write fails.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "fp_tracking"
+    },
+    {
+      "name": "get_fp_tracking",
+      "file_path": "src/aifp/helpers/preferences/tools/fp_tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve FP tracking entry by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "FP tracking ID"
+        }
+      ],
+      "return_statements": [
+        "Returns full FP tracking entry with compliance score and issues",
+        "Use this to review specific function's FP compliance"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "fp_tracking"
+    },
+    {
+      "name": "get_fp_tracking_by_function",
+      "file_path": "src/aifp/helpers/preferences/tools/fp_tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve FP tracking entries for specific function name.",
+      "parameters": [
+        {
+          "name": "function_name",
+          "type": "str",
+          "required": true,
+          "description": "Function name"
+        }
+      ],
+      "return_statements": [
+        "Returns all FP tracking entries for this function across time",
+        "Use this to see FP compliance history for function",
+        "If multiple entries, review compliance_score trends to see if improving"
+      ],
+      "error_handling": "Return empty list if no tracking for function.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "fp_tracking"
+    },
+    {
+      "name": "get_fp_tracking_by_functions",
+      "file_path": "src/aifp/helpers/preferences/tools/fp_tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve FP tracking entries for multiple function names.",
+      "parameters": [
+        {
+          "name": "function_names",
+          "type": "list[str]",
+          "required": true,
+          "description": "Array of function names"
+        }
+      ],
+      "return_statements": [
+        "Returns all FP tracking entries for all specified functions",
+        "Useful for reviewing FP compliance across module or file"
+      ],
+      "error_handling": "Return empty list if no tracking for any functions.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "fp_tracking"
+    },
+    {
+      "name": "get_fp_tracking_by_file",
+      "file_path": "src/aifp/helpers/preferences/tools/fp_tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve all FP tracking entries for specific file.",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "str",
+          "required": true,
+          "description": "File path"
+        }
+      ],
+      "return_statements": [
+        "Returns FP tracking for all functions in this file",
+        "Use this to assess overall file FP compliance",
+        "Review to identify which functions in file need FP improvements"
+      ],
+      "error_handling": "Return empty list if no tracking for file.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "fp_tracking"
+    },
+    {
+      "name": "get_fp_tracking_by_score_range",
+      "file_path": "src/aifp/helpers/preferences/tools/fp_tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Get FP tracking entries filtered by compliance score threshold (less/greater or equal).",
+      "parameters": [
+        {
+          "name": "less_or_greater",
+          "type": "str",
+          "required": true,
+          "description": "Filter mode: 'less' or 'greater'"
+        },
+        {
+          "name": "score",
+          "type": "float",
+          "required": true,
+          "description": "Compliance score threshold"
+        }
+      ],
+      "return_statements": [
+        "Use 'less' to find low-compliance functions that need improvement",
+        "Use 'greater' to find high-compliance functions as examples",
+        "Score < 0.7 typically indicates significant FP violations",
+        "Prioritize fixing low-scoring functions first"
+      ],
+      "error_handling": "Return empty list if no entries match criteria.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "fp_tracking"
+    },
+    {
+      "name": "update_fp_tracking",
+      "file_path": "src/aifp/helpers/preferences/tools/fp_tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Update FP tracking entry. Any null parameter is not updated.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "FP tracking ID"
+        },
+        {
+          "name": "function_name",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New function name (null = don't update)"
+        },
+        {
+          "name": "file_path",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New file path (null = don't update)"
+        },
+        {
+          "name": "fp_directives_applied",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New FP directives (null = don't update)"
+        },
+        {
+          "name": "compliance_score",
+          "type": "float",
+          "required": false,
+          "default": null,
+          "description": "New compliance score (null = don't update)"
+        },
+        {
+          "name": "issues_json",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New issues JSON (null = don't update)"
+        },
+        {
+          "name": "user_overrides",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New user overrides (null = don't update)"
+        }
+      ],
+      "return_statements": [
+        "Typically used after re-evaluating function FP compliance",
+        "Update compliance_score when function is refactored to improve FP adherence"
+      ],
+      "error_handling": "Return error if ID not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "fp_tracking"
+    },
+    {
+      "name": "delete_fp_tracking",
+      "file_path": "src/aifp/helpers/preferences/tools/fp_tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Delete FP tracking entry.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "FP tracking ID"
+        }
+      ],
+      "return_statements": [
+        "Use this to remove outdated tracking entries",
+        "This action cannot be undone"
+      ],
+      "error_handling": "Return error if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "fp_tracking"
+    },
+    {
+      "name": "add_issues_report",
+      "file_path": "src/aifp/helpers/preferences/tools/issue_report_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Create issue report for tracking problems, bugs, or feedback.",
+      "parameters": [
+        {
+          "name": "report_type",
+          "type": "str",
+          "required": true,
+          "description": "Type of report (bug, feedback, etc.)"
+        },
+        {
+          "name": "title",
+          "type": "str",
+          "required": true,
+          "description": "Report title"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": true,
+          "description": "Report description"
+        },
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": true,
+          "description": "Related directive"
+        },
+        {
+          "name": "context_log_id",
+          "type": "int",
+          "required": true,
+          "description": "Context log ID for reference"
+        },
+        {
+          "name": "status",
+          "type": "str",
+          "required": true,
+          "description": "Report status"
+        }
+      ],
+      "return_statements": [
+        "Use this when user reports issues with directives or AI behavior",
+        "Include context_log_id to link report to specific interaction",
+        "Status should be 'open' for new reports"
+      ],
+      "error_handling": "Return error if required fields missing.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "issue_reporting"
+    },
+    {
+      "name": "get_issues_report",
+      "file_path": "src/aifp/helpers/preferences/tools/issue_report_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve single issue report by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Report ID"
+        }
+      ],
+      "return_statements": [
+        "Returns full report with all details",
+        "Use this to review specific issue"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "issue_reporting"
+    },
+    {
+      "name": "get_issues_reports_by_type",
+      "file_path": "src/aifp/helpers/preferences/tools/issue_report_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve issue reports filtered by type.",
+      "parameters": [
+        {
+          "name": "report_type",
+          "type": "str",
+          "required": true,
+          "description": "Report type"
+        }
+      ],
+      "return_statements": [
+        "Returns all reports of this type",
+        "Use this to focus on specific types of issues (bugs vs feedback)"
+      ],
+      "error_handling": "Return empty list if no reports of type.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "issue_reporting"
+    },
+    {
+      "name": "get_issues_report_by_title",
+      "file_path": "src/aifp/helpers/preferences/tools/issue_report_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve issue reports matching title.",
+      "parameters": [
+        {
+          "name": "title",
+          "type": "str",
+          "required": true,
+          "description": "Report title"
+        }
+      ],
+      "return_statements": [
+        "Returns reports matching title (may be multiple)",
+        "Use this to check if similar issue already reported"
+      ],
+      "error_handling": "Return empty list if no reports match title.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "issue_reporting"
+    },
+    {
+      "name": "get_issues_reports_by_directive",
+      "file_path": "src/aifp/helpers/preferences/tools/issue_report_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve all issue reports for specific directive.",
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": true,
+          "description": "Directive name"
+        }
+      ],
+      "return_statements": [
+        "Returns all issues reported for this directive",
+        "Use this to identify problematic directives that need improvement",
+        "High issue count may indicate directive needs refinement"
+      ],
+      "error_handling": "Return empty list if no reports for directive.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "issue_reporting"
+    },
+    {
+      "name": "get_issues_reports_by_status",
+      "file_path": "src/aifp/helpers/preferences/tools/issue_report_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve issue reports filtered by status.",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "str",
+          "required": true,
+          "description": "Report status"
+        }
+      ],
+      "return_statements": [
+        "Returns all reports with this status",
+        "Use status='open' to find unresolved issues",
+        "Use status='resolved' to see what has been fixed"
+      ],
+      "error_handling": "Return empty list if no reports with status.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "issue_reporting"
+    },
+    {
+      "name": "update_issues_report",
+      "file_path": "src/aifp/helpers/preferences/tools/issue_report_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Update issue report. Any null parameter is not updated.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Report ID"
+        },
+        {
+          "name": "report_type",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New report type (null = don't update)"
+        },
+        {
+          "name": "title",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New title (null = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New description (null = don't update)"
+        },
+        {
+          "name": "directive_name",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New directive name (null = don't update)"
+        },
+        {
+          "name": "context_log_id",
+          "type": "int",
+          "required": false,
+          "default": null,
+          "description": "New context log ID (null = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New status (null = don't update)"
+        }
+      ],
+      "return_statements": [
+        "Typically used to update status as issues are resolved",
+        "Update status to 'resolved' when issue is fixed"
+      ],
+      "error_handling": "Return error if ID not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "issue_reporting"
+    },
+    {
+      "name": "delete_issues_report",
+      "file_path": "src/aifp/helpers/preferences/tools/issue_report_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Delete issue report.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Report ID"
+        }
+      ],
+      "return_statements": [
+        "Use this to remove duplicate or invalid reports",
+        "This action cannot be undone"
+      ],
+      "error_handling": "Return error if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "issue_reporting"
+    },
+    {
+      "name": "add_tracking_setting",
+      "file_path": "src/aifp/helpers/preferences/tools/tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Add new tracking feature setting.",
+      "parameters": [
+        {
+          "name": "feature_name",
+          "type": "str",
+          "required": true,
+          "description": "Feature name"
+        },
+        {
+          "name": "enabled",
+          "type": "bool",
+          "required": true,
+          "description": "Whether feature is enabled"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": true,
+          "description": "Feature description"
+        },
+        {
+          "name": "estimated_token_overhead",
+          "type": "int",
+          "required": true,
+          "description": "Estimated token cost per session"
+        }
+      ],
+      "return_statements": [
+        "Use this to register new tracking features",
+        "Show user estimated_token_overhead before enabling to get consent",
+        "Feature is immediately available after adding"
+      ],
+      "error_handling": "Return error if feature_name already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "tracking_management"
+    },
+    {
+      "name": "get_tracking_setting",
+      "file_path": "src/aifp/helpers/preferences/tools/tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve tracking setting by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Tracking setting ID"
+        }
+      ],
+      "return_statements": [
+        "Returns full tracking setting with enabled status and token overhead",
+        "Check enabled field to determine if feature is active"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "tracking_management"
+    },
+    {
+      "name": "get_tracking_settings_enabled",
+      "file_path": "src/aifp/helpers/preferences/tools/tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve all enabled tracking settings.",
+      "parameters": [],
+      "return_statements": [
+        "Returns only tracking features that are currently enabled=true",
+        "Use this at session start to determine what tracking to activate",
+        "Sum estimated_token_overhead to calculate total session overhead"
+      ],
+      "error_handling": "Return empty list if no tracking features enabled.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "tracking_management"
+    },
+    {
+      "name": "get_tracking_setting_by_name",
+      "file_path": "src/aifp/helpers/preferences/tools/tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Retrieve tracking setting by feature name.",
+      "parameters": [
+        {
+          "name": "feature_name",
+          "type": "str",
+          "required": true,
+          "description": "Feature name"
+        }
+      ],
+      "return_statements": [
+        "Returns tracking setting for this feature",
+        "Check enabled field before logging data for this feature"
+      ],
+      "error_handling": "Return None if feature_name not found.",
+      "used_by_directives": ["tracking_toggle"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "tracking_management"
+    },
+    {
+      "name": "update_tracking_setting",
+      "file_path": "src/aifp/helpers/preferences/tools/tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Update tracking setting. Any null parameter is not updated.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Tracking setting ID"
+        },
+        {
+          "name": "feature_name",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New feature name (null = don't update)"
+        },
+        {
+          "name": "enabled",
+          "type": "bool",
+          "required": false,
+          "default": null,
+          "description": "New enabled status (null = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "required": false,
+          "default": null,
+          "description": "New description (null = don't update)"
+        },
+        {
+          "name": "estimated_token_overhead",
+          "type": "int",
+          "required": false,
+          "default": null,
+          "description": "New token overhead (null = don't update)"
+        }
+      ],
+      "return_statements": [
+        "Typically used to toggle enabled status on/off",
+        "When enabling feature, warn user about token overhead",
+        "Feature takes effect immediately after update"
+      ],
+      "error_handling": "Return error if ID not found or no update values provided.",
+      "used_by_directives": ["tracking_toggle"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "tracking_management"
+    },
+    {
+      "name": "delete_tracking_setting",
+      "file_path": "src/aifp/helpers/preferences/tools/tracking_tools.py",
+      "database": "user_preferences.db",
+      "purpose": "Delete tracking setting.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Tracking setting ID"
+        }
+      ],
+      "return_statements": [
+        "Use this to remove deprecated tracking features",
+        "This action cannot be undone"
+      ],
+      "error_handling": "Return error if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "tracking_management"
+    }
+  ]
+}

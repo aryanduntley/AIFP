@@ -79,6 +79,7 @@ finalize_files([(file_id, name, path, language), (file_id, name, path, language)
    checks if file actually exists in path. If not exists return "file does not exists, cannot add to database"
 get_file(file_id)
 get_files([(file_id), (file_id), ...])
+update_file_checksum()
 update_file(file_id, new_name(*Can Be Null), new_path(*Can Be Null), language(*Can Be Null))
    null means do not update this field.
    checksum must be updated automatically here
@@ -126,6 +127,7 @@ finalize_files() array of parameters
 HELPER is_sub_helper=true
 update_file_timestamp(file_id)
    this is primarily for function updates. If a function is updated, the file last updated timestamp should be updated. checksum gets updates (since this call is automated after every function update). No need for a separate call by AI. 
+   return_statements should include "file {$file_id} timestamp and checksum updated automatically"
 
 IF TRIGGERS NOT DOABLE:
 For all tables since we have both created at and updated at, we should have a check for setters and automatically add updated at if exists, automatically add created at if not exists and ignore the other in both cases (if create then ignore update, if update then ignore create). AI should not have to worry about created at, updated at, checksums. These should be automated. But if triggers for this can be done, we don't have to worry about it

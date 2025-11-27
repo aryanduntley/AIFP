@@ -1,0 +1,292 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-11-26",
+    "description": "Project Database helpers - Project state, tasks, files, functions",
+    "database": "project.db",
+    "total_helpers": 9,
+    "schema_version": "1.0",
+    "notes": "This registry is for import into MCP database. Helpers reference directives (not vice versa)."
+  },
+  "helper_schema": {
+    "description": "Schema definition for helper entries",
+    "fields": {
+      "name": "Function name",
+      "file_path": "Path to implementation file",
+      "database": "Which database this helper operates on",
+      "purpose": "Detailed description of what this helper does",
+      "parameters": "Array of parameter objects with name and type",
+      "return_statements": "Array of AI behavioral guidance - what to check/do next after calling this helper",
+      "error_handling": "How errors are handled",
+      "used_by_directives": "Array of directive names that use this helper",
+      "is_tool": "Boolean - exposed via MCP as tool",
+      "is_sub_helper": "Boolean - internal utility helper not directly called by AI/directives",
+      "calls_helpers": "Array of helper names this function calls",
+      "category": "Functional category"
+    }
+  },
+  "database": "project.db",
+  "file_location": "src/aifp/helpers/project/",
+  "helpers": [
+    {
+      "name": "create_project_directory",
+      "file_path": "src/aifp/helpers/project/tools/project_setup_tools.py",
+      "database": "project.db",
+      "purpose": "Create `.aifp-project/` directory structure with necessary subdirectories.",
+      "parameters": [
+        {
+          "name": "target_path",
+          "type": "str",
+          "required": true,
+          "description": "Path where .aifp-project directory should be created"
+        }
+      ],
+      "return_statements": [
+        "If success=false and error indicates directory exists, verify if this is re-initialization or error state",
+        "After successful creation, proceed to initialize_project_db to set up database",
+        "Ensure parent directory has write permissions before calling this helper"
+      ],
+      "error_handling": "Returns Failure if directory already exists or insufficient permissions.",
+      "used_by_directives": ["project_init"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "project_setup"
+    },
+    {
+      "name": "initialize_project_db",
+      "file_path": "src/aifp/helpers/project/tools/project_setup_tools.py",
+      "database": "project.db",
+      "purpose": "Create and initialize `project.db` with schema and populate project metadata.",
+      "parameters": [
+        {
+          "name": "aifp_dir",
+          "type": "str",
+          "required": true,
+          "description": "Path to .aifp-project directory"
+        },
+        {
+          "name": "project_metadata",
+          "type": "dict",
+          "required": true,
+          "description": "Project metadata (name, purpose, goals, etc.)"
+        }
+      ],
+      "return_statements": [
+        "If success=false, check error message and determine if manual intervention needed",
+        "Verify schema_version matches expected version for compatibility",
+        "After successful initialization, proceed to initialize_user_preferences_db",
+        "Returned project_id should be used for all subsequent project operations"
+      ],
+      "error_handling": "Returns Failure if schema load fails, database creation fails, or validation fails.",
+      "used_by_directives": ["project_init"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "project_setup"
+    },
+    {
+      "name": "initialize_user_preferences_db",
+      "file_path": "src/aifp/helpers/project/tools/project_setup_tools.py",
+      "database": "project.db",
+      "purpose": "Create `user_preferences.db` with schema only (no initial data).",
+      "parameters": [
+        {
+          "name": "aifp_dir",
+          "type": "str",
+          "required": true,
+          "description": "Path to .aifp-project directory"
+        }
+      ],
+      "return_statements": [
+        "If success=false, initialization is incomplete - do not proceed with project operations",
+        "After successful creation, run validate_initialization to verify full setup",
+        "User preferences will be empty by default - directives will use default behaviors until preferences are set"
+      ],
+      "error_handling": "Returns Failure if schema load fails, database creation fails, or validation fails.",
+      "used_by_directives": ["project_init"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "project_setup"
+    },
+    {
+      "name": "validate_initialization",
+      "file_path": "src/aifp/helpers/project/tools/project_setup_tools.py",
+      "database": "project.db",
+      "purpose": "Validate that project initialization is complete and correct.",
+      "parameters": [
+        {
+          "name": "aifp_dir",
+          "type": "str",
+          "required": true,
+          "description": "Path to .aifp-project directory"
+        }
+      ],
+      "return_statements": [
+        "If success=false, review validation_errors array and fix issues before proceeding",
+        "If warnings exist but success=true, discuss warnings with user but project can proceed",
+        "After successful validation, project is ready for use - can proceed with project directives",
+        "If validation fails, may need to re-run project_init or manually correct issues"
+      ],
+      "error_handling": "Returns Failure with specific validation error message.",
+      "used_by_directives": ["project_init"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "project_setup"
+    },
+    {
+      "name": "init_project_db",
+      "file_path": "src/aifp/helpers/project/tools/project_setup_tools.py",
+      "database": "project.db",
+      "purpose": "Create project.db and initialize the project table with default schemas. Sets up initial completion path stages.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "str",
+          "required": true,
+          "description": "Project name"
+        },
+        {
+          "name": "purpose",
+          "type": "str",
+          "required": true,
+          "description": "Project purpose"
+        },
+        {
+          "name": "goals_json",
+          "type": "str",
+          "required": true,
+          "description": "JSON array of project goals"
+        },
+        {
+          "name": "project_id",
+          "type": "int",
+          "required": false,
+          "description": "Optional project ID"
+        }
+      ],
+      "return_statements": [
+        "If success=false, project initialization incomplete - prompt user for manual setup",
+        "Returned project_id is critical - store and use for all subsequent operations",
+        "Review completion_path_stages to understand project workflow structure",
+        "After successful init, create initial milestones aligned with completion path stages"
+      ],
+      "error_handling": "On failure, prompt user for manual setup. Optionally log to user_preferences.db if helper_function_logging enabled.",
+      "used_by_directives": ["project_init"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "project_setup"
+    },
+    {
+      "name": "get_project_status",
+      "file_path": "src/aifp/helpers/project/tools/project_meta_tools.py",
+      "database": "project.db",
+      "purpose": "Check if project is initialized by verifying .aifp/ folder and project.db exist and contain valid data.",
+      "parameters": [],
+      "return_statements": [
+        "If initialized=false, escalate to project_init directive immediately before attempting any project operations",
+        "If initialized=true but db_valid=false, database may be corrupted - warn user and suggest backup/recovery",
+        "Use returned project_id for all subsequent project queries and operations",
+        "Always call this at session start before attempting project-related directives"
+      ],
+      "error_handling": "Return `{\"initialized\": false}` if project not found.",
+      "used_by_directives": ["aifp_run", "aifp_status", "project_init"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "project_meta"
+    },
+    {
+      "name": "get_project_context",
+      "file_path": "src/aifp/helpers/project/tools/project_meta_tools.py",
+      "database": "project.db",
+      "purpose": "Retrieve structured project overview from project.db for AI context loading.",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "str",
+          "required": false,
+          "default": "full",
+          "description": "Context type (full, summary, minimal)"
+        }
+      ],
+      "return_statements": [
+        "Use this for comprehensive project state at session start or when user asks for status",
+        "Review completion_path to understand current project stage and overall progress",
+        "Check recent_activity to see what was worked on last - helps with context continuity",
+        "If some data is missing/partial, note which tables are inaccessible and inform user",
+        "Use returned data to determine which project directives to suggest next"
+      ],
+      "error_handling": "Return partial context with error note if some tables inaccessible.",
+      "used_by_directives": ["aifp_status"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_project_metadata", "get_completion_path", "get_tasks_by_status"],
+      "category": "project_meta"
+    },
+    {
+      "name": "get_project_tasks",
+      "file_path": "src/aifp/helpers/project/tools/task_tools.py",
+      "database": "project.db",
+      "purpose": "List tasks and subtasks from project.db.",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "str",
+          "required": false,
+          "description": "Filter by status (pending, in_progress, completed, cancelled)"
+        }
+      ],
+      "return_statements": [
+        "If empty list returned, no tasks exist yet - may need to run task creation directives",
+        "For in_progress tasks, check if there are blocking subtasks that need completion first",
+        "Review task priorities to determine which should be worked on next",
+        "Use task IDs for subsequent operations (get_task_files, update_task_status)",
+        "If filtering by status, consider checking other statuses to get full context"
+      ],
+      "error_handling": "Return empty list if no tasks found.",
+      "used_by_directives": ["aifp_status", "project_task_complete"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "task_management"
+    },
+    {
+      "name": "get_status_tree",
+      "file_path": "src/aifp/helpers/project/tools/status_tools.py",
+      "database": "project.db",
+      "purpose": "Build hierarchical status tree with historical context for task continuation. Uses priority-based system: sidequests (highest) → subtasks → tasks. Loads parent context and historical items from previous tasks when current focus has no completed items.",
+      "parameters": [
+        {
+          "name": "project_id",
+          "type": "int",
+          "required": true,
+          "description": "Project ID"
+        },
+        {
+          "name": "context_limit",
+          "type": "int",
+          "required": false,
+          "default": 5,
+          "description": "Number of historical items to include"
+        }
+      ],
+      "return_statements": [
+        "Follow chain of severity: sidequests → subtasks → tasks. Complete highest priority item first",
+        "If priority=None with 'No open tasks' message, all work is complete - discuss with user what to do next",
+        "Review parent_context to understand what the current work item is part of",
+        "Use historical_items to understand what was recently completed - helps with continuity",
+        "After completing current_item, call this again to get next priority item"
+      ],
+      "error_handling": "Return `{\"priority\": None, \"message\": \"No open tasks\"}` if no work items.",
+      "used_by_directives": ["aifp_status"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_project_tasks"],
+      "category": "status_management"
+    }
+  ]
+}

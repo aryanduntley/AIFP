@@ -77,7 +77,7 @@ docs/helpers/info-helpers-project.txt
 docs/helpers/info-helpers-core.txt
 docs/helpers/info-helpers-user-custom.txt
 
-need to consolidate all helpers to avoid confusion:
+need to consolidate all helpers and remove excess files to avoid confusion:
 docs/helpers/helper-architecture.md
 docs/helpers/helper-tool-classification.md
 docs/helpers/generic-tools-mcp.md
@@ -87,3 +87,22 @@ docs/directives-json/directive-helper-interactions.json
 docs/directives-json/helpers_parsed.json
 
 need to flesh out return statements
+
+
+reference user_settings for directives and all useful places in return_statements where appropriate
+
+working on:
+docs/helper-registry-progress.md
+docs/helpers/registry/helpers_registry_core.json
+docs/helpers/registry/helpers_registry_project.json
+docs/helpers/registry/helpers_registry_user_directives.json
+docs/helpers/registry/helpers_registry_user_directives_getters.json
+docs/helpers/registry/helpers_registry_user_settings.json
+docs/helpers/helper-sources-comparison.md
+
+docs/helpers/registry/helpers_registry_user_directives.json
+is being split into separate files getters and setters. getters done
+docs/helpers/registry/helpers_registry_user_directives_getters.json
+setters needs to be created. We are using the docs/helpers/info-helpers-user-custom.txt file for this.
+
+

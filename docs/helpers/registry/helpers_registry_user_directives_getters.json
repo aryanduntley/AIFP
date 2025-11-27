@@ -1,0 +1,1260 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-11-26",
+    "description": "User Directives Database helpers - READ-ONLY queries (getters)",
+    "database": "user_directives.db",
+    "total_helpers": 45,
+    "schema_version": "1.0",
+    "notes": "This registry is for import into MCP database. User directives is AI territory - AI is encouraged to write custom queries if helpers don't satisfy needs."
+  },
+  "helper_schema": {
+    "description": "Schema definition for helper entries",
+    "fields": {
+      "name": "Function name",
+      "file_path": "Path to implementation file",
+      "database": "Which database this helper operates on",
+      "purpose": "Detailed description of what this helper does",
+      "parameters": "Array of parameter objects with name and type",
+      "return_statements": "Array of AI behavioral guidance - what to check/do next after calling this helper",
+      "error_handling": "How errors are handled",
+      "used_by_directives": "Array of directive names that use this helper",
+      "is_tool": "Boolean - exposed via MCP as tool",
+      "is_sub_helper": "Boolean - internal utility helper not directly called by AI/directives",
+      "calls_helpers": "Array of helper names this function calls",
+      "category": "Functional category"
+    }
+  },
+  "database": "user_directives.db",
+  "file_location": "src/aifp/helpers/user_directives/",
+  "note_to_ai": "AI has freedom to write custom SQL queries for user_directives.db when existing helpers are insufficient. Use these helpers as a guide, but feel empowered to create optimized queries for specific needs.",
+  "helpers": [
+    {
+      "name": "get_user_directive",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve single user directive by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Directive ID"
+        }
+      ],
+      "return_statements": [
+        "Returns full directive with all fields including raw_content, validated_content, trigger_config, action_config",
+        "Check status field to see if directive is active, pending, or disabled",
+        "Review validation_questions/answers to understand clarifications made during setup",
+        "If None returned, directive doesn't exist - verify ID is correct"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_queries"
+    },
+    {
+      "name": "get_user_directives",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve multiple user directives by array of IDs.",
+      "parameters": [
+        {
+          "name": "ids",
+          "type": "list[int]",
+          "required": true,
+          "description": "Array of directive IDs"
+        }
+      ],
+      "return_statements": [
+        "Returns list of directive objects for matching IDs",
+        "Useful for bulk retrieval of related directives",
+        "Returned list may be shorter than input if some IDs don't exist"
+      ],
+      "error_handling": "Return empty list if no directives found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_queries"
+    },
+    {
+      "name": "get_user_directive_by_name",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve user directive by name.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "str",
+          "required": true,
+          "description": "Directive name"
+        }
+      ],
+      "return_statements": [
+        "Returns directive object matching name",
+        "User directive names should be unique - if multiple exist, only first is returned",
+        "If None returned, no directive with this name exists"
+      ],
+      "error_handling": "Return None if name not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_queries"
+    },
+    {
+      "name": "get_user_directives_by_name",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve multiple user directives by array of names.",
+      "parameters": [
+        {
+          "name": "names",
+          "type": "list[str]",
+          "required": true,
+          "description": "Array of directive names"
+        }
+      ],
+      "return_statements": [
+        "Returns list of directives matching names",
+        "Useful for bulk retrieval by name"
+      ],
+      "error_handling": "Return empty list if no directives found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_queries"
+    },
+    {
+      "name": "get_user_directives_by_action_type",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all user directives filtered by action_type (e.g., 'execute_script', 'api_call', 'file_operation').",
+      "parameters": [
+        {
+          "name": "action_type",
+          "type": "str",
+          "required": true,
+          "description": "Action type to filter by"
+        }
+      ],
+      "return_statements": [
+        "Returns all directives that perform this type of action",
+        "Use this to understand what directives execute similar operations",
+        "If empty list, no directives of this action type exist"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_queries"
+    },
+    {
+      "name": "get_user_directives_by_trigger_type",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all user directives filtered by trigger_type (e.g., 'schedule', 'event', 'manual').",
+      "parameters": [
+        {
+          "name": "trigger_type",
+          "type": "str",
+          "required": true,
+          "description": "Trigger type to filter by"
+        }
+      ],
+      "return_statements": [
+        "Returns all directives triggered by this type",
+        "Use 'schedule' to find time-based directives, 'event' for event-driven ones",
+        "Review trigger_config field to understand specific trigger settings"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_queries"
+    },
+    {
+      "name": "get_user_directives_by_status",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all user directives filtered by status.",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "str",
+          "required": true,
+          "description": "Status to filter by (active, pending, disabled, etc.)"
+        }
+      ],
+      "return_statements": [
+        "Returns all directives with this status",
+        "Use status='active' to find currently running directives",
+        "Use status='pending' to find directives awaiting approval/deployment"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_queries"
+    },
+    {
+      "name": "get_user_directives_by_implementation_status",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all user directives filtered by implementation_status.",
+      "parameters": [
+        {
+          "name": "implementation_status",
+          "type": "str",
+          "required": true,
+          "description": "Implementation status (planned, in_progress, implemented, deployed, etc.)"
+        }
+      ],
+      "return_statements": [
+        "Returns all directives at this implementation stage",
+        "Use 'planned' to find directives that need implementation",
+        "Use 'deployed' to find directives that are live and running"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_queries"
+    },
+    {
+      "name": "get_user_directive_execution",
+      "file_path": "src/aifp/helpers/user_directives/tools/execution_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve execution stats for specific directive.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Execution record ID"
+        }
+      ],
+      "return_statements": [
+        "Returns execution statistics including total_executions, success_count, error_count",
+        "Review last_error_time and last_error_message to diagnose issues",
+        "Check next_scheduled_time to see when directive will run next",
+        "Use avg_execution_time_ms and max_execution_time_ms to assess performance"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "execution_queries"
+    },
+    {
+      "name": "get_user_directive_executions_by_directive",
+      "file_path": "src/aifp/helpers/user_directives/tools/execution_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get execution stats for specific user directive.",
+      "parameters": [
+        {
+          "name": "user_directive_id",
+          "type": "int",
+          "required": true,
+          "description": "User directive ID"
+        }
+      ],
+      "return_statements": [
+        "Returns all execution records for this directive",
+        "Use this to understand directive execution history and reliability",
+        "High error_count may indicate directive needs debugging"
+      ],
+      "error_handling": "Return empty list if no execution records.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "execution_queries"
+    },
+    {
+      "name": "get_user_directive_executions_by_avg_execution_time",
+      "file_path": "src/aifp/helpers/user_directives/tools/execution_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get directives filtered by average execution time (less/greater threshold).",
+      "parameters": [
+        {
+          "name": "less_or_greater",
+          "type": "str",
+          "required": true,
+          "description": "'less' or 'greater'"
+        },
+        {
+          "name": "avg_execution_time_ms",
+          "type": "float",
+          "required": true,
+          "description": "Threshold in milliseconds"
+        }
+      ],
+      "return_statements": [
+        "Use 'greater' to find slow-running directives that may need optimization",
+        "Use 'less' to find fast directives for performance comparison",
+        "Consider optimizing directives with avg > 5000ms"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "execution_queries"
+    },
+    {
+      "name": "get_user_directive_executions_by_max_execution_time",
+      "file_path": "src/aifp/helpers/user_directives/tools/execution_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get directives filtered by maximum execution time (less/greater threshold).",
+      "parameters": [
+        {
+          "name": "less_or_greater",
+          "type": "str",
+          "required": true,
+          "description": "'less' or 'greater'"
+        },
+        {
+          "name": "max_execution_time_ms",
+          "type": "float",
+          "required": true,
+          "description": "Threshold in milliseconds"
+        }
+      ],
+      "return_statements": [
+        "Max execution time shows worst-case performance",
+        "High max values may indicate intermittent slowdowns or edge cases"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "execution_queries"
+    },
+    {
+      "name": "get_user_directive_executions_by_error_count",
+      "file_path": "src/aifp/helpers/user_directives/tools/execution_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get directives filtered by error count (less/greater threshold).",
+      "parameters": [
+        {
+          "name": "less_or_greater",
+          "type": "str",
+          "required": true,
+          "description": "'less' or 'greater'"
+        },
+        {
+          "name": "error_count",
+          "type": "int",
+          "required": true,
+          "description": "Error count threshold"
+        }
+      ],
+      "return_statements": [
+        "Use 'greater' with threshold=0 to find all directives with errors",
+        "Prioritize fixing directives with high error counts",
+        "Review last_error_message for debugging clues"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "execution_queries"
+    },
+    {
+      "name": "get_user_directive_executions_by_total_executions",
+      "file_path": "src/aifp/helpers/user_directives/tools/execution_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get directives filtered by total execution count (less/greater threshold).",
+      "parameters": [
+        {
+          "name": "less_or_greater",
+          "type": "str",
+          "required": true,
+          "description": "'less' or 'greater'"
+        },
+        {
+          "name": "total_executions",
+          "type": "int",
+          "required": true,
+          "description": "Total executions threshold"
+        }
+      ],
+      "return_statements": [
+        "Use 'less' with threshold=1 to find directives that have never executed",
+        "Use 'greater' to find frequently-used directives"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "execution_queries"
+    },
+    {
+      "name": "get_user_directive_executions_by_future_schedule",
+      "file_path": "src/aifp/helpers/user_directives/tools/execution_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get directives scheduled to execute between start and end times (future).",
+      "parameters": [
+        {
+          "name": "between_start",
+          "type": "str",
+          "required": true,
+          "description": "Start datetime"
+        },
+        {
+          "name": "between_end",
+          "type": "str",
+          "required": true,
+          "description": "End datetime"
+        }
+      ],
+      "return_statements": [
+        "Returns directives scheduled to run in specified time window",
+        "Use this to preview upcoming directive executions",
+        "Parses current time to filter only future schedules"
+      ],
+      "error_handling": "Return empty list if no scheduled executions in range.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "execution_queries"
+    },
+    {
+      "name": "get_user_directive_executions_by_past_schedule",
+      "file_path": "src/aifp/helpers/user_directives/tools/execution_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get directives that executed between start and end times (past).",
+      "parameters": [
+        {
+          "name": "between_start",
+          "type": "str",
+          "required": true,
+          "description": "Start datetime"
+        },
+        {
+          "name": "between_end",
+          "type": "str",
+          "required": true,
+          "description": "End datetime"
+        }
+      ],
+      "return_statements": [
+        "Returns directives that executed in specified time window",
+        "Use this to audit past directive activity",
+        "Parses current time to filter only past executions"
+      ],
+      "error_handling": "Return empty list if no executions in range.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "execution_queries"
+    },
+    {
+      "name": "get_user_directive_dependency",
+      "file_path": "src/aifp/helpers/user_directives/tools/dependency_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve single dependency by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Dependency ID"
+        }
+      ],
+      "return_statements": [
+        "Returns dependency info including type, name, version, status, install_command",
+        "Check status field to see if dependency is installed, pending, or failed",
+        "If required=true and status!=installed, directive cannot run"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "dependency_queries"
+    },
+    {
+      "name": "get_user_directive_dependencies_by_directive",
+      "file_path": "src/aifp/helpers/user_directives/tools/dependency_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all dependencies for specific user directive.",
+      "parameters": [
+        {
+          "name": "user_directive_id",
+          "type": "int",
+          "required": true,
+          "description": "User directive ID"
+        }
+      ],
+      "return_statements": [
+        "Returns all dependencies this directive needs",
+        "Check required field - if true and not installed, must install before running directive",
+        "Review install_command to understand how to install missing dependencies",
+        "If user_confirmed=false, get user approval before installing"
+      ],
+      "error_handling": "Return empty list if no dependencies.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "dependency_queries"
+    },
+    {
+      "name": "get_user_directive_dependencies_by_type",
+      "file_path": "src/aifp/helpers/user_directives/tools/dependency_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all dependencies filtered by type (e.g., 'python_package', 'npm_package', 'system_binary').",
+      "parameters": [
+        {
+          "name": "dependency_type",
+          "type": "str",
+          "required": true,
+          "description": "Dependency type"
+        }
+      ],
+      "return_statements": [
+        "Returns all dependencies of this type across all directives",
+        "Useful for understanding what external dependencies user directives need"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "dependency_queries"
+    },
+    {
+      "name": "get_user_directive_dependencies_by_status",
+      "file_path": "src/aifp/helpers/user_directives/tools/dependency_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all dependencies filtered by status (installed, pending, failed).",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "str",
+          "required": true,
+          "description": "Dependency status"
+        }
+      ],
+      "return_statements": [
+        "Use status='pending' to find dependencies awaiting installation",
+        "Use status='failed' to find installation issues that need resolution"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "dependency_queries"
+    },
+    {
+      "name": "get_user_directive_dependencies_by_required",
+      "file_path": "src/aifp/helpers/user_directives/tools/dependency_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all dependencies filtered by required flag.",
+      "parameters": [
+        {
+          "name": "required",
+          "type": "bool",
+          "required": true,
+          "description": "Required flag (true/false)"
+        }
+      ],
+      "return_statements": [
+        "Use required=true to find critical dependencies that must be installed",
+        "Prioritize installing required dependencies over optional ones"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "dependency_queries"
+    },
+    {
+      "name": "get_user_directive_dependencies_by_directive_required",
+      "file_path": "src/aifp/helpers/user_directives/tools/dependency_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all required dependencies for specific directive.",
+      "parameters": [
+        {
+          "name": "user_directive_id",
+          "type": "int",
+          "required": true,
+          "description": "User directive ID"
+        },
+        {
+          "name": "required",
+          "type": "bool",
+          "required": true,
+          "description": "Required flag"
+        }
+      ],
+      "return_statements": [
+        "More focused than get_user_directive_dependencies_by_directive - filters by required flag",
+        "Use this to check only critical dependencies before running directive"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "dependency_queries"
+    },
+    {
+      "name": "get_user_directive_implementation",
+      "file_path": "src/aifp/helpers/user_directives/tools/implementation_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve implementation details by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Implementation ID"
+        }
+      ],
+      "return_statements": [
+        "Returns implementation info including file_path, function_name, language, framework, entry_point",
+        "Check deployed field to see if implementation is active",
+        "Use process_id to monitor or control running implementations"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "implementation_queries"
+    },
+    {
+      "name": "get_user_directive_implementations_by_directive",
+      "file_path": "src/aifp/helpers/user_directives/tools/implementation_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all implementations for specific user directive.",
+      "parameters": [
+        {
+          "name": "user_directive_id",
+          "type": "int",
+          "required": true,
+          "description": "User directive ID"
+        }
+      ],
+      "return_statements": [
+        "Returns all implementation records for this directive",
+        "Directive may have multiple implementations (e.g., Python and Bash versions)",
+        "Check deployed field to see which implementation is currently active"
+      ],
+      "error_handling": "Return empty list if no implementations.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "implementation_queries"
+    },
+    {
+      "name": "get_user_directive_implementations_by_function_name",
+      "file_path": "src/aifp/helpers/user_directives/tools/implementation_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get implementations by function name.",
+      "parameters": [
+        {
+          "name": "function_name",
+          "type": "str",
+          "required": true,
+          "description": "Function name"
+        }
+      ],
+      "return_statements": [
+        "Returns all implementations using this function name",
+        "Useful for finding reused function implementations across directives"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "implementation_queries"
+    },
+    {
+      "name": "get_user_directive_implementations_by_file_path",
+      "file_path": "src/aifp/helpers/user_directives/tools/implementation_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get implementations by file path.",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "str",
+          "required": true,
+          "description": "Implementation file path"
+        }
+      ],
+      "return_statements": [
+        "Returns all implementations in this file",
+        "Useful for understanding what directives are implemented in specific files"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "implementation_queries"
+    },
+    {
+      "name": "get_user_directive_implementations_by_type",
+      "file_path": "src/aifp/helpers/user_directives/tools/implementation_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get implementations by type (e.g., 'script', 'function', 'api_endpoint').",
+      "parameters": [
+        {
+          "name": "implementation_type",
+          "type": "str",
+          "required": true,
+          "description": "Implementation type"
+        }
+      ],
+      "return_statements": [
+        "Returns all implementations of this type",
+        "Useful for categorizing and organizing implementations"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "implementation_queries"
+    },
+    {
+      "name": "get_user_directive_relationship",
+      "file_path": "src/aifp/helpers/user_directives/tools/relationship_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve single directive relationship by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Relationship ID"
+        }
+      ],
+      "return_statements": [
+        "Returns relationship info including source, target, relationship_type, active status",
+        "Check relationship_type to understand how directives interact (depends_on, triggers, etc.)"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "relationship_queries"
+    },
+    {
+      "name": "get_user_directive_relationships_by_source",
+      "file_path": "src/aifp/helpers/user_directives/tools/relationship_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all relationships where directive is the source. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "source_id",
+          "type": "int",
+          "required": true,
+          "description": "Source directive ID"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "Returns all relationships originating from this directive",
+        "Use this to understand what other directives this one depends on or triggers",
+        "Only returns active relationships by default - set active=false to see inactive ones"
+      ],
+      "error_handling": "Return empty list if no relationships.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "relationship_queries"
+    },
+    {
+      "name": "get_user_directive_relationships_by_target",
+      "file_path": "src/aifp/helpers/user_directives/tools/relationship_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all relationships where directive is the target. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "target_id",
+          "type": "int",
+          "required": true,
+          "description": "Target directive ID"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "Returns all relationships targeting this directive",
+        "Use this to understand what directives depend on or trigger this one"
+      ],
+      "error_handling": "Return empty list if no relationships.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "relationship_queries"
+    },
+    {
+      "name": "get_user_directive_relationships_by_relationship",
+      "file_path": "src/aifp/helpers/user_directives/tools/relationship_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all relationships filtered by relationship_type. Defaults to active=true.",
+      "parameters": [
+        {
+          "name": "relationship_type",
+          "type": "str",
+          "required": true,
+          "description": "Relationship type (depends_on, triggers, etc.)"
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "description": "Filter by active status"
+        }
+      ],
+      "return_statements": [
+        "Returns all relationships of this type across all directives",
+        "Useful for understanding dependency chains or trigger flows"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "relationship_queries"
+    },
+    {
+      "name": "get_user_helper_function",
+      "file_path": "src/aifp/helpers/user_directives/tools/helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve single user helper function by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Helper function ID"
+        }
+      ],
+      "return_statements": [
+        "Returns helper function info including file_path, parameters, purpose, function_signature",
+        "Check is_pure field to understand if function has side effects",
+        "Review implementation_status to see if helper is ready to use"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "helper_queries"
+    },
+    {
+      "name": "get_user_helper_functions",
+      "file_path": "src/aifp/helpers/user_directives/tools/helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve multiple user helper functions by array of IDs.",
+      "parameters": [
+        {
+          "name": "ids",
+          "type": "list[int]",
+          "required": true,
+          "description": "Array of helper function IDs"
+        }
+      ],
+      "return_statements": [
+        "Returns list of helper functions for matching IDs",
+        "Useful for bulk retrieval"
+      ],
+      "error_handling": "Return empty list if no helpers found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "helper_queries"
+    },
+    {
+      "name": "get_user_helper_function_by_name",
+      "file_path": "src/aifp/helpers/user_directives/tools/helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve user helper function by name.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "str",
+          "required": true,
+          "description": "Helper function name"
+        }
+      ],
+      "return_statements": [
+        "Returns helper function matching name",
+        "If None returned, helper doesn't exist - may need to create it"
+      ],
+      "error_handling": "Return None if name not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "helper_queries"
+    },
+    {
+      "name": "get_user_helper_functions_by_name",
+      "file_path": "src/aifp/helpers/user_directives/tools/helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve multiple user helper functions by array of names.",
+      "parameters": [
+        {
+          "name": "names",
+          "type": "list[str]",
+          "required": true,
+          "description": "Array of helper function names"
+        }
+      ],
+      "return_statements": [
+        "Returns list of helpers matching names",
+        "Useful for bulk retrieval by name"
+      ],
+      "error_handling": "Return empty list if no helpers found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "helper_queries"
+    },
+    {
+      "name": "get_user_helper_functions_by_path",
+      "file_path": "src/aifp/helpers/user_directives/tools/helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all user helper functions in specific file.",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "str",
+          "required": true,
+          "description": "File path"
+        }
+      ],
+      "return_statements": [
+        "Returns all helpers defined in this file",
+        "Useful for understanding file organization"
+      ],
+      "error_handling": "Return empty list if no helpers in file.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "helper_queries"
+    },
+    {
+      "name": "get_user_helper_functions_by_implementation_status",
+      "file_path": "src/aifp/helpers/user_directives/tools/helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get user helpers filtered by implementation status.",
+      "parameters": [
+        {
+          "name": "implementation_status",
+          "type": "str",
+          "required": true,
+          "description": "Implementation status (planned, in_progress, implemented, etc.)"
+        }
+      ],
+      "return_statements": [
+        "Use 'planned' to find helpers that need implementation",
+        "Use 'implemented' to find ready-to-use helpers"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "helper_queries"
+    },
+    {
+      "name": "get_user_helper_functions_by_purity",
+      "file_path": "src/aifp/helpers/user_directives/tools/helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get user helpers filtered by purity (is_pure flag).",
+      "parameters": [
+        {
+          "name": "is_pure",
+          "type": "bool",
+          "required": true,
+          "description": "Purity flag"
+        }
+      ],
+      "return_statements": [
+        "Use is_pure=true to find pure functions (no side effects)",
+        "Pure functions are safer to call multiple times and easier to test",
+        "Prefer pure functions when possible for FP compliance"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "helper_queries"
+    },
+    {
+      "name": "get_user_directive_helper",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve single directive-helper association by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Directive-helper association ID"
+        }
+      ],
+      "return_statements": [
+        "Returns association info including execution_context, sequence_order, is_required",
+        "Check sequence_order to understand when helper should be called in directive workflow"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_helper_queries"
+    },
+    {
+      "name": "get_user_directive_helpers",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve multiple directive-helper associations by array of IDs.",
+      "parameters": [
+        {
+          "name": "ids",
+          "type": "list[int]",
+          "required": true,
+          "description": "Array of association IDs"
+        }
+      ],
+      "return_statements": [
+        "Returns list of associations for matching IDs",
+        "Results ordered by sequence_order"
+      ],
+      "error_handling": "Return empty list if no associations found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_helper_queries"
+    },
+    {
+      "name": "get_user_directive_helpers_by_directive",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all helpers associated with specific directive. Ordered by sequence_order.",
+      "parameters": [
+        {
+          "name": "user_directive_id",
+          "type": "int",
+          "required": true,
+          "description": "User directive ID"
+        },
+        {
+          "name": "is_required",
+          "type": "bool",
+          "required": false,
+          "default": null,
+          "description": "Filter by required flag (null = all)"
+        }
+      ],
+      "return_statements": [
+        "Returns all helpers for this directive in execution order (sequence_order)",
+        "If is_required=true specified, only returns required helpers",
+        "Use sequence_order to call helpers in correct order during directive execution",
+        "Check is_required - required helpers must be called, optional ones can be skipped"
+      ],
+      "error_handling": "Return empty list if no helpers.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_helper_queries"
+    },
+    {
+      "name": "get_user_directive_helpers_by_function",
+      "file_path": "src/aifp/helpers/user_directives/tools/directive_helper_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get all directives that use specific helper function. Ordered by sequence_order.",
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "int",
+          "required": true,
+          "description": "Helper function ID"
+        },
+        {
+          "name": "is_required",
+          "type": "bool",
+          "required": false,
+          "default": null,
+          "description": "Filter by required flag (null = all)"
+        }
+      ],
+      "return_statements": [
+        "Returns all directives using this helper function",
+        "Useful for understanding helper reuse across directives",
+        "If helper is modified, check all returned directives for compatibility"
+      ],
+      "error_handling": "Return empty list if no associations.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "directive_helper_queries"
+    },
+    {
+      "name": "get_user_source_file",
+      "file_path": "src/aifp/helpers/user_directives/tools/source_file_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve source file metadata by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Source file ID"
+        }
+      ],
+      "return_statements": [
+        "Returns source file info including format, checksum, parse_status, directive_count",
+        "Check parse_status - if 'failed', review parse_error_message",
+        "Compare file_checksum to current file to detect changes"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "source_file_queries"
+    },
+    {
+      "name": "get_user_source_file_by_path",
+      "file_path": "src/aifp/helpers/user_directives/tools/source_file_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve source file metadata by file path.",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "str",
+          "required": true,
+          "description": "File path"
+        }
+      ],
+      "return_statements": [
+        "Returns source file metadata for this path",
+        "Use this to check if file has been parsed before",
+        "If None returned, file hasn't been processed yet"
+      ],
+      "error_handling": "Return None if file_path not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "source_file_queries"
+    },
+    {
+      "name": "get_user_source_files_by_parse_status",
+      "file_path": "src/aifp/helpers/user_directives/tools/source_file_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Get source files filtered by parse status.",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "str",
+          "required": true,
+          "description": "Parse status (success, failed, pending, etc.)"
+        }
+      ],
+      "return_statements": [
+        "Use status='failed' to find files with parse errors that need attention",
+        "Use status='success' to find successfully parsed files"
+      ],
+      "error_handling": "Return empty list if no matches.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "source_file_queries"
+    },
+    {
+      "name": "get_user_logging_config",
+      "file_path": "src/aifp/helpers/user_directives/tools/logging_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve logging configuration by ID.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "description": "Logging config ID"
+        }
+      ],
+      "return_statements": [
+        "Returns logging configuration with all settings",
+        "Check execution_logs_enabled and error_logs_enabled to see what's being logged",
+        "Review retention settings to understand log cleanup policies"
+      ],
+      "error_handling": "Return None if ID not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "logging_queries"
+    },
+    {
+      "name": "get_all_user_logging_config",
+      "file_path": "src/aifp/helpers/user_directives/tools/logging_query_tools.py",
+      "database": "user_directives.db",
+      "purpose": "Retrieve all logging configurations.",
+      "parameters": [],
+      "return_statements": [
+        "Returns all logging configurations (typically only one exists)",
+        "Use this to understand current logging settings for user directives"
+      ],
+      "error_handling": "Return empty list if no configs exist.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": [],
+      "category": "logging_queries"
+    }
+  ]
+}
