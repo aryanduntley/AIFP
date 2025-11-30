@@ -1,0 +1,176 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-11-29",
+    "description": "Project Database helpers - Generic Orchestrator Tools (Layer 2) for status queries, state updates, batch operations, and complex queries",
+    "database": "project.db",
+    "target_database": "project",
+    "total_helpers": 5,
+    "schema_version": "1.0",
+    "notes": "Layer 2 generic orchestrators - high-level interfaces that compose multiple Layer 3 helpers. All tools are MCP-exposed (is_tool=true)."
+  },
+  "helper_schema": {
+    "description": "Schema definition for helper entries",
+    "fields": {
+      "name": "Function name",
+      "file_path": "Path to implementation file",
+      "database": "Which database this helper operates on",
+      "target_database": "CHECK constraint value for aifp_core.db",
+      "purpose": "Detailed description of what this helper does",
+      "parameters": "Array of parameter objects with name and type",
+      "return_statements": "Array of AI behavioral guidance - what to check/do next after calling this helper",
+      "error_handling": "How errors are handled",
+      "used_by_directives": "Array of directive names that use this helper",
+      "is_tool": "Boolean - exposed via MCP as tool",
+      "is_sub_helper": "Boolean - internal utility helper not directly called by AI/directives",
+      "calls_helpers": "Array of helper names this function calls"
+    }
+  },
+  "database": "project.db",
+  "file_location": "src/aifp/helpers/project/orchestrators/",
+  "helpers": [
+    {
+      "name": "get_current_progress",
+      "file_path": "src/aifp/helpers/project/orchestrators/progress_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Single entry point for all project status queries. Replaces 5-10 separate helper calls with one flexible query. Supports multiple scopes (full, task, milestone, completion_path, files, functions, flows, tasks) and detail levels (minimal, summary, detailed).",
+      "parameters": [
+        {"name": "scope", "type": "str", "required": false, "default": "full", "values": ["full", "task", "milestone", "completion_path", "files", "functions", "flows", "tasks"], "description": "What information to retrieve"},
+        {"name": "detail_level", "type": "str", "required": false, "default": "summary", "values": ["minimal", "summary", "detailed"], "description": "How much detail to return"},
+        {"name": "filters", "type": "dict", "required": false, "default": {}, "description": "Optional WHERE-like conditions: status, priority, flow_id, milestone_id, updated_since, file_language"}
+      ],
+      "return_statements": [
+        "Returns comprehensive dict with project metadata, completion_path (current stage, progress), current_work (task/subtask/sidequest details, flows, progress), milestones (counts, current milestone), tasks (counts by status), recent_activity, next_action",
+        "Scope='full' + detail_level='summary' is default (counts + current work + next action)",
+        "Scope='task' + detail_level='detailed' delegates to get_work_context() for complete resume context",
+        "Minimal detail returns just counts and current status (<50ms)",
+        "Summary includes context and next action (<200ms)",
+        "Detailed includes full file/function lists with interactions",
+        "Returns partial data with warnings if some queries fail (graceful degradation)",
+        "Primary entry point for aifp_status directive"
+      ],
+      "error_handling": "Returns partial data if some queries fail. Never fails completely - graceful degradation. Logs warnings for failed sub-queries.",
+      "used_by_directives": ["aifp_status"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_project_metadata", "get_completion_path", "get_current_stage", "get_work_context", "get_tasks_by_status", "get_milestone_progress", "get_recent_files_for_task", "get_recent_functions_for_task", "get_all_flows", "get_all_themes"]
+    },
+    {
+      "name": "update_project_state",
+      "file_path": "src/aifp/helpers/project/orchestrators/state_updates.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Single entry point for common project state updates. Simplifies task lifecycle management and progress tracking. Supports task actions (start/complete/cancel/pause/resume/update_priority), flow actions (link/add/remove), file actions (add/update/delete), function actions (register/update/add_interaction), and note actions.",
+      "parameters": [
+        {"name": "action", "type": "str", "required": true, "values": ["start_task", "complete_task", "cancel_task", "pause_task", "resume_task", "update_priority", "link_flows", "add_flow", "remove_flow", "add_file", "update_file", "delete_file", "register_function", "update_function", "add_interaction", "add_note"], "description": "Operation to perform"},
+        {"name": "target_type", "type": "str", "required": true, "values": ["task", "subtask", "sidequest", "file", "function", "milestone"], "description": "Entity type"},
+        {"name": "target_id", "type": "int", "required": true, "description": "ID of target entity"},
+        {"name": "data", "type": "dict", "required": false, "default": {}, "description": "Action-specific data (e.g., flow_ids for link_flows, priority for update_priority, file details for add_file)"},
+        {"name": "create_note", "type": "bool", "required": false, "default": true, "description": "Auto-log action as note"}
+      ],
+      "return_statements": [
+        "Returns dict with success (bool), action, target (type/id/name), changes (old/new values, side effects), note_created (bool), note_id",
+        "Changes include status transitions, completion timestamps, milestone progress updates",
+        "Side effects tracked: milestone_completed, tasks_unblocked, parent_task_resumed",
+        "Complete_task checks for pending subtasks before allowing completion",
+        "Link_flows validates flow_ids exist before linking",
+        "Note automatically created if create_note=true",
+        "Returns descriptive error codes on failure (SUBTASKS_PENDING, INVALID_TRANSITION, etc.)",
+        "Use for task lifecycle directives, file/function registration"
+      ],
+      "error_handling": "Validates state transitions (e.g., can't complete task with pending subtasks). Returns descriptive error codes and actionable details. Logs all errors.",
+      "used_by_directives": ["project_task_update", "project_task_complete", "project_subtask_complete", "project_file_write"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": ["update_task_status", "link_task_to_flows", "validate_flow_ids", "add_file", "register_function", "add_interaction", "create_note", "get_milestone_progress"]
+    },
+    {
+      "name": "batch_update_progress",
+      "file_path": "src/aifp/helpers/project/orchestrators/batch_operations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update multiple project items atomically. Used after code generation or bulk operations to ensure consistency. Supports transactions (all-or-nothing), continue-on-error mode, and rollback on partial failure.",
+      "parameters": [
+        {"name": "updates", "type": "list", "required": true, "description": "List of update operation dicts, each with action, target_type (optional), target_id (optional), data"},
+        {"name": "transaction", "type": "bool", "required": false, "default": true, "description": "All-or-nothing commit (true) vs independent updates (false)"},
+        {"name": "continue_on_error", "type": "bool", "required": false, "default": false, "description": "Stop on first error (false) or continue processing (true)"},
+        {"name": "rollback_on_partial_failure", "type": "bool", "required": false, "default": true, "description": "If transaction=true and any update fails, rollback all"}
+      ],
+      "return_statements": [
+        "Returns dict with success (bool), updates_requested, updates_applied, updates_failed, transaction_committed, execution_time_ms, summary (counts by operation type), changes (array of per-update results), errors (array of error details)",
+        "Transaction=true ensures atomicity - all succeed or all rollback",
+        "Continue_on_error=true collects all errors instead of stopping on first",
+        "Summary includes counts: files_added, functions_registered, interactions_added, flows_linked, task_status_updated, notes_created",
+        "Each change includes action, success status, generated IDs (file_id, function_id, etc.)",
+        "Errors include update_index, action, error message, error_code",
+        "Typical execution: 20-100ms for 5-10 updates in transaction",
+        "Primary use: project_update_db directive after code generation"
+      ],
+      "error_handling": "Validates all updates before starting transaction. Stops on first error unless continue_on_error=true. Provides detailed error information per update. Atomic rollback if transaction=true.",
+      "used_by_directives": ["project_update_db", "project_file_write"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "query_project_state",
+      "file_path": "src/aifp/helpers/project/orchestrators/flexible_queries.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Flexible SQL-like query interface for complex project queries. Provides powerful filtering and joining capabilities without writing SQL. Supports comparison operators (gte, gt, lte, lt), list operators (in, not_in, like, not_like), date filters, JSON array filters (for flow_ids), and multi-table joins.",
+      "parameters": [
+        {"name": "entity", "type": "str", "required": true, "values": ["tasks", "subtasks", "sidequests", "files", "functions", "flows", "themes", "milestones", "notes"], "description": "Primary table to query"},
+        {"name": "filters", "type": "dict", "required": false, "default": {}, "description": "WHERE-like conditions with operators: simple equality, comparison (gte/gt/lte/lt), list (in/not_in/like/not_like), date (updated_since/created_before), JSON array (has_flow/has_any_flow/has_all_flows)"},
+        {"name": "joins", "type": "list", "required": false, "default": [], "values": ["milestone", "flows", "themes", "files", "functions", "items", "notes", "interactions"], "description": "Relations to include (LEFT JOIN)"},
+        {"name": "sort", "type": "str", "required": false, "default": null, "description": "ORDER BY clause (e.g., 'created_at DESC', 'priority DESC, created_at ASC')"},
+        {"name": "limit", "type": "int", "required": false, "default": null, "description": "Maximum results (pagination)"},
+        {"name": "offset", "type": "int", "required": false, "default": 0, "description": "Skip first N results (pagination)"}
+      ],
+      "return_statements": [
+        "Returns array of entity dicts with requested joins included",
+        "Filters support equality, comparison (gte/gt/lte/lt), list membership (in/not_in), pattern matching (like/not_like)",
+        "Date filters: updated_since, created_before, updated_in_last (days)",
+        "JSON array filters for flow_ids: has_flow, has_any_flow, has_all_flows",
+        "Joins populate related data: milestone (for tasks), flows (via flow_ids), files (for functions), functions (for files), items (for work items), notes, interactions (for functions)",
+        "Returns empty array if no matches",
+        "All inputs sanitized - parameterized queries only (SQL injection prevention)",
+        "Read-only - no UPDATE/DELETE operations allowed",
+        "Use for complex filtering, reporting, analytics, custom views"
+      ],
+      "error_handling": "Returns empty list if no matches. Validates entity name (must be valid table). Validates filter operators. Logs invalid queries. Sanitizes all inputs for SQL injection prevention.",
+      "used_by_directives": [],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "get_work_context",
+      "file_path": "src/aifp/helpers/project/orchestrators/work_context.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Get complete context for resuming work. Single call retrieves task/subtask/sidequest + flows + files + functions + interactions. Optimized for session resumption and provides comprehensive work context without multiple separate queries.",
+      "parameters": [
+        {"name": "work_item_type", "type": "str", "required": true, "values": ["task", "subtask", "sidequest"], "description": "Type of work item"},
+        {"name": "work_item_id", "type": "int", "required": true, "description": "ID of work item"},
+        {"name": "include_interactions", "type": "bool", "required": false, "default": true, "description": "Include function dependency interactions"},
+        {"name": "include_history", "type": "bool", "required": false, "default": false, "description": "Include note history for work item"}
+      ],
+      "return_statements": [
+        "Returns comprehensive dict with work_item (task/subtask/sidequest details), milestone (parent milestone), flows (array with themes), files (sorted by updated_at with functions nested), functions (with signatures, purity, parameters), interactions (function dependencies), notes (if include_history=true)",
+        "Replaces 6-8 separate helper calls with single comprehensive query",
+        "Files sorted by most recently updated first for immediate context",
+        "Functions include purity analysis and test status",
+        "Interactions show function dependency graph",
+        "Primary use case: project_auto_resume directive for session resumption",
+        "Also used by aifp_status when detailed work context needed",
+        "Graceful degradation if some related data missing"
+      ],
+      "error_handling": "Returns partial context if some queries fail. Empty structure returned if work_item_id not found. Logs warnings for missing related data.",
+      "used_by_directives": ["project_auto_resume", "aifp_status"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_incomplete_tasks", "get_task_flows", "get_files_by_flow", "get_incomplete_sidequests", "get_functions_by_file", "get_interactions_by_function"]
+    }
+  ]
+}

@@ -54,11 +54,31 @@ review available_helpers in directives json files. can remove completely? We mus
 docs/directive-json-schema-alignment-analysis.md
 in this analysis, it's conforming to docs/directives-json/sync-directives.py. We can have a better structure for categories, etc. if needed, but I don't know if we need separate files for the linking/relationships. 
 
-If I were to write this myself, I would create one sync-directives.py file that reads the directive json. Fore each json directive entry, it would make the directive table entry. read any categories check existing (get id if so) else add to categories table, then add the directive_categories entry. 
-
 separate file for directive_interactions. This would have to be ran after directives entered to get directives by name, return id, so that entries into directive_interactions can happen using ID
 
 separate file for helpers. Each helper json should have directives association by name(s). As a helper is entered into database, gets all listed directives from db by name, retrieves ID, adds directive_helpers relationship to database.
+
+-- ===============================================================
+-- Directive-Helper Mapping: Many-to-many relationship
+-- ===============================================================
+
+CREATE TABLE IF NOT EXISTS directive_helpers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    directive_id INTEGER NOT NULL,
+    helper_function_id INTEGER NOT NULL,
+    execution_context TEXT,                  -- e.g., 'workflow_step_3', 'error_handler', 'validation'
+    sequence_order INTEGER DEFAULT 0,        -- Order of execution if multiple helpers in workflow
+    is_required BOOLEAN DEFAULT 1,           -- TRUE if helper must execute, FALSE if optional/conditional
+    parameters_mapping JSON,                 -- Optional: maps directive workflow params to helper params
+    description TEXT,                        -- Brief note on why this helper is used
+    UNIQUE(directive_id, helper_function_id, execution_context),
+    FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE,
+    FOREIGN KEY (helper_function_id) REFERENCES helper_functions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_directive_helpers_directive ON directive_helpers (directive_id);
+CREATE INDEX IF NOT EXISTS idx_directive_helpers_helper ON directive_helpers (helper_function_id);
+
 
 So with this flow, directives don't need to list helper functions. AI should have only a reference to helpers and can use the helpers/tools:
 docs/helpers/info-helpers-core.txt :
@@ -71,7 +91,7 @@ get_directives_for_helper(helper_function_id, include_directives_data=false)
    include_directives_data=true calls get_directives(directive_id array)
       returns all directive_helpers data AND directives data for matches
 
-let's make these source of truth:
+these are primary:
 docs/helpers/info-helpers-user-settings.txt
 docs/helpers/info-helpers-project.txt
 docs/helpers/info-helpers-core.txt
@@ -88,21 +108,21 @@ docs/directives-json/helpers_parsed.json
 
 need to flesh out return statements
 
-
-reference user_settings for directives and all useful places in return_statements where appropriate
-
 working on:
-docs/helper-registry-progress.md
+docs/helpers/registry/helper-registry-guide.md
+docs/helpers/registry/HELPER_REGISTRY_STATUS.md
+
+helper registry:
+docs/helpers/registry/helpers_registry_git.json
 docs/helpers/registry/helpers_registry_core.json
-docs/helpers/registry/helpers_registry_project.json
-docs/helpers/registry/helpers_registry_user_directives.json
 docs/helpers/registry/helpers_registry_user_directives_getters.json
+docs/helpers/registry/helpers_registry_user_directives_setters.json
 docs/helpers/registry/helpers_registry_user_settings.json
-docs/helpers/helper-sources-comparison.md
+docs/helpers/registry/helpers_registry_project_structure_getters.json
+docs/helpers/registry/helpers_registry_project_workflow_getters.json
+docs/helpers/registry/helpers_registry_project_structure_setters.json
+docs/helpers/registry/helpers_registry_project_workflow_setters.json
+docs/helpers/registry/helpers_registry_project_core.json
 
-docs/helpers/registry/helpers_registry_user_directives.json
-is being split into separate files getters and setters. getters done
-docs/helpers/registry/helpers_registry_user_directives_getters.json
-setters needs to be created. We are using the docs/helpers/info-helpers-user-custom.txt file for this.
 
-for project must do something similar but need more than 2 files. There are over 200 project helpers I believe. Maybe helpers_registry_project_structure_getters.json helpers_registry_project_structure_setters.json helpers_registry_project_workflow_getters.json helpers_registry_project_workflow_setters.json structure will be files, functions, project infrastructure, etc. workflow would be themes, flow, taks, items, notes, etc.
+| query_mcp_db | (NOT IN REGISTRY) | N/A | ⚠️ Generic query helper - may not be in registries yet |

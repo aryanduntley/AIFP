@@ -1,0 +1,834 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-11-29",
+    "description": "Project Database helpers - Workflow WRITE operations (tasks, subtasks, sidequests, themes, flows, milestones, notes, items, completion_path)",
+    "database": "project.db",
+    "target_database": "project",
+    "total_helpers": 37,
+    "schema_version": "1.0",
+    "notes": "This registry is for import into MCP database. All delete operations require note parameters for audit trail."
+  },
+  "helper_schema": {
+    "description": "Schema definition for helper entries",
+    "fields": {
+      "name": "Function name",
+      "file_path": "Path to implementation file",
+      "database": "Which database this helper operates on",
+      "target_database": "CHECK constraint value for aifp_core.db",
+      "purpose": "Detailed description of what this helper does",
+      "parameters": "Array of parameter objects with name and type",
+      "return_statements": "Array of AI behavioral guidance - what to check/do next after calling this helper",
+      "error_handling": "How errors are handled",
+      "used_by_directives": "Array of directive names that use this helper",
+      "is_tool": "Boolean - exposed via MCP as tool",
+      "is_sub_helper": "Boolean - internal utility helper not directly called by AI/directives",
+      "calls_helpers": "Array of helper names this function calls"
+    }
+  },
+  "database": "project.db",
+  "file_location": "src/aifp/helpers/project/",
+  "helpers": [
+    {
+      "name": "add_theme",
+      "file_path": "src/aifp/helpers/project/mutations/theme_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new theme for project organization.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true},
+        {"name": "description", "type": "str", "required": true},
+        {"name": "ai_generated", "type": "bool", "required": true},
+        {"name": "confidence_score", "type": "float", "required": true}
+      ],
+      "return_statements": [
+        "Returns theme_id for reference",
+        "Are there any flows that should be added in flow_themes table?",
+        "Themes are broad categorizations of project areas"
+      ],
+      "error_handling": "Returns error if theme name already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_theme",
+      "file_path": "src/aifp/helpers/project/mutations/theme_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update theme. All parameters except theme_id are optional (null = don't update).",
+      "parameters": [
+        {"name": "theme_id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null},
+        {"name": "confidence_score", "type": "float", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Throws error if no update values: 'must have a value to change (name, description, confidence_score)'",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if theme_id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_theme",
+      "file_path": "src/aifp/helpers/project/mutations/theme_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete theme. Checks for orphaned flows before deletion.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Checks if flows are assigned to theme via get_flows_for_theme()",
+        "If flows exist, returns error: 'flows are still assigned to theme. You must re-assign all flows in flow_themes table before deleting a theme.'",
+        "Lists all flows still assigned to theme",
+        "Prevents orphaned flows without flow_themes entries",
+        "Creates note entry with deletion context"
+      ],
+      "error_handling": "Returns error if flows still assigned to theme.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_flows_for_theme", "add_note"]
+    },
+    {
+      "name": "add_flow",
+      "file_path": "src/aifp/helpers/project/mutations/flow_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new flow for workflow organization.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true},
+        {"name": "description", "type": "str", "required": true},
+        {"name": "ai_generated", "type": "bool", "required": true},
+        {"name": "confidence_score", "type": "float", "required": true}
+      ],
+      "return_statements": [
+        "Returns flow_id for reference",
+        "Are there any files that should be linked in file_flows table?",
+        "Flows are detailed action sequences related to code"
+      ],
+      "error_handling": "Returns error if flow name already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_flow",
+      "file_path": "src/aifp/helpers/project/mutations/flow_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update flow. All parameters except flow_id are optional (null = don't update).",
+      "parameters": [
+        {"name": "flow_id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null},
+        {"name": "confidence_score", "type": "float", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Throws error if no update values: 'must have a value to change (name, description, confidence_score)'",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if flow_id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_flow",
+      "file_path": "src/aifp/helpers/project/mutations/flow_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete flow. Checks for orphaned files before deletion.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Checks if files are assigned to flow via get_files_by_flow()",
+        "If files exist, returns error: 'files are still assigned to flow. You must re-assign all files or manage entries in file_flows table before deleting a flow.'",
+        "Lists all files still assigned to flow",
+        "Prevents orphaned files without flow relationships",
+        "Creates note entry with deletion context"
+      ],
+      "error_handling": "Returns error if files still assigned to flow.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_files_by_flow", "add_note"]
+    },
+    {
+      "name": "add_flow_themes",
+      "file_path": "src/aifp/helpers/project/mutations/flow_theme_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Link flow to theme in flow_themes junction table.",
+      "parameters": [
+        {"name": "flow_id", "type": "int", "required": true},
+        {"name": "theme_id", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns junction record id",
+        "A flow can be linked to multiple themes",
+        "No update operation - delete and re-add for changes"
+      ],
+      "error_handling": "Returns error if flow_id or theme_id not found, or if association already exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_flow_themes",
+      "file_path": "src/aifp/helpers/project/mutations/flow_theme_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Remove flow-theme association.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Removes association between flow and theme",
+        "Creates note entry with deletion context",
+        "No update operation - delete and re-add for changes"
+      ],
+      "error_handling": "Returns error if id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["add_note"]
+    },
+    {
+      "name": "add_completion_path",
+      "file_path": "src/aifp/helpers/project/mutations/completion_path_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new completion path stage to project roadmap.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true},
+        {"name": "status", "type": "str", "required": true},
+        {"name": "description", "type": "str", "required": true},
+        {"name": "order_index", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns completion_path id",
+        "order_index determines stage sequence",
+        "Check for order_index conflicts after insertion"
+      ],
+      "error_handling": "Returns error if order_index already exists (duplicate).",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_completion_path",
+      "file_path": "src/aifp/helpers/project/mutations/completion_path_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update completion path stage. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null},
+        {"name": "status", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Updated_at timestamp set automatically by trigger",
+        "Use reorder_completion_path() to change order_index"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_completion_path",
+      "file_path": "src/aifp/helpers/project/mutations/completion_path_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete completion path stage. Checks for assigned milestones and reorders remaining stages.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Checks milestones via get_milestones_by_path(path_id)",
+        "If milestones exist, returns error with list of milestones",
+        "Error notes that milestones must be re-assigned or removed before deletion",
+        "Calls reorder_all_completion_paths() after successful deletion",
+        "Returns all remaining completion paths ordered by order_index",
+        "Creates note entry with deletion context"
+      ],
+      "error_handling": "Returns error if milestones still assigned to stage.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_milestones_by_path", "reorder_all_completion_paths", "add_note"]
+    },
+    {
+      "name": "reorder_completion_path",
+      "file_path": "src/aifp/helpers/project/mutations/completion_path_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Change order_index of a completion path stage.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "new_order_index", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Returns if new_order_index already exists (duplicate)",
+        "Updates order_index for stage",
+        "May create temporary duplicates during reordering"
+      ],
+      "error_handling": "Returns if duplicate order_index exists.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "reorder_completion_paths",
+      "file_path": "src/aifp/helpers/project/mutations/completion_path_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Reorder multiple completion path stages in batch.",
+      "parameters": [
+        {"name": "reorder_list", "type": "list[tuple]", "required": true, "description": "Array of (id, new_order_index) tuples"}
+      ],
+      "return_statements": [
+        "Processes array of (id, new_order_index) updates",
+        "More efficient than multiple reorder_completion_path() calls",
+        "Returns updated completion paths"
+      ],
+      "error_handling": "Returns error if any id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "reorder_all_completion_paths",
+      "file_path": "src/aifp/helpers/project/mutations/completion_path_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Fix order_index gaps and duplicates across all completion path stages.",
+      "parameters": [],
+      "return_statements": [
+        "Gets all completion paths to check order_index consistency",
+        "Detects gaps (1,2,4,5 missing 3) and duplicates (1,2,3,3,4)",
+        "If gaps exist, reassigns order_index in consecutive series",
+        "If duplicates exist, reorders arbitrarily starting from 1",
+        "Returns notes on duplicates with id, name, previous and new order_index",
+        "AI can swap if necessary based on duplicate information",
+        "Calls reorder_completion_path() or reorder_completion_paths() for updates"
+      ],
+      "error_handling": "Returns current state if no gaps or duplicates found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_all_completion_paths", "reorder_completion_path", "reorder_completion_paths"]
+    },
+    {
+      "name": "swap_completion_paths_order",
+      "file_path": "src/aifp/helpers/project/mutations/completion_path_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Swap order_index of two completion path stages.",
+      "parameters": [
+        {"name": "id_1", "type": "int", "required": true},
+        {"name": "id_2", "type": "int", "required": true}
+      ],
+      "return_statements": [
+        "Gets both completion paths, extracts order_index values",
+        "Swaps order_index between stages",
+        "Creates temporary duplicate during swap (order_index not unique)",
+        "Example: stages 2 and 3 swap - sets 2→3 (duplicate 3), then 3→2",
+        "Uses reorder_completion_path() for updates"
+      ],
+      "error_handling": "Returns error if either id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_completion_path_by_id", "reorder_completion_path"]
+    },
+    {
+      "name": "add_milestone",
+      "file_path": "src/aifp/helpers/project/mutations/milestone_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new milestone to completion path stage.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true},
+        {"name": "completion_path_id", "type": "int", "required": true},
+        {"name": "status", "type": "str", "required": true},
+        {"name": "description", "type": "str", "required": true}
+      ],
+      "return_statements": [
+        "Returns milestone_id for reference",
+        "Milestones break down completion path stages",
+        "Multiple milestones may exist per stage"
+      ],
+      "error_handling": "Returns error if completion_path_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_milestone",
+      "file_path": "src/aifp/helpers/project/mutations/milestone_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update milestone. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null},
+        {"name": "completion_path_id", "type": "int", "required": false, "default": null},
+        {"name": "status", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_milestone",
+      "file_path": "src/aifp/helpers/project/mutations/milestone_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete milestone. Checks for incomplete tasks before deletion.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Uses get_incomplete_tasks_by_milestone(milestone_id)",
+        "If incomplete tasks exist, returns error with list of open tasks",
+        "Error notes that tasks must be re-assigned or marked completed before deletion",
+        "Creates note entry with deletion context"
+      ],
+      "error_handling": "Returns error if incomplete tasks still assigned to milestone.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_incomplete_tasks_by_milestone", "add_note"]
+    },
+    {
+      "name": "add_task",
+      "file_path": "src/aifp/helpers/project/mutations/task_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new task to milestone.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true},
+        {"name": "milestone_id", "type": "int", "required": true},
+        {"name": "status", "type": "str", "required": true},
+        {"name": "description", "type": "str", "required": true},
+        {"name": "flow_ids", "type": "list[int]", "required": true, "description": "JSON array of flow IDs"},
+        {"name": "priority", "type": "str", "required": false, "default": "default"}
+      ],
+      "return_statements": [
+        "Returns task_id for reference",
+        "Tasks link to flows, flows link to files",
+        "flow_ids stored as JSON array in database"
+      ],
+      "error_handling": "Returns error if milestone_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_task",
+      "file_path": "src/aifp/helpers/project/mutations/task_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update task. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null},
+        {"name": "milestone_id", "type": "int", "required": false, "default": null},
+        {"name": "status", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null},
+        {"name": "flow_ids", "type": "list[int]", "required": false, "default": null},
+        {"name": "priority", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_task",
+      "file_path": "src/aifp/helpers/project/mutations/task_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete task. Checks items status before allowing deletion.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Calls get_items_for_task(task_id) without status filter",
+        "If items have status 'completed' or 'in_progress', returns error",
+        "Error: task cannot be deleted, pending items must be deleted and task marked completed",
+        "If only pending items exist, returns error with list of items",
+        "Error notes that items must be removed before task deletion",
+        "If no items exist, task can be safely deleted",
+        "Creates note entry with deletion context"
+      ],
+      "error_handling": "Returns error if task has completed/in_progress items or pending items exist.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_items_for_task", "add_note"]
+    },
+    {
+      "name": "add_subtask",
+      "file_path": "src/aifp/helpers/project/mutations/subtask_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new subtask to parent task.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true},
+        {"name": "parent_task_id", "type": "int", "required": true},
+        {"name": "status", "type": "str", "required": true},
+        {"name": "description", "type": "str", "required": true},
+        {"name": "priority", "type": "str", "required": false, "default": "default"}
+      ],
+      "return_statements": [
+        "Returns subtask_id for reference",
+        "Subtasks inherit milestone from parent task",
+        "Subtasks inherit flows from parent task"
+      ],
+      "error_handling": "Returns error if parent_task_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_subtask",
+      "file_path": "src/aifp/helpers/project/mutations/subtask_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update subtask. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null},
+        {"name": "task_id", "type": "int", "required": false, "default": null},
+        {"name": "status", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null},
+        {"name": "priority", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_subtask",
+      "file_path": "src/aifp/helpers/project/mutations/subtask_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete subtask. Checks items status before allowing deletion.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Calls get_items_for_subtask(subtask_id) without status filter",
+        "If items have status 'completed' or 'in_progress', returns error",
+        "Error: subtask cannot be deleted, pending items must be deleted and subtask marked completed",
+        "If only pending items exist, returns error with list of items",
+        "Error notes that items must be removed before subtask deletion",
+        "If no items exist, subtask can be safely deleted",
+        "Creates note entry with deletion context"
+      ],
+      "error_handling": "Returns error if subtask has completed/in_progress items or pending items exist.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_items_for_subtask", "add_note"]
+    },
+    {
+      "name": "add_sidequest",
+      "file_path": "src/aifp/helpers/project/mutations/sidequest_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new sidequest for immediate need issues.",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true},
+        {"name": "paused_task_id", "type": "int", "required": true},
+        {"name": "paused_subtask_id", "type": "int", "required": false, "default": null},
+        {"name": "status", "type": "str", "required": true},
+        {"name": "description", "type": "str", "required": true},
+        {"name": "flow_ids", "type": "list[int]", "required": true, "description": "JSON array of flow IDs"},
+        {"name": "priority", "type": "str", "required": false, "default": "default"}
+      ],
+      "return_statements": [
+        "Returns sidequest_id for reference",
+        "paused_subtask_id optional - include if sidequest occurs during subtask",
+        "Sidequests are for urgent issues requiring immediate attention",
+        "flow_ids stored as JSON array in database"
+      ],
+      "error_handling": "Returns error if paused_task_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_sidequest",
+      "file_path": "src/aifp/helpers/project/mutations/sidequest_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update sidequest. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "name", "type": "str", "required": false, "default": null},
+        {"name": "paused_task_id", "type": "int", "required": false, "default": null},
+        {"name": "paused_subtask_id", "type": "int", "required": false, "default": null},
+        {"name": "status", "type": "str", "required": false, "default": null},
+        {"name": "description", "type": "str", "required": false, "default": null},
+        {"name": "flow_ids", "type": "list[int]", "required": false, "default": null},
+        {"name": "priority", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_sidequest",
+      "file_path": "src/aifp/helpers/project/mutations/sidequest_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete sidequest. Checks items status before allowing deletion.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Calls get_items_for_sidequest(sidequest_id) without status filter",
+        "If items have status 'completed' or 'in_progress', returns error",
+        "Error: sidequest cannot be deleted, pending items must be deleted and sidequest marked completed",
+        "If only pending items exist, returns error with list of items",
+        "Error notes that items must be removed before sidequest deletion",
+        "If no items exist, sidequest can be safely deleted",
+        "Creates note entry with deletion context"
+      ],
+      "error_handling": "Returns error if sidequest has completed/in_progress items or pending items exist.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["get_items_for_sidequest", "add_note"]
+    },
+    {
+      "name": "add_item",
+      "file_path": "src/aifp/helpers/project/mutations/item_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add new item to task, subtask, or sidequest.",
+      "parameters": [
+        {"name": "for_table", "type": "str", "required": true, "values": ["tasks", "subtasks", "sidequests"]},
+        {"name": "for_id", "type": "int", "required": true},
+        {"name": "content", "type": "str", "required": true},
+        {"name": "status", "type": "str", "required": true, "default": "pending"}
+      ],
+      "return_statements": [
+        "Returns item_id for reference",
+        "Items are specific action items within task/subtask/sidequest",
+        "for_table accepts 'tasks', 'subtasks', 'sidequests' (or singular forms)"
+      ],
+      "error_handling": "Returns error if for_id not found in specified table.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_item",
+      "file_path": "src/aifp/helpers/project/mutations/item_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update item. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "content", "type": "str", "required": false, "default": null},
+        {"name": "status", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_item",
+      "file_path": "src/aifp/helpers/project/mutations/item_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete item. Only pending items can be deleted.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "If item status is 'completed' or 'in_progress', returns error",
+        "Error: item cannot be removed, it has already begun",
+        "Item can only be marked as 'complete' with note if necessary",
+        "Only items with status 'pending' can be safely deleted",
+        "Creates note entry with deletion context"
+      ],
+      "error_handling": "Returns error if item status is completed or in_progress.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["add_note"]
+    },
+    {
+      "name": "add_note",
+      "file_path": "src/aifp/helpers/project/mutations/note_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Add note for project event, decision, or issue tracking.",
+      "parameters": [
+        {"name": "content", "type": "str", "required": true},
+        {"name": "note_type", "type": "str", "required": true},
+        {"name": "reference_table", "type": "str", "required": true},
+        {"name": "reference_id", "type": "int", "required": true},
+        {"name": "source", "type": "str", "required": false, "default": "ai", "values": ["ai", "user"]},
+        {"name": "severity", "type": "str", "required": false, "default": "info", "values": ["info", "warning", "error"]},
+        {"name": "directive_name", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "Returns note_id for reference",
+        "Notes provide audit trail for project changes",
+        "directive_name optional - records which directive triggered note"
+      ],
+      "error_handling": "Returns error if reference_table/reference_id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "update_note",
+      "file_path": "src/aifp/helpers/project/mutations/note_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Update note. All parameters except id are optional (null = don't update).",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "content", "type": "str", "required": false, "default": null},
+        {"name": "note_type", "type": "str", "required": false, "default": null},
+        {"name": "reference_table", "type": "str", "required": false, "default": null},
+        {"name": "reference_id", "type": "int", "required": false, "default": null},
+        {"name": "source", "type": "str", "required": false, "default": null},
+        {"name": "severity", "type": "str", "required": false, "default": null},
+        {"name": "directive_name", "type": "str", "required": false, "default": null}
+      ],
+      "return_statements": [
+        "At least one non-id parameter must be provided",
+        "Updated_at timestamp set automatically by trigger"
+      ],
+      "error_handling": "Returns error if id not found or no update values provided.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    },
+    {
+      "name": "delete_note",
+      "file_path": "src/aifp/helpers/project/mutations/note_mutations.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Delete note. Returns deleted note data for potential recovery.",
+      "parameters": [
+        {"name": "id", "type": "int", "required": true},
+        {"name": "note_reason", "type": "str", "required": true},
+        {"name": "note_severity", "type": "str", "required": true, "values": ["info", "warning", "error"]},
+        {"name": "note_source", "type": "str", "required": true, "values": ["ai", "user"]},
+        {"name": "note_type", "type": "str", "required": true, "default": "entry_deletion"}
+      ],
+      "return_statements": [
+        "Returns deleted note data",
+        "WARNING: You have deleted a note. This is not usual and may remove access to important information.",
+        "The deleted field is available in return data to add back if needed",
+        "Please consider whether this deletion was correct"
+      ],
+      "error_handling": "Returns error if id not found.",
+      "used_by_directives": [],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": []
+    }
+  ]
+}
