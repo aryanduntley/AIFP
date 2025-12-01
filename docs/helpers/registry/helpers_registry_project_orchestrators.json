@@ -5,7 +5,7 @@
     "description": "Project Database helpers - Generic Orchestrator Tools (Layer 2) for status queries, state updates, batch operations, and complex queries",
     "database": "project.db",
     "target_database": "project",
-    "total_helpers": 5,
+    "total_helpers": 6,
     "schema_version": "1.0",
     "notes": "Layer 2 generic orchestrators - high-level interfaces that compose multiple Layer 3 helpers. All tools are MCP-exposed (is_tool=true)."
   },
@@ -171,6 +171,30 @@
       "is_tool": true,
       "is_sub_helper": false,
       "calls_helpers": ["get_incomplete_tasks", "get_task_flows", "get_files_by_flow", "get_incomplete_sidequests", "get_functions_by_file", "get_interactions_by_function"]
+    },
+    {
+      "name": "validate_initialization",
+      "file_path": "src/aifp/helpers/project/orchestrators/validation.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Validate that project initialization is complete and correct. Performs comprehensive structural validation of .aifp-project/ directory, databases, schemas, and required files. Used as sanity check after project_init completion.",
+      "parameters": [
+        {"name": "aifp_dir", "type": "str", "required": true, "description": "Path to .aifp-project/ directory"}
+      ],
+      "return_statements": [
+        "Returns Result[bool, str] - Success(True) if all validation checks pass, Failure(error_message) with specific details if any check fails",
+        "Validation checks performed: .aifp-project/ directory exists, project.db exists and has valid schema, project table has metadata populated, user_preferences.db exists and has valid schema, ProjectBlueprint.md exists and is not empty, all required tables created in both databases",
+        "Returns specific error messages for each failed check (e.g., 'project.db missing', 'project table empty', 'invalid schema version')",
+        "This is deterministic validation - checking file existence, database schema, table population (not pattern recognition)",
+        "Use after project_init to confirm initialization succeeded",
+        "Can be called standalone for troubleshooting initialization issues",
+        "Fast execution (<50ms) - just file/database structure checks"
+      ],
+      "error_handling": "Returns Failure with specific validation error message indicating which check failed. Never raises exceptions - always returns Result type.",
+      "used_by_directives": ["project_init"],
+      "is_tool": true,
+      "is_sub_helper": false,
+      "calls_helpers": []
     }
   ]
 }

@@ -8,21 +8,30 @@
 
 ## Executive Summary
 
+**Date Updated**: 2025-11-30
 **Files Reviewed**: 7
 **Orchestrators Added**: ✅ 8 (4 MCP + 4 Project, plus get_work_context moved)
-**helpers_parsed.json Verification**: ✅ Complete - See VERIFICATION_REPORT.md
+**helpers_parsed.json Verification**: ✅ **COMPLETE** - All 27 helpers reviewed and categorized
+**User Directive Helpers Verification**: ✅ **COMPLETE** - 8 exist, 2 AI-driven
 **Directive-Helper Mappings**: ⏸️ Deferred (to be done with directive work)
 **Documentation Files**: 5 kept as reference
 
 **Completed Actions**:
 1. ✅ **ADDED**: 8 orchestrator tools (Layer 2) to 2 new registry files
 2. ✅ **VERIFIED**: helpers_parsed.json (49 helpers) - most exist with better names/organization
-3. ⏸️ **DEFERRED**: Directive-helper mappings (62) - will use registry data for parser later
-4. ✅ **DOCUMENTED**: Kept 5 architecture/spec files as reference
-5. ✅ **READY TO ARCHIVE**: helpers_parsed.json after final user review
+3. ✅ **VERIFIED & CATEGORIZED**: 27 "likely exists" helpers (11 project + 10 user directive + 6 verification)
+4. ✅ **CATEGORIZED**: 5 helpers removed (AI directive-driven), 3 consolidated, 2 AI-driven
+5. ⏸️ **DEFERRED**: Directive-helper mappings (62) - will use registry data for parser later
+6. ✅ **DOCUMENTED**: Kept 5 architecture/spec files as reference
+7. ✅ **READY TO ARCHIVE**: helpers_parsed.json and helper-functions-reference.md
 
-**Pending User Review**:
-- 11 helpers from helpers_parsed.json not in info-helpers-*.txt (evaluate for addition)
+**Pending Actions**:
+- Design and implement unified `initialize_aifp_project()` helper
+- ✅ OOP handling policy decided - See `docs/aifp-oop-policy.md` (AIFP is FP-only)
+- ✅ All 3 ambiguous helpers resolved:
+  - ✅ validate_initialization: ADDED to `helpers_registry_project_orchestrators.json`
+  - ✅ infer_architecture: NOT NEEDED - AI directive-driven pattern recognition
+  - ✅ query_mcp_db: NOT NEEDED - bypasses helper structure, use specific helpers
 
 ---
 
@@ -45,28 +54,32 @@
 3. ✅ Modern Layer 2 orchestrators subsume many generic helpers
 4. ✅ 347 helpers in registries vs 49 in helpers_parsed.json (7x more comprehensive)
 
-**11 Helpers NOT in info-helpers-*.txt (Require User Review)**:
+**11 Helpers NOT in info-helpers-*.txt - ✅ REVIEWED 2025-11-30**:
 
-These were in old helper-functions-reference.md but never in your source txt files:
+These were in old helper-functions-reference.md but never in your source txt files. **All have been categorized:**
 
-**Project Initialization (7) - 🔍 EVALUATE FOR ADDITION**:
-- create_project_blueprint
-- read_project_blueprint
-- update_project_blueprint_section
-- initialize_project_db
-- initialize_user_preferences_db
-- create_project_directory
-- validate_initialization
+**❌ REMOVED - AI Directive Driven (5 helpers)**:
+- create_project_blueprint - AI creates files via directives
+- read_project_blueprint - AI uses Read tool directly
+- update_project_blueprint_section - AI updates files + DB checksum via `update_project`
+- detect_and_init_project - AI queries DB + follows directives
+- scan_existing_files - AI uses Glob/Grep/Read + DB queries (superior to code)
 
-**Project Analysis (3) - 🔍 EVALUATE FOR ADDITION**:
-- detect_and_init_project
-- scan_existing_files
-- infer_architecture
+**Rationale**: MCP server cannot improve on AI's native tools. AI "thought" and directives are superior to restrictive code patterns for file operations and scanning.
 
-**MCP Query (1) - ❌ NOT NEEDED**:
-- query_mcp_db (AI can do direct read-only queries; helper is redundant)
+**🔄 CONSOLIDATED (3 helpers → 1 unified function)**:
+- create_project_directory → `initialize_aifp_project()`
+- initialize_project_db → `initialize_aifp_project()`
+- initialize_user_preferences_db → `initialize_aifp_project()`
 
-**Action**: User to review and evaluate 10 project helpers for potential addition (next session)
+**Proposed**: Single unified helper for both new and existing project initialization (see Action Items below)
+
+**⚠️ PENDING DISCUSSION (3 helpers)**:
+- validate_initialization - Directive vs helper approach?
+- infer_architecture - Purpose unclear, may not be needed
+- query_mcp_db - Generic SQL escape hatch needed?
+
+**Action**: See "Recommendations for Next Session" for implementation details
 
 ---
 
@@ -192,33 +205,105 @@ These were in old helper-functions-reference.md but never in your source txt fil
 
 ---
 
-## Files Requiring User Review (Next Session)
+## User Directive Helpers Verification - ✅ COMPLETE 2025-11-30
 
-### 10 Project Helpers from helpers_parsed.json
+### 10 "Likely Exists" User Directive Helpers Verified
 
-These exist in helper-functions-reference.md but NOT in info-helpers-*.txt:
+**Results**:
+- ✅ **8 Confirmed** - All exist with slightly different names:
+  - activate_directive → `set_user_directive_activate(id, active, activated_at)`
+  - deactivate_directive → Same as above (uses `active=false`)
+  - detect_dependencies → `get_user_directive_dependencies_by_directive(user_directive_id)`
+  - generate_implementation_code → `add_user_directive_implementation(...)`
+  - get_user_directive_status → `get_user_directive(id)`, `get_user_directives(ids)`
+  - install_dependency → `add_user_directive_dependency(...)`
+  - monitor_directive_execution → Multiple execution query helpers
+  - update_directive → `update_user_directive(...)`
 
-**Project Initialization (7)**:
-1. create_project_blueprint
-2. read_project_blueprint
-3. update_project_blueprint_section
-4. initialize_project_db
-5. initialize_user_preferences_db
-6. create_project_directory
-7. validate_initialization
+- ✅ **2 Resolved** - AI directive-driven (not helper functions):
+  - parse_directive_file → Handled by `user_directive_parse` directive (NLP, format flexibility)
+  - validate_user_directive → Handled by `user_directive_validate` directive (interactive Q&A)
 
-**Project Analysis (3)**:
-8. detect_and_init_project
-9. scan_existing_files
-10. infer_architecture
+**Decision**: Parsing and validation require AI capabilities (natural language understanding, ambiguity resolution, interactive clarification) that code cannot match.
 
-**User Questions for Next Session**:
-1. Are these helpers needed/useful for orchestrators?
-2. Were they intentionally omitted from info-helpers files?
-3. Should any be added to:
-   - helpers_registry_project_core.json (initialization)?
-   - helpers_registry_project_orchestrators.json (if Layer 2)?
-   - helpers_registry_project_structure_getters.json (analysis)?
+---
+
+## Action Items for Implementation
+
+### 1. Create Unified `initialize_aifp_project()` Helper
+
+**Purpose**: Handle all project initialization (new and existing projects)
+
+**Parameters**:
+```python
+initialize_aifp_project(
+    base_path: str,           # Project root where .aifp-project/ is created
+    project_name: str,
+    project_type: str,        # "new" or "existing"
+    # Additional metadata parameters
+) -> Result[ProjectInitStatus, InitError]
+```
+
+**Behavior - New Project**:
+1. Create `.aifp-project/` directory structure
+2. Initialize all databases from schemas (project.db, user_preferences.db)
+3. Create blank ProjectBlueprint.md template
+4. Return success - AI must then populate initial data per directives before marking as initialized
+
+**Behavior - Existing Project**:
+1. Create `.aifp-project/` directory structure
+2. Initialize all databases from schemas
+3. Create blank ProjectBlueprint.md template
+4. **Evaluate existing files** to create current project status:
+   - Scan project directory for files
+   - Analyze code structure (files, functions, dependencies)
+   - Populate database with discovered structure
+   - Generate initial project state snapshot
+5. Return project analysis for AI review
+
+**⚠️ CRITICAL - OOP Handling Decision Required**:
+
+When initializing an existing project that contains OOP code (not AIFP/FP compliant):
+- **Issue**: Database expects FP-compliant structure (pure functions, immutability, no classes)
+- **Options to Consider**:
+  1. **Dual-track approach**: AI creates new FP-compliant code alongside existing OOP code
+  2. **Relaxed standards**: Disable FP compliance checks for this specific project
+  3. **Reject initialization**: Inform user that AIFP MCP server is designed for FP projects only
+  4. **Gradual migration**: Track OOP code "as-is" initially, guide AI to refactor incrementally
+
+**Prerequisites**:
+- Review initialization directives (project_init, etc.)
+- Review current registry helpers related to init
+- **Decide OOP handling strategy** (blocks implementation)
+
+**Where to Add**: `helpers_registry_project_core.json` or new `helpers_registry_initialization.json`
+
+### 2. Resolve Ambiguous Helpers ✅ MOSTLY COMPLETE
+
+**Resolved** (2 of 3):
+
+1. **validate_initialization** - ✅ ADDED
+   - **Decision**: KEEP as helper function
+   - **Rationale**: Deterministic validation (file existence, database schema, table population)
+   - **Added to**: `helpers_registry_project_orchestrators.json`
+   - **File**: `src/aifp/helpers/project/orchestrators/validation.py`
+   - **Purpose**: Validates project initialization is complete and correct
+   - **Returns**: Result[bool, str] with specific error messages
+   - **Usage**: Called after project_init as sanity check
+
+2. **infer_architecture** - ✅ NOT NEEDED
+   - **Decision**: Do not create helper function - AI directive-driven
+   - **Rationale**: Pattern recognition requiring flexible reasoning - AI reads code and understands architecture better than rigid directory scanning
+   - **AI Approach**: AI uses Read/Grep tools to analyze codebase and infer architectural patterns
+   - **Why not code**: Code-based directory scanning is too brittle, can't handle non-standard patterns
+
+**Resolved** (3 of 3):
+
+3. **query_mcp_db** - ✅ NOT NEEDED
+   - **Decision**: Do not create helper function
+   - **Rationale**: Generic SQL escape hatch bypasses helper structure and directive patterns
+   - **Recommendation**: All queries should go through specific helpers
+   - **Alternative**: AI can suggest new specific helpers when gaps are found
 
 ---
 
@@ -248,14 +333,24 @@ These exist in helper-functions-reference.md but NOT in info-helpers-*.txt:
 
 ## Recommendations for Next Session
 
-1. **User reviews 10 project helpers** listed above
-2. **Decide which (if any) to add** to registries
-3. **Archive obsolete files** (helpers_parsed.json, helper-functions-reference.md)
-4. **Begin directive registry work** (if helpers are complete)
-5. **Create database import script** (when all helpers finalized)
+1. ✅ **Verification Complete** - All 27 "likely exists" helpers categorized
+2. ⏳ **Design `initialize_aifp_project()` helper**:
+   - Review initialization directives
+   - Review current registry helpers
+   - **Decide OOP handling strategy** (CRITICAL - blocks implementation)
+   - Implement unified function
+   - Add to registry
+3. ⏳ **Resolve 3 ambiguous helpers**:
+   - validate_initialization
+   - infer_architecture
+   - query_mcp_db
+4. ⏳ **Update registry files** with final decisions
+5. ✅ **Archive obsolete files** (helpers_parsed.json, helper-functions-reference.md) - Ready to archive
+6. ⏳ **Begin directive registry work** (when helpers complete)
+7. ⏳ **Create database import script** (when all helpers finalized)
 
 ---
 
-**Status**: ✅ Helper registry consolidation complete pending user review of 10 helpers
-**Next Action**: User evaluation of project init/analysis helpers
-**Updated**: 2025-11-29
+**Status**: ✅ Helper verification complete - 5 removed (AI-driven), 3 consolidated, 2 AI-driven
+**Next Action**: Design initialize_aifp_project() + decide OOP handling strategy
+**Updated**: 2025-11-30

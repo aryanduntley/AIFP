@@ -6,22 +6,54 @@
 
 ## Key Design Decisions
 
+### 0. AI vs Code Decision Framework (CRITICAL)
+**Decision**: Not all operations should be helper functions - some should be AI directive-driven
+
+**Philosophy**: AI capabilities (NLP, reasoning, flexibility) > Code capabilities (deterministic, structured) for certain operations
+
+**When to Use AI Directives (NOT Helper Functions)**:
+- **Natural Language Processing**: Parsing user-written directives in YAML/JSON/plain text
+- **Semantic Validation**: Identifying ambiguities, asking clarifying questions, understanding intent
+- **File Operations AI Already Does**: Reading, creating, updating files (MCP server cannot improve on AI's native Read tool)
+- **Flexible Scanning**: Directory exploration, code pattern analysis (AI "thought" > restrictive code patterns)
+- **Interactive Workflows**: Q&A with users, ambiguity resolution, context-dependent decisions
+
+**When to Use Helper Functions (Code)**:
+- **Deterministic Operations**: Database queries, data transformations, calculations
+- **Structured Data**: CRUD operations on databases
+- **Performance-Critical**: Batch operations, complex queries requiring SQL optimization
+- **State Management**: Tracking project state, execution statistics, relationships
+- **Initialization**: Setting up directory structures, creating databases from schemas
+
+**Examples from Verification**:
+- ❌ **parse_directive_file** - AI handles via `user_directive_parse` directive (NLP, format flexibility)
+- ❌ **validate_user_directive** - AI handles via `user_directive_validate` directive (interactive Q&A)
+- ❌ **create_project_blueprint** - AI creates files via directives (native file creation)
+- ❌ **read_project_blueprint** - AI uses Read tool directly (cannot improve on native tool)
+- ❌ **scan_existing_files** - AI uses Glob/Grep/Read (superior "thought" vs code patterns)
+- ✅ **initialize_aifp_project()** - Code handles deterministic setup (directory structure, DB initialization from schemas)
+- ✅ **get_user_directive_dependencies_by_directive()** - Code handles structured database queries
+
+**Rationale**: Leverage AI's strengths for reasoning and flexibility, use code for deterministic operations and data management.
+
 ### 1. File Structure - Split by Database
 **Decision**: Split helpers into separate files by database instead of one monolithic file
 
 **Why**: Easier to manage, clearer organization, better for future maintenance
 
-**Structure**:
-- `helpers_registry_core.json` - MCP database (aifp_core.db)
+**Structure** (12 registry files):
+- `helpers_registry_core.json` - MCP database core helpers (aifp_core.db)
+- `helpers_registry_mcp_orchestrators.json` - MCP Layer 2 orchestrators (aifp_core.db)
 - `helpers_registry_user_settings.json` - User preferences database (user_preferences.db)
-- `helpers_registry_user_directives_getters.json` - User directives READ operations
-- `helpers_registry_user_directives_setters.json` - User directives WRITE operations
-- `helpers_registry_project_core.json` - Project table operations
-- `helpers_registry_project_structure_getters.json` - Code structure READ
-- `helpers_registry_project_structure_setters.json` - Code structure WRITE
-- `helpers_registry_project_workflow_getters.json` - Workflow READ
-- `helpers_registry_project_workflow_setters.json` - Workflow WRITE
-- `helpers_registry_git.json` - Git integration operations
+- `helpers_registry_user_directives_getters.json` - User directives READ operations (user_directives.db)
+- `helpers_registry_user_directives_setters.json` - User directives WRITE operations (user_directives.db)
+- `helpers_registry_project_core.json` - Project table operations (project.db)
+- `helpers_registry_project_structure_getters.json` - Code structure READ (project.db)
+- `helpers_registry_project_structure_setters.json` - Code structure WRITE (project.db)
+- `helpers_registry_project_workflow_getters.json` - Workflow READ (project.db)
+- `helpers_registry_project_workflow_setters.json` - Workflow WRITE (project.db)
+- `helpers_registry_project_orchestrators.json` - Project Layer 2 orchestrators (project.db)
+- `helpers_registry_git.json` - Git integration operations (project.db)
 
 ### 2. Getters/Setters Split Strategy
 **Decision**: Split large registries (>70 helpers) by operation type
@@ -170,6 +202,7 @@ Pattern: `helpers_registry_{database}_{category}_{operation}.json`
 ```
 docs/helpers/registry/
 ├── helpers_registry_core.json
+├── helpers_registry_mcp_orchestrators.json (NEW)
 ├── helpers_registry_user_settings.json
 ├── helpers_registry_user_directives_getters.json
 ├── helpers_registry_user_directives_setters.json
@@ -178,8 +211,11 @@ docs/helpers/registry/
 ├── helpers_registry_project_structure_setters.json
 ├── helpers_registry_project_workflow_getters.json
 ├── helpers_registry_project_workflow_setters.json
+├── helpers_registry_project_orchestrators.json (NEW)
 ├── helpers_registry_git.json
 ├── HELPER_REGISTRY_STATUS.md
+├── VERIFICATION_REPORT.md
+├── CONSOLIDATION_REPORT.md
 └── helper-registry-guide.md (this file)
 ```
 
@@ -281,9 +317,35 @@ These registries are designed for direct import into `aifp_core.db` helper_funct
 5. Insert into helper_functions table
 6. Update directive_helpers junction table
 
-**Ready for production**: Yes, after file consolidation review completes
+**Ready for production**: Yes, after `initialize_aifp_project()` implementation and OOP handling decision
 
 ---
 
-**Last Updated**: 2025-11-29
-**Status**: Complete and ready for database import after file review
+## Outstanding Design Decisions
+
+### OOP Handling Strategy for Existing Projects
+**Status**: ⚠️ **CRITICAL DECISION REQUIRED**
+
+**Context**: When `initialize_aifp_project()` is called on an existing project with OOP code:
+- Database expects FP-compliant structure (pure functions, immutability, no classes)
+- Existing OOP code will create mismatches during database population
+- Need strategy before implementing initialization helper
+
+**Options**:
+1. **Dual-track**: AI creates new FP code alongside existing OOP (separate files/directories)
+2. **Relaxed standards**: Disable FP compliance checks for this specific project (project-level setting)
+3. **Reject initialization**: Inform user AIFP is designed for FP projects only (clear error message)
+4. **Gradual migration**: Track OOP code "as-is" initially, guide AI to refactor incrementally (track "FP readiness" level)
+
+**Impacts**:
+- Initialization helper implementation
+- Project directives (project_init, project_compliance_check, etc.)
+- Database schema (may need "fp_compliance_mode" field in project table)
+- System prompt guidance for handling non-FP projects
+
+**Action Required**: Choose strategy before implementing `initialize_aifp_project()`
+
+---
+
+**Last Updated**: 2025-11-30
+**Status**: Complete and ready for database import after `initialize_aifp_project()` and OOP decision

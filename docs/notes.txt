@@ -108,9 +108,28 @@ docs/directives-json/helpers_parsed.json
 
 need to flesh out return statements
 
+must handle existing projects that are oop
+
+Read:
+README.md
+sys-prompt/aifp_system_prompt.txt
+.aifp/ProjectBlueprint.md
+
+=======
+
+our registry was created primarily from these:
+docs/helpers/info-helpers-user-settings.txt
+docs/helpers/info-helpers-project.txt
+docs/helpers/info-helpers-core.txt
+docs/helpers/info-helpers-user-custom.txt
+
 working on:
-docs/helpers/registry/helper-registry-guide.md
+docs/helpers/registry/VERIFICATION_REPORT.md
 docs/helpers/registry/HELPER_REGISTRY_STATUS.md
+docs/helpers/registry/CONSOLIDATION_REPORT.md
+docs/helpers/registry/helper-registry-guide.md
+
+docs/aifp-oop-policy.md
 
 helper registry:
 docs/helpers/registry/helpers_registry_git.json
@@ -124,5 +143,6 @@ docs/helpers/registry/helpers_registry_project_structure_setters.json
 docs/helpers/registry/helpers_registry_project_workflow_setters.json
 docs/helpers/registry/helpers_registry_project_core.json
 
+used_by_directive field in the helper json files needs to be evaluated when re-evaluating directives
 
-| query_mcp_db | (NOT IN REGISTRY) | N/A | ⚠️ Generic query helper - may not be in registries yet |
+create initialize_aifp_project(). with this review all useful directive collective functions. Think aifp_run, etc. 
