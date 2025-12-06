@@ -1,13 +1,13 @@
 {
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2025-11-29",
-    "description": "Project Database helpers - Core project table operations (project metadata: name, purpose, goals, status, version, blueprint tracking)",
+    "last_updated": "2025-12-06",
+    "description": "Project Database helpers - Core project table operations (project metadata: name, purpose, goals, status, version, blueprint tracking) and initialization",
     "database": "project.db",
     "target_database": "project",
-    "total_helpers": 5,
+    "total_helpers": 6,
     "schema_version": "1.0",
-    "notes": "Project table is singular (one entry per database). These helpers manage the main project metadata distinct from infrastructure/files/tasks."
+    "notes": "Project table is singular (one entry per database). These helpers manage the main project metadata distinct from infrastructure/files/tasks. Includes unified initialization helper for new and existing projects."
   },
   "helper_schema": {
     "description": "Schema definition for helper entries",
@@ -29,6 +29,38 @@
   "database": "project.db",
   "file_location": "src/aifp/helpers/project/",
   "helpers": [
+    {
+      "name": "initialize_aifp_project",
+      "file_path": "src/aifp/helpers/project/initialization/init_project.py",
+      "database": "project.db",
+      "target_database": "project",
+      "purpose": "Unified initialization helper for new and existing projects. Creates .aifp-project/ directory structure, initializes all databases from schemas (project.db, user_preferences.db), creates blank ProjectBlueprint.md template. For existing projects: detects OOP code and enforces FP-only policy per docs/aifp-oop-policy.md.",
+      "parameters": [
+        {"name": "base_path", "type": "str", "required": true, "description": "Project root directory path where .aifp-project/ will be created"},
+        {"name": "project_name", "type": "str", "required": true, "description": "Name of the project"},
+        {"name": "project_type", "type": "str", "required": true, "description": "Type of project initialization: 'new' (empty project) or 'existing' (has code)"},
+        {"name": "use_case", "type": "str", "required": false, "default": "development", "description": "Project use case: 'development' (regular software) or 'automation' (user directives)", "values": ["development", "automation"]},
+        {"name": "project_purpose", "type": "str", "required": false, "default": null, "description": "Optional project purpose description"},
+        {"name": "project_goals", "type": "dict", "required": false, "default": null, "description": "Optional project goals JSON object"}
+      ],
+      "return_statements": [
+        "For new projects: Returns success status after creating structure and blank databases",
+        "For existing projects: Scans codebase using AI Read/Grep tools to detect OOP patterns",
+        "If OOP detected in existing project: AI evaluates project size (files, LOC, complexity)",
+        "Large OOP projects: Firm rejection with message per aifp-oop-policy.md, recommend MCP removal",
+        "Small OOP projects: Offer conversion with warnings, recommend rejection, allow new-directory option",
+        "After successful init: AI must populate project entry using create_project helper",
+        "AI must create completion_path stages using project workflow helpers",
+        "AI must generate ProjectBlueprint.md content via directives (not by code)",
+        "For automation use_case: Set user_directives_status field appropriately",
+        "Next step: Call project_init directive to complete initialization workflow"
+      ],
+      "error_handling": "Returns error if .aifp-project/ already exists. Returns OOP rejection message if existing project contains OOP code (enforces FP-only policy). Handles file system errors gracefully. Validates base_path exists and is accessible.",
+      "used_by_directives": ["project_init"],
+      "is_tool": false,
+      "is_sub_helper": false,
+      "calls_helpers": ["create_project", "get_project"]
+    },
     {
       "name": "create_project",
       "file_path": "src/aifp/helpers/project/mutations/project_mutations.py",

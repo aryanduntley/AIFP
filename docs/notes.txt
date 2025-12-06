@@ -91,21 +91,6 @@ get_directives_for_helper(helper_function_id, include_directives_data=false)
    include_directives_data=true calls get_directives(directive_id array)
       returns all directive_helpers data AND directives data for matches
 
-these are primary:
-docs/helpers/info-helpers-user-settings.txt
-docs/helpers/info-helpers-project.txt
-docs/helpers/info-helpers-core.txt
-docs/helpers/info-helpers-user-custom.txt
-
-need to consolidate all helpers and remove excess files to avoid confusion:
-docs/helpers/helper-architecture.md
-docs/helpers/helper-tool-classification.md
-docs/helpers/generic-tools-mcp.md
-docs/helpers/generic-tools-project.md
-docs/helpers/helper-functions-reference.md
-docs/directives-json/directive-helper-interactions.json
-docs/directives-json/helpers_parsed.json
-
 need to flesh out return statements
 
 must handle existing projects that are oop
@@ -123,13 +108,13 @@ docs/helpers/info-helpers-project.txt
 docs/helpers/info-helpers-core.txt
 docs/helpers/info-helpers-user-custom.txt
 
-working on:
-docs/helpers/registry/VERIFICATION_REPORT.md
+working on (registry docs):
+docs/helpers/registry/helper-registry-guide.md
+docs/helpers/registry/CURRENT_STATUS.md
+docs/aifp-oop-policy.md
 docs/helpers/registry/HELPER_REGISTRY_STATUS.md
 docs/helpers/registry/CONSOLIDATION_REPORT.md
-docs/helpers/registry/helper-registry-guide.md
-
-docs/aifp-oop-policy.md
+docs/helpers/registry/VERIFICATION_REPORT.md
 
 helper registry:
 docs/helpers/registry/helpers_registry_git.json
@@ -142,7 +127,10 @@ docs/helpers/registry/helpers_registry_project_workflow_getters.json
 docs/helpers/registry/helpers_registry_project_structure_setters.json
 docs/helpers/registry/helpers_registry_project_workflow_setters.json
 docs/helpers/registry/helpers_registry_project_core.json
+docs/helpers/registry/helpers_registry_project_orchestrators.json
+docs/helpers/registry/helpers_registry_mcp_orchestrators.json
+
+directives next steps:
+docs/directives-json/Tasks/DIRECTIVE_CLEANUP_TASK.md
 
 used_by_directive field in the helper json files needs to be evaluated when re-evaluating directives
-
-create initialize_aifp_project(). with this review all useful directive collective functions. Think aifp_run, etc. 
