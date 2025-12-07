@@ -132,5 +132,10 @@ docs/helpers/registry/helpers_registry_mcp_orchestrators.json
 
 directives next steps:
 docs/directives-json/Tasks/DIRECTIVE_CLEANUP_TASK.md
+docs/directives-json/Tasks/DIRECTIVES_QUICK_REF.md
+docs/directives-json/Tasks/HELPER_FUNCTIONS_QUICK_REF.md
+docs/directives-json/Tasks/MD_HELPER_REFS_ANALYSIS.md
+docs/temp.txt
+docs/directives-json/Tasks/MD_CLEANUP_CHECKLIST.md
 
 used_by_directive field in the helper json files needs to be evaluated when re-evaluating directives

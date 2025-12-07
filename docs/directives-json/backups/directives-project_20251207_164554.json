@@ -45,7 +45,7 @@
               ]
             },
             "ai_decision_flow": [
-              "1. Check: Is this a status/continuation request? → Call aifp_status",
+              "1. Check: Is this a status/continuation request? \u2192 Call aifp_status",
               "2. Check project type: Query project.user_directives_status (NULL=Use Case 1, 'in_progress'/'active'/'disabled'=Use Case 2)",
               "3. Evaluate: Is this coding, project management, or user directive automation?",
               "4. Check: Do I have directives in memory?",
@@ -145,6 +145,7 @@
           "if": "blueprint_prompts_complete",
           "then": "create_project_structure",
           "details": {
+            "helper": "create_project_directory",
             "module": "aifp.scripts.init_aifp_project",
             "parameters": {
               "target_path": "user_working_dir"
@@ -160,6 +161,7 @@
           "if": "structure_created",
           "then": "generate_project_blueprint",
           "details": {
+            "helper": "create_project_blueprint",
             "module": "aifp.scripts.init_aifp_project",
             "parameters": {
               "aifp_dir": ".aifp-project/",
@@ -174,6 +176,8 @@
           "if": "blueprint_generated",
           "then": "initialize_databases",
           "details": {
+            "helper_project_db": "initialize_project_db",
+            "helper_prefs_db": "initialize_user_preferences_db",
             "module": "aifp.scripts.init_aifp_project",
             "parameters": {
               "aifp_dir": ".aifp-project/",
@@ -194,6 +198,7 @@
           "if": "databases_initialized",
           "then": "validate_initialization",
           "details": {
+            "helper": "validate_initialization",
             "module": "aifp.scripts.init_aifp_project",
             "parameters": {
               "aifp_dir": ".aifp-project/"
@@ -1064,7 +1069,7 @@
       "name": "error_handling",
       "description": "Delegates unresolved issues back to the user."
     },
-    "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review. Standard fallback directive for AI–user collaboration. Ensures ambiguous operations always route through human confirmation.",
+    "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review. Standard fallback directive for AI\u2013user collaboration. Ensures ambiguous operations always route through human confirmation.",
     "md_file_path": "directives/project_user_referral.md",
     "workflow": {
       "trunk": "check_confidence",
@@ -1649,7 +1654,7 @@
       "name": "status_management",
       "description": "Retrieves comprehensive project status with context-aware task continuation support."
     },
-    "description": "Retrieves comprehensive project status with historical context for task continuation. For existing projects: reads ProjectBlueprint.md, loads infrastructure, builds priority status tree (sidequests → subtasks → tasks), provides historical context from previous tasks, checks for ambiguities, and generates status report. For new projects: checks for .aifp/ folder, checks .git/.aifp/ backup, prompts for restoration or initialization.",
+    "description": "Retrieves comprehensive project status with historical context for task continuation. For existing projects: reads ProjectBlueprint.md, loads infrastructure, builds priority status tree (sidequests \u2192 subtasks \u2192 tasks), provides historical context from previous tasks, checks for ambiguities, and generates status report. For new projects: checks for .aifp/ folder, checks .git/.aifp/ backup, prompts for restoration or initialization.",
     "md_file_path": "directives/aifp_status.md",
     "workflow": {
       "trunk": "determine_project_state",
@@ -1665,7 +1670,9 @@
         {
           "if": "git_synced",
           "then": "get_existing_project_status",
-          "details": {}
+          "details": {
+            "call_helper": "get_project_status"
+          }
         },
         {
           "if": "no_aifp_folder",
@@ -1696,6 +1703,7 @@
           "if": "existing_project",
           "then": "read_project_blueprint",
           "details": {
+            "call_helper": "project_blueprint_read",
             "path": ".aifp-project/ProjectBlueprint.md"
           }
         },
@@ -1948,7 +1956,9 @@
         {
           "if": "parameters_valid",
           "then": "read_current_blueprint",
-          "details": {}
+          "details": {
+            "call_helper": "project_blueprint_read"
+          }
         },
         {
           "if": "blueprint_read",
@@ -2544,7 +2554,8 @@
           "if": "user_chooses_next_task",
           "then": "set_next_task_in_progress",
           "details": {
-            "update_task_status": "in_progress"
+            "update_task_status": "in_progress",
+            "helper": "get_project_tasks"
           }
         },
         {
@@ -2908,6 +2919,7 @@
           "if": "directive_name_provided",
           "then": "call_helper",
           "details": {
+            "helper": "get_directive_content",
             "parameters": [
               "directive_name"
             ],
@@ -2935,6 +2947,7 @@
           "if": "no_directive_specified",
           "then": "show_available_directives",
           "details": {
+            "helper": "search_directives",
             "prompt": "Which directive do you need help with? (name, keyword, or category)"
           }
         },

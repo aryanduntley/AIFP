@@ -1,0 +1,1411 @@
+{
+  "summary": {
+    "total_files_scanned": 125,
+    "files_with_issues": 94,
+    "total_issues": 105,
+    "by_pattern_type": {
+      "helper_ref_links": 71,
+      "helper_module_paths": 4,
+      "helper_sections": 23,
+      "helper_function_lists": 3,
+      "call_instructions": 4
+    }
+  },
+  "files": {
+    "fp_lazy_computation.md": {
+      "helper_ref_links": [
+        [
+          722,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-lazy-computation)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_guard_clauses.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          598,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_const_refactoring.md": {
+      "helper_ref_links": [
+        [
+          632,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_preferences_import.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_state_elimination.md": {
+      "helper_ref_links": [
+        [
+          638,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_dependency_tracking.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          504,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_type_inference.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          492,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_optionals.md": {
+      "helper_ref_links": [
+        [
+          513,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-error-handling)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          339,
+          "# \u2705 Better: Use helper function"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "aifp_help.md": {
+      "helper_ref_links": [
+        [
+          412,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#mcp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [
+        [
+          80,
+          "- **Module**: `src/aifp/helpers/mcp.py`"
+        ],
+        [
+          296,
+          "- Module: `src/aifp/helpers/mcp.py`"
+        ],
+        [
+          301,
+          "- Module: `src/aifp/helpers/mcp.py`"
+        ],
+        [
+          306,
+          "- Module: `src/aifp/helpers/mcp.py`"
+        ]
+      ],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "git_detect_external_changes.md": {
+      "helper_ref_links": [
+        [
+          461,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_runtime_type_check.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          457,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_update_db.md": {
+      "helper_ref_links": [
+        [
+          473,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [
+        [
+          395,
+          "- `begin_transaction()`, `commit_transaction()`, `rollback_transaction()` - Transaction helpers"
+        ]
+      ],
+      "call_instructions": []
+    },
+    "fp_dead_code_elimination.md": {
+      "helper_ref_links": [
+        [
+          590,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-dead-code-elimination)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "git_create_branch.md": {
+      "helper_ref_links": [
+        [
+          484,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_blueprint_update.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": [
+        [
+          59,
+          "- Call `project_blueprint_read` helper"
+        ]
+      ]
+    },
+    "user_directive_monitor.md": {
+      "helper_ref_links": [
+        [
+          598,
+          "- [Helper Functions Reference](../helper-functions-reference.md#monitoring-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_subtask_create.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_dependency_map.md": {
+      "helper_ref_links": [
+        [
+          646,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-dependency-map)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_metrics.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_task_create.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_theme_flow_mapping.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_constant_folding.md": {
+      "helper_ref_links": [
+        [
+          495,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-constant-folding)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_init.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_task_isolation.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          506,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_encoding_consistency.md": {
+      "helper_ref_links": [
+        [
+          628,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-encoding-consistency)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_directive_update.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_directive_implement.md": {
+      "helper_ref_links": [
+        [
+          906,
+          "- [Helper Functions Reference](../helper-functions-reference.md#code-generation)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_error_pipeline.md": {
+      "helper_ref_links": [
+        [
+          728,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-composition)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_purity_caching_analysis.md": {
+      "helper_ref_links": [
+        [
+          662,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-cache-analysis)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_reflection_limitation.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          437,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_keyword_alignment.md": {
+      "helper_ref_links": [
+        [
+          632,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-keyword-alignment)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_null_elimination.md": {
+      "helper_ref_links": [
+        [
+          629,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-null-elimination)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_file_write.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_metadata_annotation.md": {
+      "helper_ref_links": [
+        [
+          652,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-metadata-annotation)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_parallel_evaluation.md": {
+      "helper_ref_links": [
+        [
+          620,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-parallel-evaluation)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_archive.md": {
+      "helper_ref_links": [
+        [
+          524,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-archive)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_parallel_purity.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          454,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_naming_conventions.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          514,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_map_reduce.md": {
+      "helper_ref_links": [
+        [
+          589,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-map-reduce)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_syntax_normalization.md": {
+      "helper_ref_links": [
+        [
+          592,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-syntax-normalization)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "tracking_toggle.md": {
+      "helper_ref_links": [
+        [
+          599,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_task_update.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "aifp_run.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_ownership_safety.md": {
+      "helper_ref_links": [
+        [
+          720,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_performance_summary.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_sidequest_create.md": {
+      "helper_ref_links": [
+        [
+          624,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-sidequest-create)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_evolution.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_task_decomposition.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "aifp_status.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_data_filtering.md": {
+      "helper_ref_links": [
+        [
+          658,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-data-filtering)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_task_complete.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_function_inlining.md": {
+      "helper_ref_links": [
+        [
+          523,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-inlining)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_compliance_check.md": {
+      "helper_ref_links": [
+        [
+          427,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_call_graph_generation.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          464,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_pattern_unpacking.md": {
+      "helper_ref_links": [
+        [
+          658,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-pattern-unpacking)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "git_sync_state.md": {
+      "helper_ref_links": [
+        [
+          531,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_directive_deactivate.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_directive_validate.md": {
+      "helper_ref_links": [
+        [
+          678,
+          "- [Helper Functions Reference](../helper-functions-reference.md#validation-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_inheritance_flattening.md": {
+      "helper_ref_links": [
+        [
+          820,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_list_operations.md": {
+      "helper_ref_links": [
+        [
+          589,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-list-operations)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_function_indexing.md": {
+      "helper_ref_links": [
+        [
+          767,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-function-indexing)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_io_isolation.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          649,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_directive_activate.md": {
+      "helper_ref_links": [
+        [
+          764,
+          "- [Helper Functions Reference](../helper-functions-reference.md#deployment-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_generic_constraints.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          494,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_borrow_check.md": {
+      "helper_ref_links": [
+        [
+          671,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "git_detect_conflicts.md": {
+      "helper_ref_links": [
+        [
+          641,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_test_purity.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          519,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_integrity_check.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_sidequest_complete.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_immutability.md": {
+      "helper_ref_links": [
+        [
+          471,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_tail_recursion.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          492,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_language_standardization.md": {
+      "helper_ref_links": [
+        [
+          639,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-language-standardization)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_preferences_learn.md": {
+      "helper_ref_links": [
+        [
+          537,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#pattern-detection)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_directive_approve.md": {
+      "helper_ref_links": [
+        [
+          660,
+          "- [Helper Functions Reference](../helper-functions-reference.md#approval-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_evaluation_order_control.md": {
+      "helper_ref_links": [
+        [
+          689,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-evaluation-order-control)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_error_handling.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_type_safety.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          484,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_conditional_elimination.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          542,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_auto_resume.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_file_delete.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "git_merge_branch.md": {
+      "helper_ref_links": [
+        [
+          792,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_preferences_export.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_notes_log.md": {
+      "helper_ref_links": [
+        [
+          786,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_purity.md": {
+      "helper_ref_links": [
+        [
+          435,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_symbol_map_validation.md": {
+      "helper_ref_links": [
+        [
+          645,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-symbol-map-validation)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_no_reassignment.md": {
+      "helper_ref_links": [
+        [
+          637,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_side_effect_detection.md": {
+      "helper_ref_links": [
+        [
+          646,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_lazy_evaluation.md": {
+      "helper_ref_links": [
+        [
+          608,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-lazy-evaluation)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_refactor_path.md": {
+      "helper_ref_links": [
+        [
+          544,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-refactor-path)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_result_types.md": {
+      "helper_ref_links": [
+        [
+          682,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-error-handling)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_auto_summary.md": {
+      "helper_ref_links": [
+        [
+          542,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-auto-summary)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_concurrency_safety.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          538,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_monadic_composition.md": {
+      "helper_ref_links": [
+        [
+          737,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-monadic-composition)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_backup_restore.md": {
+      "helper_ref_links": [
+        [
+          535,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-backup-restore)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_api_design.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          652,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_milestone_complete.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_user_referral.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_preferences_update.md": {
+      "helper_ref_links": [
+        [
+          667,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#intent-matching)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": [
+        [
+          16,
+          "- **Intent-based matching**: Uses `find_directive_by_intent` helper to search directive names, descriptions, and keywords"
+        ],
+        [
+          24,
+          "2. **Find matching directive** - Use `find_directive_by_intent` helper for intelligent matching"
+        ]
+      ]
+    },
+    "fp_documentation.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          679,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_cost_analysis.md": {
+      "helper_ref_links": [
+        [
+          523,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-cost-analysis)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_side_effects_flag.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          625,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_docstring_enforcement.md": {
+      "helper_ref_links": [
+        [
+          672,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-docstring-enforcement)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_memoization.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          530,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_file_read.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_subtask_complete.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_reflection_block.md": {
+      "helper_ref_links": [
+        [
+          667,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-reflection-block)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_wrapper_generation.md": {
+      "helper_ref_links": [
+        [
+          745,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_recursion_enforcement.md": {
+      "helper_ref_links": [
+        [
+          695,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-recursion-enforcement)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_try_monad.md": {
+      "helper_ref_links": [
+        [
+          635,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-error-handling)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "git_init.md": {
+      "helper_ref_links": [
+        [
+          479,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_currying.md": {
+      "helper_ref_links": [
+        [
+          637,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_ai_reasoning_trace.md": {
+      "helper_ref_links": [
+        [
+          620,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-ai-reasoning-trace)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_directive_status.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_blueprint_read.md": {
+      "helper_ref_links": [
+        [
+          406,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_pattern_matching.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          551,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_dependency_sync.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_item_create.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_completion_check.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "project_add_path.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_directive_parse.md": {
+      "helper_ref_links": [
+        [
+          583,
+          "- [Helper Functions Reference](../helper-functions-reference.md#user-directive-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": [
+        [
+          85,
+          "- Use NLP helper: `parse_natural_language_directive(text)`"
+        ]
+      ]
+    },
+    "fp_cross_language_wrappers.md": {
+      "helper_ref_links": [
+        [
+          728,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-cross-language-wrappers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "user_preferences_sync.md": {
+      "helper_ref_links": [
+        [
+          555,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_logging_safety.md": {
+      "helper_ref_links": [],
+      "helper_module_paths": [],
+      "helper_sections": [
+        [
+          616,
+          "## Helper Functions"
+        ]
+      ],
+      "helper_function_lists": [],
+      "call_instructions": []
+    },
+    "fp_chaining.md": {
+      "helper_ref_links": [
+        [
+          740,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [
+        [
+          683,
+          "- `generate_pipe_function() -> str` - Generate pipe helper code"
+        ],
+        [
+          684,
+          "- `generate_compose_function() -> str` - Generate compose helper code"
+        ]
+      ],
+      "call_instructions": []
+    },
+    "fp_no_oop.md": {
+      "helper_ref_links": [
+        [
+          571,
+          "- [Helper Functions Reference](../../../docs/helper-functions-reference.md#oop-detection)"
+        ]
+      ],
+      "helper_module_paths": [],
+      "helper_sections": [],
+      "helper_function_lists": [],
+      "call_instructions": []
+    }
+  }
+}

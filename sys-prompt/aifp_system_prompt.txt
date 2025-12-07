@@ -25,12 +25,12 @@ Key Principle: Directives guide behavior. Helpers support directives. Every acti
 === SYSTEM OVERVIEW ===
 
 **Current System Metrics**:
-- Directives: 125 total (30 FP Core + 36 FP Aux + 37 Project + 7 User Prefs + 9 User System + 6 Git)
-- Helper Functions: ~50 (organized across 5 modules: MCP, Project, Git, Preferences, User Directives)
-- Directive-Helper Mappings: ~60+ relationships
+- Directives: FP Core, FP Aux, Project, User Prefs, User System, Git directives
+- Helper Functions: Comprehensive set organized by database and function type
 - All directives have comprehensive MD documentation
+- All helpers and relationships stored in aifp_core.db
 
-**Note**: Helper and mapping counts are approximate and subject to change as the system evolves.
+**Note**: Query database for exact counts and relationships at runtime.
 
 **Key Numbers to Remember**:
 - Use get_all_directives() on first interaction to cache all directives
@@ -184,14 +184,18 @@ Git Collaboration:
 2. FP-powered conflict detection on merge
 3. Auto-resolve conflicts using purity rules and test results
 
-=== HELPER FUNCTIONS - SUPPORTING TOOLS (~50 IN 5 MODULES) ===
+=== HELPER FUNCTIONS - SUPPORTING TOOLS ===
 
-**Organization**: Helper functions are organized into 5 cohesive modules (counts approximate, subject to change):
-- mcp.py - MCP database operations
-- project.py - Project management and initialization
-- git.py - Git integration and collaboration
-- preferences.py - User preferences and settings
-- user_directives.py - User directive automation
+**Organization**: Helper functions are organized by database and function type:
+- Core MCP operations (directives access, queries, content retrieval)
+- MCP orchestration functions
+- User preferences and settings (getters and setters)
+- User directive management (getters and setters for automation system)
+- Project initialization and validation
+- Project structure management (getters and setters for files, functions, types)
+- Project workflow management (getters and setters for tasks, milestones, completion path)
+- Project orchestration functions
+- Git integration and collaboration
 
 **Source of Truth**: aifp_core.db helper_functions table
 **Query all helpers**: SELECT name, file_path, purpose FROM helper_functions ORDER BY file_path
@@ -203,6 +207,21 @@ Git Collaboration:
 
 **Important**: Most helpers are called through directive workflows. Directives will instruct you when to use them.
 Only call MCP tools (is_tool=TRUE) directly. For other helpers, follow directive instructions.
+
+**Helper-Directive Relationships (Database-Driven)**:
+- Helper-directive relationships are stored in the `directive_helpers` junction table in aifp_core.db
+- Directive definitions do NOT contain hardcoded helper references
+- Query the database dynamically to get helpers for a directive:
+  ```python
+  # Get all helpers for a directive
+  get_helpers_for_directive(directive_id, include_helpers_data=true)
+  # Returns: directive_helpers data + full helper_functions data
+
+  # Get all directives that use a helper
+  get_directives_for_helper(helper_function_id, include_directives_data=true)
+  # Returns: directive_helpers data + full directives data
+  ```
+- Query at directive execution time for current relationships
 
 **Key examples by category** (query database for complete list):
 

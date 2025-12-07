@@ -1,7 +1,8 @@
 # Task: Directive Review & Cleanup for Helper Function Consistency
 
 **Date Created**: 2025-12-06
-**Status**: ⏳ Pending
+**Date Updated**: 2025-12-07
+**Status**: 🔄 In Progress (Phase 1 Complete)
 **Priority**: High
 **Blocking**: Database import, directive implementation
 
@@ -9,7 +10,7 @@
 
 ## Overview
 
-Helper function registry is now complete (349 helpers across 12 JSON files). All directives must be reviewed and updated for consistency with the new helper function system.
+Helper function registry is now complete. All directives must be reviewed and updated for consistency with the new helper function system.
 
 **Key Decision**: Helper-directive relationships are maintained in **helper registry files** (not directive files). The database import script will read `used_by_directives` fields from helper registries to populate the `directive_helpers` table.
 
@@ -18,10 +19,10 @@ Helper function registry is now complete (349 helpers across 12 JSON files). All
 ## Helper Function Completion Summary
 
 **Status**: ✅ **COMPLETE** (2025-12-06)
-- **Total Helpers**: 349 documented helpers
-- **Registry Files**: 12 JSON files
+- **Registry Files**: Multiple JSON files organized by database and function type
 - **Databases Covered**: 4 (aifp_core.db, user_preferences.db, user_directives.db, project.db)
 - **Source of Truth**: `docs/helpers/registry/*.json`
+- **Query registry files or database for exact counts**
 
 ### Key Changes to Helper Functions
 
@@ -163,9 +164,32 @@ Some directive markdown files contain hardcoded helper lists that must be remove
 
 ---
 
+## Progress Summary
+
+### Phase 1: Directive JSON Cleanup ✅ COMPLETE (2025-12-07)
+
+**Completed Actions:**
+- ✅ Created scan script (`scan_helper_refs.py`) to identify all helper references
+- ✅ Identified 13 helper references across 3 directive files
+- ✅ Created removal script (`remove_helper_refs.py`) with backup/restore functionality
+- ✅ Moved `directive-helper-interactions.json` to backups (temporary reference)
+- ✅ Removed all 13 helper references from directive JSON files
+- ✅ Created timestamped backups of all directive files
+- ✅ Verified cleanup with re-scan (0 helper references remaining)
+
+**Results:**
+- `directives-project.json`: 11 helper refs removed
+- `directives-user-system.json`: 1 helper ref removed (entire `helper_functions` section)
+- `directives-user-pref.json`: 1 helper ref removed
+- `directives-fp-core.json`, `directives-fp-aux.json`, `directives-git.json`: Already clean
+
+**Backups Location:** `docs/directives-json/backups/` (timestamp: 20251207_164554)
+
+---
+
 ## Required Actions
 
-### 1. ✅ Remove ALL Helper References from Directive JSON Files
+### 1. ✅ Remove ALL Helper References from Directive JSON Files (COMPLETE)
 
 **Affected Files**:
 - `docs/directives-json/directives-project.json`
@@ -181,11 +205,15 @@ Some directive markdown files contain hardcoded helper lists that must be remove
 - Remove `"module"` references to standalone scripts (if obsolete)
 - Clean up `"note"` fields that reference removed helpers
 
-**Method**: Python script (see Script Requirements below)
+**Method**: Python script (`remove_helper_refs.py`) ✅ **COMPLETE**
 
 **Rationale**: Helper-directive relationships are maintained in helper registry files, not directive files.
 
-### 2. ✅ Update Helper Registry JSON Files with Directive References
+**Completion Date**: 2025-12-07
+
+### 2. ⏳ Update Helper Registry JSON Files with Directive References
+
+**Status**: Pending review (helper registries already have `used_by_directives` fields)
 
 **For each helper** in the 12 registry JSON files, ensure:
 - `used_by_directives` field lists all directives that use this helper
@@ -202,7 +230,7 @@ Some directive markdown files contain hardcoded helper lists that must be remove
 
 **Note**: The database import script will resolve directive names to IDs when building the `directive_helpers` table.
 
-### 3. ✅ Update aifp_system_prompt.txt
+### 3. 🔄 Update aifp_system_prompt.txt (NEXT)
 
 **Add guidance** about database-driven helper-directive relationships:
 
@@ -212,9 +240,10 @@ to retrieve all associated helper functions from the database. Do not rely on ha
 references in directive files.
 ```
 
-### 4. ✅ Remove Hardcoded Helper Lists from Directive Markdown Files
+### 4. ⏳ Remove Hardcoded Helper Lists from Directive Markdown Files (NEXT)
 
 **Location**: `src/aifp/reference/directives/*.md`
+**Method**: Python/console script to scan ~125 MD files
 
 **Action**: Remove sections like:
 ```markdown
@@ -235,7 +264,7 @@ get_helpers_for_directive(directive_id, include_helpers_data=true)
 to retrieve all associated helpers.
 ```
 
-### 5. ✅ Create Database Import Script
+### 5. ⏳ Create Database Import Script
 
 **Script**: Reads helper registries and populates `directive_helpers` table.
 
@@ -285,23 +314,30 @@ python3 docs/directives-json/Tasks/remove_helper_refs_from_directives.py --resto
 
 ## Verification Checklist
 
-### Helper Function System
-- [x] 349 helpers documented in JSON registries
+### Helper Function System ✅ COMPLETE
+- [x] Helper functions documented in JSON registries
 - [x] All registries validated (JSON syntax)
 - [x] Consolidations documented
 - [x] Removed helpers documented
 - [x] OOP policy documented
 - [x] AI vs Code framework documented
 
-### Directive Cleanup (Pending)
-- [ ] Python script created and tested
-- [ ] All directive JSON files cleaned (helper refs removed)
-- [ ] Helper registries updated with `used_by_directives` data
-- [ ] Directive markdown files updated (remove hardcoded helper lists)
-- [ ] aifp_system_prompt.txt updated with database query guidance
-- [ ] OOP handling integrated into relevant directives
+### Directive JSON Cleanup ✅ COMPLETE (2025-12-07)
+- [x] Python scan script created (`scan_helper_refs.py`)
+- [x] Python removal script created (`remove_helper_refs.py`)
+- [x] All directive JSON files cleaned (13 helper refs removed, 0 remaining)
+- [x] Backups created with timestamps in `backups/` folder
+- [x] `directive-helper-interactions.json` moved to backups
+- [x] Cleanup verified with re-scan
 
-### Database Import (Pending)
+### Documentation Cleanup 🔄 IN PROGRESS
+- [ ] Helper registries reviewed for `used_by_directives` completeness
+- [ ] Directive markdown files scanned for hardcoded helper lists (~125 files)
+- [ ] Directive markdown files cleaned (remove hardcoded helper lists)
+- [ ] aifp_system_prompt.txt updated with database query guidance
+- [ ] README.md reviewed and cleaned if needed
+
+### Database Import ⏳ PENDING
 - [ ] directive_helpers table verified in aifp_core.sql
 - [ ] Database import script created
 - [ ] Import script populates directive_helpers from helper registries
@@ -406,7 +442,22 @@ python3 docs/directives-json/Tasks/remove_helper_refs_from_directives.py --resto
 
 ---
 
-**Status**: ⏳ Awaiting directive cleanup script and helper registry updates
-**Blocker**: Must complete before database import
+## Scripts Created
+
+1. **`scan_helper_refs.py`** ✅
+   - Recursively scans directive JSON files for helper references
+   - Outputs detailed report with paths and context
+   - Generates JSON report for archival
+
+2. **`remove_helper_refs.py`** ✅
+   - Removes all helper references from directive JSON files
+   - Supports `--dry-run`, `--execute`, `--restore` modes
+   - Creates timestamped backups before modification
+   - Preserves all other fields and formatting
+
+---
+
+**Status**: 🔄 Phase 1 Complete (Directive JSON cleanup done), Phase 2 In Progress (Documentation cleanup)
+**Blocker**: Must complete documentation cleanup before database import
 **Owner**: TBD
-**Last Updated**: 2025-12-06
+**Last Updated**: 2025-12-07
