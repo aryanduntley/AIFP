@@ -9,11 +9,11 @@
 
 ## Purpose
 
-The `user_preferences_update` directive handles **explicit user requests to modify AI behavior preferences**, translating natural language customization requests into structured database updates. This directive uses the `find_directive_by_intent` helper to intelligently map user requests like "always add docstrings" to specific directives like `project_file_write`, then stores preferences in the atomic key-value `directive_preferences` table.
+The `user_preferences_update` directive handles **explicit user requests to modify AI behavior preferences**, translating natural language customization requests into structured database updates. The AI uses its NLP capabilities to map user requests like "always add docstrings" to specific directives like `project_file_write`, then stores preferences in the atomic key-value `directive_preferences` table.
 
 This directive is **essential for user empowerment** because:
 - **Natural language preferences**: Users say "always do X" without knowing internal directive names
-- **Intent-based matching**: Uses `find_directive_by_intent` helper to search directive names, descriptions, and keywords
+- **Intent-based matching**: AI uses NLP to search directive names, descriptions, and keywords in `aifp_core.db`
 - **Atomic key-value structure**: Multiple preferences per directive (UNIQUE constraint on directive_name, preference_key)
 - **User confirmation**: Shows which directive will be affected before applying
 - **Validation**: Ensures preference values are valid before storing
@@ -21,17 +21,11 @@ This directive is **essential for user empowerment** because:
 
 The update workflow:
 1. **Parse preference request** - Extract intent from user's natural language
-2. **Find matching directive** - Use `find_directive_by_intent` helper for intelligent matching
+2. **Find matching directive** - AI queries `directives` table for intelligent matching
 3. **Confirm with user** - Show which directive will be customized
 4. **Parse preference details** - Extract preference key and value
 5. **Update or insert** - UPSERT into `directive_preferences` table
 6. **Confirm update** - Show user the new preference setting
-
-**Key Helper**: `find_directive_by_intent(user_request: str, min_confidence: float) -> list[DirectiveMatch]`
-- Searches `aifp_core.db` directives table
-- Matches against: name, description, intent_keywords_json
-- Returns scored matches with confidence levels
-- Enables natural language → directive mapping
 
 ---
 
@@ -61,17 +55,9 @@ Parses user's natural language preference request.
 ### Branches
 
 **Branch 1: If parse_complete**
-- **Then**: `find_directive_by_intent`
-- **Details**: Use helper to find matching directive
-  - Call helper:
-    ```python
-    matches = find_directive_by_intent(
-      user_request="always add docstrings",
-      min_confidence=0.6,
-      search_fields=["name", "description", "intent_keywords_json"]
-    )
-    ```
-  - Helper searches aifp_core.db:
+- **Then**: Find matching directive
+- **Details**: AI queries directives table to find matching directive
+  - Query aifp_core.db:
     ```sql
     SELECT name, description, intent_keywords_json, type
     FROM directives
@@ -408,9 +394,11 @@ directive_name = "project_file_write"  # Assumes user knows internal name
 
 **Corrected:**
 ```python
-# ✅ Use helper to find directive
-matches = find_directive_by_intent(user_request="always add docs", min_confidence=0.6)
-directive_name = matches[0]["name"] if matches else prompt_user()
+# ✅ Query database to find matching directive
+# AI uses NLP to match user intent to directive names/descriptions
+directive_name = ai_match_intent_to_directive("always add docs")
+if not directive_name:
+    directive_name = prompt_user_for_clarification()
 ```
 
 ---
@@ -555,8 +543,8 @@ if "for " in user_request.lower():
   - User requests - Natural language preference setting
   - `aifp_run` - When user says "set preference..."
 - **Calls**:
-  - `find_directive_by_intent` helper - Maps user request to directives
-  - Database update helpers
+  - Database queries to find matching directives
+  - Database setters for preference storage
 - **Modifies**:
   - `directive_preferences` table - Stores user preferences
   - `user_settings` table - For global settings
@@ -568,14 +556,18 @@ if "for " in user_request.lower():
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `find_directive_by_intent(user_request: str, min_confidence: float) -> list[DirectiveMatch]` - Find matching directives
-- `parse_user_preference_request(request: str) -> dict` - Extract intent, key, value
-- `normalize_preference_key(key: str) -> str` - Lowercase with underscores
-- `validate_preference_value(key: str, value: str) -> bool` - Type validation
-- `upsert_directive_preference(directive: str, key: str, value: str) -> None` - Database update
-- `query_existing_preferences(directive: str) -> list[dict]` - Get current preferences
+This directive's helpers are dynamically mapped in `aifp_core.db`.
+
+**Query at runtime**:
+```python
+get_helpers_for_directive(directive_id, include_helpers_data=true)
+```
+
+This returns all helpers associated with this directive, including database getters and setters for preference management.
+
+See `helper_functions` and `directive_helpers` tables in aifp_core.db for complete specifications.
 
 ---
 
@@ -664,7 +656,6 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#intent-matching)
 - [Blueprint: User Preferences Database](../../../docs/blueprints/blueprint_user_prefs_db.md)
 - [JSON Definition](../../../docs/directives-json/directives-user-pref.json)
 - [Database Schema](../../../docs/db-schema/schemaExampleSettings.sql)

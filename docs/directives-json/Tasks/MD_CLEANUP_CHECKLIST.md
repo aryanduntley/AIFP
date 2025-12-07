@@ -14,7 +14,13 @@
 - [ ] **Phase 3**: Files with Multiple Issues (15+ files)
 - [ ] **Phase 4**: Remaining Files (~70 files)
 
-**Completion**: 0 / 94 files complete
+**Completion**: 1 / 94 files complete (1.1%)
+
+**Files Completed**:
+1. ✅ user_preferences_update.md - Removed all hardcoded helpers, updated to AI NLP + DB queries
+
+**Files In Progress**:
+1. ⚠️ aifp_help.md - Partially complete, needs further review (see notes below)
 
 ---
 
@@ -28,6 +34,97 @@
 3. **Check off sub-items** as you fix each issue
 4. **Check off main item** when file review is complete
 5. **Update completion count** at top when done
+
+---
+
+## ⚠️ CRITICAL: Database-Driven Approach - NO HELPER NAMES IN MD FILES
+
+### Core Principle: Directives = Conceptual Guidance, NOT Code
+
+**Directives describe WHAT to achieve, not HOW with specific functions.**
+
+AI has intelligence to:
+1. Query `get_helpers_for_directive(directive_id)` to discover available tools
+2. Select appropriate helpers based on task context
+3. Execute the conceptual goals described in the directive
+
+### Why NO Helper Function Names
+
+**The Problem:**
+- Helpers change: renamed, consolidated, removed, added
+- MD files with hardcoded names become INSTANTLY STALE
+- Creates false references to non-existent or wrong functions
+- Defeats the entire purpose of database-driven architecture
+- Example: `find_directive_by_intent` was referenced but doesn't exist in core registry
+
+**The Solution:**
+- MD files provide CONCEPTUAL guidance only
+- AI queries database for available helpers at runtime
+- Database is single source of truth for what exists
+
+### What to REMOVE (Be Ruthless)
+
+**❌ DELETE these ENTIRELY:**
+- **ANY helper function names** in workflow steps
+  - ❌ `search_directives(keyword)`
+  - ❌ `get_directive_content(name)`
+  - ❌ `find_directive_by_intent(query)`
+- **ANY made-up function names** in code examples
+  - ❌ `query_directives_by_keyword()`
+  - ❌ `load_directive_documentation()`
+- **ANY "Primary helpers" or "Helper Functions Used" lists**
+- **Module paths** like `src/aifp/helpers/mcp.py`
+- **Links** to outdated `helper-functions-reference.md`
+- **Workflow instructions** calling specific helpers
+
+**If you see a function name in a workflow → DELETE IT**
+
+### What to KEEP (Conceptual Only)
+
+**✅ KEEP only these:**
+- **Generic conceptual descriptions**:
+  - ✅ "AI queries the directives table"
+  - ✅ "Search for matching directives by keyword"
+  - ✅ "Load directive documentation from MD file"
+  - ✅ "Retrieve directive metadata from database"
+- **Database table references**:
+  - ✅ `directives`, `helper_functions`, `directive_helpers`
+- **Standard Helper Functions section**:
+  - ✅ "Query `get_helpers_for_directive()` to discover helpers. See system prompt."
+  - ✅ That's it - no code examples, no lists, no details
+- **SQL query examples** (no helper calls):
+  - ✅ `SELECT name FROM directives WHERE...`
+
+**Note**: `get_helpers_for_directive()` is documented in system prompt, not MD files.
+
+### Standard Replacement Template
+
+**Replace ANY "Helper Functions" section with this EXACT template:**
+
+```markdown
+## Helper Functions
+
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
+```
+
+**That's it. Nothing more.**
+
+**DO NOT add:**
+- ❌ "Primary helpers" lists
+- ❌ Specific function names
+- ❌ Function signatures
+- ❌ Return types or parameters
+- ❌ Code examples with `get_helpers_for_directive()` (it's in system prompt)
+
+**Helper lookup is in system prompt - MD files reference it, don't duplicate it.**
+
+### Architecture Notes
+
+- **Production**: MD files ship with package at `src/aifp/reference/directives/*.md`
+- **Database**: Pre-populated `aifp_core.db` contains all helper-directive mappings
+- **Runtime**: AI queries database, not docs, for current helper availability
+- **Dev**: JSON registries in `docs/helpers/registry/*.json` are dev-only staging
 
 ---
 
@@ -46,28 +143,34 @@
 These files are core directives or heavily affected by helper changes.
 
 
-### [ ] aifp_help.md 🔴 **HIGH PRIORITY**
+### [ ] aifp_help.md 🔴 **HIGH PRIORITY** ⚠️ IN PROGRESS
 
 **Issues**: 5 | **Priority Score**: 170
 
-- [ ] **🔗 Helper Ref Links** (1 found)
-  - Line 412: `- [Helper Functions Reference](../../../docs/helper-functions-referenc...`
-- [ ] **📂 Module Paths** (4 found)
-  - Line 80: `- **Module**: `src/aifp/helpers/mcp.py``
-  - Line 296: `- Module: `src/aifp/helpers/mcp.py``
-  - Line 301: `- Module: `src/aifp/helpers/mcp.py``
-  - _(+ 1 more)_
+- [X] **🔗 Helper Ref Links** (1 found) - REMOVED ✅
+  - Line 412: Removed outdated helper-functions-reference.md link
+- [X] **📂 Module Paths** (4 found) - REMOVED ✅
+  - Lines 80, 296, 301, 306: Removed all `src/aifp/helpers/mcp.py` references
+- [ ] **⚠️ STILL NEEDS FIXING** - Hardcoded helper names remain:
+  - **Line 53**: Comment "Use search_directives helper" → DELETE
+  - **Lines 54-58**: `search_directives()` call → Replace with conceptual description
+  - **Line 71**: Comment "Call get_directive_content helper" → DELETE
+  - **Line 72**: `get_directive_content(directive_name)` → Replace with conceptual description
+  - **Lines 303-313**: "Primary helpers" list with 3 functions → DELETE entire list
+  - **Approach**: Remove ALL function names, keep only conceptual workflow descriptions
 
 
-### [ ] user_preferences_update.md 🔴 **HIGH PRIORITY**
+### [X] user_preferences_update.md 🔴 **HIGH PRIORITY** ✅ COMPLETE
 
 **Issues**: 3 | **Priority Score**: 130
 
-- [ ] **🔗 Helper Ref Links** (1 found)
-  - Line 667: `- [Helper Functions Reference](../../../docs/helper-functions-referenc...`
-- [ ] **⚙️ Call Instructions** (2 found)
-  - Line 16: `- **Intent-based matching**: Uses `find_directive_by_intent` helper to...`
-  - Line 24: `2. **Find matching directive** - Use `find_directive_by_intent` helper...`
+- [X] **🔗 Helper Ref Links** (1 found) - REMOVED
+  - Line 667: Removed outdated helper-functions-reference.md link
+- [X] **⚙️ Call Instructions** (Multiple) - REMOVED ALL HARDCODED HELPERS
+  - Removed all references to `find_directive_by_intent`, `find_directives`
+  - Updated to AI NLP matching + database queries
+  - Added standard `get_helpers_for_directive()` section
+  - Updated code examples to show generic approach
 
 
 ### [ ] user_directive_parse.md 🔴 **HIGH PRIORITY**
@@ -890,7 +993,8 @@ Remove the Module line, keep other details:
 Update this section as you progress:
 
 **By Phase**:
-- [ ] Phase 1 Complete: 0 / 7 high-priority files
+- [ ] Phase 1 Complete: 1 / 4 high-priority files (25%)
+  - 1 complete, 1 in progress, 2 pending
 - [ ] Phase 2 Complete: 0 / 4 module path files
 - [ ] Phase 3 Complete: 0 / ~15 multi-issue files
 - [ ] Phase 4 Complete: 0 / ~70 remaining files

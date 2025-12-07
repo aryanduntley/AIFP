@@ -76,11 +76,11 @@ documentation = get_directive_content(directive_name)
 ```
 
 **Helper Function**:
-- **Name**: `get_directive_content`
-- **Module**: `src/aifp/helpers/mcp.py`
+- **Name**: `get_directive_md`
 - **Parameters**: `directive_name` (string)
 - **Returns**: Full markdown documentation as string
 - **Error**: Returns None if MD file not found
+- **Query database for complete specification**
 
 ### Step 3: Display Documentation
 
@@ -290,22 +290,29 @@ else:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- **get_directive_content(name)** - Load full MD documentation for directive
-  - Module: `src/aifp/helpers/mcp.py`
+This directive's helpers are dynamically mapped in `aifp_core.db`.
+
+**Query at runtime**:
+```python
+get_helpers_for_directive(directive_id, include_helpers_data=true)
+```
+
+**Primary helpers**:
+- **get_directive_md(name)** - Load full MD documentation for directive
   - Returns: Full markdown content as string
   - Error: Returns None if file not found
 
-- **search_directives(keyword, category, type)** - Search directives by criteria
-  - Module: `src/aifp/helpers/mcp.py`
+- **get_directives_by_category(category)** - Search directives by category
   - Returns: List of matching directive objects
   - Use: Find directives when exact name unknown
 
 - **get_directive(name)** - Get directive metadata from database
-  - Module: `src/aifp/helpers/mcp.py`
   - Returns: Directive object with basic metadata
   - Use: Fallback when MD file missing
+
+See `helper_functions` table in aifp_core.db for complete specifications.
 
 ---
 
@@ -409,6 +416,5 @@ assert directive is not None  # Exists in DB but no MD file
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#mcp-helpers)
 - [Blueprint: aifp_core.db](../../../docs/blueprints/blueprint_aifp_core_db.md)
 - [JSON Definition](../../../docs/directives-json/directives-project.json)

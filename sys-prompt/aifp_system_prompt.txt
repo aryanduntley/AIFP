@@ -210,18 +210,31 @@ Only call MCP tools (is_tool=TRUE) directly. For other helpers, follow directive
 
 **Helper-Directive Relationships (Database-Driven)**:
 - Helper-directive relationships are stored in the `directive_helpers` junction table in aifp_core.db
-- Directive definitions do NOT contain hardcoded helper references
-- Query the database dynamically to get helpers for a directive:
-  ```python
-  # Get all helpers for a directive
-  get_helpers_for_directive(directive_id, include_helpers_data=true)
-  # Returns: directive_helpers data + full helper_functions data
+- Directive definitions and MD files do NOT contain hardcoded helper references
+- **CRITICAL: Query the database at runtime to discover available helpers**
 
-  # Get all directives that use a helper
-  get_directives_for_helper(helper_function_id, include_directives_data=true)
-  # Returns: directive_helpers data + full directives data
-  ```
-- Query at directive execution time for current relationships
+**Primary lookup functions**:
+```python
+# Get all helpers for a directive (use this when executing directives)
+get_helpers_for_directive(directive_id, include_helpers_data=true)
+# Returns: directive_helpers data + full helper_functions data
+# Includes: helper names, parameters, purpose, execution_context, sequence_order
+
+# Get all directives that use a helper (reciprocal lookup)
+get_directives_for_helper(helper_function_id, include_directives_data=true)
+# Returns: directive_helpers data + full directives data
+```
+
+**When executing any directive:**
+1. Query `get_helpers_for_directive(directive_id, include_helpers_data=true)` first
+2. Review available helpers and their purposes
+3. Select appropriate helpers based on task context
+4. Execute directive goals using discovered helpers
+
+**DO NOT:**
+- Assume specific helper function names exist
+- Use helper names from MD file examples (those are conceptual only)
+- Call helpers without verifying they exist in the returned data
 
 **Key examples by category** (query database for complete list):
 
