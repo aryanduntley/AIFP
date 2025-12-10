@@ -156,20 +156,20 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: `{"changed": boolean, "current_checksum": string}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`get_project_status()`**
+**`get_project_status()`** NOTE: should return only the status field in project db. REMOVE?
 - **Purpose**: Check if project initialized, get comprehensive status
 - **Returns**: Object with initialization status and metadata
 - **Note**: High-level orchestrator for project state
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`get_project_context(type)`**
+**`get_project_context(type)`** NOTE: REMOVE. This is incorrect. This function should be moved to a helpers-consolidated-orchestrators file and we need to fine tune the parameters and returns. Should review registry and helper docs
 - **Purpose**: Get structured project overview
 - **Parameters**: `type` (String) - "blueprint", "metadata", "status"
 - **Returns**: Contextual project data based on type
 - **Note**: Orchestrator for project context
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`get_status_tree()`**
+**`get_status_tree()`** NOTE: same as above
 - **Purpose**: Get hierarchical status view (sidequests → subtasks → tasks with priorities)
 - **Returns**: Tree structure with nested work items
 - **Note**: Complex orchestrator for work visualization
@@ -194,7 +194,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`delete_infrastructure(id, note_reason, note_severity, note_source, note_type)`**
+**`delete_infrastructure(id, note_reason, note_severity, note_source, note_type)`** NOTE: review all delete statements. For delete functions that do not require checks, should have one single generic delete with these same parameters. delete_project_entry(table, id, note_reason, note_severity, note_source, note_type). Should return error if attempting to delete from restricted table with a reference to specific delete function for that table OR should call that function and provide return data from called, specialized delete function.
 - **Purpose**: Delete infrastructure entry with note
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
@@ -207,7 +207,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ### Reserve/Finalize Operations
 
-**`reserve_file(name, path, language)`**
+**`reserve_file(name, path, language)`** NOTE: might be able to remove singular in favor of plural below. This reduces number of functions and standardized call as array. One array object simply means one file. Same for all singular/plural functions. Review.
 - **Purpose**: Reserve file ID for naming before creation
 - **Parameters**: Name, path, language (can be preliminary)
 - **Returns**: `{"success": true, "id": reserved_id, "is_reserved": true}`
@@ -243,14 +243,14 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ### High-Frequency File Helpers
 
-**`get_file_by_name(file_name)`**
+**`get_file_by_name(file_name)`** NOT really high frequency. Because getting by ID is much faster and what SQL type databases were meant for, we are using the reserve/finalize method so that the file ID is always available. We can have this tool, but the get_from_project("file", [{ID}]) shold be sufficient for high-frequency calls
 - **Purpose**: Get file by name (high-frequency lookup)
 - **Parameters**: `file_name` (String)
 - **Returns**: File object or null
 - **Note**: Zero cognitive load for common file lookups
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`get_file_by_path(file_path)`**
+**`get_file_by_path(file_path)`** Same as above, further, file_path may not have the file name. I think we separated path and name. We need to review this and decide what's best for file_name and file_path. 
 - **Purpose**: Get file by path (very high-frequency lookup)
 - **Parameters**: `file_path` (String)
 - **Returns**: File object or null
@@ -259,9 +259,9 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ### File Operations
 
-**`update_file(file_id, new_name, new_path, language)`**
+**`update_file(file_id, new_name, new_path, language)`** NOTE file_id is passed as required parameter, so no need to return it as well.
 - **Purpose**: Update file metadata
-- **Parameters**: All optional except file_id (*Can Be Null)
+- **Parameters**: All optional except file_id
 - **Returns**: `{"success": true, "file_id": file_id}`
 - **Return Statements**:
   - "Verify flows are updated in file_flows if necessary"
@@ -275,7 +275,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: `{"changed": boolean, "current_checksum": string, "stored_checksum": string}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`update_file_checksum(file_id)`**
+**`update_file_checksum(file_id)`** NOTE: should probably be is_sub_helper. No need for AI to call this manually. Any changes to functions or file should call this automatically. REVIEW to ensure this is the case. timestamp and checksum should probably be updated together at all times. Might even consolidate into one function.
 - **Purpose**: Update file checksum after external changes
 - **Parameters**: `file_id` (Integer)
 - **Returns**: `{"success": true, "new_checksum": string}`
@@ -288,7 +288,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Note**: Called automatically after function updates
 - **Classification**: is_tool=false, is_sub_helper=true
 
-**`delete_file(file_id, note_reason, note_severity, note_source, note_type)`**
+**`delete_file(file_id, note_reason, note_severity, note_source, note_type)`** NOTE: specialty delete function. Must keep. Generic delete must either return error if attempted to be called with this table OR generic delete must call this function and return whatever this function returns.
 - **Purpose**: Delete file with cross-reference validation
 - **Parameters**: Standard deletion parameters
 - **Returns**:
