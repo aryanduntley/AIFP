@@ -147,7 +147,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_project(name, purpose, goals, status, version, user_directives_status)`**
 - **Purpose**: Update project metadata
-- **Parameters**: All optional (*Can Be Null)
+- **Parameters**: All optional 
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -261,7 +261,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_file(file_id, new_name, new_path, language)`** NOTE file_id is passed as required parameter, so no need to return it as well.
 - **Purpose**: Update file metadata
-- **Parameters**: All optional except file_id
+- **Parameters**: All optional except file_id 
 - **Returns**: `{"success": true, "file_id": file_id}`
 - **Return Statements**:
   - "Verify flows are updated in file_flows if necessary"
@@ -281,7 +281,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: `{"success": true, "new_checksum": string}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`update_file_timestamp(file_id)`** ⚠️ SUB-HELPER
+**`update_file_timestamp(file_id)`** ⚠️ SUB-HELPER NOTE: Should call update_file_checksum. If timestamp is updated, changes have been made, checksum should be updated. DISCUSS:::??? Do we need the checksum really? Is it used for git? it's a pain in the butt to keep updated when we can simply run a checksum on the fly when needed?
 - **Purpose**: Update file timestamp and checksum (called automatically)
 - **Parameters**: `file_id` (Integer)
 - **Returns**: `{"success": true}`
@@ -339,7 +339,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ### High-Frequency Function Helpers
 
-**`get_function_by_name(function_name)`**
+**`get_function_by_name(function_name)`** NOTE: functions, types and files are registered to get DB ID. Then finalized after ID is added to name (file name, function name, type name). So, this isn't really high frequency. We can keep it, but the ID should be available in the name.
 - **Purpose**: Get function by name (very high-frequency lookup)
 - **Parameters**: `function_name` (String)
 - **Returns**: Function object with interaction data or null
@@ -347,7 +347,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Return Statements**: "Interaction data included automatically"
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`get_functions_by_file(file_id)`**
+**`get_functions_by_file(file_id)`** NOTE: definitely high frequency. Need this one
 - **Purpose**: Get all functions in a file (high-frequency)
 - **Parameters**: `file_id` (Integer)
 - **Returns**: Array of function objects with interaction data
@@ -355,15 +355,15 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ### Function Operations
 
-**`update_function(function_id, name, purpose, parameters, returns)`**
+**`update_function(function_id, name, purpose, parameters, returns)`** NOTE: shouldn't need to return function id
 - **Purpose**: Update function metadata
-- **Parameters**: All optional except function_id (*Can Be Null)
+- **Parameters**: All optional except function_id 
 - **Returns**: `{"success": true, "function_id": function_id, "file_id": file_id}`
 - **Return Statements**:
   - "Check if interactions need updating"
   - "Ensure code references updated if name/parameters/returns changed"
   - "Check if database interactions need to be added"
-- **Note**: Calls update_file_timestamp(file_id)
+- **Note**: Calls update_file_timestamp(file_id) 
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`update_functions_for_file(file_id, function_array)`**
@@ -393,6 +393,8 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Purpose**: Delete function with cascade cleanup
 - **Parameters**: Standard deletion parameters
 - **Returns**: `{"success": true, "file_id": file_id}`
+- **Return Statements**:
+  - "Ensure any calls to this function are removed or otherwise handled"
 - **Note**:
   - Deletes all types with function_id
   - Deletes all types_functions entries
@@ -404,7 +406,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ## Types (Reserve/Finalize Workflow)
 
-**Type Naming Convention**: `TypeName_idxxx` (e.g., `Result_id42`)
+**Type Naming Convention**: `TypeName_idxxx` (e.g., `Result_id42`) NOTE: should we change all naming from NameWithID_idxxx to NameWithID_id_xxx I used idxxx for what I thought might be easy parsing (search string of name for _id(\d) but it might be just as easy if not easier to search for _id_(\d) ). If _id_ makes more sense, then we should update all references to this naming convention (directives not yet added/updaed, readme and system prompt might need updating, all active helper functon files should be updated)
 
 ### Reserve/Finalize Operations
 
@@ -442,7 +444,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_type(type_id, name, file_id, definition_json, description)`**
 - **Purpose**: Update type metadata
-- **Parameters**: All optional except type_id (*Can Be Null)
+- **Parameters**: All optional except type_id 
 - **Returns**: `{"success": true, "type_id": type_id, "file_id": file_id}`
 - **Return Statements**:
   - "Check if types_functions relationships need updating"
@@ -457,13 +459,13 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Error Handling**:
   - Calls `get_from_project_where("types_functions", {"type_id": type_id})`
   - Returns error with list of function relationships
-  - Requires manual removal/reassignment before deletion
+  - Requires manual removal/reassignment before deletion NOTE: we need to make sure we specify what requires manual removal/reassignment. Here and in all such references
 - **Note**: Calls update_file_timestamp(file_id) on success
 - **Classification**: is_tool=true, is_sub_helper=false
 
 ---
 
-## Types-Functions Relationships
+## Types-Functions Relationships NOTE: All of our add and update are pretty much exactly the same. The parameters will be different for each table due to table field differences, but this can all be handled in switch statements or comparitive statements in one function that simply receives a table parameter and compares passed values to actual table fields. Returns error if there is a mismatch. AI to use these would have to get helper/tool, read params, use. AI to get a single function for these would have to specify table as a parm, get fields for table and pass json, object or array with correct fields for add/update. Let's investigate this a bit. just a note that any delete functions that do not require checks do not need separate calls. Use general delete and pass db/table/field_id.
 
 **`add_type_function(type_id, function_id, role)`**
 - **Purpose**: Link type to function with role
@@ -514,7 +516,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_interaction(id, source, target, type, description)`**
 - **Purpose**: Update interaction metadata
-- **Parameters**: All optional except id (*Can Be Null)
+- **Parameters**: All optional except id 
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -561,7 +563,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_theme(theme_id, name, description, confidence_score)`**
 - **Purpose**: Update theme metadata
-- **Parameters**: All optional except theme_id (*Can Be Null)
+- **Parameters**: All optional except theme_id 
 - **Returns**: `{"success": true}`
 - **Error Handling**: Error if no update fields provided
 - **Classification**: is_tool=true, is_sub_helper=false
@@ -590,7 +592,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_flow(flow_id, name, description, confidence_score)`**
 - **Purpose**: Update flow metadata
-- **Parameters**: All optional except flow_id (*Can Be Null)
+- **Parameters**: All optional except flow_id 
 - **Returns**: `{"success": true}`
 - **Error Handling**: Error if no update fields provided
 - **Classification**: is_tool=true, is_sub_helper=false
@@ -681,7 +683,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_completion_path(id, name, status, description)`**
 - **Purpose**: Update completion path
-- **Parameters**: All optional except id (*Can Be Null)
+- **Parameters**: All optional except id 
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -745,7 +747,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_milestone(id, name, completion_path_id, status, description)`**
 - **Purpose**: Update milestone metadata
-- **Parameters**: All optional except id (*Can Be Null)
+- **Parameters**: All optional except id 
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -815,7 +817,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_task(id, name, milestone_id, status, description, flow_ids, priority)`**
 - **Purpose**: Update task metadata
-- **Parameters**: All optional except id (*Can Be Null)
+- **Parameters**: All optional except id 
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -864,7 +866,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_subtask(id, name, task_id, status, description, priority)`**
 - **Purpose**: Update subtask metadata
-- **Parameters**: All optional except id (*Can Be Null)
+- **Parameters**: All optional except id 
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -909,7 +911,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_sidequest(id, name, paused_task_id, paused_subtask_id, status, description, flow_ids, priority)`**
 - **Purpose**: Update sidequest metadata
-- **Parameters**: All optional except id (*Can Be Null)
+- **Parameters**: All optional except id 
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -984,7 +986,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`update_note(id, content, note_type, reference_table, reference_id, source, severity, directive_name)`**
 - **Purpose**: Update note metadata
-- **Parameters**: All optional except id (*Can Be Null)
+- **Parameters**: All optional except id 
 - **Returns**: `{"success": true}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
