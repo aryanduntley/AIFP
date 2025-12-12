@@ -54,7 +54,7 @@ filters = {
 ### match_mode (str)
 How to interpret query:
 - `"intent"` (default) - Use AI intent matching with confidence scores
-- `"keyword"` - Match against intent_keywords_json field
+- `"keyword"` - Match against directives_intent_keywords table
 - `"category"` - Filter by category name
 - `"exact"` - Exact name match
 - `"fuzzy"` - Fuzzy name matching (typo tolerance)

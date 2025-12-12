@@ -33,6 +33,46 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: Object mapping table names to field arrays
 - **Classification**: is_tool=true, is_sub_helper=false
 
+**`get_project_json_parameters(table)`**
+- **Purpose**: Get available fields for table to use with generic add/update operations
+- **Parameters**: `table` (String) - Table name
+- **Returns**:
+  ```json
+  {
+    "table": "infrastructure",
+    "fields": [
+      {
+        "name": "type",
+        "type": "TEXT",
+        "required": true,
+        "description": "Type of infrastructure (language, package, tool)"
+      },
+      {
+        "name": "value",
+        "type": "TEXT",
+        "required": true,
+        "description": "Value (e.g., 'Python', 'SQLite')"
+      },
+      {
+        "name": "description",
+        "type": "TEXT",
+        "required": false,
+        "description": "Optional description"
+      }
+    ],
+    "example_add": {
+      "type": "language",
+      "value": "Python",
+      "description": "Primary programming language"
+    },
+    "example_update": {
+      "description": "Updated description"
+    }
+  }
+  ```
+- **Note**: Use with `add_project_entry()` or `update_project_entry()` for tables without specialized functions. Only include fields being set/updated in JSON - omit unchanged fields to prevent overwriting with empty values.
+- **Classification**: is_tool=true, is_sub_helper=false
+
 ---
 
 ## Generic Project Operations (Tier 2-4)
@@ -114,7 +154,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`delete_project_entry(table, id, note_reason, note_severity, note_source, note_type)`**
-- **Purpose**: Delete entry with required note logging
+- **Purpose**: Smart delete with automatic routing to specialized functions when needed
 - **Parameters**:
   - `table` (String) - Table name
   - `id` (Integer) - Record ID
@@ -122,9 +162,48 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
   - `note_severity` (String) - "info", "warning", "error"
   - `note_source` (String) - "ai" or "user"
   - `note_type` (String) - "entry_deletion"
-- **Returns**: `{"success": true, "deleted_id": id}`
-- **Restrictions**: Simple tables only (no complex relationships)
-- **Error Handling**: Return error if cross-references exist
+- **Routing Logic**:
+  - **Protected tables** (require specialized delete):
+    - `files` → Returns error directing to `delete_file()`
+    - `functions` → Returns error directing to `delete_function()`
+    - `types` → Returns error directing to `delete_type()`
+    - `themes` → Returns error directing to `delete_theme()`
+    - `flows` → Returns error directing to `delete_flow()`
+    - `completion_path` → Returns error directing to `delete_completion_path()`
+    - `milestones` → Returns error directing to `delete_milestone()`
+    - `tasks` → Returns error directing to `delete_task()`
+    - `subtasks` → Returns error directing to `delete_subtask()`
+    - `sidequests` → Returns error directing to `delete_sidequest()`
+    - `items` → Returns error directing to `delete_item()`
+  - **Restricted tables** (cannot delete):
+    - `project` → Returns error (cannot delete project entry)
+  - **Simple tables** (safe to delete):
+    - `infrastructure`, `notes`, `interactions`, `flow_themes`, `file_flows`, `types_functions`, etc.
+- **Returns** (for protected tables):
+  ```json
+  {
+    "error": "Table 'files' requires specialized delete function: delete_file",
+    "use_function": "delete_file",
+    "reason": "Cross-reference validation required",
+    "specialized_function_purpose": "Validates no functions/types/flows reference this file"
+  }
+  ```
+- **Returns** (for restricted tables):
+  ```json
+  {
+    "error": "Cannot delete from protected table: project",
+    "reason": "Project table entries cannot be deleted"
+  }
+  ```
+- **Returns** (for simple tables):
+  ```json
+  {
+    "success": true,
+    "table": "infrastructure",
+    "deleted_id": 5
+  }
+  ```
+- **Note**: Logs all successful deletions to notes table
 - **Classification**: is_tool=true, is_sub_helper=false
 
 ---
@@ -152,8 +231,8 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`blueprint_has_changed()`**
-- **Purpose**: Check if ProjectBlueprint.md has changed
-- **Returns**: `{"changed": boolean, "current_checksum": string}`
+- **Purpose**: Check if ProjectBlueprint.md has changed using Git or filesystem timestamp
+- **Returns**: `{"changed": boolean, "method": "git|filesystem"}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`get_project_status()`** NOTE: should return only the status field in project db. REMOVE?
@@ -177,10 +256,28 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ### Infrastructure
 
-**`add_infrastructure(type, value, description)`**
-- **Purpose**: Add infrastructure entry (language, packages, tools)
-- **Returns**: `{"success": true, "id": new_id}`
-- **Classification**: is_tool=true, is_sub_helper=false
+**Low-frequency table - use generic operations:**
+
+**To add infrastructure:**
+```python
+# First, discover available fields:
+params = get_project_json_parameters("infrastructure")
+
+# Then add entry:
+add_project_entry("infrastructure", {
+    "type": "language",  # or "package", "tool"
+    "value": "Python",
+    "description": "Primary programming language"
+})
+```
+
+**To update infrastructure:**
+```python
+# Only include fields being changed:
+update_project_entry("infrastructure", 5, {
+    "description": "Updated description"
+})
+```
 
 **`get_infrastructure_by_type(type)`**
 - **Purpose**: Get all infrastructure of specific type
@@ -188,22 +285,14 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: Array of infrastructure objects
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`update_infrastructure(id, type, value, description)`**
-- **Purpose**: Update infrastructure entry
-- **Parameters**: All optional except id
-- **Returns**: `{"success": true}`
-- **Classification**: is_tool=true, is_sub_helper=false
-
-**`delete_infrastructure(id, note_reason, note_severity, note_source, note_type)`** NOTE: review all delete statements. For delete functions that do not require checks, should have one single generic delete with these same parameters. delete_project_entry(table, id, note_reason, note_severity, note_source, note_type). Should return error if attempting to delete from restricted table with a reference to specific delete function for that table OR should call that function and provide return data from called, specialized delete function.
-- **Purpose**: Delete infrastructure entry with note
-- **Returns**: `{"success": true}`
-- **Classification**: is_tool=true, is_sub_helper=false
+**To delete infrastructure:**
+Use `delete_project_entry("infrastructure", id, note_reason, note_severity, note_source, note_type)`
 
 ---
 
 ## Files (Reserve/Finalize Workflow)
 
-**File Naming Convention**: `filename-IDxxx` (e.g., `calculator-ID42.py`)
+**File Naming Convention**: `filename-ID_xxx` (e.g., `calculator-ID_42.py`)
 
 ### Reserve/Finalize Operations
 
@@ -211,7 +300,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Purpose**: Reserve file ID for naming before creation
 - **Parameters**: Name, path, language (can be preliminary)
 - **Returns**: `{"success": true, "id": reserved_id, "is_reserved": true}`
-- **Return Statements**: "Use returned ID in filename as suffix -IDxx. Once created, call finalize_file()"
+- **Return Statements**: "Use returned ID in filename as suffix -ID_xx. Once created, call finalize_file()"
 - **Note**: Sets is_reserved=true, created_at auto-set by trigger
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -219,20 +308,20 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Purpose**: Reserve multiple file IDs at once
 - **Parameters**: Array of `[(name, path, language), ...]`
 - **Returns**: `{"success": true, "ids": [id1, id2, ...]}`
-- **Return Statements**: "Use returned IDs in filenames. Call finalize_files() after creation"
+- **Return Statements**: "Use returned IDs in filenames with -ID_xx suffix. Call finalize_files() after creation"
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`finalize_file(file_id, name, path, language)`**
 - **Purpose**: Finalize reserved file after creation
 - **Parameters**:
   - `file_id` (Integer) - Reserved ID
-  - `name` (String) - Final name with -IDxx suffix
+  - `name` (String) - Final name with -ID_xx suffix
   - `path` (String) - File path
   - `language` (String) - Language
-- **Returns**: `{"success": true, "file_id": file_id, "checksum": checksum}`
+- **Returns**: `{"success": true, "file_id": file_id}`
 - **Error Handling**: Return error if file doesn't exist at path
 - **Return Statements**: "Verify flows are added in file_flows table if necessary"
-- **Note**: Checks file exists, creates checksum, sets is_reserved=false
+- **Note**: Checks file exists, sets is_reserved=false
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`finalize_files(file_array)`**
@@ -266,45 +355,70 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Return Statements**:
   - "Verify flows are updated in file_flows if necessary"
   - "Ensure name/path changes reflected in codebase"
-- **Note**: Checksum automatically updated
+- **Note**: Timestamp automatically updated
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`file_has_changed(file_id)`**
-- **Purpose**: Check if file content changed since last checksum
+- **Purpose**: Check if file changed using Git (if available) or filesystem timestamp
 - **Parameters**: `file_id` (Integer)
-- **Returns**: `{"changed": boolean, "current_checksum": string, "stored_checksum": string}`
+- **Returns**: `{"changed": boolean, "method": "git|filesystem"}`
+- **Note**: Uses Git diff if available, falls back to filesystem timestamp comparison
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`update_file_checksum(file_id)`** NOTE: should probably be is_sub_helper. No need for AI to call this manually. Any changes to functions or file should call this automatically. REVIEW to ensure this is the case. timestamp and checksum should probably be updated together at all times. Might even consolidate into one function.
-- **Purpose**: Update file checksum after external changes
-- **Parameters**: `file_id` (Integer)
-- **Returns**: `{"success": true, "new_checksum": string}`
-- **Classification**: is_tool=true, is_sub_helper=false
-
-**`update_file_timestamp(file_id)`** ⚠️ SUB-HELPER NOTE: Should call update_file_checksum. If timestamp is updated, changes have been made, checksum should be updated. DISCUSS:::??? Do we need the checksum really? Is it used for git? it's a pain in the butt to keep updated when we can simply run a checksum on the fly when needed?
-- **Purpose**: Update file timestamp and checksum (called automatically)
+**`update_file_timestamp(file_id)`**
+- **Purpose**: Update file timestamp (called automatically after function updates)
 - **Parameters**: `file_id` (Integer)
 - **Returns**: `{"success": true}`
-- **Note**: Called automatically after function updates
+- **Note**: Called automatically after function updates, sub-helper only
 - **Classification**: is_tool=false, is_sub_helper=true
 
-**`delete_file(file_id, note_reason, note_severity, note_source, note_type)`** NOTE: specialty delete function. Must keep. Generic delete must either return error if attempted to be called with this table OR generic delete must call this function and return whatever this function returns.
-- **Purpose**: Delete file with cross-reference validation
+**`delete_file(file_id, note_reason, note_severity, note_source, note_type)`**
+- **Purpose**: Delete file with comprehensive cross-reference validation
 - **Parameters**: Standard deletion parameters
-- **Returns**:
-  - Error if file_flows, functions, or types exist for file
-  - Success if no cross-references
-- **Error Handling**:
-  - Calls `get_flows_for_file(file_id)`, `get_from_project_where("functions", {"file_id": file_id})`, `get_from_project_where("types", {"file_id": file_id})`
-  - Returns all cross-references with actionable error message
-- **Return Statements**: "Handle file_flows, functions, and types before deletion allowed"
+- **Cross-References Checked**:
+  1. `functions` table (functions.file_id)
+  2. `types` table (types.file_id)
+  3. `file_flows` table (file_flows.file_id)
+- **Returns** (if blocking references exist):
+  ```json
+  {
+    "success": false,
+    "error": "Cannot delete file: blocking references exist",
+    "file_id": 23,
+    "file_name": "auth-ID_23.py",
+    "blocking_references": {
+      "functions": [
+        {"id": 42, "name": "validate_token_id_42", "status": "active"},
+        {"id": 43, "name": "generate_token_id_43", "status": "active"}
+      ],
+      "types": [
+        {"id": 8, "name": "TokenResult_id_8"}
+      ],
+      "file_flows": [
+        {"id": 15, "flow_id": 5, "flow_name": "Authentication Flow"}
+      ]
+    },
+    "resolution_steps": [
+      "1. Handle 2 function(s): delete_function() to remove OR move to another file",
+      "2. Handle 1 type(s): delete_type() to remove OR update_type() to reassign",
+      "3. Handle 1 flow assignment(s): delete_project_entry('file_flows', ...) to unlink",
+      "4. Retry delete_file() after resolving all references"
+    ],
+    "estimated_complexity": "medium",
+    "total_blocking_items": 4
+  }
+  ```
+- **Returns** (if no blocking references):
+  ```json
+  {"success": true, "deleted_file_id": 23, "file_name": "auth-ID_23.py"}
+  ```
 - **Classification**: is_tool=true, is_sub_helper=false
 
 ---
 
 ## Functions (Reserve/Finalize Workflow)
 
-**Function Naming Convention**: `function_name_idxxx` (e.g., `calculate_total_id42`)
+**Function Naming Convention**: `function_name_id_xxx` (e.g., `calculate_total_id_42`)
 
 ### Reserve/Finalize Operations
 
@@ -312,7 +426,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Purpose**: Reserve function ID for naming before creation
 - **Parameters**: Preliminary function data
 - **Returns**: `{"success": true, "id": reserved_id, "is_reserved": true}`
-- **Return Statements**: "Use returned ID in function name as suffix _idxx. Call finalize_function() after creation"
+- **Return Statements**: "Use returned ID in function name as suffix _id_xx. Call finalize_function() after creation"
 - **Note**: Sets is_reserved=true
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -324,7 +438,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`finalize_function(function_id, name, file_id, purpose, params, returns)`**
 - **Purpose**: Finalize reserved function after creation
-- **Parameters**: Final function data with _idxx suffix in name
+- **Parameters**: Final function data with _id_xx suffix in name
 - **Returns**: `{"success": true, "function_id": function_id, "file_id": file_id}`
 - **Return Statements**: "Check if database interactions need to be added for this function"
 - **Note**: Sets is_reserved=false, calls update_file_timestamp(file_id)
@@ -373,7 +487,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
   - `function_array` - Array of `[(name, purpose, parameters, returns), ...]`
 - **Returns**: `{"success": true, "updated_count": count}`
 - **Return Statements**:
-  - "If name changed, ensure _idxxx suffix retained"
+  - "If name changed, ensure _id_xxx suffix retained"
   - "Ensure code references updated for all changes"
 - **Note**: Single update_file_timestamp call at end
 - **Classification**: is_tool=true, is_sub_helper=false
@@ -406,7 +520,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ## Types (Reserve/Finalize Workflow)
 
-**Type Naming Convention**: `TypeName_idxxx` (e.g., `Result_id42`) NOTE: should we change all naming from NameWithID_idxxx to NameWithID_id_xxx I used idxxx for what I thought might be easy parsing (search string of name for _id(\d) but it might be just as easy if not easier to search for _id_(\d) ). If _id_ makes more sense, then we should update all references to this naming convention (directives not yet added/updaed, readme and system prompt might need updating, all active helper functon files should be updated)
+**Type Naming Convention**: `TypeName_id_xxx` (e.g., `Result_id_42`)
 
 ### Reserve/Finalize Operations
 
@@ -414,7 +528,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Purpose**: Reserve type ID for naming before creation
 - **Parameters**: Preliminary type data
 - **Returns**: `{"success": true, "id": reserved_id, "is_reserved": true}`
-- **Return Statements**: "Use returned ID in type name as suffix _idxx. Call finalize_type() after creation"
+- **Return Statements**: "Use returned ID in type name as suffix _id_xx. Call finalize_type() after creation"
 - **Note**: Sets is_reserved=true
 - **Classification**: is_tool=true, is_sub_helper=false
 
@@ -426,7 +540,7 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 **`finalize_type(type_id, name, definition_json, description, file_id)`**
 - **Purpose**: Finalize reserved type after creation
-- **Parameters**: Final type data with _idxx suffix
+- **Parameters**: Final type data with _id_xx suffix
 - **Returns**: `{"success": true, "type_id": type_id, "file_id": file_id}`
 - **Return Statements**:
   - "Check if types_functions relationships need to be added"
@@ -465,21 +579,14 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ---
 
-## Types-Functions Relationships NOTE: All of our add and update are pretty much exactly the same. The parameters will be different for each table due to table field differences, but this can all be handled in switch statements or comparitive statements in one function that simply receives a table parameter and compares passed values to actual table fields. Returns error if there is a mismatch. AI to use these would have to get helper/tool, read params, use. AI to get a single function for these would have to specify table as a parm, get fields for table and pass json, object or array with correct fields for add/update. Let's investigate this a bit. just a note that any delete functions that do not require checks do not need separate calls. Use general delete and pass db/table/field_id.
-
-**`add_type_function(type_id, function_id, role)`**
-- **Purpose**: Link type to function with role
-- **Parameters**:
-  - `type_id` (Integer)
-  - `function_id` (Integer)
-  - `role` (String) - "constructor", "method", "operator", etc.
-- **Returns**: `{"success": true, "id": new_id}`
-- **Classification**: is_tool=true, is_sub_helper=false
+## Types-Functions Relationships
 
 **`add_types_functions(relationship_array)`**
-- **Purpose**: Add multiple type-function relationships
+- **Purpose**: Add type-function relationship(s)
 - **Parameters**: Array of `[(type_id, function_id, role), ...]`
 - **Returns**: `{"success": true, "ids": [...]}`
+- **Note**: For single relationship, pass array with one tuple: `[(type_id, function_id, role)]`
+- **Role examples**: "constructor", "method", "operator", "property", "uses", "returns"
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`update_type_function_role(type_id, function_id, role)`**
@@ -607,10 +714,23 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 
 ### Theme-Flow & File-Flow Relationships
 
-**`add_flow_theme(flow_id, theme_id)`**
-- **Purpose**: Link flow to theme
-- **Returns**: `{"success": true, "id": new_id}`
-- **Classification**: is_tool=true, is_sub_helper=false
+**Low-frequency relationship tables - use generic operations:**
+
+**To add flow-theme relationship:**
+```python
+add_project_entry("flow_themes", {
+    "flow_id": 5,
+    "theme_id": 8
+})
+```
+
+**To add file-flow relationship:**
+```python
+add_project_entry("file_flows", {
+    "file_id": 23,
+    "flow_id": 5
+})
+```
 
 **`get_flows_for_theme(theme_id)`**
 - **Purpose**: Get all flows for a theme
@@ -622,16 +742,8 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: Array of theme objects
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`delete_flow_theme(id, note_reason, note_severity, note_source, note_type)`**
-- **Purpose**: Remove flow-theme relationship
-- **Returns**: `{"success": true}`
-- **Note**: No update operation - delete and add new
-- **Classification**: is_tool=true, is_sub_helper=false
-
-**`add_file_flow(file_id, flow_id)`**
-- **Purpose**: Link file to flow
-- **Returns**: `{"success": true, "id": new_id}`
-- **Classification**: is_tool=true, is_sub_helper=false
+**To delete relationships:**
+Use `delete_project_entry()` for both flow_themes and file_flows tables.
 
 **`get_files_by_flow(flow_id)`**
 - **Purpose**: Get all files for a flow
@@ -641,12 +753,6 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 **`get_flows_for_file(file_id)`**
 - **Purpose**: Get all flows for a file
 - **Returns**: Array of flow objects
-- **Classification**: is_tool=true, is_sub_helper=false
-
-**`delete_file_flow(id, note_reason, note_severity, note_source, note_type)`**
-- **Purpose**: Remove file-flow relationship
-- **Returns**: `{"success": true}`
-- **Note**: No update operation - delete and add new
 - **Classification**: is_tool=true, is_sub_helper=false
 
 ---

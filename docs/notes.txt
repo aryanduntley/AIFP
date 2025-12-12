@@ -130,6 +130,15 @@ docs/helpers/registry/helpers_registry_project_core.json
 docs/helpers/registry/helpers_registry_project_orchestrators.json
 docs/helpers/registry/helpers_registry_mcp_orchestrators.json
 
+consolidated helpers:
+docs/helpers/helpers-consolidated-git.md
+docs/helpers/helpers-consolidated-index.md
+docs/helpers/helpers-consolidated-orchestrators.md
+docs/helpers/helpers-consolidated-core.md
+docs/helpers/helpers-consolidated-project.md
+docs/helpers/helpers-consolidated-settings.md
+docs/helpers/helpers-consolidated-user-custom.md
+
 directives next steps:
 docs/directives-json/Tasks/DIRECTIVE_CLEANUP_TASK.md
 docs/directives-json/Tasks/DIRECTIVES_QUICK_REF.md
@@ -140,13 +149,10 @@ docs/directives-json/Tasks/MD_CLEANUP_CHECKLIST.md
 
 used_by_directive field in the helper json files needs to be evaluated when re-evaluating directives
 
-add helper (not tool) is_sub_helper = false, search by intent_keywords_json 
-get_directives_by_intent_keywords(keywords)
-either array or string? What's best for one or multiple keywords? Function must query the directives intent keywords field which is json.
-aifp_help.md file working on. Bad helper function references.
-might be better to add directives_intent_keywords table for easier searching, duplicate keywords, etc. keyword string to directive id
-
-the query_ function needs to be evaluated for quick getting. 
-
 src/aifp/reference/directives/user_preferences_update.md
 new simpler template with no helper functions. system prompt tells AI to use get_helpers_for_directive(directive_id, include_helpers_data=true) so no need to add that even to the md files. Keep them clean with conceptual information not function calls.
+
+ -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
+ file and blueprint file checksum removed from poject database. Should be no reason for it as we have git for historical reference. 
+
+ intent_keywords_json removed from core replaced with directives_intent_keywords table

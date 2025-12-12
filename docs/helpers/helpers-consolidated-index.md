@@ -118,13 +118,14 @@ For detailed helper function documentation for each database, see:
    - Generic operations: get_from_settings(), get_from_settings_where(), query_settings()
 
 4. **[User Custom Directives Database (user_directives.db)](helpers-consolidated-user-custom.md)**
-   - User directive operations (parse_directive_file, validate_directive_config)
-   - Handler code generation (generate_handler_code)
-   - Background service deployment (deploy_background_service)
-   - Directive monitoring (get_user_directive_status, monitor_directive_execution)
    - Generic operations: get_from_user_custom(), get_from_user_custom_where(), query_user_custom()
+   - Note: User directive workflows (parse, validate, implement, activate, etc.) are handled by AI following directives, not helper functions
 
-5. **[Git Operations](helpers-consolidated-git.md)**
+5. **[Orchestrators](helpers-consolidated-orchestrators.md)**
+   - Layer 2 generic orchestrators (get_current_progress, update_project_state, batch_update_progress, query_project_state, validate_initialization, get_work_context)
+   - Layer 3 specific orchestrators (get_project_status, get_project_context, get_status_tree, get_files_by_flow_context)
+
+6. **[Git Operations](helpers-consolidated-git.md)**
    - Git status & detection (get_current_commit_hash, get_current_branch, detect_external_changes)
    - Branch management (create_user_branch, list_active_branches)
    - Conflict detection & resolution (detect_conflicts_before_merge, merge_with_fp_intelligence)
@@ -197,7 +198,7 @@ The following helpers are NOT MCP tools but ARE available to directives:
 
 The following helpers are internal only (called by other helpers):
 
-1. `update_file_timestamp` - Update file timestamp and checksum (called automatically after function updates)
+1. `update_file_timestamp` - Update file timestamp (called automatically after function updates)
 
 ---
 
@@ -240,11 +241,11 @@ Many helpers include `return_statements` field with AI guidance:
 ## Notes
 
 1. **Database Triggers**: Timestamps (created_at, updated_at) managed by SQLite triggers
-2. **Checksums**: Automatically computed for files on finalize/update
+2. **Change Detection**: Uses Git diff (preferred) or filesystem timestamps (fallback) - no stored checksums
 3. **Naming Conventions**:
-   - Files: `name-IDxxx`
-   - Functions: `name_idxxx`
-   - Types: `TypeName_idxxx`
+   - Files: `name-ID_xxx`
+   - Functions: `name_id_xxx`
+   - Types: `TypeName_id_xxx`
 4. **Cross-References**: Delete operations validate relationships before deletion
 5. **Reserve/Finalize**: Required for files/functions/types to enable ID-based naming
 6. **Empty Arrays**:

@@ -948,10 +948,10 @@ AI: "✅ Project evolved to v{new_version}
 Added field to existing `project` table:
 
 ```sql
-ALTER TABLE project ADD COLUMN blueprint_checksum TEXT; -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
+-- Note: blueprint_checksum removed - using Git diff for change detection instead
 ```
 
-**Rationale**: Since AIFP uses one project per database (not multi-project), storing blueprint metadata in a separate table is unnecessary. The `project` table already has `version` and `updated_at` fields. We only need to add `blueprint_checksum` for validation. Blueprint path is always `.aifp/ProjectBlueprint.md` (convention), and backup path follows convention: `.aifp/backups/ProjectBlueprint.md.v{version}`.
+**Rationale**: Since AIFP uses one project per database (not multi-project), storing blueprint metadata in a separate table is unnecessary. The `project` table already has `version` and `updated_at` fields. Blueprint change detection uses Git diff (preferred) or filesystem timestamps (fallback). Blueprint path is always `.aifp/ProjectBlueprint.md` (convention), and backup path follows convention: `.aifp/backups/ProjectBlueprint.md.v{version}`.
 
 ### 6.2 Enhanced `notes` Table Usage
 

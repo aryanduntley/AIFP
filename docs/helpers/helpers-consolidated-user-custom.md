@@ -34,6 +34,13 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: Object mapping table names to field arrays
 - **Classification**: is_tool=true, is_sub_helper=false
 
+**`get_user_custom_json_parameters(table)`**
+- **Purpose**: Get available fields for table to use with generic add/update operations
+- **Parameters**: `table` (String) - Table name
+- **Returns**: Object with fields array, examples (similar to `get_project_json_parameters()`)
+- **Note**: Use with `add_user_custom_entry()` or `update_user_custom_entry()` for tables without specialized functions. Only include fields being set/updated in JSON.
+- **Classification**: is_tool=true, is_sub_helper=false
+
 ---
 
 ## Generic User Custom Operations (Tier 2-4)

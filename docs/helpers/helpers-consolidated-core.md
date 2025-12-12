@@ -134,7 +134,91 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
   - `user_request` (String)
   - `threshold` (Float, default 0.7) - Confidence threshold
 - **Returns**: Array of matching directives with confidence scores
-- **Note**: Intelligent mapping beyond simple lookups
+- **Note**: High-level NLP search that uses AI reasoning to determine intent keywords, then calls `find_directives_by_intent_keyword()` internally
+- **Classification**: is_tool=true, is_sub_helper=false
+
+**`find_directives_by_intent_keyword(keywords, match_mode)`**
+- **Purpose**: Find directive IDs matching one or more intent keywords (direct keyword lookup)
+- **Parameters**:
+  - `keywords` (String | Array) - Single keyword string or array of keywords
+  - `match_mode` (String, optional, default="any") - "any" for OR logic, "all" for AND logic
+- **Returns**: Array of directive IDs
+- **Database**: Queries `directives_intent_keywords` table
+- **Examples**:
+  - `find_directives_by_intent_keyword("authentication")` → [15, 23, 42]
+  - `find_directives_by_intent_keyword(["purity", "immutability"], "all")` → [5, 12]
+- **Note**: Low-level keyword search. For NLP-based intent mapping, use `find_directive_by_intent()`. This is a directive-callable helper (not MCP tool)
+- **Classification**: is_tool=false, is_sub_helper=false
+
+**`get_directives_with_intent_keywords(keywords, match_mode, include_keyword_matches)`**
+- **Purpose**: Search directives by intent keywords and return full directive objects
+- **Parameters**:
+  - `keywords` (String | Array) - Single keyword or array of keywords
+  - `match_mode` (String, optional, default="any") - "any" for OR logic, "all" for AND logic
+  - `include_keyword_matches` (Boolean, optional, default=true) - Include which keywords matched
+- **Returns**: Array of directive objects with `matched_keywords` field
+- **Example Return**:
+  ```json
+  [
+    {
+      "id": 15,
+      "name": "fp_authentication",
+      "type": "fp",
+      "description": "...",
+      "matched_keywords": ["authentication", "security"]
+    }
+  ]
+  ```
+- **Helpers Called**: `find_directives_by_intent_keyword()`, `get_from_core()`
+- **Note**: Orchestrator that combines keyword search with full directive data retrieval
+- **Classification**: is_tool=true, is_sub_helper=false
+
+**`add_directive_intent_keyword(directive_id, keyword)`**
+- **Purpose**: Add an intent keyword to a directive
+- **Parameters**:
+  - `directive_id` (Integer)
+  - `keyword` (String)
+- **Returns**: Success boolean
+- **Database**: Inserts into `directives_intent_keywords` table
+- **Note**: Duplicate keywords for the same directive are prevented by UNIQUE constraint
+- **Classification**: is_tool=false, is_sub_helper=false
+
+**`remove_directive_intent_keyword(directive_id, keyword)`**
+- **Purpose**: Remove an intent keyword from a directive
+- **Parameters**:
+  - `directive_id` (Integer)
+  - `keyword` (String)
+- **Returns**: Success boolean
+- **Database**: Deletes from `directives_intent_keywords` table
+- **Classification**: is_tool=false, is_sub_helper=false
+
+**`get_directive_keywords(directive_id)`**
+- **Purpose**: Get all intent keywords for a specific directive
+- **Parameters**: `directive_id` (Integer)
+- **Returns**: Array of keyword strings
+- **Database**: Queries `directives_intent_keywords` table
+- **Classification**: is_tool=true, is_sub_helper=false
+
+**`get_all_directive_keywords()`**
+- **Purpose**: Get list of all unique intent keywords available for searching (simple list)
+- **Returns**: Array of keyword strings, sorted alphabetically
+- **Example Return**: `["authentication", "purity", "task", "security", "immutability", "git", ...]`
+- **Database**: Queries distinct keywords from `directives_intent_keywords` table
+- **Note**: Use this when AI needs to browse available keywords and decide which to search for. For keyword usage statistics, use `get_all_intent_keywords_with_counts()`
+- **Classification**: is_tool=true, is_sub_helper=false
+
+**`get_all_intent_keywords_with_counts()`**
+- **Purpose**: Get all unique intent keywords with usage counts for analytics
+- **Returns**: Array of objects with `keyword` and `usage_count` fields, sorted by usage (most used first)
+- **Example Return**:
+  ```json
+  [
+    {"keyword": "task", "usage_count": 15},
+    {"keyword": "purity", "usage_count": 12},
+    {"keyword": "authentication", "usage_count": 8}
+  ]
+  ```
+- **Note**: Useful for analytics, identifying popular keywords, and suggesting common searches
 - **Classification**: is_tool=true, is_sub_helper=false
 
 ### Directive Relationships

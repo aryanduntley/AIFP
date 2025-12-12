@@ -14,7 +14,12 @@ get_incomplete_tasks()
 Or we could do this for a get_next_steps() or something
 
 ## directives
-name type('fp', 'project', etc) level( 0–4 for 'project' only) parent_directive(d-name optional) description workflow(JSON with trunk/branches/error_handling) md_file_path roadblocks_json(JSON array of issues/resolutions) intent_keywords_json(Optional keywords for intent detection) confidence_threshold(0–1 threshold for matching/escalation)
+name type('fp', 'project', etc) level( 0–4 for 'project' only) parent_directive(d-name optional) description workflow(JSON with trunk/branches/error_handling) md_file_path roadblocks_json(JSON array of issues/resolutions) confidence_threshold(0–1 threshold for matching/escalation)
+
+## directives_intent_keywords
+directive_id keyword
+NOTE: Intent keywords moved to separate table for efficient searching and indexing.
+Primary use: find_directives_by_intent_keyword() searches this table.
 
 TOOLS
 get_directive(directive_id)

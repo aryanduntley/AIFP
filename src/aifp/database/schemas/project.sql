@@ -23,7 +23,6 @@ CREATE TABLE IF NOT EXISTS project (
     goals_json TEXT NOT NULL,               -- JSON array, e.g., '["Fast computation", "No OOP"]'
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed', 'abandoned')),
     version INTEGER DEFAULT 1,              -- Tracks idea evolution
-    blueprint_checksum TEXT,                -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
     user_directives_status TEXT DEFAULT NULL CHECK (user_directives_status IN (NULL, 'in_progress', 'active', 'disabled')),
                                             -- NULL: no user directives, 'in_progress': being set up, 'active': running, 'disabled': paused
     last_known_git_hash TEXT,               -- Last Git commit hash processed by AIFP (for external change detection)
@@ -45,10 +44,9 @@ CREATE TABLE IF NOT EXISTS infrastructure (
 -- Files Table: Project file inventory with reservation system
 CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,                              -- File name (e.g., 'calculator-ID42.py')
+    name TEXT,                              -- File name (e.g., 'calculator-ID_42.py')
     path TEXT NOT NULL UNIQUE,              -- Full file path
     language TEXT,                          -- Guessed or set (e.g., 'Python')
-    checksum TEXT,                          -- For change detection
     is_reserved BOOLEAN DEFAULT 0,          -- TRUE during reservation, FALSE after finalization
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

@@ -1,5 +1,5 @@
 -- aifp_core.db Schema
--- Version: 1.6
+-- Version: 1.7
 -- Purpose: Defines MCP-level directives (read-only) and helper functions
 -- This database is immutable once deployed; AI reads it but never modifies it.
 
@@ -13,9 +13,27 @@ CREATE TABLE IF NOT EXISTS directives (
     workflow JSON NOT NULL,                         -- JSON with trunk/branches/error_handling
     md_file_path TEXT,                              -- e.g., 'directives/aifp_run.md'
     roadblocks_json TEXT,                           -- JSON array of issues/resolutions
-    intent_keywords_json TEXT,                      -- Optional keywords for intent detection
     confidence_threshold REAL DEFAULT 0.5           -- 0–1 threshold for matching/escalation
 );
+
+-- ===============================================================
+-- Intent Keywords for Directive Search
+-- ===============================================================
+
+-- Intent Keywords Table (many-to-many: directive -> keywords)
+CREATE TABLE IF NOT EXISTS directives_intent_keywords (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    directive_id INTEGER NOT NULL,
+    keyword TEXT NOT NULL,                          -- Single keyword for intent matching
+    UNIQUE(directive_id, keyword),                  -- Prevent duplicate keyword per directive
+    FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE
+);
+
+-- Critical for fast keyword searches
+CREATE INDEX IF NOT EXISTS idx_intent_keyword ON directives_intent_keywords(keyword);
+
+-- Useful for getting all keywords for a directive
+CREATE INDEX IF NOT EXISTS idx_directive_keywords ON directives_intent_keywords(directive_id);
 
 -- ===============================================================
 -- Categories and Directive-Category Linking
@@ -138,4 +156,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.6');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.7');
