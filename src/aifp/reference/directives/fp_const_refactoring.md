@@ -565,13 +565,10 @@ INITIAL_BALANCE = 0  # OK (business context)
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `find_repeated_literals(ast: AST, min_count: int = 2) -> list[Literal]` - Find duplicates
-- `find_mutable_bindings(ast: AST) -> list[Binding]` - Find variables never reassigned
-- `generate_constant_name(literal: Literal, context: str) -> str` - Create descriptive name
-- `insert_constant_declaration(file: File, name: str, value: Any) -> None` - Add constant to file
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -629,10 +626,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#immutability)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP directive for promoting constants and eliminating magic numbers*

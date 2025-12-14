@@ -521,14 +521,10 @@ def fetch_from_primary_or_backup(primary_url: str, backup_url: str) -> Try[dict]
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_risky_operations(ast: AST) -> list[RiskyOp]` - Finds exception-prone code
-- `detect_explicit_throws(ast: AST) -> list[ThrowStmt]` - Finds throw statements
-- `detect_try_catch_blocks(ast: AST) -> list[TryCatch]` - Finds exception handling
-- `wrap_in_try_monad(code: str, operations: list) -> str` - Refactors to Try
-- `update_functions_table(func_id: int, try_safe: bool)` - Updates project.db
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -632,11 +628,7 @@ project_compliance_check
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-error-handling)
-- [Blueprint: Interactions](../../../docs/blueprints/blueprint_interactions.md#fp-project-integration)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#error-handling)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for safe exception handling with Try monad*

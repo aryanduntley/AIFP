@@ -515,14 +515,10 @@ def fetch_data(url: str) -> Result[dict, str]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_null_literals(ast: AST) -> list[NullLiteral]` - Finds all null/None/undefined
-- `detect_null_assignments(ast: AST) -> list[Assignment]` - Finds `x = None`
-- `detect_null_comparisons(ast: AST) -> list[Comparison]` - Finds `x is None`, `x == null`
-- `replace_nulls_with_option(code: str, nulls: list) -> str` - Refactors to Option
-- `update_functions_table(func_id: int, null_free: bool)` - Updates project.db
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -626,11 +622,7 @@ project_compliance_check
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-null-elimination)
-- [Blueprint: Interactions](../../../docs/blueprints/blueprint_interactions.md#fp-project-integration)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#error-handling)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for complete null elimination*

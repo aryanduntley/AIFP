@@ -756,13 +756,10 @@ def add(x: int, y: int) -> int:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `build_inheritance_tree(classes: list[Class]) -> dict` - Map class hierarchy
-- `extract_overridden_methods(child: Class, parent: Class) -> list[Method]` - Find overrides
-- `generate_dispatch_table(hierarchy: dict) -> str` - Create dispatch code
-- `convert_method_to_function(method: Method, class_name: str) -> str` - Extract method
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -817,10 +814,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#anti_oop)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP directive for flattening class inheritance hierarchies*

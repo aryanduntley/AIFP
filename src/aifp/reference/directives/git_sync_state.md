@@ -438,14 +438,10 @@ fi
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `get_current_git_hash() -> str` - Runs `git rev-parse HEAD`
-- `get_stored_git_hash(conn) -> str | None` - Queries database for last_known_git_hash
-- `update_git_hash(conn, hash: str) -> None` - Updates project table with new hash
-- `get_current_branch() -> str` - Runs `git branch --show-current`
-- `check_git_available() -> bool` - Verifies Git is installed
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -528,11 +524,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-- [Blueprint: Git Integration](../../../docs/blueprints/blueprint_git.md)
-- [JSON Definition](../../../docs/directives-json/directives-git.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - Git integration directive for state synchronization*

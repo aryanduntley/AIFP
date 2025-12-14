@@ -266,13 +266,10 @@ aifp_run checks: project.user_directives_status
 - **`project_task_decomposition`** - Routed to for task creation
 - **`user_directive_parse`** - Routed to for user automation parsing
 
-### Helper Functions Used
+### Helper Functions
 
-- `get_all_directives()` - Load all 108 directives
-- `get_directive(name)` - Get specific directive details
-- `get_project_status()` - Check if project initialized
-- `get_project_context()` - Get full project context
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations

@@ -513,8 +513,10 @@ user_directive_activate
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Approval Management
 - `check_approval_status(directive_id: int) -> dict`
   - Check if directive is approved
@@ -656,7 +658,6 @@ INSERT INTO notes (
 
 - [Previous: user_directive_implement](./user_directive_implement.md)
 - [Next: user_directive_activate](./user_directive_activate.md)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
 - [Helper Functions Reference](../helper-functions-reference.md#approval-helpers)
 
 ---

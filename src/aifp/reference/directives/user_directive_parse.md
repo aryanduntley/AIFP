@@ -53,7 +53,7 @@ The main workflow follows these steps:
 
 #### Step 2: Detect File Format
 1. **Read file content**
-   - Use helper: `read_file(file_path)`
+   - AI reads file directly at provided path
 
 2. **Detect format**:
    - `.yaml` or `.yml` extension → YAML format
@@ -82,7 +82,7 @@ The main workflow follows these steps:
      ```
 
 2. **For Plain Text**:
-   - Use NLP helper: `parse_natural_language_directive(text)`
+   - AI uses natural language processing to parse text
    - Extract: trigger pattern, action description, conditions
    - Store as semi-structured dict with `needs_validation: true` flag
 
@@ -372,51 +372,10 @@ Ambiguities: ["No trigger defined - when should this run?", "Action missing endp
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-### File Operations
-- `read_file(file_path: str) -> str`
-  - Read file contents
-  - Handle encoding issues (UTF-8, ASCII, etc.)
-
-- `calculate_checksum(content: str) -> str`
-  - Generate MD5/SHA256 checksum
-  - Detect file modifications
-
-### Parsing Functions
-- `parse_yaml(content: str) -> Result[dict, str]`
-  - Parse YAML to dictionary
-  - Return error if invalid syntax
-
-- `parse_json(content: str) -> Result[dict, str]`
-  - Parse JSON to dictionary
-  - Return error if invalid syntax
-
-- `parse_natural_language_directive(text: str) -> Result[dict, list[str]]`
-  - NLP parsing for plain text directives
-  - Return structured dict + list of ambiguities
-  - Uses keyword extraction, pattern matching
-
-### Validation Functions
-- `validate_directive_schema(directive_dict: dict) -> Result[bool, list[str]]`
-  - Check for required fields
-  - Return list of missing/invalid fields
-
-- `detect_ambiguities(directive_dict: dict) -> list[str]`
-  - Analyze directive for unclear/missing details
-  - Return list of questions for validation phase
-
-### Database Functions
-- `insert_user_directive(directive_data: dict) -> int`
-  - Insert into user_directives table
-  - Return directive ID
-
-- `insert_source_file(file_data: dict) -> int`
-  - Insert into source_files table
-  - Return file ID
-
-- `link_directive_to_source(directive_id: int, file_id: int) -> bool`
-  - Create relationship in database
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 
 ---
 
@@ -580,10 +539,6 @@ User: "Parse my automation directive"
 
 ## References
 
-- [Helper Functions Reference](../helper-functions-reference.md#user-directive-helpers)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
-- [JSON Definition](../../directives-json/directives-user-system.json)
-- [Database Schema](../../db-schema/schemaExampleUserDirectives.sql)
 - [Next Directive: user_directive_validate](./user_directive_validate.md)
 
 ---

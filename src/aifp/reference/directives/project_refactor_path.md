@@ -456,17 +456,10 @@ def safe_archive_milestone(milestone_id: int) -> Result[None, str]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `get_completion_path() -> list[Milestone]` - Get all milestones
-- `merge_milestones(id1: int, id2: int) -> Result[int, str]` - Merge two milestones
-- `reorder_milestones(order: list[tuple]) -> Result[None, str]` - Update order
-- `reassign_tasks(tasks: list[int], milestone_id: int) -> Result[None, str]` - Move tasks
-- `validate_no_circular_deps(order: list) -> Result[None, str]` - Check dependencies
-- `archive_milestone(milestone_id: int) -> Result[None, str]` - Archive milestone
-- `verify_path_integrity() -> Result[None, str]` - Check integrity
-- `log_path_refactoring(details: dict)` - Record changes
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -541,10 +534,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-refactor-path)
-- [Blueprint: Project Directives](../../../docs/blueprints/blueprint_project_directives.md#archival-refactor)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - Project directive for completion path refactoring*

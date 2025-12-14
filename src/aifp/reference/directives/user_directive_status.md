@@ -510,8 +510,10 @@ All systems operational! ✨
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Status Aggregation
 - `get_all_directive_status() -> list[dict]`
   - Query all directives with stats
@@ -640,7 +642,6 @@ Verify: No errors, helpful guidance
 
 - [Called by: aifp_status](./aifp_status.md)
 - [Data from: user_directive_monitor](./user_directive_monitor.md)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
 
 ---
 

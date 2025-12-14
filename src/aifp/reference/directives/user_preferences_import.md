@@ -448,14 +448,10 @@ except Exception as e:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `read_json_file(path: str) -> dict` - Load and parse JSON
-- `validate_preferences_schema(data: dict) -> bool` - Validate structure
-- `detect_preference_conflicts(imported: list, existing: list) -> list[Conflict]` - Find conflicts
-- `prompt_conflict_resolution(conflicts: list) -> str` - Get user strategy
-- `import_preferences_transactionally(data: dict, strategy: str) -> ImportResult` - Atomic import
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -489,10 +485,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Blueprint: User Preferences Database](../../../docs/blueprints/blueprint_user_prefs_db.md)
-- [JSON Definition](../../../docs/directives-json/directives-user-pref.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleSettings.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - User customization directive for importing preferences*

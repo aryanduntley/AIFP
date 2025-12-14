@@ -657,14 +657,10 @@ result.fold(
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_nested_error_checks(ast: AST) -> list[Check]` - Find nested if-checks
-- `detect_result_option_chains(ast: AST) -> list[Chain]` - Find monad chains
-- `generate_monadic_composition(chain: Chain) -> str` - Create flatMap code
-- `verify_monad_laws(monad: Monad) -> bool` - Validate monad implementation
-- `update_functions_table(func_id: int, uses_monads: bool)` - Update database
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -734,10 +730,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-monadic-composition)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#composition)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for monadic function composition*

@@ -671,13 +671,10 @@ else:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `insert_note(content: str, note_type: str, severity: str, source: str, directive_name: str | None, reference_table: str | None, reference_id: int | None) -> int` - Insert note and return ID
-- `query_recent_notes(limit: int, note_type: str | None) -> list[Note]` - Get recent notes
-- `check_duplicate_note(content: str, time_window_minutes: int) -> bool` - Detect duplicates
-- `validate_entity_reference(reference_table: str, reference_id: int) -> bool` - Check entity exists
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -783,11 +780,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)
-- [Blueprint: Project Database](../../../docs/blueprints/blueprint_project_db.md#notes-table)
-- [JSON Definition](../../../docs/directives-json/directives-user-pref.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql#notes-table)
-
+None
 ---
 
 *Part of AIFP v1.0 - Core context management directive for persistent AI memory*

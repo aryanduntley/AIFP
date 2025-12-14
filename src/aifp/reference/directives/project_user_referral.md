@@ -186,30 +186,13 @@ Evaluates AI confidence and determines if user referral is needed.
 
 **Branch 6: If referral_logged**
 - **Then**: `log_note`
-- **Details**: Record referral in notes table
+- **Details**: Record referral in notes table using available helpers
   - Include directive, issue, confidence score
   - Include user's decision
   - Enable future learning
-- **SQL**:
-  ```sql
-  INSERT INTO notes (
-    content,
-    note_type,
-    reference_table,
-    reference_id,
-    source,
-    directive_name,
-    severity
-  ) VALUES (
-    'User referral: [directive] - [issue]. Confidence: [score]. Decision: [user_choice]',
-    'user_referral',
-    'directives',
-    ?,
-    'user',
-    'project_user_referral',
-    'info'
-  );
-  ```
+- **Implementation**: AI uses available helpers for notes operations
+  - Query database for helpers that add notes to project database
+  - Use discovered helper with parameters: content, note_type="user_referral", reference_table="directives", source="user", directive_name="project_user_referral", severity="info"
 - **Result**: Referral logged for learning
 
 **Branch 7: If user_provides_guidance**

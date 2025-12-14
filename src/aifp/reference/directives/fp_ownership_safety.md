@@ -655,13 +655,10 @@ copy_a = deepcopy(a)  # Works (handles cycles)
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_shared_references(func: Function) -> list[Param]` - Find shared data
-- `is_pure_function(func: Function) -> bool` - Check function purity
-- `requires_deep_copy(data_type: Type) -> bool` - Determine copy strategy
-- `suggest_ownership_strategy(pattern: Pattern) -> str` - Recommend copy/borrow/move
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -717,11 +714,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#ownership)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql#functions-table)
-
+None
 ---
 
 *Part of AIFP v1.0 - Core FP directive for ownership safety and preventing shared mutation*

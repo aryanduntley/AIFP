@@ -676,12 +676,10 @@ def process_tracked(data):
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_nested_calls(ast: AST) -> list[Call]` - Find nested function calls
-- `extract_pipeline_sequence(calls: list[Call]) -> list[Function]` - Extract sequential calls
-- `generate_pipe_function() -> str` - Generate pipe helper code
-- `generate_compose_function() -> str` - Generate compose helper code
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 
 ---
 
@@ -737,9 +735,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#composition)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
+None
 
 ---
 

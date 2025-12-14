@@ -378,15 +378,10 @@ except DatabaseError:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `get_last_known_hash() -> str` - Query `project.last_known_git_hash`
-- `get_current_git_hash() -> str` - Run `git rev-parse HEAD`
-- `get_changed_files(from_hash: str, to_hash: str) -> list[str]` - Git diff file list
-- `query_themes_for_files(files: list[str]) -> list[dict]` - Database query
-- `query_functions_for_files(files: list[str]) -> list[dict]` - Database query
-- `get_git_log(from_hash: str, to_hash: str) -> list[dict]` - Commit history
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -458,11 +453,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-- [Blueprint: Git Integration](../../../docs/blueprints/blueprint_git.md)
-- [JSON Definition](../../../docs/directives-json/directives-git.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - Git integration directive for external change detection*

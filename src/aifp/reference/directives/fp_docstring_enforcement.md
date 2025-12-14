@@ -592,14 +592,10 @@ def add(x: int, y: int) -> int:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `check_docstring_presence(func: Function) -> bool` - Function has docstring?
-- `parse_docstring(docstring: str) -> DocstringInfo` - Extract sections
-- `validate_docstring_completeness(func: Function, docstring: DocstringInfo) -> bool` - Check completeness
-- `generate_docstring_template(func: Function) -> str` - Auto-generate docstring
-- `update_functions_table(func_id: int, has_docstring: bool)` - Update database
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -669,10 +665,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-docstring-enforcement)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#meta-reflection)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for docstring enforcement*

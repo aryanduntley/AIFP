@@ -437,15 +437,10 @@ if not is_tracking_enabled("ai_interaction_log"):
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_correction(ai_output: str, user_final: str) -> CorrectionDetail | None` - Compare outputs
-- `classify_correction_type(correction: CorrectionDetail) -> str` - Categorize change
-- `query_recent_corrections(directive: str, days: int) -> list[Correction]` - Pattern analysis
-- `calculate_pattern_confidence(corrections: list) -> float` - Confidence scoring
-- `prompt_user_for_learning(pattern: Pattern) -> bool` - Ask user confirmation
-- `mark_interactions_applied(interaction_ids: list[int]) -> None` - Update ai_interaction_log
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -534,11 +529,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#pattern-detection)
-- [Blueprint: User Preferences Database](../../../docs/blueprints/blueprint_user_prefs_db.md)
-- [JSON Definition](../../../docs/directives-json/directives-user-pref.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleSettings.sql#ai_interaction_log)
-
+None
 ---
 
 *Part of AIFP v1.0 - User customization directive for learning from corrections (opt-in)*

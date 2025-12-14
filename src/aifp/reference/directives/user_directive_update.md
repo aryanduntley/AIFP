@@ -491,8 +491,10 @@ user_directive_approve (require re-approval)
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Change Detection
 - `calculate_file_checksum(file_path: str) -> str`
   - MD5 or SHA256 of file content
@@ -621,7 +623,6 @@ Verify: If was active, stays active (fallback)
 
 - [Loops to: user_directive_parse](./user_directive_parse.md)
 - [Calls: user_directive_deactivate](./user_directive_deactivate.md)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
 
 ---
 

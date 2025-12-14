@@ -609,14 +609,10 @@ theme = get_user_preference(123, "theme", "light")
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_nested_error_handling(ast: AST) -> list[NestedHandling]` - Finds nested try/catch
-- `detect_manual_error_propagation(ast: AST) -> list[ManualCheck]` - Finds imperative error checks
-- `refactor_to_pipeline(code: str, operations: list) -> str` - Refactors to flatMap pipeline
-- `generate_pipeline_code(steps: list[Function]) -> str` - Generates pipeline code
-- `update_functions_table(func_id: int, uses_pipeline: bool)` - Updates project.db
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -725,11 +721,7 @@ project_compliance_check
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-composition)
-- [Blueprint: Interactions](../../../docs/blueprints/blueprint_interactions.md#fp-project-integration)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#error-handling)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for composable error handling pipelines*

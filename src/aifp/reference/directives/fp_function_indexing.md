@@ -685,16 +685,10 @@ def add(x: int, y: int) -> int:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `parse_source_file(file_path: str) -> AST` - Parse code to AST
-- `extract_functions_from_ast(ast: AST) -> list[Function]` - Find function definitions
-- `extract_function_metadata(func: Function) -> Metadata` - Parse metadata
-- `analyze_function_dependencies(func: Function) -> list[str]` - Find function calls
-- `insert_function_to_db(func: Function, metadata: Metadata, file_id: int)` - Add to database
-- `update_function_in_db(func_id: int, metadata: Metadata)` - Update existing entry
-- `create_interaction_entries(source_id: int, dependencies: list[int])` - Track calls
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -764,10 +758,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-function-indexing)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#meta-reflection)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for automatic function indexing*

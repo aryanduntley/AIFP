@@ -489,17 +489,10 @@ def complete_sidequest(sidequest_id: int) -> Result[None, str]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `validate_task_exists(task_id: int) -> Result[None, str]` - Verify task exists
-- `validate_task_active(task_id: int) -> Result[None, str]` - Check task is active
-- `insert_sidequest(params: dict) -> Result[int, str]` - Insert sidequest record
-- `mark_task_paused(task_id: int) -> Result[None, str]` - Pause task
-- `resume_paused_task(task_id: int) -> Result[None, str]` - Resume task
-- `create_initial_items(sidequest_id: int) -> Result[None, str]` - Create items
-- `log_sidequest_creation(sidequest_id: int, task_id: Optional[int])` - Log creation
-- `query_active_subtasks() -> list[Subtask]` - Check for active subtasks
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -621,11 +614,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-sidequest-create)
-- [Blueprint: Project Directives](../../../docs/blueprints/blueprint_project_directives.md#task-management)
-- [Blueprint: Project DB Schema](../../../docs/blueprints/blueprint_project_db.md#sidequests)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - Project directive for sidequest creation and exploratory work tracking*

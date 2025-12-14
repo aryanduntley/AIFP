@@ -504,14 +504,10 @@ total = parallel_reduce(numbers, lambda acc, x: acc + x, 0)
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_aggregation_loops(ast: AST) -> list[Loop]` - Find aggregation patterns
-- `detect_accumulator_mutations(ast: AST) -> list[Mutation]` - Find mutable accumulators
-- `classify_aggregation_type(loop: Loop) -> AggregationType` - Classify (sum, product, etc.)
-- `convert_to_reduce(loop: Loop, agg_type: AggregationType) -> str` - Convert to reduce
-- `update_functions_table(func_id: int, uses_reduce: bool)` - Update project.db
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -586,10 +582,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-map-reduce)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#data-structures)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for functional aggregation with reduce*

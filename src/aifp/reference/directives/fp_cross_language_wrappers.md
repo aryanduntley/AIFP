@@ -20,7 +20,7 @@ Cross-language wrappers provide **purity preservation**, enabling:
 
 This directive acts as an **adapter layer** between pure functional code and impure external libraries.
 
-**Real-world examples**: See [examples/wrappers/](../../../examples/wrappers/) for working wrapper implementations. As AIFP develops, this folder will contain reference implementations for common libraries.
+**Real-world examples**: See [../wrappers/](../wrappers/) for working wrapper implementations. As AIFP develops, this folder will contain reference implementations for common libraries.
 
 ---
 
@@ -647,14 +647,10 @@ count3 = increment_counter(count2)  # 2
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_external_imports(code: str) -> list[str]` - Find library imports
-- `analyze_library_purity(library: str) -> bool` - Check if library is FP-compliant
-- `generate_wrapper_module(library: str, functions: list) -> str` - Create wrapper code
-- `update_imports(code: str, old_import: str, new_import: str) -> str` - Replace imports
-- `update_files_table(file_id: int, is_wrapper: bool)` - Update database
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -725,11 +721,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-cross-language-wrappers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#language-adaptation)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-- [Wrapper Examples](../../../examples/wrappers/) - Real-world wrapper implementations (populated during development)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for pure functional library wrappers*

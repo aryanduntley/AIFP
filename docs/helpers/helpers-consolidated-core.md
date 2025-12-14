@@ -315,6 +315,19 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Return Statements**: "Consider using get_from_core() with returned IDs for full data"
 - **Classification**: is_tool=true, is_sub_helper=false
 
+**`get_directives_by_type(type, include_md_content)`**
+- **Purpose**: Get all directives filtered by type (orchestration vs reference)
+- **Parameters**:
+  - `type` (String) - One of: 'fp', 'project', 'git', 'user_system', 'user_preference'
+  - `include_md_content` (Boolean, default false) - Include full MD file content
+- **Returns**: Array of directive objects filtered by type
+- **Use Cases**:
+  - `get_directives_by_type('project')` - Get all project orchestration directives
+  - `get_directives_by_type('fp')` - Get FP reference directives for clarification
+  - `get_directives_by_type('fp', true)` - Get FP directives with full MD documentation
+- **Classification**: is_tool=true, is_sub_helper=false
+- **Note**: Key for separating orchestration queries from FP reference queries. See DIRECTIVE_ARCHITECTURE.md for usage patterns.
+
 ---
 
 **End of Core Database Helper Functions**

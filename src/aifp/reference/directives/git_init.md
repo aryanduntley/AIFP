@@ -395,16 +395,10 @@ fi
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `check_git_installed() -> bool` - Verifies Git is available
-- `check_git_repo_exists(project_root: str) -> bool` - Checks for `.git` folder
-- `run_git_command(cmd: list) -> Result[str, str]` - Executes Git commands safely
-- `get_current_git_hash() -> str` - Gets current HEAD commit hash
-- `create_gitignore(project_root: str) -> None` - Creates AIFP `.gitignore`
-- `update_gitignore(project_root: str) -> None` - Appends AIFP exclusions
-- `create_git_tables(db_conn) -> None` - Creates work_branches, merge_history tables
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -476,10 +470,6 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-- [Blueprint: Git Integration](../../../docs/blueprints/blueprint_git.md)
-- [JSON Definition](../../../docs/directives-json/directives-git.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql#git-tables)
 - [Git Documentation](https://git-scm.com/doc)
 
 ---

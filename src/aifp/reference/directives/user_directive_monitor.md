@@ -438,8 +438,10 @@ user_directive_monitor (YOU ARE HERE - runs continuously)
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Logging
 - `append_to_log(log_file: str, content: str) -> bool`
   - Append JSON line to log file
@@ -594,7 +596,6 @@ Verify: Status shows 'error', user notified
 
 - [Previous: user_directive_activate](./user_directive_activate.md)
 - [Next: user_directive_update](./user_directive_update.md)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
 - [Helper Functions Reference](../helper-functions-reference.md#monitoring-helpers)
 
 ---

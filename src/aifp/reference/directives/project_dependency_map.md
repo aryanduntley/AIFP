@@ -552,16 +552,10 @@ def handle_large_graph(
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `query_all_functions() -> list[Function]` - Get all functions
-- `query_function_interactions() -> list[Interaction]` - Get function calls
-- `build_function_graph(funcs, interactions) -> DependencyGraph` - Build graph
-- `calculate_graph_metrics(graph: DependencyGraph) -> dict` - Calculate metrics
-- `store_dependency_map(graph: DependencyGraph, type: str)` - Persist graph
-- `detect_circular_dependencies(graph: DependencyGraph) -> list[list[str]]` - Find cycles
-- `generate_dot_format(graph: DependencyGraph) -> str` - Create GraphViz format
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -643,10 +637,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-dependency-map)
-- [Blueprint: Project Directives](../../../docs/blueprints/blueprint_project_directives.md#dependency-management)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - Project directive for dependency mapping and visualization*

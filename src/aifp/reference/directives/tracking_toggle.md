@@ -514,13 +514,10 @@ if not database_exists("user_preferences.db"):
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `parse_tracking_feature_request(request: str) -> str` - Extract feature name
-- `get_tracking_status(feature: str) -> dict` - Query current state
-- `calculate_cumulative_overhead(enabled_features: list) -> str` - Sum overhead percentages
-- `update_tracking_feature(feature: str, enabled: bool) -> None` - Toggle feature
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -596,11 +593,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)
-- [Blueprint: User Preferences Database](../../../docs/blueprints/blueprint_user_prefs_db.md)
-- [JSON Definition](../../../docs/directives-json/directives-user-pref.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleSettings.sql#tracking_settings)
-
+None
 ---
 
 *Part of AIFP v1.0 - User customization directive for tracking feature management*

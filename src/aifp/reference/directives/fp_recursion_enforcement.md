@@ -615,15 +615,10 @@ def process_until_condition(state: S) -> R:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_loops(ast: AST) -> list[Loop]` - Find for/while loops in code
-- `analyze_loop_variables(loop: Loop) -> LoopInfo` - Identify accumulator, counter
-- `is_tail_recursive(func: Function) -> bool` - Check if tail-recursive
-- `convert_to_recursion(loop: Loop) -> Function` - Transform loop to recursion
-- `add_tco_annotation(func: Function) -> Function` - Mark for tail-call optimization
-- `update_functions_table(func_id: int, is_recursive: bool, is_tail_recursive: bool)` - Update database
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -692,10 +687,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-recursion-enforcement)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#core-patterns)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for tail-recursive loop elimination*

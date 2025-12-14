@@ -485,15 +485,10 @@ def validate_input(value: int) -> Result[int, str]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `scan_code_for_oop(code: str) -> OOPAnalysis` - Detects OOP constructs
-- `detect_classes(ast: AST) -> list[ClassDef]` - Finds class definitions
-- `detect_inheritance(ast: AST) -> list[InheritanceChain]` - Finds inheritance
-- `detect_methods(ast: AST) -> list[MethodDef]` - Finds instance methods
-- `refactor_class_to_module(class_def: ClassDef) -> str` - Converts class to functions
-- `extract_state_to_dataclass(class_def: ClassDef) -> str` - Extracts state to frozen dataclass
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -568,11 +563,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#oop-detection)
-- [Blueprint: Interactions](../../../docs/blueprints/blueprint_interactions.md)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-- [FP vs OOP Philosophy](../../../docs/blueprints/blueprint_fp_directives.md)
-
+None
 ---
 
 *Part of AIFP v1.0 - Critical FP Core directive for OOP elimination*

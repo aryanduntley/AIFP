@@ -444,19 +444,10 @@ def restore_with_lock(backup_path: str) -> Result[None, str]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `create_backup(label: str) -> Result[str, str]` - Create backup with label
-- `copy_database(dest_path: str) -> Result[None, str]` - Copy database file
-- `copy_blueprint(backup_path: str) -> Result[None, str]` - Copy blueprint file
-- `validate_backup(path: str) -> Result[None, str]` - Verify backup is valid
-- `restore_from_file(path: str) -> Result[None, str]` - Restore database from backup
-- `verify_database_integrity() -> Result[None, str]` - Check database consistency
-- `list_backups() -> list[str]` - List available backups
-- `remove_old_backups() -> Result[int, str]` - Clean up old backups
-- `log_backup(path: str, type: str)` - Record backup in notes
-- `log_restoration(path: str)` - Record restoration in notes
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -532,10 +523,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-backup-restore)
-- [Blueprint: Project Directives](../../../docs/blueprints/blueprint_project_directives.md#recovery-automation)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - Project directive for backup and restore operations*

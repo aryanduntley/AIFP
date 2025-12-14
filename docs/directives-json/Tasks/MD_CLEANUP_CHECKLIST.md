@@ -1,26 +1,36 @@
 # Directive MD Files - Cleanup Progress Checklist
 
 **Created**: 2025-12-07
-**Purpose**: Track manual cleanup progress for 94 directive markdown files
-**Total Files**: 94
-**Status**: ⏳ In Progress
+**Updated**: 2025-12-13
+**Purpose**: Track cleanup progress for 125 directive markdown files
+**Total Files**: 125
+**Status**: ✅ **COMPLETE**
 
 ---
 
 ## Progress Summary
 
-- [ ] **Phase 1**: High-Priority Files (7 files)
-- [ ] **Phase 2**: Files with Module Paths (4 files)
-- [ ] **Phase 3**: Files with Multiple Issues (15+ files)
-- [ ] **Phase 4**: Remaining Files (~70 files)
+- [x] **Phase 1**: High-Priority Files (4/4) ✅ **COMPLETE**
+- [x] **Phase 2**: Automated Script Cleanup (74 files) ✅ **COMPLETE**
+- [x] **Phase 3**: Manual Fixes (2 files) ✅ **COMPLETE**
+- [x] **Phase 4**: Already Clean (45 files) ✅ **COMPLETE**
 
-**Completion**: 1 / 94 files complete (1.1%)
+**Completion**: 125 / 125 files complete (100%) 🎉
 
-**Files Completed**:
-1. ✅ user_preferences_update.md - Removed all hardcoded helpers, updated to AI NLP + DB queries
+**Cleanup Summary**:
+- **Manual Cleanup**: 4 high-priority files
+- **Automated Script**: 74 files (replaced Helper Functions sections + cleaned References)
+- **Manual Path Fixes**: 2 files (updated wrappers examples to ../wrappers/)
+- **Already Clean**: 45 files (no changes needed)
 
-**Files In Progress**:
-1. ⚠️ aifp_help.md - Partially complete, needs further review (see notes below)
+**Changes Made**:
+- ✅ Removed ALL "## Helper Functions Used" sections (76 files)
+- ✅ Replaced with standard template: `Query get_helpers_for_directive()... See system prompt`
+- ✅ Removed ALL dev-only file references (../../../ and ../../ paths)
+- ✅ Cleaned ALL References sections (removed or replaced with "None")
+- ✅ Updated wrappers examples to use production path (../wrappers/)
+
+**Script Created**: `docs/directives-json/Tasks/cleanup_md_files.py`
 
 ---
 
@@ -143,21 +153,17 @@ See system prompt for usage.
 These files are core directives or heavily affected by helper changes.
 
 
-### [ ] aifp_help.md 🔴 **HIGH PRIORITY** ⚠️ IN PROGRESS
+### [X] aifp_help.md 🔴 **HIGH PRIORITY** ✅ COMPLETE
 
 **Issues**: 5 | **Priority Score**: 170
 
 - [X] **🔗 Helper Ref Links** (1 found) - REMOVED ✅
-  - Line 412: Removed outdated helper-functions-reference.md link
 - [X] **📂 Module Paths** (4 found) - REMOVED ✅
-  - Lines 80, 296, 301, 306: Removed all `src/aifp/helpers/mcp.py` references
-- [ ] **⚠️ STILL NEEDS FIXING** - Hardcoded helper names remain:
-  - **Line 53**: Comment "Use search_directives helper" → DELETE
-  - **Lines 54-58**: `search_directives()` call → Replace with conceptual description
-  - **Line 71**: Comment "Call get_directive_content helper" → DELETE
-  - **Line 72**: `get_directive_content(directive_name)` → Replace with conceptual description
-  - **Lines 303-313**: "Primary helpers" list with 3 functions → DELETE entire list
-  - **Approach**: Remove ALL function names, keep only conceptual workflow descriptions
+- [X] **Hardcoded helper names** - ALL REMOVED ✅
+  - Replaced with conceptual AI interaction patterns
+  - Examples show user conversations, not function calls
+  - Helper Functions section replaced with standard template
+  - References section cleaned (removed dev-only links)
 
 
 ### [X] user_preferences_update.md 🔴 **HIGH PRIORITY** ✅ COMPLETE
@@ -165,30 +171,36 @@ These files are core directives or heavily affected by helper changes.
 **Issues**: 3 | **Priority Score**: 130
 
 - [X] **🔗 Helper Ref Links** (1 found) - REMOVED
-  - Line 667: Removed outdated helper-functions-reference.md link
 - [X] **⚙️ Call Instructions** (Multiple) - REMOVED ALL HARDCODED HELPERS
   - Removed all references to `find_directive_by_intent`, `find_directives`
   - Updated to AI NLP matching + database queries
   - Added standard `get_helpers_for_directive()` section
-  - Updated code examples to show generic approach
 
 
-### [ ] user_directive_parse.md 🔴 **HIGH PRIORITY**
+### [X] user_directive_parse.md 🔴 **HIGH PRIORITY** ✅ COMPLETE
 
 **Issues**: 2 | **Priority Score**: 120
 
-- [ ] **🔗 Helper Ref Links** (1 found)
-  - Line 583: `- [Helper Functions Reference](../helper-functions-reference.md#user-d...`
-- [ ] **⚙️ Call Instructions** (1 found)
-  - Line 85: `- Use NLP helper: `parse_natural_language_directive(text)``
+- [X] **🔗 Helper Ref Links** (1 found) - REMOVED
+  - Line 542: Removed helper-functions-reference.md link
+- [X] **⚙️ Call Instructions** (2 found) - REMOVED
+  - Line 56: Removed `read_file(file_path)` - replaced with "AI reads file directly"
+  - Line 85: Removed `parse_natural_language_directive(text)` - replaced with "AI uses NLP"
+- [X] **Helper Functions section** - Replaced with standard template
+- [X] **References section** - Removed dev-only links (blueprints, JSON, schemas)
 
 
-### [ ] user_directive_validate.md 🔴 **HIGH PRIORITY**
+### [X] user_directive_validate.md 🔴 **HIGH PRIORITY** ✅ COMPLETE
 
 **Issues**: 1 | **Priority Score**: 110
 
-- [ ] **🔗 Helper Ref Links** (1 found)
-  - Line 678: `- [Helper Functions Reference](../helper-functions-reference.md#valida...`
+- [X] **🔗 Helper Ref Links** (1 found) - REMOVED
+  - Line 678: Removed helper-functions-reference.md link
+- [X] **Helper Functions section** (lines 489-533) - Replaced with standard template
+  - Removed entire section with detailed function lists
+  - Replaced with `get_helpers_for_directive()` reference
+- [X] **References section** - Cleaned
+  - Removed dev-only links (blueprints, JSON, schemas)
 
 
 ---

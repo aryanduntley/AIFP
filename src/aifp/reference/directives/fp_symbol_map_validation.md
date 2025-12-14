@@ -563,15 +563,10 @@ from .math_ops import *  # Imports all from math_ops
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `extract_exports(file_path: str) -> list[str]` - Parse module to find exports
-- `query_functions_for_file(file_id: int) -> list[str]` - Get database functions
-- `compare_symbol_maps(code_exports: set, db_exports: set) -> SymbolMapDiff` - Compare sets
-- `add_function_to_database(func_name: str, file_id: int)` - Index missing export
-- `remove_function_from_database(func_name: str, file_id: int)` - Clean orphaned entry
-- `update_functions_table(func_id: int, visibility: str)` - Update visibility
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -642,10 +637,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-symbol-map-validation)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#meta-reflection)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for symbol map validation*

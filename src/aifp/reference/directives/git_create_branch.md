@@ -407,15 +407,10 @@ fi
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_user_name() -> Result[str, str]` - Auto-detect user from multiple sources
-- `normalize_username(name: str) -> str` - Normalize to lowercase-hyphen format
-- `get_next_branch_number(user: str) -> int` - Query database for next number
-- `format_branch_name(user: str, number: int) -> str` - Format with zero-padding
-- `create_git_branch(name: str, base: str) -> Result[None, str]` - Git branch creation
-- `store_branch_metadata(branch_data: dict) -> Result[int, str]` - Database insert
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -481,11 +476,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-- [Blueprint: Git Integration](../../../docs/blueprints/blueprint_git.md)
-- [JSON Definition](../../../docs/directives-json/directives-git.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql#work_branches-table)
-
+None
 ---
 
 *Part of AIFP v1.0 - Git integration directive for collaborative branch management*

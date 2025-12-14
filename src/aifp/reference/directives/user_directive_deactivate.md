@@ -472,8 +472,10 @@ AI: Stopping 'webhook_listener'...
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Process Management
 - `terminate_process(pid: int, timeout: int = 10) -> bool`
   - Graceful shutdown request
@@ -626,7 +628,6 @@ Verify: Status unchanged, no side effects
 - [Opposite: user_directive_activate](./user_directive_activate.md)
 - [Called by: user_directive_update](./user_directive_update.md)
 - [Called by: user_directive_monitor](./user_directive_monitor.md)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
 
 ---
 

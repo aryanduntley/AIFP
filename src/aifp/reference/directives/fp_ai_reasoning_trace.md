@@ -534,14 +534,10 @@ def find_user(users: list[dict], user_id: int) -> Option[dict]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `extract_directive_applications(code: str) -> list[str]` - Identify which directives were applied
-- `generate_trace_comment(directive: str, context: dict) -> str` - Generate reasoning comment
-- `detect_existing_trace(code: str) -> Optional[str]` - Find existing trace comments
-- `validate_trace_format(trace: str) -> bool` - Check trace formatting
-- `update_notes_table(func_id: int, trace: str)` - Store trace in database
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -617,10 +613,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-ai-reasoning-trace)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#meta-reflection)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for AI reasoning transparency and explainability*

@@ -559,14 +559,10 @@ def create_filter(threshold: int):
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `parse_function_ast(code: str) -> AST` - Parse function into AST
-- `identify_global_references(ast: AST) -> list[str]` - Find global variable access
-- `is_constant(name: str) -> bool` - Check if UPPERCASE naming convention
-- `add_function_parameter(func: Function, param_name: str, param_type: str) -> Function` - Add parameter to signature
-- `update_call_sites(func_name: str, new_param: str) -> None` - Update all call sites
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -635,11 +631,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#purity)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql#functions-table)
-
+None
 ---
 
 *Part of AIFP v1.0 - Core FP directive for eliminating global state and ensuring stateless functions*

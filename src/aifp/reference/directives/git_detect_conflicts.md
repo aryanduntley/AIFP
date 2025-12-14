@@ -553,16 +553,10 @@ if is_binary_file(file_path):
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `git_diff_branches(source: str, target: str) -> list[str]` - Get changed files
-- `extract_functions_from_branch(branch: str, file_path: str) -> list[FunctionDef]` - Parse functions
-- `query_function_metadata(fn_name: str, branch: str) -> FunctionMetadata` - Get purity, tests, deps
-- `compare_function_versions(v1: Function, v2: Function) -> ConflictDetail` - Compare implementations
-- `apply_fp_resolution_rules(conflict: ConflictDetail) -> ResolutionStrategy` - FP-based resolution
-- `extract_database_from_branch(branch: str) -> Path` - Extract project.db from Git
-- `compare_database_tables(db1: Path, db2: Path) -> list[DBConflict]` - Detect DB conflicts
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -638,11 +632,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-- [Blueprint: Git Integration](../../../docs/blueprints/blueprint_git.md)
-- [JSON Definition](../../../docs/directives-json/directives-git.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - Git integration directive for FP-powered conflict detection*

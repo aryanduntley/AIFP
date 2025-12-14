@@ -512,14 +512,10 @@ MapExpression(Variable("items"), Lambda(Parameter("x"), BinaryOp("*", Variable("
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `parse_to_ast(code: str, language: str) -> AST` - Parse source to language-specific AST
-- `normalize_ast(ast: AST, source_language: str) -> CanonicalAST` - Convert to AIFP canonical
-- `desugar_syntax(ast: AST) -> AST` - Remove syntax sugar
-- `validate_canonical_ast(ast: CanonicalAST) -> bool` - Verify normalization
-- `generate_code(canonical_ast: CanonicalAST, target_language: str) -> str` - Generate code from AST
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -589,10 +585,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-syntax-normalization)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#language-adaptation)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for AST-level syntax normalization*

@@ -436,18 +436,10 @@ def archive_with_space_check() -> Result[str, str]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `verify_all_milestones_complete() -> Result[bool, str]` - Check completion
-- `collect_project_files() -> list[str]` - Gather all project files
-- `create_archive_manifest(files: list[str]) -> dict` - Create manifest
-- `compress_project(manifest: dict) -> Result[str, str]` - Create archive
-- `verify_archive_integrity(path: str) -> Result[None, str]` - Verify archive
-- `update_project_status(status: str)` - Update project.status field
-- `log_archival(archive_path: str)` - Record archival in notes
-- `estimate_archive_size() -> int` - Estimate compressed size
-- `get_project_metadata() -> dict` - Get project info
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -521,10 +513,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-archive)
-- [Blueprint: Project Directives](../../../docs/blueprints/blueprint_project_directives.md#archival-refactor)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - Project directive for archival and long-term storage*

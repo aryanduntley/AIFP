@@ -345,14 +345,10 @@ if user_approved_performance_exception(function_name):
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `load_user_preferences(directive_name: str) -> dict` - Loads compliance preferences
-- `run_fp_compliance_checks(code: str, preferences: dict) -> ComplianceResult` - Runs all FP checks
-- `categorize_violations(results: list) -> dict` - Groups violations by severity
-- `attempt_auto_fix(code: str, violations: list) -> Result[str, str]` - Auto-refactors if enabled
-- `escalate_to_fp_directive(violation: Violation) -> DirectiveResult` - Routes to specific FP directive
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -424,12 +420,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md)
-- [Blueprint: Project Directives](../../../docs/blueprints/blueprint_project_directives.md)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-- [User Preferences Schema](../../../docs/db-schema/schemaExampleSettings.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - Critical Project directive for FP compliance enforcement*

@@ -398,14 +398,10 @@ def process_items_lazy(items: tuple[int, ...]) -> tuple[int, ...]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `analyze_variables(code: str) -> ImmutabilityAnalysis` - Analyzes variables for mutations
-- `detect_reassignments(ast: AST) -> list[Reassignment]` - Identifies variable reassignments
-- `detect_mutations(ast: AST) -> list[Mutation]` - Finds in-place modifications
-- `refactor_to_immutable(code: str, violations: list) -> str` - Refactors to immutable patterns
-- `suggest_immutable_type(mutable_type: str) -> str` - Suggests immutable equivalent (list→tuple)
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -468,9 +464,6 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)
-- [Blueprint: Interactions](../../../docs/blueprints/blueprint_interactions.md)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
 - [Python Immutability Patterns](https://docs.python.org/3/library/dataclasses.html#frozen-instances)
 
 ---

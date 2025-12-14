@@ -524,14 +524,10 @@ def debug_with_tap(items: list[int]):
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_eager_collections(ast: AST) -> list[Collection]` - Finds eager list operations
-- `detect_intermediate_materialization(ast: AST) -> list[Materialization]` - Finds intermediate lists
-- `refactor_to_lazy(code: str, operations: list) -> str` - Refactors to lazy sequences
-- `generate_lazy_code(language: str, operations: list) -> str` - Generates lazy code
-- `update_functions_table(func_id: int, uses_lazy: bool)` - Updates project.db
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -605,10 +601,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-lazy-evaluation)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#data-structures)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for lazy sequence evaluation*

@@ -486,50 +486,10 @@ user_directive_implement
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-### Question Generation
-- `generate_validation_questions(ambiguities: list) -> list[Question]`
-  - Convert ambiguities to structured questions
-  - Infer question types (text, choice, number, boolean)
-  - Generate default values
-
-- `group_questions_by_topic(questions: list) -> dict`
-  - Group related questions (trigger, action, conditions)
-  - Order logically for user flow
-
-### Answer Validation
-- `validate_answer(question: Question, answer: str) -> Result[any, str]`
-  - Check against validation rules
-  - Type conversion (string → int, string → bool)
-  - Return error message if invalid
-
-- `detect_credential_pattern(text: str) -> bool`
-  - Detect if text looks like API key, password, token
-  - Patterns: `sk-...`, `ghp_...`, `^[A-Za-z0-9]{32,}$`
-
-### Contradiction Detection
-- `detect_contradictions(answers: list) -> list[Contradiction]`
-  - Check for conflicting answers
-  - Example: "weekdays" + "yes to Saturday"
-  - Return list of conflicts for user resolution
-
-### Configuration Building
-- `merge_validated_config(parsed_data: dict, answers: list) -> dict`
-  - Combine parsed data with validated answers
-  - Override parsed fields with validated values
-  - Add metadata
-
-### Dependency Extraction
-- `extract_dependencies(validated_config: dict) -> list[Dependency]`
-  - Analyze config for external dependencies
-  - Identify: APIs, packages, env vars, files
-  - Return structured dependency list
-
-- `check_dependency_availability(dependency: Dependency) -> bool`
-  - Check if package installed
-  - Check if env var set
-  - Optionally test API connectivity
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 
 ---
 
@@ -675,10 +635,6 @@ Expected:
 
 - [Previous: user_directive_parse](./user_directive_parse.md)
 - [Next: user_directive_implement](./user_directive_implement.md)
-- [Helper Functions Reference](../helper-functions-reference.md#validation-helpers)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
-- [JSON Definition](../../directives-json/directives-user-system.json)
-- [Database Schema](../../db-schema/schemaExampleUserDirectives.sql)
 
 ---
 

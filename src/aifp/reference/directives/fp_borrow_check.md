@@ -102,23 +102,8 @@ Analyzes reference lifetimes and borrow scopes.
         local_data = (1, 2, 3)  # Tuple (immutable)
         return local_data  # Safe to return
     ```
-  - Update database:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      severity,
-      source,
-      directive_name
-    ) VALUES (
-      'Borrow check violation: Reference outlives data source in create_reference',
-      'roadblock',
-      'error',
-      'directive',
-      'fp_borrow_check'
-    );
-    ```
 - **Result**: Borrow violation flagged, user warned
+  - Note: Logging to notes table only occurs if `fp_flow_tracking` is enabled (disabled by default)
 
 **Branch 2: If safe_borrow**
 - **Then**: `mark_compliant`
@@ -377,25 +362,11 @@ def create_data_owned():
     """Creates and returns owned data."""
     return [1, 2, 3]  # Caller owns data
 
-# Database log
-INSERT INTO notes (
-  content,
-  note_type,
-  severity,
-  source,
-  directive_name
-) VALUES (
-  'Borrow check: Reference return pattern in create_data_reference suggests copy or immutable',
-  'research',
-  'info',
-  'directive',
-  'fp_borrow_check'
-);
-
 # Result:
 # ✅ Ownership explicit
 # ✅ No dangling reference risk
 # ✅ Clear data ownership semantics
+# Note: Analysis may be logged if fp_flow_tracking is enabled (disabled by default)
 ```
 
 ---
@@ -594,13 +565,10 @@ def use_weakref():
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `analyze_reference_lifetime(func: Function) -> dict[str, Lifetime]` - Track lifetimes
-- `detect_escaped_references(func: Function) -> list[Reference]` - Find escaping refs
-- `validate_closure_captures(closure: Closure) -> bool` - Check closure safety
-- `check_borrow_aliasing(func: Function) -> list[Conflict]` - Find aliasing issues
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -608,7 +576,7 @@ def use_weakref():
 This directive updates the following tables:
 
 - **`functions`**: UPDATE side_effects_json with borrow_safe flag
-- **`notes`**: INSERT borrow violations and lifetime warnings
+- **`notes`**: INSERT borrow violations and lifetime warnings (only if `fp_flow_tracking` enabled - disabled by default)
 
 ---
 
@@ -668,11 +636,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#ownership)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql#functions-table)
-
+None
 ---
 
 *Part of AIFP v1.0 - Advanced FP directive for borrow checking and lifetime validation*

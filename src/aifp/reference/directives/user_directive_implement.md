@@ -716,8 +716,10 @@ user_directive_approve
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Code Generation
 - `generate_types_module(config: dict) -> str`
   - Generate ADTs and data structures
@@ -904,7 +906,6 @@ Verify: Pure composition, proper Result type chaining
 - [FP Directives: fp_no_oop](./fp_no_oop.md)
 - [Project Directive: project_file_write](./project_file_write.md)
 - [Helper Functions Reference](../helper-functions-reference.md#code-generation)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
 
 ---
 

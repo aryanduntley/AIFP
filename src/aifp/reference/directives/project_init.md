@@ -485,15 +485,10 @@ Use "status" to view current state or "continue" to resume work.
 - **`project_task_decomposition`** - Create initial tasks
 - **`get_project_status()`** - Pre-check helper
 
-### Helper Functions Used
+### Helper Functions
 
-- `get_project_status()` - Check initialization status
-- `create_project_blueprint()` - Generate ProjectBlueprint.md from template and user input
-- `detect_primary_language()` - Infer language from existing files
-- `scan_existing_files()` - Detect existing project structure
-- `infer_architecture()` - Analyze code to determine architectural patterns
-- `load_schema(name)` - Load database schema SQL files
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Helper Functions Defined by Project Structure
 
 **`create_project_blueprint(project_name, project_purpose, goals_json, language, build_tool, fp_strictness_level, existing_structure, use_case)`**

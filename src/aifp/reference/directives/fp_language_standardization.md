@@ -556,14 +556,10 @@ function mapWithIndex(items, fn) {
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_language(file_path: str) -> str` - Identify programming language
-- `get_language_aliases(concept: str, language: str) -> list[str]` - Get language-specific names
-- `get_aifp_standard(concept: str) -> str` - Get AIFP standard name
-- `rename_identifiers(code: str, mappings: dict) -> str` - Apply rename mappings
-- `update_functions_table(func_id: int, standardized: bool)` - Update database
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -636,10 +632,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-language-standardization)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#language-adaptation)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for cross-language naming consistency*

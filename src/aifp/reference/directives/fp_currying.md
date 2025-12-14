@@ -576,13 +576,10 @@ add_five = partial(calc.add, 5)
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_multi_param_functions(ast: AST) -> list[Function]` - Find functions with 2+ params
-- `generate_curried_version(func: Function) -> str` - Create curried code
-- `suggest_parameter_order(func: Function) -> list[str]` - Optimal param order for currying
-- `detect_repeated_arguments(calls: list[Call]) -> dict` - Find partial application opportunities
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -634,10 +631,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#composition)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP directive for currying and partial application*

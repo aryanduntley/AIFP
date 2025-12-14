@@ -567,13 +567,10 @@ with open("file.txt") as f:  # f assigned here
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `track_assignments(ast: AST) -> dict[str, list[int]]` - Map variables to assignment line numbers
-- `detect_reassignments(assignments: dict) -> list[str]` - Find variables assigned 2+ times
-- `suggest_new_variable_name(old_name: str, context: str) -> str` - Generate descriptive name
-- `replace_reassignment_with_binding(code: str, var: str) -> str` - Refactor to new binding
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -634,11 +631,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#immutability)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql#functions-table)
-
+None
 ---
 
 *Part of AIFP v1.0 - Core FP directive for eliminating variable reassignment and ensuring single-assignment semantics*

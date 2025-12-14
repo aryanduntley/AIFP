@@ -26,7 +26,7 @@ This directive generates wrappers for:
 
 **Wrapper principle**: Convert stateful methods to pure functions with explicit state.
 
-**Real-world examples**: See [examples/wrappers/](../../../examples/wrappers/) for working wrapper implementations. As AIFP develops, this folder will contain reference implementations for common libraries.
+**Real-world examples**: See [../wrappers/](../wrappers/) for working wrapper implementations. As AIFP develops, this folder will contain reference implementations for common libraries.
 
 ---
 
@@ -682,13 +682,10 @@ def file_from_bytes(data: bytes) -> FileHandle: ...
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_oop_patterns(library: str) -> dict` - Analyze library usage
-- `generate_state_dataclass(class_def: Class) -> str` - Create state object
-- `convert_method_to_function(method: Method) -> str` - Generate wrapper function
-- `is_pure_library(library: str) -> bool` - Check if wrapper needed
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -742,11 +739,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#anti_oop)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-- [Wrapper Examples](../../../examples/wrappers/) - Real-world wrapper implementations (populated during development)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP directive for wrapping OOP libraries with functional interfaces*

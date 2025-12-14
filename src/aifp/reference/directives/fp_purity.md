@@ -348,15 +348,10 @@ def cached_expensive_calculation(n: int) -> int:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `analyze_function(code: str) -> PurityAnalysis` - Analyzes function for purity violations
-- `detect_mutations(ast: AST) -> list[Mutation]` - Identifies parameter/variable mutations
-- `detect_external_state(ast: AST) -> list[StateAccess]` - Finds global variable access
-- `detect_side_effects(ast: AST) -> list[SideEffect]` - Finds I/O, logging, etc.
-- `refactor_to_pure(code: str, violations: list) -> str` - Refactors code to be pure
-- `update_functions_table(func_id: int, purity: str)` - Updates `project.db`
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -432,11 +427,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)
-- [Blueprint: Interactions](../../../docs/blueprints/blueprint_interactions.md)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-- [FP Directives Blueprint](../../../docs/blueprints/blueprint_fp_directives.md)
-
+None
 ---
 
 *Part of AIFP v1.0 - Critical FP Core directive for pure functional programming*

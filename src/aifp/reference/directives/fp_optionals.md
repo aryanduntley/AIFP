@@ -398,13 +398,10 @@ result = combine_values(Option.some(3), Option.none())
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_null_returns(ast: AST) -> list[NullReturn]` - Finds null return statements
-- `detect_null_checks(ast: AST) -> list[NullCheck]` - Finds imperative null checks
-- `refactor_to_option(code: str, violations: list) -> str` - Refactors to Option type
-- `generate_option_imports(language: str) -> str` - Generates language-specific Option imports
-- `update_functions_table(func_id: int, option_compliant: bool)` - Updates project.db
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 
 ---
 
@@ -510,10 +507,7 @@ project_compliance_check
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-error-handling)
-- [Blueprint: Interactions](../../../docs/blueprints/blueprint_interactions.md#fp-project-integration)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#error-handling)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
+None
 
 ---
 

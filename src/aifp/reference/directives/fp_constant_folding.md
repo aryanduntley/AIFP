@@ -408,14 +408,10 @@ PTR_SIZE = 8 if sys.maxsize > 2**32 else 4  # Platform-dependent
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_constant_expressions(ast: AST) -> list[ConstExpr]` - Finds constant expressions
-- `verify_expression_purity(expr: Expression) -> bool` - Checks if expression is pure
-- `evaluate_constant_expression(expr: Expression) -> Literal` - Evaluates at compile time
-- `replace_with_literal(code: str, expr: Expression, value: Literal) -> str` - Replaces expression
-- `update_functions_table(func_id: int, has_folded_constants: bool)` - Updates project.db
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -492,10 +488,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-constant-folding)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#optimization)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for compile-time constant evaluation*

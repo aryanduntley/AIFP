@@ -108,13 +108,16 @@ docs/helpers/info-helpers-project.txt
 docs/helpers/info-helpers-core.txt
 docs/helpers/info-helpers-user-custom.txt
 
-working on (registry docs):
+Registry stuff:
 docs/helpers/registry/helper-registry-guide.md
 docs/helpers/registry/CURRENT_STATUS.md
 docs/aifp-oop-policy.md
 docs/helpers/registry/HELPER_REGISTRY_STATUS.md
 docs/helpers/registry/CONSOLIDATION_REPORT.md
 docs/helpers/registry/VERIFICATION_REPORT.md
+docs/helpers/IMPLEMENTATION_LOG.md
+docs/helpers/CONSOLIDATION_COMPLETE.md
+docs/helpers/project-helpers-analysis-recommendations.md
 
 helper registry:
 docs/helpers/registry/helpers_registry_git.json

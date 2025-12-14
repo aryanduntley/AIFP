@@ -444,14 +444,10 @@ if include_tracking:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `query_all_preferences() -> dict` - Read all tables
-- `format_preferences_json(prefs: dict) -> dict` - Structure for export
-- `save_json_file(data: dict, path: str) -> None` - Write with pretty formatting
-- `get_project_name() -> str` - Get current project name
-- `calculate_file_size(path: str) -> str` - Format file size (KB, MB)
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -487,10 +483,7 @@ This directive reads the following tables:
 
 ## References
 
-- [Blueprint: User Preferences Database](../../../docs/blueprints/blueprint_user_prefs_db.md)
-- [JSON Definition](../../../docs/directives-json/directives-user-pref.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleSettings.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - User customization directive for exporting preferences*

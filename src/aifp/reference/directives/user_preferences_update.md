@@ -656,10 +656,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Blueprint: User Preferences Database](../../../docs/blueprints/blueprint_user_prefs_db.md)
-- [JSON Definition](../../../docs/directives-json/directives-user-pref.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleSettings.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - User customization directive for updating preferences*

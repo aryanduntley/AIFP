@@ -449,16 +449,10 @@ def handle_new_project() -> Result[str, str]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `get_project_metadata() -> dict` - Get project info
-- `get_current_focus() -> Focus` - Get active work
-- `get_open_items(focus: Focus) -> list[WorkItem]` - Get open tasks
-- `get_recent_completions() -> list[Completion]` - Get recent work
-- `calculate_progress() -> Progress` - Calculate completion
-- `format_active_summary(...) -> str` - Format summary
-- `store_summary(summary: str, type: str) -> str` - Persist summary
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -539,10 +533,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-auto-summary)
-- [Blueprint: Project Directives](../../../docs/blueprints/blueprint_project_directives.md#metrics)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - Project directive for automated status summaries*

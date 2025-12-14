@@ -609,13 +609,10 @@ Errors (24h): 0
 - **`project_task_decomposition`** - Uses status for context
 - **`project_completion_check`** - Validates completion progress
 
-### Helper Functions Used
+### Helper Functions
 
-- `get_project_context(type)` - Structured project overview
-- `get_status_tree(project_id, context_limit)` - Hierarchical status with history
-- `parse_blueprint_section(file, section)` - Parse blueprint sections
-- `detect_and_init_project()` - Handle uninitialized projects
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Helper Functions Defined by Project Structure
 
 **`get_status_tree(project_id, context_limit=10)`**

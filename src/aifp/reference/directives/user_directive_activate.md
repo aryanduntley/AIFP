@@ -592,8 +592,10 @@ user_directive_monitor (runs continuously)
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ### Approval Verification
 - `check_approval_status(directive_id: int) -> bool`
   - Verify approved = true
@@ -760,7 +762,6 @@ Verify: Each has independent deployment and tracking
 
 - [Previous: user_directive_approve](./user_directive_approve.md)
 - [Next: user_directive_monitor](./user_directive_monitor.md)
-- [Blueprint: User Directives](../../blueprints/blueprint_user_directives.md)
 - [Helper Functions Reference](../helper-functions-reference.md#deployment-helpers)
 
 ---

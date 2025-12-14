@@ -384,15 +384,10 @@ conn.execute("UPDATE files SET checksum=?, updated_at=CURRENT_TIMESTAMP WHERE id
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `parse_file_ast(content: str, language: str) -> AST` - Parses code into AST
-- `extract_functions(ast: AST) -> list[FunctionDef]` - Finds function definitions
-- `extract_dependencies(ast: AST) -> list[Dependency]` - Finds function calls
-- `calculate_checksum(content: str) -> str` - Computes SHA256 hash
-- `detect_language(path: str) -> str` - Guesses language from extension
-- `query_project_db(query: str, params: tuple) -> Result` - Database query helper
-- `begin_transaction()`, `commit_transaction()`, `rollback_transaction()` - Transaction helpers
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 
 ---
 
@@ -470,11 +465,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-helpers)
-- [Blueprint: Project Database](../../../docs/blueprints/blueprint_project_db.md)
-- [Blueprint: Project Directives](../../../docs/blueprints/blueprint_project_directives.md)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql)
+None
 
 ---
 

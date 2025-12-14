@@ -505,14 +505,10 @@ def cartesian_product_v2(list1: list[int], list2: list[int]) -> list[tuple]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `detect_transform_loops(ast: AST) -> list[Loop]` - Find transformation loops
-- `detect_filter_loops(ast: AST) -> list[Loop]` - Find filtering loops
-- `detect_aggregate_loops(ast: AST) -> list[Loop]` - Find aggregation loops
-- `convert_to_functional(loop: Loop, operation_type: str) -> str` - Convert to map/filter/reduce
-- `update_functions_table(func_id: int, uses_functional_ops: bool)` - Update project.db
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -586,10 +582,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-list-operations)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#data-structures)
-- [JSON Definition](../../../docs/directives-json/directives-fp-aux.json)
-
+None
 ---
 
 *Part of AIFP v1.0 - FP Auxiliary directive for functional list transformations*

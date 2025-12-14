@@ -561,14 +561,10 @@ WHERE name = 'get_data';
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `parse_function_ast(code: str) -> AST` - Parse function
-- `detect_io_operations(ast: AST) -> list[IOOp]` - Find I/O calls
-- `detect_mutations(ast: AST) -> list[Mutation]` - Find mutations
-- `detect_logging(ast: AST) -> list[LogCall]` - Find print/log calls
-- `is_pure_library_function(func_name: str) -> bool` - Check library purity
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -643,11 +639,7 @@ This directive updates the following tables:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-- [Blueprint: FP Directives](../../../docs/blueprints/blueprint_fp_directives.md#purity)
-- [JSON Definition](../../../docs/directives-json/directives-fp-core.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql#functions-table)
-
+None
 ---
 
 *Part of AIFP v1.0 - Core FP directive for detecting and isolating side effects*

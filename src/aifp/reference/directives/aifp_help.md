@@ -50,12 +50,8 @@ directive_name = user_input.directive_name
 
 **If unclear or keyword search**:
 ```python
-# Use search_directives helper
-results = search_directives(
-    keyword=user_keyword,
-    category=None,  # Optional filter
-    type=None       # Optional filter
-)
+# AI uses available helpers to search directives_intent_keywords table by keyword
+results = matching_directives
 
 # Display matches
 if len(results) > 1:
@@ -68,19 +64,9 @@ else:
 ### Step 2: Load Directive Documentation
 
 ```python
-# Call get_directive_content helper
-documentation = get_directive_content(directive_name)
-
-# Returns full markdown content from MD file
-# Example: src/aifp/reference/directives/fp_purity.md
+# AI reads MD file directly: src/aifp/reference/directives/{directive_name}.md
+documentation = md_file_content
 ```
-
-**Helper Function**:
-- **Name**: `get_directive_md`
-- **Parameters**: `directive_name` (string)
-- **Returns**: Full markdown documentation as string
-- **Error**: Returns None if MD file not found
-- **Query database for complete specification**
 
 ### Step 3: Display Documentation
 
@@ -110,9 +96,10 @@ documentation = get_directive_content(directive_name)
 ## Related Directives
 [Related directives and relationships]
 
-## Helper Functions Used
-[Helper functions with descriptions]
+## Helper Functions
 
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ## Database Operations
 [Database tables and queries]
 ```
@@ -138,87 +125,77 @@ if user_task_context:
 **User Request**:
 > "I need help understanding how fp_purity works"
 
-**Execution**:
-```python
-# Step 1: Parse directive name from request
-directive_name = "fp_purity"
+**AI Process**:
+1. Identifies directive name: `fp_purity`
+2. Reads MD file: `src/aifp/reference/directives/fp_purity.md`
+3. Queries `directives_interactions` table for related directives
+4. Reviews categories and keywords from database
 
-# Step 2: Load documentation
-doc = get_directive_content("fp_purity")
-
-# Step 3: Display full documentation
-show_markdown(doc)
-
-# Step 4: Suggest related
-suggest("Related: fp_side_effect_detection, fp_immutability")
-```
-
-**Output**:
-```
-# fp_purity - Function Purity Enforcer
-
-**Type**: Functional Programming
-**Level**: 1
-...
-
-[Full documentation displayed]
-
-Related directives you might need:
-- fp_side_effect_detection: Detect and flag side effects
-- fp_immutability: Enforce immutable data structures
-```
+**AI Response**:
+> **fp_purity - Function Purity Enforcer**
+>
+> This directive ensures all functions are pure (same inputs → same outputs, no side effects).
+>
+> [Displays full documentation content]
+>
+> **Related directives** (from directives_interactions table):
+> - `fp_side_effect_detection` - Detects side effects in functions
+> - `fp_immutability` - Enforces immutable data structures
+> - `fp_state_elimination` - Removes hidden state
+>
+> Would you like me to explain any of these related directives?
 
 ### Example 2: Fuzzy Search
 
 **User Request**:
 > "How do I use the file write directive?"
 
-**Execution**:
-```python
-# Step 1: Keyword search (no exact name)
-results = search_directives(keyword="file write")
+**AI Process**:
+1. Searches `directives` and `directives_intent_keywords` tables for "file write"
+2. Finds multiple matches
+3. Presents options to user
 
-# Returns: project_file_write, project_file_delete, project_file_read
+**AI Response**:
+> I found 3 directives matching "file write":
+>
+> 1. **project_file_write** - Write code files to project
+> 2. **project_file_delete** - Delete files from project
+> 3. **project_file_read** - Read file contents
+>
+> Which one would you like to learn about?
 
-# Prompt user
-prompt("Found 3 directives matching 'file write':")
-show_list([
-    "1. project_file_write - Write code files to project",
-    "2. project_file_delete - Delete files from project",
-    "3. project_file_read - Read file contents"
-])
+**User**:
+> "The first one"
 
-# User selects #1
-directive_name = "project_file_write"
-
-# Step 2-4: Load and display
-doc = get_directive_content("project_file_write")
-show_markdown(doc)
-```
+**AI Response**:
+> [Reads and displays project_file_write.md documentation]
 
 ### Example 3: Documentation Not Available
 
 **User Request**:
 > "Show me the fp_custom_feature documentation"
 
-**Execution**:
-```python
-# Step 1: Parse directive name
-directive_name = "fp_custom_feature"
+**AI Process**:
+1. Attempts to read MD file: `src/aifp/reference/directives/fp_custom_feature.md`
+2. File not found
+3. Queries `directives` table for basic metadata
+4. If found in database: Shows basic info
+5. If not found: Suggests searching
 
-# Step 2: Load documentation
-doc = get_directive_content("fp_custom_feature")
-# Returns: None (file not found)
+**AI Response** (if in database):
+> ⚠️ Full documentation not available for `fp_custom_feature`.
+>
+> **Basic information from database**:
+> - **Type**: Functional Programming
+> - **Category**: Core
+> - **Description**: [from directives.description field]
+>
+> The MD documentation file is missing. Would you like me to search for similar directives?
 
-# Fallback: Load basic metadata from database
-directive_info = get_directive("fp_custom_feature")
-
-if directive_info:
-    show_basic_info(directive_info)
-    warn("Full documentation not available. Showing basic metadata.")
-else:
-    error("Directive not found. Try search_directives()?")
-```
+**AI Response** (if not in database):
+> ❌ Directive `fp_custom_feature` not found.
+>
+> Would you like me to search for directives by keyword? Or use `get_all_directives()` to see all available directives?
 
 ---
 
@@ -228,91 +205,44 @@ else:
 
 **Issue**: Directive exists in database but MD file is missing
 
-**Detection**:
-```python
-doc = get_directive_content(directive_name)
-if doc is None:
-    # MD file not found
-```
+**AI Process**:
+1. Attempts to read MD file
+2. File not found
+3. Queries `directives` table for metadata
+4. Displays basic info with warning
 
-**Resolution**:
-```python
-# Fallback to database metadata
-directive = get_directive(directive_name)
-show_basic_info({
-    "name": directive.name,
-    "description": directive.description,
-    "type": directive.type,
-    "category": directive.category
-})
-warn("Full documentation not available. Showing basic information from database.")
-```
+**Resolution**: Shows basic directive information from database (name, description, type, category) and warns user that full documentation is unavailable.
 
 ### Case 2: Multiple Directive Matches
 
 **Issue**: User provides ambiguous keyword
 
-**Detection**:
-```python
-results = search_directives(keyword=user_keyword)
-if len(results) > 1:
-    # Ambiguous request
-```
+**AI Process**:
+1. Searches directives by keyword
+2. Finds multiple matches
+3. Presents numbered list to user
+4. Waits for user selection
 
-**Resolution**:
-```python
-# Show numbered list
-show_list([f"{i+1}. {r.name} - {r.description}" for i, r in enumerate(results)])
-user_selection = prompt("Which directive? (enter number)")
-directive_name = results[int(user_selection) - 1].name
-```
+**Resolution**: AI displays all matching directives and asks user to clarify which one they want to learn about.
 
 ### Case 3: Directive Does Not Exist
 
 **Issue**: User requests help for non-existent directive
 
-**Detection**:
-```python
-directive = get_directive(directive_name)
-if directive is None:
-    # Not found in database
-```
+**AI Process**:
+1. Searches `directives` table for exact name
+2. Not found
+3. Searches by keyword for similar names
+4. Suggests alternatives or offers to show all directives
 
-**Resolution**:
-```python
-# Fuzzy search for similar names
-similar = search_directives(keyword=directive_name)
-if similar:
-    suggest(f"Did you mean: {similar[0].name}?")
-else:
-    error("Directive not found. Use get_all_directives() to see available directives.")
-```
+**Resolution**: AI suggests similar directive names if found, or offers to display all available directives using available helpers.
 
 ---
 
 ## Helper Functions
 
-This directive's helpers are dynamically mapped in `aifp_core.db`.
-
-**Query at runtime**:
-```python
-get_helpers_for_directive(directive_id, include_helpers_data=true)
-```
-
-**Primary helpers**:
-- **get_directive_md(name)** - Load full MD documentation for directive
-  - Returns: Full markdown content as string
-  - Error: Returns None if file not found
-
-- **get_directives_by_category(category)** - Search directives by category
-  - Returns: List of matching directive objects
-  - Use: Find directives when exact name unknown
-
-- **get_directive(name)** - Get directive metadata from database
-  - Returns: Directive object with basic metadata
-  - Use: Fallback when MD file missing
-
-See `helper_functions` table in aifp_core.db for complete specifications.
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 
 ---
 
@@ -346,9 +276,9 @@ ORDER BY name;
 - None (terminal directive - displays information only)
 
 **Related**:
-- `get_all_directives()` - Lists all available directives
-- `search_directives()` - Search directives by keyword
-- `get_directive_interactions()` - Show directive relationships
+- Use available helpers to list all directives
+- Use available helpers to search directives by keyword
+- Use available helpers to find directive relationships
 
 ---
 
@@ -376,21 +306,17 @@ echo $?  # Should return 0
 ### Test Case 2: Fuzzy Search
 
 **Input**:
-```python
-aifp_help(keyword="file write")
-```
+User asks: "Help with file write"
 
 **Expected Output**:
+- AI searches for matching directives
 - Multiple matches shown
 - User prompted to select
 - Selected directive documentation displayed
 
 **Verification**:
-```python
-results = search_directives(keyword="file write")
-assert len(results) >= 1
-assert any("file_write" in r.name for r in results)
-```
+- AI finds directives matching "file write" keyword
+- Results include project_file_write, project_file_read, project_file_delete
 
 ### Test Case 3: Missing Documentation
 
@@ -400,21 +326,17 @@ aifp_help(directive_name="some_missing_directive")
 ```
 
 **Expected Output**:
-- Fallback to database metadata
+- AI attempts to read MD file
+- MD file not found
+- AI queries database for basic metadata
 - Warning message shown
-- Basic information displayed
+- Basic information displayed from database
 
 **Verification**:
-```python
-doc = get_directive_content("some_missing_directive")
-assert doc is None
-directive = get_directive("some_missing_directive")
-assert directive is not None  # Exists in DB but no MD file
-```
+- MD file does not exist: `src/aifp/reference/directives/some_missing_directive.md`
+- Directive exists in `directives` table
+- AI displays basic info from database
 
 ---
 
 ## References
-
-- [Blueprint: aifp_core.db](../../../docs/blueprints/blueprint_aifp_core_db.md)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)

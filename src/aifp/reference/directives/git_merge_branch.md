@@ -648,16 +648,10 @@ fi
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `validate_branch_exists(branch: str) -> bool` - Check branch validity
-- `check_uncommitted_changes() -> bool` - Check working directory clean
-- `perform_git_merge(branch: str) -> Result[str, str]` - Execute Git merge
-- `merge_databases(source_db: Path, target_db: Path) -> Result[None, str]` - Merge project.db
-- `apply_resolution_strategy(conflict: ConflictDetail, strategy: str) -> None` - Apply resolution
-- `log_merge_to_history(merge_data: dict) -> int` - Insert merge_history record
-- `mark_branch_merged(branch: str) -> None` - Update work_branches status
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -789,11 +783,7 @@ Confidence: 90% auto-resolvable
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-- [Blueprint: Git Integration](../../../docs/blueprints/blueprint_git.md)
-- [JSON Definition](../../../docs/directives-json/directives-git.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleProject.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - Git integration directive for FP-powered branch merging*

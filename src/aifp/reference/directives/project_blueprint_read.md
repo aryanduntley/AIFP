@@ -320,16 +320,10 @@ result = {
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `read_file(path: str) -> Result[str, str]` - Reads blueprint file
-- `parse_markdown_sections(content: str) -> dict` - Parses markdown into structured data
-- `calculate_checksum(content: str) -> str` - Computes file checksum (MD5/SHA256)
-- `query_project_db(project_root: str) -> dict` - Queries database for fallback data
-- `get_project_metadata() -> dict` - Gets project table data
-- `get_themes_and_flows() -> dict` - Gets themes/flows from database
-- `get_completion_path() -> list` - Gets roadmap stages/milestones
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -403,11 +397,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-helpers)
-- [Blueprint: Project Structure](../../../docs/blueprints/blueprint_aifp_project_structure.md)
-- [JSON Definition](../../../docs/directives-json/directives-project.json)
-- [ProjectBlueprint.md Example](../../../.aifp/ProjectBlueprint.md)
-
+None
 ---
 
 *Part of AIFP v1.0 - Critical Project directive for blueprint management*

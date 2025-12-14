@@ -449,16 +449,10 @@ if tracking_enabled["fp_flow_tracking"]:
 
 ---
 
-## Helper Functions Used
+## Helper Functions
 
-- `check_database_exists(path: str) -> bool` - Verify database file exists
-- `initialize_preferences_db(path: str) -> None` - Create database from schema
-- `load_directive_preferences(directive_name: str) -> dict` - Query preferences
-- `load_user_settings() -> dict` - Query global settings
-- `load_tracking_settings() -> dict` - Query tracking flags
-- `parse_preference_value(value: str) -> Any` - Parse JSON or simple values
-- `cache_preferences(directive_name: str, prefs: dict) -> None` - Session caching
-
+Query `get_helpers_for_directive()` to discover this directive's available helpers.
+See system prompt for usage.
 ---
 
 ## Database Operations
@@ -552,11 +546,7 @@ How to verify this directive is working:
 
 ## References
 
-- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)
-- [Blueprint: User Preferences Database](../../../docs/blueprints/blueprint_user_prefs_db.md)
-- [JSON Definition](../../../docs/directives-json/directives-user-pref.json)
-- [Database Schema](../../../docs/db-schema/schemaExampleSettings.sql)
-
+None
 ---
 
 *Part of AIFP v1.0 - User customization directive for loading preferences*
