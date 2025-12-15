@@ -329,7 +329,7 @@
       "name": "task_management",
       "description": "Manages decomposition of user goals into AIFP-aligned tasks, subtasks, and sidequests."
     },
-    "description": "Decomposes high-level user requests into completion_path, milestones, tasks, subtasks, and items. Respects user preferences for task granularity, naming conventions, and decomposition style. Creates roadmap structure and ensures hierarchy consistency. Central decomposition directive; translates user intent into actionable milestones.",
+    "description": "Decomposes high-level user requests into completion_path, milestones, tasks, subtasks, and items. When tasks require code generation, use project_reserve_finalize before project_file_write to reserve names and get database IDs. Respects user preferences for task granularity, naming conventions, and decomposition style. Creates roadmap structure and ensures hierarchy consistency. Central decomposition directive; translates user intent into actionable milestones.",
     "md_file_path": "directives/project_task_decomposition.md",
     "workflow": {
       "trunk": "check_user_preferences",
@@ -529,7 +529,7 @@
       "name": "file_operations",
       "description": "Handles file generation and metadata updates."
     },
-    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
+    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly. Should use project_reserve_finalize BEFORE writing to get database IDs for embedding in filenames/function names. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
     "md_file_path": "directives/project_file_write.md",
     "workflow": {
       "trunk": "check_user_preferences",
@@ -622,6 +622,95 @@
     "confidence_threshold": 0.7
   },
   {
+    "name": "project_reserve_finalize",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "database_operations",
+      "description": "Reservation and finalization workflow for files, functions, and types."
+    },
+    "description": "Manages reservation and finalization of files, functions, and types in project database. AI reserves names BEFORE writing code to receive database IDs, embeds IDs in code for instant lookups (filename_id_42.py, function_name_id_99), and finalizes reservations after implementation. Prevents naming collisions, enables rename-proof references, and dramatically reduces API query costs by using integer lookups instead of string matching.",
+    "md_file_path": "directives/project_reserve_finalize.md",
+    "workflow": {
+      "trunk": "reserve_entities",
+      "branches": [
+        {
+          "if": "reserving_file",
+          "then": "reserve_file_name",
+          "details": {
+            "helper": "reserve_file(name, path, language)",
+            "returns": "file_id for embedding"
+          }
+        },
+        {
+          "if": "reserving_function",
+          "then": "reserve_function_name",
+          "details": {
+            "helper": "reserve_function(name, file_id, purpose)",
+            "returns": "function_id for embedding"
+          }
+        },
+        {
+          "if": "reserving_type",
+          "then": "reserve_type_name",
+          "details": {
+            "helper": "reserve_type(name, file_id, purpose)",
+            "returns": "type_id for embedding"
+          }
+        },
+        {
+          "if": "reserved_successfully",
+          "then": "write_with_embedded_id",
+          "details": {
+            "naming": "filename_id_42.py, function_name_id_99(), TypeName_id_7",
+            "id_comment": "# AIFP:FUNC:42 or AIFP-ID: 42 in docstring"
+          }
+        },
+        {
+          "if": "code_written",
+          "then": "finalize_reservation",
+          "details": {
+            "helpers": "finalize_file(file_id), finalize_function(function_id), finalize_type(type_id)",
+            "updates": "name field with embedded ID (e.g., calculate_sum -> calculate_sum_id_99)",
+            "sets": "is_reserved=FALSE"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "reservation_failed_or_unclear"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "check_collision_or_retry"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "name_collision",
+        "resolution": "Suggest alternative names with v2/alt suffix"
+      },
+      {
+        "issue": "reservation_without_implementation",
+        "resolution": "Cleanup reservation or mark abandoned"
+      },
+      {
+        "issue": "finalize_without_reserve",
+        "resolution": "Verify entity exists and is_reserved flag"
+      }
+    ],
+    "intent_keywords_json": [
+      "reserve",
+      "finalize",
+      "embed ID",
+      "database ID",
+      "prevent collision"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
     "name": "project_update_db",
     "type": "project",
     "level": 3,
@@ -630,7 +719,7 @@
       "name": "file_operations",
       "description": "Synchronizes generated code metadata with the project database."
     },
-    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking. Handles user directive generated files by also updating user_directives.db tables (directive_implementations). Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle.",
+    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking. Should finalize reservations (via project_reserve_finalize) to update names with embedded IDs and set is_reserved=FALSE after successful file writes. Handles user directive generated files by also updating user_directives.db tables (directive_implementations). Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle.",
     "md_file_path": "directives/project_update_db.md",
     "workflow": {
       "trunk": "parse_content",

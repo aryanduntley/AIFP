@@ -232,7 +232,7 @@
       "level": 2,
       "parent_directive": "user_directive_validate",
       "md_file_path": "directives/user_directive_implement.md",
-      "description": "Build the entire AIFP project to implement user directives. Generate all necessary FP-compliant code, install dependencies, create helper functions, set up cron jobs, configure automations, and build supporting infrastructure. The project's purpose becomes executing these directives.",
+      "description": "Build the entire AIFP project to implement user directives. Reserve names via project_reserve_finalize before generating code to get database IDs for embedding. Generate all necessary FP-compliant code with embedded IDs, install dependencies, create helper functions, set up cron jobs, configure automations, and build supporting infrastructure. The project's purpose becomes executing these directives.",
       "workflow": {
         "trunk": "generate_implementation_code",
         "branches": [

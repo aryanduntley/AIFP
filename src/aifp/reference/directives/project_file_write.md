@@ -337,6 +337,7 @@ VALUES (1, '.aifp-project/user-directives/generated/lights_controller.py', 'hand
 
 ## Related Directives
 
+- `project_reserve_finalize` - Reserve names BEFORE writing to get database IDs for embedding
 - `project_update_db` - Synchronizes file metadata to database
 - `project_task_decomposition` - Creates files for tasks
 - `fp_purity` - Validates function purity

@@ -46,13 +46,12 @@ docs/helpers/generic-tools-mcp.md
 
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
-New directive requiring that files, functions types be reserved in database before writing to avoid potential cleanup aftermath if created before adding to database with many references. New additons of these types will require the id suffixed to the name, so reservation is important. After creation, the finalization functions must be called to update the name (at least) after write creations.
-docs/schema-updates-decisions.md
-
 docs/directives-json/sync-directives.py
 review available_helpers in directives json files. can remove completely? We must match helpers to directives in directive_helpers table. also directive_interactions and categories with directive_categories. All directive schema data should be available in directives json files as well as all interactions and helper function relationships.
 docs/directive-json-schema-alignment-analysis.md
 in this analysis, it's conforming to docs/directives-json/sync-directives.py. We can have a better structure for categories, etc. if needed, but I don't know if we need separate files for the linking/relationships. 
+
+directive interactions. Need to make sure this is done well
 
 separate file for directive_interactions. This would have to be ran after directives entered to get directives by name, return id, so that entries into directive_interactions can happen using ID
 

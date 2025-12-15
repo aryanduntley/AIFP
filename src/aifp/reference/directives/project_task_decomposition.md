@@ -356,7 +356,8 @@ UPDATE project SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE i
 
 - `aifp_status` - Provides project context
 - `project_add_path` - Creates milestones and paths
-- `project_file_write` - Generates code for tasks
+- `project_reserve_finalize` - Reserve names before generating code for tasks
+- `project_file_write` - Generates code for tasks with embedded IDs
 - `project_update_db` - Syncs task metadata
 - `project_task_update` - Updates task status
 - `user_preferences_sync` - Loads user customizations

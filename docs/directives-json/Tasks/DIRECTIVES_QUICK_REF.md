@@ -19,7 +19,7 @@ Use this reference when updating directive MD files to cross-reference directive
 
 ## All Directives
 
-Total directives: **124**
+Total directives: **125**
 
 ### FP Auxiliary Directives
 
@@ -115,7 +115,7 @@ Total directives: **124**
 
 ### Project Management Directives
 
-**Count**: 37
+**Count**: 38
 
 | Directive Name | JSON File | Line |
 |----------------|-----------|------|
@@ -145,6 +145,7 @@ Total directives: **124**
 | `project_milestone_complete` | directives-project.json | 2767 |
 | `project_performance_summary` | directives-project.json | 1255 |
 | `project_refactor_path` | directives-project.json | 1517 |
+| `project_reserve_finalize` | directives-project.json | 625 |
 | `project_sidequest_complete` | directives-project.json | 2673 |
 | `project_sidequest_create` | directives-project.json | 2430 |
 | `project_subtask_complete` | directives-project.json | 2593 |

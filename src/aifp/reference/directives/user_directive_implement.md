@@ -690,7 +690,8 @@ user_directive_approve
 - **user_directive_validate**: Provides validated configuration
 
 ### Triggers After Completion
-- **project_file_write**: For each generated file (automatic)
+- **project_reserve_finalize**: Reserve names before writing to get IDs (automatic)
+- **project_file_write**: For each generated file with embedded IDs (automatic)
 - **project_update_db**: Update files, functions tables (automatic)
 - **user_directive_approve**: Next step in pipeline (manual trigger by AI)
 
