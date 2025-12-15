@@ -128,7 +128,7 @@ if user_task_context:
 **AI Process**:
 1. Identifies directive name: `fp_purity`
 2. Reads MD file: `src/aifp/reference/directives/fp_purity.md`
-3. Queries `directives_interactions` table for related directives
+3. Queries `directive_flow` table for related directives (conditional flows, error paths)
 4. Reviews categories and keywords from database
 
 **AI Response**:
@@ -138,7 +138,7 @@ if user_task_context:
 >
 > [Displays full documentation content]
 >
-> **Related directives** (from directives_interactions table):
+> **Related directives** (from directive_flow table):
 > - `fp_side_effect_detection` - Detects side effects in functions
 > - `fp_immutability` - Enforces immutable data structures
 > - `fp_state_elimination` - Removes hidden state

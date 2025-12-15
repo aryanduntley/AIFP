@@ -128,6 +128,10 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Note**: Higher-level search functionality beyond simple queries
 - **Classification**: is_tool=true, is_sub_helper=false
 
+### Intent Keyword Search (Normalized Schema v1.9)
+
+**Schema Note**: As of v1.9, intent keywords are normalized with a master `intent_keywords` table and `directives_intent_keywords` linking table. This provides consistency with the `categories` table structure, better data integrity, and improved query performance for keyword operations.
+
 **`find_directive_by_intent(user_request, threshold)`**
 - **Purpose**: Map user intent to directives using NLP/keyword matching
 - **Parameters**:
@@ -143,7 +147,14 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
   - `keywords` (String | Array) - Single keyword string or array of keywords
   - `match_mode` (String, optional, default="any") - "any" for OR logic, "all" for AND logic
 - **Returns**: Array of directive IDs
-- **Database**: Queries `directives_intent_keywords` table
+- **Database**: Queries `directives_intent_keywords` joined with `intent_keywords` table
+- **SQL Example**:
+  ```sql
+  SELECT DISTINCT dik.directive_id
+  FROM directives_intent_keywords dik
+  JOIN intent_keywords ik ON dik.keyword_id = ik.id
+  WHERE ik.keyword IN (...)
+  ```
 - **Examples**:
   - `find_directives_by_intent_keyword("authentication")` → [15, 23, 42]
   - `find_directives_by_intent_keyword(["purity", "immutability"], "all")` → [5, 12]
@@ -179,7 +190,18 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
   - `directive_id` (Integer)
   - `keyword` (String)
 - **Returns**: Success boolean
-- **Database**: Inserts into `directives_intent_keywords` table
+- **Database**:
+  1. INSERT OR IGNORE into `intent_keywords` (creates keyword if new)
+  2. INSERT into `directives_intent_keywords` (links directive to keyword)
+- **SQL Example**:
+  ```sql
+  -- Step 1: Ensure keyword exists
+  INSERT OR IGNORE INTO intent_keywords (keyword) VALUES (?);
+  -- Step 2: Get keyword_id
+  SELECT id FROM intent_keywords WHERE keyword = ?;
+  -- Step 3: Link to directive
+  INSERT INTO directives_intent_keywords (directive_id, keyword_id) VALUES (?, ?);
+  ```
 - **Note**: Duplicate keywords for the same directive are prevented by UNIQUE constraint
 - **Classification**: is_tool=false, is_sub_helper=false
 
@@ -189,27 +211,55 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
   - `directive_id` (Integer)
   - `keyword` (String)
 - **Returns**: Success boolean
-- **Database**: Deletes from `directives_intent_keywords` table
+- **Database**: Deletes from `directives_intent_keywords` table (keyword remains in intent_keywords)
+- **SQL Example**:
+  ```sql
+  DELETE FROM directives_intent_keywords
+  WHERE directive_id = ? AND keyword_id = (
+      SELECT id FROM intent_keywords WHERE keyword = ?
+  );
+  ```
+- **Note**: Does not delete keyword from intent_keywords table (preserves keyword for reuse)
 - **Classification**: is_tool=false, is_sub_helper=false
 
 **`get_directive_keywords(directive_id)`**
 - **Purpose**: Get all intent keywords for a specific directive
 - **Parameters**: `directive_id` (Integer)
 - **Returns**: Array of keyword strings
-- **Database**: Queries `directives_intent_keywords` table
+- **Database**: Queries `directives_intent_keywords` joined with `intent_keywords`
+- **SQL Example**:
+  ```sql
+  SELECT ik.keyword
+  FROM directives_intent_keywords dik
+  JOIN intent_keywords ik ON dik.keyword_id = ik.id
+  WHERE dik.directive_id = ?
+  ORDER BY ik.keyword;
+  ```
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`get_all_directive_keywords()`**
 - **Purpose**: Get list of all unique intent keywords available for searching (simple list)
 - **Returns**: Array of keyword strings, sorted alphabetically
 - **Example Return**: `["authentication", "purity", "task", "security", "immutability", "git", ...]`
-- **Database**: Queries distinct keywords from `directives_intent_keywords` table
+- **Database**: Queries `intent_keywords` table directly (much simpler than old approach!)
+- **SQL Example**:
+  ```sql
+  SELECT keyword FROM intent_keywords ORDER BY keyword;
+  ```
 - **Note**: Use this when AI needs to browse available keywords and decide which to search for. For keyword usage statistics, use `get_all_intent_keywords_with_counts()`
 - **Classification**: is_tool=true, is_sub_helper=false
 
 **`get_all_intent_keywords_with_counts()`**
 - **Purpose**: Get all unique intent keywords with usage counts for analytics
 - **Returns**: Array of objects with `keyword` and `usage_count` fields, sorted by usage (most used first)
+- **SQL Example**:
+  ```sql
+  SELECT ik.keyword, COUNT(dik.directive_id) as usage_count
+  FROM intent_keywords ik
+  LEFT JOIN directives_intent_keywords dik ON ik.id = dik.keyword_id
+  GROUP BY ik.id, ik.keyword
+  ORDER BY usage_count DESC, ik.keyword;
+  ```
 - **Example Return**:
   ```json
   [
@@ -221,26 +271,69 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Note**: Useful for analytics, identifying popular keywords, and suggesting common searches
 - **Classification**: is_tool=true, is_sub_helper=false
 
-### Directive Relationships
+### Directive Navigation (Status-Driven Decision Tree)
 
-**`get_directive_interactions(directive_name)`**
-- **Purpose**: Get directive relationships (triggers, depends_on, escalates_to)
-- **Parameters**: `directive_name` (String)
-- **Returns**: Object with categorized relationship arrays
-- **Note**: Specialized orchestrator for relationship graph
+**See**: docs/DIRECTIVE_NAVIGATION_SYSTEM.md for complete architecture documentation
+
+**Note**: `aifp_status()` orchestrator is documented in [helpers-consolidated-orchestrators.md](helpers-consolidated-orchestrators.md#aifp_status) - it's the central status orchestrator that feeds the navigation system below.
+
+**`get_next_directives_from_status(from_directive, status_object)`**
+- **Purpose**: Get all possible next directives with condition evaluation
+- **Parameters**:
+  - `from_directive` (String) - Usually 'aifp_status'
+  - `status_object` (Object) - Status returned from aifp_status()
+- **Returns**: Array of objects:
+  ```json
+  [
+    {
+      "to_directive": "string",
+      "flow_type": "status_branch|conditional|completion_loop|error",
+      "condition_key": "string",
+      "condition_value": "string",
+      "condition_description": "string",
+      "priority": number,
+      "matches": true|false,
+      "description": "string"
+    }
+  ]
+  ```
+- **Note**: Returns both matching and non-matching for transparency
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`get_interactions_for_directive(source_directive_id)`**
-- **Purpose**: Get all interactions where directive is source (active only)
-- **Parameters**: `source_directive_id` (Integer)
-- **Returns**: Array of interactions where active=1
-- **Return Statements**: "Consider calling get_from_core_where() with target directive IDs"
+**`get_matching_next_directives(from_directive, status_object)`**
+- **Purpose**: Get ONLY directives whose conditions match current state
+- **Parameters**: Same as `get_next_directives_from_status()`
+- **Returns**: Filtered array with only `matches: true`
+- **Note**: Convenience wrapper for most common use case
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`get_interactions_for_directive_as_target(target_directive_id)`**
-- **Purpose**: Get all interactions where directive is target (active only)
-- **Parameters**: `target_directive_id` (Integer)
-- **Returns**: Array of interactions where active=1
+**`get_completion_loop_target(from_directive)`**
+- **Purpose**: Get where to loop back after completing directive
+- **Parameters**: `from_directive` (String)
+- **Returns**: Single directive name (usually 'aifp_status')
+- **SQL**:
+  ```sql
+  SELECT to_directive FROM directive_flow
+  WHERE from_directive = ? AND flow_type = 'completion_loop'
+  LIMIT 1;
+  ```
+- **Note**: Work directives use this to determine where to return after completion
+- **Classification**: is_tool=true, is_sub_helper=false
+
+**`get_conditional_work_paths(from_directive, work_context)`**
+- **Purpose**: Get conditional next steps during work execution
+- **Parameters**:
+  - `from_directive` (String) - e.g., 'task_item_work'
+  - `work_context` (Object) - Current item/task context
+- **Returns**: Array of conditional work directives with descriptions and priorities
+- **SQL**:
+  ```sql
+  SELECT to_directive, condition_description, priority
+  FROM directive_flow
+  WHERE from_directive = ? AND flow_type = 'conditional'
+  ORDER BY priority DESC;
+  ```
+- **Note**: Used when work items have different requirements (file creation, function creation, etc.)
 - **Classification**: is_tool=true, is_sub_helper=false
 
 ### Helper Functions (Used Frequently)

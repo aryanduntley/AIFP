@@ -105,30 +105,9 @@ docs/helpers/info-helpers-project.txt
 docs/helpers/info-helpers-core.txt
 docs/helpers/info-helpers-user-custom.txt
 
-Registry stuff:
-docs/helpers/registry/helper-registry-guide.md
-docs/helpers/registry/CURRENT_STATUS.md
-docs/aifp-oop-policy.md
-docs/helpers/registry/HELPER_REGISTRY_STATUS.md
-docs/helpers/registry/CONSOLIDATION_REPORT.md
-docs/helpers/registry/VERIFICATION_REPORT.md
-docs/helpers/IMPLEMENTATION_LOG.md
 docs/helpers/CONSOLIDATION_COMPLETE.md
-docs/helpers/project-helpers-analysis-recommendations.md
-
-helper registry:
-docs/helpers/registry/helpers_registry_git.json
-docs/helpers/registry/helpers_registry_core.json
-docs/helpers/registry/helpers_registry_user_directives_getters.json
-docs/helpers/registry/helpers_registry_user_directives_setters.json
-docs/helpers/registry/helpers_registry_user_settings.json
-docs/helpers/registry/helpers_registry_project_structure_getters.json
-docs/helpers/registry/helpers_registry_project_workflow_getters.json
-docs/helpers/registry/helpers_registry_project_structure_setters.json
-docs/helpers/registry/helpers_registry_project_workflow_setters.json
-docs/helpers/registry/helpers_registry_project_core.json
-docs/helpers/registry/helpers_registry_project_orchestrators.json
-docs/helpers/registry/helpers_registry_mcp_orchestrators.json
+docs/aifp-oop-policy.md
+docs/helpers/IMPLEMENTATION_LOG.md
 
 consolidated helpers:
 docs/helpers/helpers-consolidated-git.md
@@ -159,13 +138,73 @@ new simpler template with no helper functions. system prompt tells AI to use get
  file and blueprint file checksum removed from poject database. Should be no reason for it as we have git for historical reference. 
 
  intent_keywords_json removed from core replaced with directives_intent_keywords table
+ have now intent_keywords table for separation similar to categories. 
+ CHECK to ensure helper functions and directives json and md match new schema
+docs/SCHEMA_NORMALIZATION_V1.9.md
 
-directive interactions. Need to make sure this is done well. In conjuction, make a directive tree. A branched path from start to finish. 
-
--- Categories Table CREATE TABLE IF NOT EXISTS categories ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, -- e.g., 'purity', 'immutability', 'task_management' description TEXT -- Optional human-readable explanation ); -- Linking Table (many-to-many) CREATE TABLE IF NOT EXISTS directive_categories ( directive_id INTEGER NOT NULL, category_id INTEGER NOT NULL, PRIMARY KEY (directive_id, category_id), FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE, FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE );
-
-we have two tables here. Is the catetgories table needed? cannot all categories be queried directly from directive_categories and instead of category_id, we use the category name? Just like we are doing with directives_intent_keywords? 
-Or should we create an intent_keywords table to list all avalailable keywords and use intent_keyword_id in the directives_intent_keywords table? 
-What's best/most efficient?
 
 for docs/directive-graph.txt please review. Should we incorporate this path system into our core database for AI clarity in directive usage? We have example helper functions but we don't need to implement those right away. We should first work with and assess the core project management system. Later we can reviwe our consolidated helpers and determine what we should add for any new tables and directive querying for AI we improved. 
+This is very linear. I proposed a tree because it really does 
+depend on what the current action is and what is needed next. So
+ depending on current action, there may be choices instead of 
+just one next action. Any table we create should have a many to 
+many relationship so that when getting one directive, returned 
+are a list of possible next steps. This can limit the "thinking"
+ to a defined list and based on description and AI's current 
+state in the project, AI can determine which to go to. But these
+ should all have a loop back as well. An end point doesn't mean 
+stop work, it means: is completion path, current path complete? 
+If so, move to next completion path, move to first milestone, 
+create first task. If not, check for open milestone. If no oopen
+ milestone, move to next pending milestone, create first task 
+for milestone. If open milestone, check for open task. If no 
+open task, create next task. If open task, check for open task 
+items. If no open task items, should task be marked complete? 
+Should new task items be created (all task items should be 
+created as soon as task is created, is something wrong?)? If new
+ task, create task items. If open task items, work on next task 
+item. file creations/updates function creations/updates, etc. 
+etc. Loop back when anything is marked complete. This is the 
+standard project management that really needs to be mapped out 
+well. I believe we have directives for all of these so a map or 
+tree of following the directives in this type of order should be
+ quickly and easliy available.\
+\
+  -- Starting point
+  INSERT INTO directive_flow (from_directive, to_directive, 
+flow_type, priority, description)
+  VALUES ('aifp_run', 'project_init', 'canonical', 100, 'First 
+directive on initial run');
+
+  -- After project init
+  INSERT INTO directive_flow (from_directive, to_directive, 
+flow_type, priority, condition_description)
+  VALUES ('project_init', 'blueprint_read', 'canonical', 100, 
+'Read ProjectBlueprint.md');\
+\
+In your examples here, project init is next step, but if project
+ is initialized, is there an automatic jump to blueprint_read? \
+\
+aifp_run should actually first strat with aifp_status. Status 
+should accurately get current state programmatically for AI to 
+process and determine what to do (init, continue working, etc.).
+ We could potentially offer starting points based on the 
+returned value (if not initialized, suggest init. If in 
+progress, suggest continuation directive(s)).\
+\
+status should query the database using all of the helpers and 
+potentially some custom queries as well, getting if user_custom 
+exists, if project initialized (db's in place, blueprint in 
+place, infrastructure in place, etc), get themes and determing 
+point in completion path. Determine current milestone and task. 
+Determine task/subtask/sidequest state and item state relative 
+to any of those. Get last X number of completed items for 
+context. If X not available, get previous task/subtask/sidequest
+ and last X number of completed items for context. Get current 
+incomplete item and next item for context. All should be 
+returned as a comprehensive current state, to include 
+infrastructure guidance, project blueprint location for AI read,
+ etc. \
+\
+From status state some starting point suggestions can be offered
+ and AI can determine how to proceed. 

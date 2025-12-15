@@ -6,6 +6,8 @@
 **Priority**: High
 **Blocking**: Database import, directive implementation
 
+> **⚠️ Historical Note (Jan 2025)**: This document references `directives_interactions` table and `directive-helper-interactions.json`. As of schema v1.8, `directives_interactions` was replaced with `directive_flow` table for the status-driven decision tree architecture. See [DIRECTIVE_NAVIGATION_SYSTEM.md](../../DIRECTIVE_NAVIGATION_SYSTEM.md) and [DIRECTIVES_INTERACTIONS_REVIEW.md](../../DIRECTIVES_INTERACTIONS_REVIEW.md) for current architecture.
+
 ---
 
 ## Overview

@@ -1,5 +1,5 @@
 -- aifp_core.db Schema
--- Version: 1.7
+-- Version: 1.9
 -- Purpose: Defines MCP-level directives (read-only) and helper functions
 -- This database is immutable once deployed; AI reads it but never modifies it.
 
@@ -17,23 +17,33 @@ CREATE TABLE IF NOT EXISTS directives (
 );
 
 -- ===============================================================
--- Intent Keywords for Directive Search
+-- Intent Keywords for Directive Search (Normalized)
 -- ===============================================================
 
--- Intent Keywords Table (many-to-many: directive -> keywords)
+-- Intent Keywords Table (master list of all keywords)
+CREATE TABLE IF NOT EXISTS intent_keywords (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    keyword TEXT NOT NULL UNIQUE                    -- e.g., 'authentication', 'purity', 'task'
+);
+
+-- Index for keyword lookups
+CREATE INDEX IF NOT EXISTS idx_intent_keyword_name ON intent_keywords(keyword);
+
+-- Linking Table: Directive <-> Keywords (many-to-many)
 CREATE TABLE IF NOT EXISTS directives_intent_keywords (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     directive_id INTEGER NOT NULL,
-    keyword TEXT NOT NULL,                          -- Single keyword for intent matching
-    UNIQUE(directive_id, keyword),                  -- Prevent duplicate keyword per directive
-    FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE
+    keyword_id INTEGER NOT NULL,
+    UNIQUE(directive_id, keyword_id),               -- Prevent duplicate keyword per directive
+    FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE,
+    FOREIGN KEY (keyword_id) REFERENCES intent_keywords(id) ON DELETE CASCADE
 );
 
--- Critical for fast keyword searches
-CREATE INDEX IF NOT EXISTS idx_intent_keyword ON directives_intent_keywords(keyword);
-
--- Useful for getting all keywords for a directive
+-- Index for directive -> keywords lookup
 CREATE INDEX IF NOT EXISTS idx_directive_keywords ON directives_intent_keywords(directive_id);
+
+-- Index for keyword -> directives lookup
+CREATE INDEX IF NOT EXISTS idx_keyword_directives ON directives_intent_keywords(keyword_id);
 
 -- ===============================================================
 -- Categories and Directive-Category Linking
@@ -65,41 +75,37 @@ BEGIN
 END;
 
 -- ===============================================================
--- Directive Interactions
+-- Directive Flow: Status-Driven Decision Tree
 -- ===============================================================
+-- See docs/DIRECTIVE_NAVIGATION_SYSTEM.md for complete documentation
 
-CREATE TABLE IF NOT EXISTS directives_interactions (
+CREATE TABLE IF NOT EXISTS directive_flow (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_directive TEXT NOT NULL,
+    to_directive TEXT NOT NULL,
 
-    -- Foreign key references to directives table
-    source_directive_id INTEGER NOT NULL,
-    target_directive_id INTEGER NOT NULL,
+    -- Flow classification
+    flow_type TEXT CHECK (flow_type IN (
+        'status_branch',    -- Branch from status based on project state
+        'completion_loop',  -- Return to status after completing action
+        'conditional',      -- Conditional next step during work execution
+        'error'            -- Error handling path
+    )) NOT NULL DEFAULT 'conditional',
 
-    -- Defines how these two directives are related
-    relation_type TEXT NOT NULL CHECK (relation_type IN (
-        'triggers',        -- source calls or activates target
-        'depends_on',      -- source relies on data or state from target
-        'escalates_to',    -- source delegates upward to target for resolution
-        'cross_link',      -- bidirectional or contextual connection
-        'fp_reference'     -- source calls or enforces an FP directive
-    )),
+    -- Condition for this transition
+    condition_key TEXT,              -- JSONPath-like key: "project.initialized", "task.has_items"
+    condition_value TEXT,            -- Expected value: "false", "true", "exists", or specific value
+    condition_description TEXT,      -- Human readable: "if project not initialized"
 
-    -- Optional hierarchy weight (used for sorting or graph traversal)
-    weight INTEGER DEFAULT 1,
+    priority INTEGER DEFAULT 0,      -- Higher = preferred when multiple conditions match
+    description TEXT,                -- Why this transition exists
 
-    -- Descriptive notes about the connection
-    description TEXT,
-
-    -- For internal reasoning or graph traversal
-    active BOOLEAN DEFAULT 1,
-
-    FOREIGN KEY (source_directive_id) REFERENCES directives(id),
-    FOREIGN KEY (target_directive_id) REFERENCES directives(id)
+    FOREIGN KEY (from_directive) REFERENCES directives(name),
+    FOREIGN KEY (to_directive) REFERENCES directives(name)
 );
 
-CREATE INDEX IF NOT EXISTS idx_interactions_source ON directives_interactions (source_directive_id);
-CREATE INDEX IF NOT EXISTS idx_interactions_target ON directives_interactions (target_directive_id);
-CREATE INDEX IF NOT EXISTS idx_interactions_relation_type ON directives_interactions (relation_type);
+CREATE INDEX IF NOT EXISTS idx_directive_flow_from ON directive_flow(from_directive);
+CREATE INDEX IF NOT EXISTS idx_directive_flow_type ON directive_flow(flow_type);
 
 -- ===============================================================
 -- Helper Functions (used by directives)
@@ -156,4 +162,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.7');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.9');

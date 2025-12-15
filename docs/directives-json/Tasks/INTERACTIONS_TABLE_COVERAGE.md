@@ -4,6 +4,8 @@
 **Purpose**: Determine if removing fp_call_graph_generation leaves gaps in interactions table usage
 **Schema**: `src/aifp/database/schemas/project.sql` line 94-103
 
+> **Note**: This document analyzes the **project database** `interactions` table (function dependencies), NOT the core database `directives_interactions` table (which was replaced by `directive_flow` in v1.8). These are two separate tables with different purposes.
+
 ---
 
 ## Production Schema

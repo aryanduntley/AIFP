@@ -375,6 +375,139 @@ These orchestrators provide flexible, parameter-driven interfaces for common pat
 
 ## Layer 3: Specific Project Analysis Orchestrators
 
+### `aifp_status()`
+
+**Purpose**: Status orchestrator optimized for directive navigation decision tree. Returns comprehensive project state with completion flags and next-step suggestions designed to feed the `get_next_directives_from_status()` system.
+
+**See**: docs/DIRECTIVE_NAVIGATION_SYSTEM.md for complete architecture documentation
+
+**Parameters**: None
+
+**Returns**: Complete status object with:
+```json
+{
+  "project": {
+    "initialized": true | false,
+    "name": "string",
+    "status": "planning" | "in_progress" | "completed",
+    "blueprint_path": "string",
+    "blueprint_needs_sync": true | false
+  },
+  "user_custom": {
+    "exists": true | false
+  },
+  "infrastructure": [
+    {"type": "language|package|tool", "value": "string"}
+  ],
+  "completion_path": {
+    "current": {
+      "id": number,
+      "name": "string",
+      "status": "pending|in_progress|completed",
+      "order_index": number,
+      "all_milestones_complete": true | false
+    },
+    "next_pending": {
+      "id": number,
+      "name": "string"
+    } | null
+  },
+  "milestone": {
+    "current": {
+      "id": number,
+      "name": "string",
+      "status": "pending|in_progress|completed",
+      "all_tasks_complete": true | false,
+      "has_tasks": true | false
+    } | null,
+    "has_incomplete": true | false
+  },
+  "task": {
+    "current": {
+      "id": number,
+      "name": "string",
+      "status": "pending|in_progress|completed",
+      "priority": "low|medium|high|critical",
+      "all_items_complete": true | false,
+      "has_items": true | false
+    } | null,
+    "has_incomplete_items": true | false,
+    "next_pending": {
+      "id": number,
+      "name": "string"
+    } | null
+  },
+  "items": {
+    "current": {
+      "id": number,
+      "content": "string",
+      "status": "pending|in_progress|completed",
+      "for_table": "tasks|subtasks|sidequests"
+    } | null,
+    "next_pending": {
+      "id": number,
+      "content": "string"
+    } | null
+  },
+  "context": {
+    "recent_completed": [
+      {
+        "id": number,
+        "content": "string",
+        "completed_at": "ISO timestamp",
+        "for_table": "tasks|subtasks|sidequests"
+      }
+    ],
+    "files_in_scope": [
+      {
+        "id": number,
+        "name": "string",
+        "path": "string",
+        "language": "string"
+      }
+    ]
+  },
+  "suggested_next_directives": [
+    {
+      "directive": "string",
+      "reason": "string",
+      "priority": number,
+      "condition_matches": true
+    }
+  ]
+}
+```
+
+**Key Differences from `get_current_progress()` and `get_project_status()`:**
+- **Decision-making focus**: Includes completion flags (`all_milestones_complete`, `all_tasks_complete`, `all_items_complete`) for directive flow conditions
+- **Next entity tracking**: Explicitly identifies next pending milestone, task, item
+- **Directive suggestions**: Pre-computes suggested next directives with reasons
+- **Blueprint sync**: Checks if blueprint needs re-reading
+- **User custom check**: Verifies user_directives.db existence
+- **Current item focus**: Identifies specific in-progress item, not just counts
+
+**Helpers Called**:
+- `get_project()`
+- `blueprint_has_changed()`
+- `get_from_project_where()` (multiple calls for milestones, tasks, items)
+- `get_milestones_by_path()`
+- `get_tasks_by_milestone()`
+- `get_task_flows()`, `get_file_ids_from_flows()`
+- `get_from_project()` (for files)
+- Internal: `generate_next_directive_suggestions()`
+
+**Notes**:
+- Designed specifically for the status-driven decision tree architecture
+- Used by directive navigation system to determine valid next steps
+- Single comprehensive call reduces query overhead for navigation decisions
+- Completion flags match condition_key format in directive_flow table
+
+**Used By**: aifp_run directive, directive navigation system
+
+**Classification**: is_tool=true, is_sub_helper=false, target_database='orchestrator'
+
+---
+
 ### `get_project_status()`
 
 **Purpose**: Analyze entire work hierarchy and return comprehensive project status
