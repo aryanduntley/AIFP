@@ -1,0 +1,247 @@
+This is a very strong design already. What you’re missing is **not more hierarchy**, but a **first-class *directive navigation model*** that the AI can *reason over*, not just query.
+
+Below is a concrete, FP-compatible way to add a **directive path tree / graph layer** that fits *exactly* with how your MCP server works (directive-driven, stateful, DB-centric, no code-path following).
+
+---
+
+# Reframe the Problem (Important)
+
+You are **not** doing “pathfinding” in the classic sense.
+
+You are doing:
+
+> **State-conditioned directive traversal in a declarative control system**
+
+So the correct structure is **not a simple tree** and not a single graph either — it is a:
+
+> **Typed, state-aware directive graph with canonical traversal paths**
+
+Your current schema already contains 80% of what’s needed.
+
+What’s missing is:
+
+* A **canonical traversal layer**
+* A **directive “why/when” path**
+* A **single authoritative map AI can load mentally**
+
+---
+
+# The Right Abstraction: Directive Navigation Graph (DNG)
+
+Think of this as a **meta-graph over your directives** that answers:
+
+* *Where am I?*
+* *What directives are valid next?*
+* *Which ones are canonical vs situational?*
+* *What path would a “perfect run” take?*
+
+This graph is:
+
+* Read-only
+* Precomputed or declaratively defined
+* Queried, not executed
+
+---
+
+# Why Your Existing Tables Aren’t Enough (Yet)
+
+You already have:
+
+* `parent_directive` → hierarchy
+* `directives_interactions` → relationships
+* `workflow JSON` → internal flow
+* `level` → project phase
+* `intent keywords` → discovery
+
+But AI still has to **mentally infer**:
+
+* Primary paths vs exceptions
+* Phase transitions
+* Canonical sequences
+* “You are here” semantics
+
+That’s cognitive load you can remove.
+
+---
+
+# Add One New Concept (Minimal, Powerful)
+
+## 1️⃣ `directive_paths` (Canonical Paths)
+
+This defines **authoritative directive traversal paths**.
+
+```sql
+CREATE TABLE IF NOT EXISTS directive_paths (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,                -- e.g. 'default_project_lifecycle'
+    description TEXT,
+    entry_directive TEXT NOT NULL,            -- usually 'aifp_run'
+    exit_directive TEXT,                      -- e.g. 'project_complete'
+    path_type TEXT CHECK (path_type IN (
+        'canonical',
+        'error_recovery',
+        'maintenance',
+        'user_override'
+    )) NOT NULL DEFAULT 'canonical',
+    applies_when JSON,                        -- conditions on project state
+    confidence REAL DEFAULT 1.0               -- how authoritative this path is
+);
+```
+
+---
+
+## 2️⃣ `directive_path_steps`
+
+This is the **actual tree / graph ordering**.
+
+```sql
+CREATE TABLE IF NOT EXISTS directive_path_steps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path_id INTEGER NOT NULL,
+
+    step_order INTEGER NOT NULL,
+    directive_name TEXT NOT NULL,
+
+    required BOOLEAN DEFAULT 1,
+    allows_branch BOOLEAN DEFAULT 0,
+    branch_condition JSON,                    -- e.g. "if tasks_pending == true"
+
+    next_on_success TEXT,                     -- override normal sequence
+    next_on_failure TEXT,
+
+    FOREIGN KEY (path_id) REFERENCES directive_paths(id)
+);
+```
+
+This gives you:
+
+* A **tree (branches)**
+* A **linear happy path**
+* Explicit **fallbacks**
+
+---
+
+# How AI Uses This (Critical)
+
+### On `aifp_run`:
+
+1. AI loads:
+
+   * Current project state (from project DB)
+   * Active directive path(s) whose `applies_when` match
+2. AI identifies:
+
+   * Current directive position in path
+   * Completed steps
+3. AI chooses:
+
+   * Next directive from path
+   * Or deviation if `confidence_threshold` violated
+
+No inference. No guessing.
+
+---
+
+# This Solves Your Exact Goals
+
+### ✔ “Full understanding at any time”
+
+The AI can literally ask:
+
+```sql
+SELECT * FROM directive_path_steps
+WHERE path_id = :active_path
+ORDER BY step_order;
+```
+
+That’s the *map*.
+
+---
+
+### ✔ FP-Aligned
+
+* No execution logic
+* No mutable control flow
+* Declarative state → directive selection
+
+---
+
+### ✔ Rejects OOP Cleanly
+
+You can attach:
+
+```json
+applies_when: {
+  "project.paradigm": "functional"
+}
+```
+
+If violated → path invalid → escalation directive.
+
+---
+
+### ✔ No Context Reload Needed
+
+Because:
+
+* State lives in DB
+* Path lives in DB
+* AI only needs to re-scan pointers
+
+---
+
+# Optional (But Extremely Powerful)
+
+## 3️⃣ `directive_state_contracts`
+
+This makes paths **provably correct**.
+
+```sql
+CREATE TABLE IF NOT EXISTS directive_state_contracts (
+    directive_name TEXT PRIMARY KEY,
+    requires_state JSON,
+    produces_state JSON,
+    invalidates_state JSON
+);
+```
+
+Now AI can:
+
+* Validate path correctness
+* Detect impossible transitions
+* Explain *why* it chose a directive
+
+---
+
+# Mental Model for AI (Put This in System Prompt)
+
+> “You do not infer workflows.
+> You locate the active directive path.
+> You execute the next valid directive according to the path and current state.”
+
+This reduces hallucination dramatically.
+
+---
+
+# Final Recommendation (Concise)
+
+**Do not build a generic tree.**
+Build a **Directive Navigation Graph** with:
+
+1. Canonical paths (`directive_paths`)
+2. Ordered steps (`directive_path_steps`)
+3. State-aware activation
+4. Optional state contracts
+
+Your existing schema already supports this with minimal extension.
+
+---
+
+If you want, next I can:
+
+* Design the **exact `aifp_run` algorithm**
+* Show **SQL queries AI would use**
+* Help you **auto-generate a visual directive map**
+* Stress-test this against failure modes
+
+This is a genuinely solid architecture.

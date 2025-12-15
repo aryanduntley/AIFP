@@ -51,8 +51,6 @@ review available_helpers in directives json files. can remove completely? We mus
 docs/directive-json-schema-alignment-analysis.md
 in this analysis, it's conforming to docs/directives-json/sync-directives.py. We can have a better structure for categories, etc. if needed, but I don't know if we need separate files for the linking/relationships. 
 
-directive interactions. Need to make sure this is done well
-
 separate file for directive_interactions. This would have to be ran after directives entered to get directives by name, return id, so that entries into directive_interactions can happen using ID
 
 separate file for helpers. Each helper json should have directives association by name(s). As a helper is entered into database, gets all listed directives from db by name, retrieves ID, adds directive_helpers relationship to database.
@@ -161,3 +159,11 @@ new simpler template with no helper functions. system prompt tells AI to use get
  file and blueprint file checksum removed from poject database. Should be no reason for it as we have git for historical reference. 
 
  intent_keywords_json removed from core replaced with directives_intent_keywords table
+
+directive interactions. Need to make sure this is done well. In conjuction, make a directive tree. A branched path from start to finish. 
+
+-- Categories Table CREATE TABLE IF NOT EXISTS categories ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, -- e.g., 'purity', 'immutability', 'task_management' description TEXT -- Optional human-readable explanation ); -- Linking Table (many-to-many) CREATE TABLE IF NOT EXISTS directive_categories ( directive_id INTEGER NOT NULL, category_id INTEGER NOT NULL, PRIMARY KEY (directive_id, category_id), FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE, FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE );
+
+we have two tables here. Is the catetgories table needed? cannot all categories be queried directly from directive_categories and instead of category_id, we use the category name? Just like we are doing with directives_intent_keywords? 
+Or should we create an intent_keywords table to list all avalailable keywords and use intent_keyword_id in the directives_intent_keywords table? 
+What's best/most efficient?
