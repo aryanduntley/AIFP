@@ -167,3 +167,5 @@ directive interactions. Need to make sure this is done well. In conjuction, make
 we have two tables here. Is the catetgories table needed? cannot all categories be queried directly from directive_categories and instead of category_id, we use the category name? Just like we are doing with directives_intent_keywords? 
 Or should we create an intent_keywords table to list all avalailable keywords and use intent_keyword_id in the directives_intent_keywords table? 
 What's best/most efficient?
+
+for docs/directive-graph.txt please review. Should we incorporate this path system into our core database for AI clarity in directive usage? We have example helper functions but we don't need to implement those right away. We should first work with and assess the core project management system. Later we can reviwe our consolidated helpers and determine what we should add for any new tables and directive querying for AI we improved. 
