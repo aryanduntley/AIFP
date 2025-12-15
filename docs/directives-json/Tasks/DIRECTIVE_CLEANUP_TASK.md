@@ -1,8 +1,8 @@
 # Task: Directive Review & Cleanup for Helper Function Consistency
 
 **Date Created**: 2025-12-06
-**Date Updated**: 2025-12-07
-**Status**: 🔄 In Progress (Phase 1 Complete)
+**Date Updated**: 2025-12-14
+**Status**: 🔄 In Progress (Phases 1 & 3 Complete)
 **Priority**: High
 **Blocking**: Database import, directive implementation
 
@@ -10,19 +10,19 @@
 
 ## Overview
 
-Helper function registry is now complete. All directives must be reviewed and updated for consistency with the new helper function system.
+Helper function consolidation is now complete. All directives must be reviewed and updated for consistency with the new helper function system.
 
-**Key Decision**: Helper-directive relationships are maintained in **helper registry files** (not directive files). The database import script will read `used_by_directives` fields from helper registries to populate the `directive_helpers` table.
+**Key Decision**: Helper-directive relationships are stored in the **database** (`directive_helpers` table). Development documentation in `docs/helpers/` is for database import preparation only. AI queries the database at runtime, not documentation files.
 
 ---
 
 ## Helper Function Completion Summary
 
-**Status**: ✅ **COMPLETE** (2025-12-06)
-- **Registry Files**: Multiple JSON files organized by database and function type
+**Status**: ✅ **COMPLETE** (2025-12-14 - Consolidated)
+- **Consolidated Docs**: 7 markdown files organized by function category
 - **Databases Covered**: 4 (aifp_core.db, user_preferences.db, user_directives.db, project.db)
-- **Source of Truth**: `docs/helpers/registry/*.json`
-- **Query registry files or database for exact counts**
+- **Source of Truth**: `docs/helpers/helpers-consolidated-*.md`
+- **Total Helpers**: 337 helper functions documented in consolidated format
 
 ### Key Changes to Helper Functions
 
@@ -49,7 +49,7 @@ Helper function registry is now complete. All directives must be reviewed and up
 5. **AI vs Code Decision Framework**:
    - **AI handles**: NLP, semantic validation, file operations, flexible scanning, interactive workflows
    - **Code handles**: Deterministic operations, structured data CRUD, performance-critical tasks, state management
-   - See `docs/helpers/registry/helper-registry-guide.md` for full framework
+   - See `docs/helpers/registry/helper-registry-guide.md` (legacy documentation) for full framework
 
 ---
 
@@ -69,32 +69,23 @@ get_directives_for_helper(helper_function_id, include_directives_data=true)
 # Returns: directive_helpers data + full directives data
 ```
 
-**Location**: `docs/helpers/registry/helpers_registry_core.json`
+**Location**: `docs/helpers/helpers-consolidated-*.md`
 **Database Table**: `directive_helpers` (junction table in aifp_core.db)
 
 ### How Relationships Are Maintained
 
-**Source of Truth**: Helper registry JSON files (`used_by_directives` field)
+**Production Source of Truth**: Database (`directive_helpers` table in aifp_core.db)
 
-Each helper in the registry includes:
-```json
-{
-  "name": "initialize_aifp_project",
-  "used_by_directives": ["project_init"],
-  "execution_context": "Initialize project structure and databases",
-  "sequence_order": 1,
-  "is_required": true
-}
-```
+**Development Preparation**: Consolidated helper documentation in `docs/helpers/` (for database import preparation only)
 
-**Database Import Script** reads helper registries and populates `directive_helpers` table automatically.
+**Database Import Script** reads development helper documentation and populates `directive_helpers` table for production use.
 
 ### Benefits of This Approach
 
-- ✅ Helper functions are source of truth (they're more stable than directives)
+- ✅ Database is the single source of truth for production
 - ✅ No duplicate helper lists in directive files
-- ✅ Easier to maintain (update once in helper registry)
-- ✅ AI queries relationships dynamically at runtime
+- ✅ Easier to maintain (update database, not scattered documentation)
+- ✅ AI queries database dynamically at runtime
 - ✅ Directives remain clean and focused on workflow logic
 
 ---
@@ -207,28 +198,29 @@ Some directive markdown files contain hardcoded helper lists that must be remove
 
 **Method**: Python script (`remove_helper_refs.py`) ✅ **COMPLETE**
 
-**Rationale**: Helper-directive relationships are maintained in helper registry files, not directive files.
+**Rationale**: Helper-directive relationships are stored in the database (`directive_helpers` table), not directive files.
 
 **Completion Date**: 2025-12-07
 
-### 2. ⏳ Update Helper Registry JSON Files with Directive References
+### 2. ⏳ Update Consolidated Helper Documentation with Directive References (FOR DATABASE IMPORT PREP ONLY)
 
-**Status**: Pending review (helper registries already have `used_by_directives` fields)
+**Status**: Pending review (consolidated helper docs in `docs/helpers/` are for database import preparation)
 
-**For each helper** in the 12 registry JSON files, ensure:
-- `used_by_directives` field lists all directives that use this helper
-- Field includes directive names (not IDs, since directives aren't imported yet)
-- Update any helpers with incomplete or missing `used_by_directives` data
+**Important**: These files are development/preparation materials only. Production references the database, not documentation.
 
-**Example** (from `helpers_registry_project_core.json`):
-```json
-{
-  "name": "initialize_aifp_project",
-  "used_by_directives": ["project_init"]
-}
+**For each helper** in the 7 consolidated helper markdown files in `docs/helpers/`, ensure:
+- Directive relationships are documented for database import script to read
+- Documentation includes directive names (not IDs, since directives aren't imported yet)
+- Update any helpers with incomplete or missing directive relationship data
+
+**Example** (from consolidated helper docs - development preparation):
+```markdown
+### initialize_aifp_project()
+**Used by directives**: project_init
+**Purpose**: Initialize project structure and databases
 ```
 
-**Note**: The database import script will resolve directive names to IDs when building the `directive_helpers` table.
+**Note**: The database import script will read these dev docs, resolve directive names to IDs, and populate the `directive_helpers` table in production database.
 
 ### 3. 🔄 Update aifp_system_prompt.txt (NEXT)
 
@@ -256,8 +248,8 @@ references in directive files.
 ```markdown
 ## Helper Functions
 
-This directive's helper functions are maintained in the helper registry.
-At runtime, use:
+This directive's helper functions are stored in the database.
+At runtime, query the database using:
 ```python
 get_helpers_for_directive(directive_id, include_helpers_data=true)
 ```
@@ -266,17 +258,17 @@ to retrieve all associated helpers.
 
 ### 5. ⏳ Create Database Import Script
 
-**Script**: Reads helper registries and populates `directive_helpers` table.
+**Script**: Reads consolidated helper documentation and populates `directive_helpers` table.
 
 **Logic**:
 1. Import all directives to `directives` table (get directive IDs)
 2. Import all helpers to `helper_functions` table (get helper function IDs)
-3. For each helper, read `used_by_directives` field
-4. For each directive name in `used_by_directives`:
+3. For each helper, read directive relationship metadata from consolidated docs
+4. For each directive name in the relationships:
    - Look up directive_id from directives table
    - Insert into `directive_helpers` (directive_id, helper_function_id, execution_context, sequence_order, is_required)
 
-**Note**: This approach means helper registries are the single source of truth for relationships.
+**Note**: This approach means consolidated helper documentation is the single source of truth for relationships.
 
 ---
 
@@ -331,9 +323,9 @@ python3 docs/directives-json/Tasks/remove_helper_refs_from_directives.py --resto
 - [x] Cleanup verified with re-scan
 
 ### Documentation Cleanup 🔄 IN PROGRESS
-- [ ] Helper registries reviewed for `used_by_directives` completeness
-- [ ] Directive markdown files scanned for hardcoded helper lists (~125 files)
-- [ ] Directive markdown files cleaned (remove hardcoded helper lists)
+- [ ] Consolidated helper docs reviewed for directive relationship completeness
+- [x] Directive markdown files scanned for hardcoded helper lists (~125 files) - MD_CLEANUP_CHECKLIST.md shows 100%
+- [x] Directive markdown files cleaned (remove hardcoded helper lists) - COMPLETE 2025-12-14
 - [ ] aifp_system_prompt.txt updated with database query guidance
 - [ ] README.md reviewed and cleaned if needed
 
@@ -355,19 +347,14 @@ python3 docs/directives-json/Tasks/remove_helper_refs_from_directives.py --resto
 5. `docs/directives-json/directives-user-pref.json`
 6. `docs/directives-json/directives-git.json`
 
-### Helper Registry Files (12 files) - Update used_by_directives
-1. `docs/helpers/registry/helpers_registry_core.json`
-2. `docs/helpers/registry/helpers_registry_mcp_orchestrators.json`
-3. `docs/helpers/registry/helpers_registry_user_settings.json`
-4. `docs/helpers/registry/helpers_registry_user_directives_getters.json`
-5. `docs/helpers/registry/helpers_registry_user_directives_setters.json`
-6. `docs/helpers/registry/helpers_registry_project_core.json`
-7. `docs/helpers/registry/helpers_registry_project_structure_getters.json`
-8. `docs/helpers/registry/helpers_registry_project_structure_setters.json`
-9. `docs/helpers/registry/helpers_registry_project_workflow_getters.json`
-10. `docs/helpers/registry/helpers_registry_project_workflow_setters.json`
-11. `docs/helpers/registry/helpers_registry_project_orchestrators.json`
-12. `docs/helpers/registry/helpers_registry_git.json`
+### Consolidated Helper Documentation (7 files) - Update directive relationships
+1. `docs/helpers/helpers-consolidated-core.md`
+2. `docs/helpers/helpers-consolidated-git.md`
+3. `docs/helpers/helpers-consolidated-index.md`
+4. `docs/helpers/helpers-consolidated-orchestrators.md`
+5. `docs/helpers/helpers-consolidated-project.md`
+6. `docs/helpers/helpers-consolidated-settings.md`
+7. `docs/helpers/helpers-consolidated-user-custom.md`
 
 ### Directive Markdown Files (~125 files) - Remove Helper Lists
 - `src/aifp/reference/directives/*.md`
@@ -380,15 +367,16 @@ python3 docs/directives-json/Tasks/remove_helper_refs_from_directives.py --resto
 
 ## Related Documentation
 
-**Helper Function Registry**:
-- `docs/helpers/registry/CURRENT_STATUS.md` - Current status overview
-- `docs/helpers/registry/HELPER_REGISTRY_STATUS.md` - Detailed breakdown
-- `docs/helpers/registry/helper-registry-guide.md` - Design principles & AI vs Code framework
-- `docs/helpers/registry/CONSOLIDATION_REPORT.md` - Changes summary
+**Development Preparation Files** (for database import only):
+- `docs/helpers/helpers-consolidated-index.md` - Index of helper functions for import prep
+- `docs/helpers/helpers-consolidated-*.md` (7 files) - Helper documentation for import prep
+- Categories: core, git, orchestrators, project, settings, user-custom
+
+**Production Source**: Database queries using `get_helpers_for_directive()` and related functions
 
 **Policies & Decisions**:
 - `docs/aifp-oop-policy.md` - FP-only policy, OOP rejection workflow
-- `docs/helpers/registry/helper-registry-guide.md` (Section 0) - AI vs Code decision framework
+- `docs/helpers/registry/helper-registry-guide.md` (legacy documentation, Section 0) - AI vs Code decision framework
 
 **Database Schema**:
 - `src/aifp/database/schemas/aifp_core.sql` - Line 113: directive_helpers table
@@ -400,45 +388,46 @@ python3 docs/directives-json/Tasks/remove_helper_refs_from_directives.py --resto
 
 ## Timeline Estimate
 
-**Phase 1: Cleanup Script** (1 session)
+**Phase 1: Cleanup Script** ✅ COMPLETE (1 session)
 - Create Python script to remove helper refs from directive JSON files
 - Test on one file, then run on all 6 files
 
-**Phase 2: Helper Registry Updates** (1-2 sessions)
-- Review all 349 helpers for `used_by_directives` completeness
-- Update missing or incomplete directive references
+**Phase 2: Consolidated Helper Updates** (1-2 sessions)
+- Review all 337 helpers for directive relationship completeness
+- Update missing or incomplete directive references in consolidated docs
 
-**Phase 3: Markdown & System Prompt** (1 session)
-- Update directive markdown files (remove hardcoded helper lists)
-- Update aifp_system_prompt.txt with database query guidance
+**Phase 3: Markdown & System Prompt** ✅ COMPLETE (1 session)
+- Update directive markdown files (remove hardcoded helper lists) - DONE 2025-12-14
+- Update aifp_system_prompt.txt with database query guidance - PENDING
 
 **Phase 4: Database Import Script** (1-2 sessions)
 - Create script to import directives, helpers, and build directive_helpers table
 - Test and verify relationships
 
-**Total**: 4-6 sessions
+**Total**: 4-6 sessions (Phase 1 & 3 complete)
 
 ---
 
 ## Key Decisions
 
-1. **Helper registries are source of truth** for directive-helper relationships
-   - Rationale: Helpers are more stable than directives
-   - Implementation: `used_by_directives` field in each helper entry
+1. **Database is the production source of truth** for directive-helper relationships
+   - Rationale: Single source of truth for all production queries
+   - Implementation: `directive_helpers` table in aifp_core.db
+   - Development docs in `docs/helpers/` are for database import preparation only
 
-2. **Remove ALL helper references from directive files**
-   - Directive JSON files: Remove `helper` and `helper_*` fields
-   - Directive markdown files: Remove hardcoded helper lists
-   - AI queries database at runtime instead
+2. **Remove ALL helper references from directive files** ✅ COMPLETE
+   - Directive JSON files: Remove `helper` and `helper_*` fields - DONE 2025-12-07
+   - Directive markdown files: Remove hardcoded helper lists - DONE 2025-12-14
+   - AI queries database at runtime, not documentation
 
-3. **Database import script builds relationships**
-   - Reads `used_by_directives` from helper registries
-   - Populates `directive_helpers` table automatically
-   - Single source of truth = helper registries
+3. **Database import script builds production relationships**
+   - Reads development documentation in `docs/helpers/` as preparation data
+   - Populates `directive_helpers` table in production database
+   - Production source of truth = database, not documentation
 
-4. **Update system prompt**
-   - AI must query `get_helpers_for_directive()` when executing directives
-   - No reliance on hardcoded references
+4. **Update system prompt** ⏳ PENDING
+   - AI must query database using `get_helpers_for_directive()` when executing directives
+   - No reliance on hardcoded references or documentation files
 
 ---
 
@@ -457,7 +446,7 @@ python3 docs/directives-json/Tasks/remove_helper_refs_from_directives.py --resto
 
 ---
 
-**Status**: 🔄 Phase 1 Complete (Directive JSON cleanup done), Phase 2 In Progress (Documentation cleanup)
-**Blocker**: Must complete documentation cleanup before database import
+**Status**: 🔄 Phases 1 & 3 Complete (Directive JSON & MD cleanup done), Phase 2 In Progress (Consolidated helper updates)
+**Blocker**: Must complete consolidated helper review before database import
 **Owner**: TBD
-**Last Updated**: 2025-12-07
+**Last Updated**: 2025-12-14

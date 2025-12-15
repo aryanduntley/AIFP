@@ -416,15 +416,6 @@ SET
     }',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'calculate_discount' AND file_id = ?;
-
--- Record validation addition
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Added runtime type validation to calculate_discount function',
-    '["fp_runtime_type_check", "type_safety", "validation"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions Needing Runtime Validation

@@ -97,24 +97,6 @@ Scans code for repeated literals and mutable bindings.
     - Top of file (after imports)
     - Grouped by category if many constants
     - Documented with comment if non-obvious
-  - Update database:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      reference_table,
-      reference_id,
-      source,
-      directive_name
-    ) VALUES (
-      'Extracted repeated literal 18 to constant ADULT_AGE_THRESHOLD',
-      'research',
-      'files',
-      ?,  -- file_id
-      'directive',
-      'fp_const_refactoring'
-    );
-    ```
 - **Result**: Repeated literal extracted, code更加 maintainable
 
 **Branch 2: If mutable_bindings**
@@ -358,15 +340,6 @@ def check_password_strength(password: str) -> str:
     if len(password) < STRONG_PASSWORD_LENGTH:
         return "medium"
     return "strong"
-
-# Database log
-INSERT INTO notes (content, note_type, source, directive_name)
-VALUES (
-  'Extracted repeated literal 8 to MIN_PASSWORD_LENGTH',
-  'research',
-  'directive',
-  'fp_const_refactoring'
-);
 
 # Result:
 # ✅ Magic numbers replaced with named constants

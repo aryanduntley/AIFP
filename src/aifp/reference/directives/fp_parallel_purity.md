@@ -424,15 +424,6 @@ SET
     }',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'parallel_process' AND file_id = ?;
-
--- Record parallelism validation
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Validated parallel_process for parallel purity: all tasks pure and independent',
-    '["fp_parallel_purity", "concurrency", "validation"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ---

@@ -946,7 +946,8 @@
     "intent_keywords_json": [
       "dependency",
       "import",
-      "call graph"
+      "call graph",
+      "dependency map"
     ],
     "confidence_threshold": 0.7
   },
@@ -1302,47 +1303,6 @@
       "task isolation",
       "async",
       "parallel safety"
-    ],
-    "confidence_threshold": 0.7
-  },
-  {
-    "name": "fp_call_graph_generation",
-    "type": "fp",
-    "parent_directive": null,
-    "category": {
-      "name": "introspection",
-      "description": "Generates a call graph for reasoning and debugging."
-    },
-    "description": "Builds an internal representation of all function calls for dependency and impact analysis. Used by MCP for dependency reasoning and impact analysis.",
-    "md_file_path": "directives/fp_call_graph_generation.md",
-    "workflow": {
-      "trunk": "scan_for_function_calls",
-      "branches": [
-        {
-          "if": "function_call_detected",
-          "then": "record_dependency"
-        },
-        {
-          "if": "graph_complete",
-          "then": "store_in_metadata"
-        },
-        {
-          "fallback": "prompt_user"
-        }
-      ],
-      "error_handling": {
-        "on_failure": "prompt_user"
-      }
-    },
-    "roadblocks_json": [
-      {
-        "issue": "unresolved_symbol",
-        "resolution": "Link or flag for analysis"
-      }
-    ],
-    "intent_keywords_json": [
-      "call graph",
-      "dependency map"
     ],
     "confidence_threshold": 0.7
   },

@@ -250,20 +250,6 @@ Analyzes how data is passed between functions.
     - Function consumes data (no need to keep original)
     - Transferring ownership to avoid copy overhead
     - Resource management (file handles, connections)
-  - Update database:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      source,
-      directive_name
-    ) VALUES (
-      'Ownership transferred (move semantics) in function consume_data',
-      'research',
-      'directive',
-      'fp_ownership_safety'
-    );
-    ```
 - **Result**: Ownership transferred, no shared reference
 
 **Branch 5: If concurrent_access_detected**

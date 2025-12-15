@@ -121,20 +121,6 @@ Inspects function signatures for currying opportunities.
     - Flexible function usage
     - Create specialized variants
     - Pipeline-friendly
-  - Update database:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      source,
-      directive_name
-    ) VALUES (
-      'Curried function add() for partial application',
-      'research',
-      'directive',
-      'fp_currying'
-    );
-    ```
 - **Result**: Function curried
 
 **Branch 2: If partial_application_opportunity**
@@ -323,19 +309,6 @@ def add(x, y):
 # Both work
 result = add(5)(3)  # Curried: 8
 result = add(5, 3)  # Direct: 8
-
-# Database log
-INSERT INTO notes (
-  content,
-  note_type,
-  source,
-  directive_name
-) VALUES (
-  'Curried add() function for partial application',
-  'research',
-  'directive',
-  'fp_currying'
-);
 
 # Result:
 # ✅ Function curried

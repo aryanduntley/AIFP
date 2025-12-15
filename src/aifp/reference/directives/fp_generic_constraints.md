@@ -453,15 +453,6 @@ SET
     }',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'process_items' AND file_id = ?;
-
--- Record constraint addition
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Added Comparable bound to generic parameter T in process_items',
-    '["fp_generic_constraints", "type_safety", "refactoring"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions with Unbounded Generics

@@ -479,19 +479,6 @@ def start(vehicle: Vehicle) -> str:
 car = Vehicle(vehicle_type="car", brand="Toyota", model="Camry")
 print(start(car))  # "Toyota Camry car starting"
 
-# Database log
-INSERT INTO notes (
-  content,
-  note_type,
-  source,
-  directive_name
-) VALUES (
-  'Flattened inheritance: Vehicle → Car to dispatch table',
-  'research',
-  'directive',
-  'fp_inheritance_flattening'
-);
-
 # Result:
 # ✅ No inheritance
 # ✅ Flat functions

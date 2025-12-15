@@ -558,15 +558,6 @@ SET
     control_flow_style = 'guard_clauses',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'process_user' AND file_id = ?;
-
--- Record refactoring
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Refactored process_user from nested conditionals to guard clauses, reducing complexity',
-    '["fp_guard_clauses", "refactoring", "complexity_reduction"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions Needing Guard Clause Refactoring

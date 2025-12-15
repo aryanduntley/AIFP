@@ -650,15 +650,6 @@ SET
     ),
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'calculate_discount' AND file_id = ?;
-
--- Record documentation violation
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'DOCUMENTATION: Function "process_data" missing docstring with purity annotation',
-    '["fp_documentation", "violation", "code_quality"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ---

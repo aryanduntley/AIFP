@@ -497,15 +497,6 @@ SET
     }',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'process_items_parallel' AND file_id = ?;
-
--- Record concurrency refactoring
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Refactored process_items to eliminate shared mutable state for concurrency safety',
-    '["fp_concurrency_safety", "parallelism", "refactoring"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions for Concurrency Analysis

@@ -451,15 +451,6 @@ SET
     optimization_level = 'optimized',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'factorial' AND file_id = ?;
-
--- Record transformation
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Converted factorial from non-tail to tail-recursive with accumulator',
-    '["fp_tail_recursion", "optimization", "refactoring"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions Needing Tail Call Optimization

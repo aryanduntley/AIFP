@@ -510,15 +510,6 @@ SET
     complexity_score = 2,  -- Reduced from 5 (nested if/else)
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'process_response' AND file_id = ?;
-
--- Record refactoring in notes
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Converted process_response from nested if/else to pattern matching',
-    '["fp_pattern_matching", "refactoring", "control_flow"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions Needing Pattern Matching

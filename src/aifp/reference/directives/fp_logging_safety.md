@@ -587,15 +587,6 @@ SET
     ),
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'process_payment' AND file_id = ?;
-
--- Record refactoring
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Isolated logging from process_payment by returning log data',
-    '["fp_logging_safety", "side_effects", "refactoring"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ---

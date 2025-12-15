@@ -442,15 +442,6 @@ SET
     type_safety_level = 'fully_typed',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'calculate_total' AND file_id = ?;
-
--- Record type-related changes
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Added complete type annotations to calculate_total function',
-    '["fp_type_safety", "type_annotations", "refactoring"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions Missing Type Annotations

@@ -451,15 +451,6 @@ SET
     type_inference_method = 'operation_based',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'calculate_area' AND file_id = ?;
-
--- Record inference details in notes
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Inferred types for calculate_area based on multiplication operator usage',
-    '["fp_type_inference", "automatic", "numeric_types"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions Needing Type Inference

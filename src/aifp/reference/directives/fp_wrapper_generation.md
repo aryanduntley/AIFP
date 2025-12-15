@@ -116,20 +116,6 @@ Scans imports and identifies OOP libraries.
     - **Pattern 2**: Mutable state → Immutable config objects
     - **Pattern 3**: Method chaining → Function composition
     - **Pattern 4**: Callbacks → Return values or iterators
-  - Update database:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      source,
-      directive_name
-    ) VALUES (
-      'Generated FP wrapper for requests library: fetch_url()',
-      'research',
-      'directive',
-      'fp_wrapper_generation'
-    );
-    ```
 - **Result**: Functional wrapper generated
 
 **Branch 2: If unknown_library**
@@ -403,19 +389,6 @@ def get_user_data(user_id: int, config: HttpConfig = HttpConfig()) -> dict:
     url = f"https://api.example.com/users/{user_id}"
     response = http_get(url, config)
     return response.data
-
-# Database log
-INSERT INTO notes (
-  content,
-  note_type,
-  source,
-  directive_name
-) VALUES (
-  'Generated FP wrapper for requests library: http_get()',
-  'research',
-  'directive',
-  'fp_wrapper_generation'
-);
 
 # Result:
 # ✅ Stateful library wrapped with pure functions

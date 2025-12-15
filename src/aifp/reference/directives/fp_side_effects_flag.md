@@ -584,15 +584,6 @@ SET
     purity_level = 'impure',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'process_and_save_data' AND file_id = ?;
-
--- Record side effect refactoring
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Isolated I/O side effects in process_and_save_data to boundary functions',
-    '["fp_side_effects_flag", "io_isolation", "refactoring"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions with Side Effects

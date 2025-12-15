@@ -477,15 +477,6 @@ SET
     ),
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'process_users_isolated' AND file_id = ?;
-
--- Record isolation validation
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Validated task isolation in process_users_isolated: each task operates on independent data',
-    '["fp_task_isolation", "concurrency", "validation"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ---

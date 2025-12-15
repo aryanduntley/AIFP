@@ -14,6 +14,8 @@
 
 ✅ **project_user_referral.md** - Replaced SQL with helper guidance (user referral is legitimate logging)
 ✅ **fp_borrow_check.md** - Removed SQL examples, added "only if fp_flow_tracking enabled (disabled by default)" notes
+✅ **fp_api_design.md** - Removed INSERT INTO notes SQL block (2025-12-14)
+✅ **fp_call_graph_generation.md** - ENTIRE FILE REMOVED (directive deleted, used wrong table)
 
 ---
 
@@ -63,9 +65,14 @@
 
 ## Files Needing FP Logging Cleanup
 
+**Status**: 2 / 27 complete (7%)
+**Remaining**: 25 files
+
+See `SQL_CLEANUP_CHECKLIST.md` for detailed tracking.
+
 ### High Priority (document logging as standard behavior)
-- [ ] fp_api_design.md
-- [ ] fp_chaining.md (2 instances)
+- [X] fp_api_design.md ✅ DONE
+- [ ] fp_chaining.md - SKIP (no INSERT INTO notes found)
 - [ ] fp_concurrency_safety.md
 - [ ] fp_conditional_elimination.md
 - [ ] fp_const_refactoring.md (2 instances)

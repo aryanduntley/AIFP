@@ -150,6 +150,9 @@ docs/directives-json/Tasks/MD_HELPER_REFS_ANALYSIS.md
 docs/temp.txt
 docs/directives-json/Tasks/MD_CLEANUP_CHECKLIST.md
 
+docs/directives-json/Tasks/SQL_CLEANUP_NEEDED.md
+docs/directives-json/DIRECTIVE_ARCHITECTURE.md
+
 used_by_directive field in the helper json files needs to be evaluated when re-evaluating directives
 
 src/aifp/reference/directives/user_preferences_update.md

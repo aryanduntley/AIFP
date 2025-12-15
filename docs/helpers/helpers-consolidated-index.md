@@ -168,12 +168,12 @@ For detailed helper function documentation for each database, see:
 
 ### Total Helper Count
 
-**~130 total helper functions**
-- ~55 MCP Tools (is_tool=true) - AI can call directly
+**~200 total helper functions**
+- ~180 MCP Tools (is_tool=true) - AI can call directly
 - ~15 Directive Helpers (is_tool=false, is_sub_helper=false) - Called via directives
 - ~5 Sub-Helpers (is_sub_helper=true) - Internal only
 
-**Note**: The Directive Helpers count was corrected from an earlier estimate of ~70 to the accurate count of ~15.
+**Note**: Approximate counts subject to change as helpers are added/removed.
 
 ### Directive Helpers (is_tool=false, is_sub_helper=false)
 

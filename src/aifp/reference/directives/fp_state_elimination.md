@@ -219,17 +219,6 @@ Scans function body for references to global or static variables.
   - Resolution:
     - Move initialization to entry point (main function)
     - Warn user about import side effects
-    - Log to project.db notes table:
-      ```sql
-      INSERT INTO notes (content, note_type, severity, source, directive_name)
-      VALUES (
-        'Import side effect detected: logging.basicConfig() at module level in auth.py',
-        'roadblock',
-        'warning',
-        'directive',
-        'fp_state_elimination'
-      )
-      ```
 - **Result**: Import side effects documented, user notified
 
 **Branch 6: If scope_clean**

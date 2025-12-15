@@ -608,15 +608,6 @@ SET
     purity_level = 'pure',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'calculate_user_orders' AND file_id = ?;
-
--- Record refactoring
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Isolated database I/O from calculate_user_orders using repository pattern',
-    '["fp_io_isolation", "side_effects", "refactoring"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions with Inline I/O

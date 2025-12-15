@@ -485,15 +485,6 @@ SET
     ),
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'calculate_total' AND file_id = ?;
-
--- Record naming violation
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'NAMING: Function "do_stuff" should use descriptive verb-noun pattern. Suggested: "process_user_data"',
-    '["fp_naming_conventions", "violation", "code_quality"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ---

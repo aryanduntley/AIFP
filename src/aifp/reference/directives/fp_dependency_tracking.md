@@ -490,7 +490,6 @@ WHERE i1.source_function_id < i1.target_function_id;
 ## Related Directives
 
 ### FP Directives
-- **fp_call_graph_generation**: Sister directive focused on graph generation
 - **fp_purity**: Pure functions simplify dependency reasoning
 - **fp_function_composition**: Tracks composed function dependencies
 
@@ -685,9 +684,6 @@ def on_file_save(file_path):
 ---
 
 ## Integration Points
-
-### With `fp_call_graph_generation`
-Complementary directive for visual graph generation.
 
 ### With `project_compliance_check`
 Uses dependency info to validate architectural rules.

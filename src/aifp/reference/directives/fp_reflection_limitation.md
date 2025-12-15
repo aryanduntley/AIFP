@@ -409,15 +409,6 @@ SET
     compliance_status = 'violation',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'dynamic_function' AND file_id = ?;
-
--- Record violation
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'VIOLATION: Function dynamic_function uses eval() and getattr() - refactor to static code',
-    '["fp_reflection_limitation", "violation", "security"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ---

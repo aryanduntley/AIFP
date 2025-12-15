@@ -501,15 +501,6 @@ SET
     optimization_level = 'memoized',
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'calculate_expensive_result' AND file_id = ?;
-
--- Record memoization application
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'OPTIMIZATION: Applied LRU memoization to calculate_expensive_result. Expected 100x speedup for repeated inputs.',
-    '["fp_memoization", "optimization", "performance"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ---

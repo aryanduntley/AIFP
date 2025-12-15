@@ -502,15 +502,6 @@ SET
     complexity_score = 1,  -- Reduced
     updated_at = CURRENT_TIMESTAMP
 WHERE name = 'get_status' AND file_id = ?;
-
--- Record refactoring
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'Converted get_status from imperative if/else to declarative expression',
-    '["fp_conditional_elimination", "declarative", "refactoring"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ### Query Functions with Imperative Conditionals

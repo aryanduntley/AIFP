@@ -19,7 +19,7 @@ Use this reference when updating directive MD files to cross-reference directive
 
 ## All Directives
 
-Total directives: **125**
+Total directives: **124**
 
 ### FP Auxiliary Directives
 
@@ -66,12 +66,11 @@ Total directives: **125**
 
 ### FP Core Directives
 
-**Count**: 30
+**Count**: 29
 
 | Directive Name | JSON File | Line |
 |----------------|-----------|------|
 | `fp_borrow_check` | directives-fp-core.json | 378 |
-| `fp_call_graph_generation` | directives-fp-core.json | 1309 |
 | `fp_chaining` | directives-fp-core.json | 557 |
 | `fp_concurrency_safety` | directives-fp-core.json | 866 |
 | `fp_conditional_elimination` | directives-fp-core.json | 1000 |

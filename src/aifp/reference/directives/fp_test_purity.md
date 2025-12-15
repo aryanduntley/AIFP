@@ -490,15 +490,6 @@ VALUES (
     ),
     1
 );
-
--- Record test purity validation
-INSERT INTO notes (project_id, content, tags, created_at)
-VALUES (
-    1,
-    'TEST PURITY: test_user_workflow uses mutable shared state. Refactor to pure fixtures.',
-    '["fp_test_purity", "violation", "testing"]',
-    CURRENT_TIMESTAMP
-);
 ```
 
 ---
