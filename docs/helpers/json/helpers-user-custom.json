@@ -1,0 +1,255 @@
+{
+  "helpers": [
+    {
+      "name": "get_user_custom_tables",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "List all tables in user custom directives database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of table names"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_user_custom_fields",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Get field names and types for a specific table",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of field objects"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_user_custom_schema",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Get complete schema for user custom directives database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Object mapping table names to field arrays"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_user_custom_json_parameters",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Get available fields for table to use with generic add/update operations",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Object with fields array, examples (similar to `get_project_json_parameters()`)",
+        "Use with `add_user_custom_entry()` or `update_user_custom_entry()` for tables without specialized functions. Only include fields being set/updated in JSON."
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_from_user_custom",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [
+        {
+          "name": "id_array",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "**MUST contain at least one ID**"
+        }
+      ],
+      "purpose": "Get records by ID(s) - **EMPTY ARRAY NOT ALLOWED**",
+      "error_handling": "Return error if id_array is empty",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of records"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_from_user_custom_where",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [
+        {
+          "name": "conditions",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs"
+        }
+      ],
+      "purpose": "Flexible filtering with structured JSON conditions",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching records"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "query_user_custom",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Execute complex SQL WHERE clause (advanced, rare use)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching rows"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_user_custom_entry",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Add entry to user custom directives database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_user_custom_entry",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Update entry in user custom directives database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_user_custom_entry",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Delete entry from user custom directives",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "parse_directive_file",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Parse YAML/JSON/TXT directive file (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Tracks file reference in source_files table"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "validate_directive_config",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Interactive validation for parsed directive (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Updates validated config in user_directives table"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "generate_handler_code",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Generate FP-compliant implementation code (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Creates src/ files, updates project.db, generates tests"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "deploy_background_service",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Activate directive for real-time execution (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Starts scheduler/event handler"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_user_directive_status",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Get status of user directive(s) (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Directive status object(s) with execution stats"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "monitor_directive_execution",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [],
+      "purpose": "Get execution statistics and errors (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Detailed logs in .aifp-project/logs/, not database"
+      ],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-user-custom.json",
+    "count": 16,
+    "status": "converted from markdown - used_by_directives empty"
+  }
+}

@@ -1,0 +1,590 @@
+{
+  "helpers": [
+    {
+      "name": "update_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update milestone metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete milestone with task validation",
+      "error_handling": "- Calls `get_incomplete_tasks_by_milestone(milestone_id, skip_pending=false)`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error if incomplete tasks exist, success otherwise"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "JSON array of flow IDs"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Default if not specified"
+        }
+      ],
+      "purpose": "Add task to milestone",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_tasks_by_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "skip_pending",
+          "type": "boolean",
+          "required": true,
+          "default": null,
+          "description": "If true, excludes pending tasks"
+        }
+      ],
+      "purpose": "Get open tasks for a milestone with related subtasks/sidequests",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Ensures status=in_progress tasks included"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_tasks",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all incomplete tasks with subtasks/sidequests",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Object with tasks, subtasks, sidequests arrays",
+        "Comprehensive work overview"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_tasks_by_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all tasks for a milestone (any status)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of task objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_tasks_comprehensive",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Advanced task search with multiple filters",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of filtered task objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_task_flows",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get flow IDs for a task",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of flow IDs from flow_ids JSON field"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_task_files",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all files related to task via flows (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of file objects with full data",
+        "Chains get_task_flows → get_file_ids_from_flows → get_from_project()"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update task metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete task with item validation",
+      "error_handling": "- Calls `get_items_for_task(task_id)` (all statuses)",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error if completed/in_progress items exist, success if only pending or no items"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_subtask",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Add subtask to task",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`",
+        "Subtasks inherit task's milestone and flows"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_subtasks",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all non-completed subtasks",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of subtask objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_subtasks_by_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get incomplete subtasks for specific task",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of subtask objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_subtasks_by_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get subtasks for task, optionally filtered by status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of subtask objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_subtasks_comprehensive",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Advanced subtask search",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of filtered subtask objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_subtask",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update subtask metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_subtask",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete subtask with item validation (same logic as delete_task)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error or success based on item status"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_sidequest",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "paused_subtask_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "If sidequest during subtask"
+        },
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "JSON array of flow IDs"
+        }
+      ],
+      "purpose": "Add sidequest (urgent interruption)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_sidequests",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all non-completed sidequests",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of sidequest objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_sidequests_comprehensive",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Advanced sidequest search",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of filtered sidequest objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_sidequest_flows",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get flow IDs for a sidequest",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of flow IDs"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_sidequest_files",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all files related to sidequest via flows (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of file objects",
+        "Chains get_sidequest_flows → get_file_ids_from_flows → get_from_project()"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_sidequest",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update sidequest metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_sidequest",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete sidequest with item validation (same logic as delete_task)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error or success based on item status"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_items_for_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get items for task, optionally filtered by status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of item objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_items_for_subtask",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get items for subtask",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of item objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_items_for_sidequest",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get items for sidequest",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of item objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_items",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "for_table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "\"tasks\", \"subtasks\", \"sidequests\" (accepts singular)"
+        },
+        {
+          "name": "for_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Parent ID"
+        }
+      ],
+      "purpose": "Get incomplete items for any parent type",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of incomplete item objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_item",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete item with status validation",
+      "error_handling": "Cannot delete in-progress/completed items, only pending",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "- Error if status is \"completed\" or \"in_progress\"",
+        "Completed/in-progress items must stay, use notes for issues"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_note",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "\"ai\" or \"user\" (default \"ai\")"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "\"info\", \"warning\", \"error\" (default \"info\")"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Directive context"
+        }
+      ],
+      "purpose": "Add note to project database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_notes_comprehensive",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Advanced note search with filters",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of filtered note objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "search_notes",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "search_string",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Required"
+        }
+      ],
+      "purpose": "Search note content with optional filters",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching notes"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_note",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update note metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_note",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete note (discouraged)",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-3.json",
+    "count": 35,
+    "range": "helpers 78-112 of 112",
+    "status": "converted from markdown - used_by_directives empty",
+    "note": "Consolidated from original 6 project files into 3 files (~600 lines each)"
+  }
+}

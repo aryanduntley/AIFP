@@ -1,0 +1,600 @@
+{
+  "helpers": [
+   {
+      "name": "finalize_type",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Finalize reserved type after creation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"type_id\": type_id, \"file_id\": file_id}`",
+        "Sets is_reserved=false, calls update_file_timestamp(file_id)"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "finalize_types",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Finalize multiple reserved types",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"finalized_ids\": [...]}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_type",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update type metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"type_id\": type_id, \"file_id\": file_id}`",
+        "Calls update_file_timestamp(file_id)"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_type",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete type with relationship validation",
+      "error_handling": "- Calls `get_from_project_where(\"types_functions\", {\"type_id\": type_id})`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error if types_functions exist, success otherwise",
+        "Calls update_file_timestamp(file_id) on success"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_types_functions",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Add type-function relationship(s)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"ids\": [...]}`",
+        "For single relationship, pass array with one tuple: `[(type_id, function_id, role)]`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_type_function_role",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update relationship role only",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`",
+        "For other changes, delete old and add new"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_type_function",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Remove type-function relationship",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_interaction",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Source function name"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Target function name"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Interaction type"
+        }
+      ],
+      "purpose": "Add function dependency/interaction",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_interactions",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Add multiple interactions at once",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"ids\": [...]}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_interaction",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update interaction metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_interaction",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete interaction",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_theme_by_name",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get theme by name (fairly frequent)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Theme object or null"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_flow_by_name",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get flow by name (fairly frequent)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Flow object or null"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_all_themes",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all project themes",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of themes"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_all_flows",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all project flows",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of flows"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_theme",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Add project theme",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_theme",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update theme metadata",
+      "error_handling": "Error if no update fields provided",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_theme",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete theme with flow validation",
+      "error_handling": "- Calls `get_flows_for_theme(theme_id)`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error if flows exist, success otherwise"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Add project flow",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_file_ids_from_flows",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all file IDs associated with flows",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of file IDs"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update flow metadata",
+      "error_handling": "Error if no update fields provided",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete flow with file validation",
+      "error_handling": "- Calls `get_files_by_flow(flow_id)`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error if files exist, success otherwise"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_flows_for_theme",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all flows for a theme",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of flow objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_themes_for_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all themes for a flow",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of theme objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_files_by_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all files for a flow",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of file objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_flows_for_file",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all flows for a file",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of flow objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Add completion path stage",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_all_completion_paths",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all completion paths ordered by order_index",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of completion path objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_next_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get lowest order_index with status != completed",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Next incomplete completion path"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_completion_paths_by_status",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get completion paths filtered by status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array ordered by order_index"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_completion_paths",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all non-completed paths",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array ordered by order_index"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update completion path",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Delete completion path with milestone validation",
+      "error_handling": "- Calls `get_milestones_by_path(path_id)`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error if milestones exist, success otherwise"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "reorder_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Change order_index for a completion path",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}` or error if order exists"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "reorder_all_completion_paths",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Fix gaps and duplicates in order_index",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Renumbers to consecutive sequence, reports duplicates"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "swap_completion_paths_order",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Swap order_index of two completion paths",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`",
+        "Temporarily allows duplicates during swap"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Add milestone to completion path",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_milestones_by_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all milestones for a completion path",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of milestone objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_milestones_by_status",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get milestones filtered by status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of milestone objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_milestones",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all non-completed milestones",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of milestone objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-2.json",
+    "count": 40,
+    "range": "helpers 38-77 of 112",
+    "status": "converted from markdown - used_by_directives empty",
+    "note": "Consolidated from original 6 project files into 3 files (~600 lines each)"
+  }
+}

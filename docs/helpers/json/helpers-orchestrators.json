@@ -1,0 +1,348 @@
+{
+  "helpers": [
+    {
+      "name": "get_current_progress",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [
+        {
+          "name": "scope",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "What information to retrieve"
+        },
+        {
+          "name": "detail_level",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "How much detail to return"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "WHERE-like conditions"
+        }
+      ],
+      "purpose": "Single entry point for all project status queries. Replaces 5-10 separate helper calls with one flexible query.",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_project_state",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [
+        {
+          "name": "action",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Operation to perform"
+        },
+        {
+          "name": "target_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Entity type"
+        },
+        {
+          "name": "target_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "ID of target entity"
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Action-specific data"
+        },
+        {
+          "name": "create_note",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "Auto-log action as note"
+        }
+      ],
+      "purpose": "Single entry point for common project state updates. Simplifies task lifecycle management and progress tracking.",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "batch_update_progress",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [
+        {
+          "name": "updates",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "List of update operation objects"
+        },
+        {
+          "name": "transaction",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "All-or-nothing commit vs independent updates"
+        },
+        {
+          "name": "continue_on_error",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "Stop on first error or continue processing"
+        },
+        {
+          "name": "rollback_on_partial_failure",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "If transaction=true and any update fails, rollback all"
+        }
+      ],
+      "purpose": "Update multiple project items atomically. Used after code generation or bulk operations to ensure consistency.",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "query_project_state",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Primary table to query"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "WHERE-like conditions with operators"
+        },
+        {
+          "name": "joins",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Relations to include (LEFT JOIN)"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "ORDER BY clause"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum results (pagination)"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Skip first N results (pagination)"
+        }
+      ],
+      "purpose": "Flexible SQL-like query interface for complex project queries. Provides powerful filtering and joining capabilities without writing SQL.",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of entity objects with requested joins included"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "validate_initialization",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [
+        {
+          "name": "aifp_dir",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to .aifp-project/ directory"
+        }
+      ],
+      "purpose": "Validate that project initialization is complete and correct. Performs comprehensive structural validation.",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_work_context",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [
+        {
+          "name": "work_item_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Type of work item"
+        },
+        {
+          "name": "work_item_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "ID of work item"
+        },
+        {
+          "name": "include_interactions",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "Include function dependency interactions"
+        },
+        {
+          "name": "include_history",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "Include note history for work item"
+        }
+      ],
+      "purpose": "Get complete context for resuming work. Single call retrieves task/subtask/sidequest + flows + files + functions + interactions. Optimized for session resumption.",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "aifp_status",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [],
+      "purpose": "Status orchestrator optimized for directive navigation decision tree. Returns comprehensive project state with completion flags and next-step suggestions designed to feed the `get_next_directives_from_status()` system.",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Complete status object with:"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_project_status",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [],
+      "purpose": "Analyze entire work hierarchy and return comprehensive project status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "This is NOT a simple field getter - it analyzes the entire work hierarchy and provides detailed status analysis for AI to understand project progress."
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_project_context",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Context type: \"blueprint\", \"metadata\", \"status\", \"infrastructure\""
+        }
+      ],
+      "purpose": "Get structured project overview for different contexts",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_status_tree",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [],
+      "purpose": "Get hierarchical view of all work items with nested structure",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Provides complete hierarchical view for visualization and progress tracking"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_files_by_flow_context",
+      "file_path": "TODO_helpers/orchestrator/module.py",
+      "parameters": [
+        {
+          "name": "flow_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Flow ID"
+        }
+      ],
+      "purpose": "Get all files for a flow with functions embedded",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Useful for understanding complete flow implementation with all associated functions"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-orchestrators.json",
+    "count": 11,
+    "status": "converted from markdown - used_by_directives empty",
+    "note": "All 11 orchestrator helpers consolidated into single file"
+  }
+}

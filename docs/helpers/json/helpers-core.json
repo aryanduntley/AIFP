@@ -1,0 +1,657 @@
+{
+  "helpers": [
+    {
+      "name": "get_core_tables",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "List all tables in core database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of table names"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_core_fields",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        }
+      ],
+      "purpose": "Get field names and types for a specific table",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_core_schema",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get complete schema for core database (all tables and fields)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Object mapping table names to field arrays"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_from_core",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "id_array",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "IDs to fetch, **empty array [] returns ALL records**"
+        }
+      ],
+      "purpose": "Get records by ID(s), or all records if empty array",
+      "error_handling": "Return empty array if no matches",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of records",
+        "Empty array allowed for core (read-only, safe to return all)"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_from_core_where",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "conditions",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs (AND logic), e.g., `{\"type\": \"fp\", \"category\": \"purity\"}`"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum rows to return"
+        },
+        {
+          "name": "orderby",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Sort order, e.g., \"name ASC\" or \"id DESC\""
+        }
+      ],
+      "purpose": "Flexible filtering with structured JSON conditions",
+      "error_handling": "Return empty array if no matches, error if invalid field names",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching records"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "query_core",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "WHERE clause without \"WHERE\" keyword"
+        }
+      ],
+      "purpose": "Execute complex SQL WHERE clause (advanced, rare use)",
+      "error_handling": "Return error if SQL syntax invalid",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching rows",
+        "Use Tier 2 (JSON filtering) whenever possible, reserve this for truly complex queries"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_directive_by_name",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get specific directive by name (high-frequency operation)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Directive object or null",
+        "Zero cognitive load - use this instead of constructing queries"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_all_directives",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Load all directives for caching (special orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of all directives with self-assessment questions",
+        "Called once per session for context caching"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_directive_content",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Load full MD documentation for directive",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Markdown content string",
+        "Retrieves comprehensive directive guidance from MD files"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "search_directives",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Search directives with filters (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching directives",
+        "Higher-level search functionality beyond simple queries"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "find_directive_by_intent",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "threshold",
+          "type": "float",
+          "required": false,
+          "default": "0.7",
+          "description": "Confidence threshold"
+        }
+      ],
+      "purpose": "Map user intent to directives using NLP/keyword matching",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching directives with confidence scores",
+        "High-level NLP search that uses AI reasoning to determine intent keywords, then calls `find_directives_by_intent_keyword()` internally"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "find_directives_by_intent_keyword",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "keywords",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Single keyword string or array of keywords"
+        },
+        {
+          "name": "match_mode",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "\"any\" for OR logic, \"all\" for AND logic"
+        }
+      ],
+      "purpose": "Find directive IDs matching one or more intent keywords (direct keyword lookup)",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of directive IDs",
+        "Low-level keyword search. For NLP-based intent mapping, use `find_directive_by_intent()`. This is a directive-callable helper (not MCP tool)"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_directives_with_intent_keywords",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "keywords",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Single keyword or array of keywords"
+        },
+        {
+          "name": "match_mode",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "\"any\" for OR logic, \"all\" for AND logic"
+        },
+        {
+          "name": "include_keyword_matches",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "Include which keywords matched"
+        }
+      ],
+      "purpose": "Search directives by intent keywords and return full directive objects",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of directive objects with `matched_keywords` field",
+        "Orchestrator that combines keyword search with full directive data retrieval"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_directive_intent_keyword",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Add an intent keyword to a directive",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Success boolean",
+        "Duplicate keywords for the same directive are prevented by UNIQUE constraint"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "remove_directive_intent_keyword",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Remove an intent keyword from a directive",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Success boolean",
+        "Does not delete keyword from intent_keywords table (preserves keyword for reuse)"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_directive_keywords",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all intent keywords for a specific directive",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of keyword strings"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_all_directive_keywords",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get list of all unique intent keywords available for searching (simple list)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of keyword strings, sorted alphabetically",
+        "Use this when AI needs to browse available keywords and decide which to search for. For keyword usage statistics, use `get_all_intent_keywords_with_counts()`"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_all_intent_keywords_with_counts",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all unique intent keywords with usage counts for analytics",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of objects with `keyword` and `usage_count` fields, sorted by usage (most used first)",
+        "Useful for analytics, identifying popular keywords, and suggesting common searches",
+        "`aifp_status()` orchestrator is documented in [helpers-consolidated-orchestrators.md](helpers-consolidated-orchestrators.md#aifp_status) - it's the central status orchestrator that feeds the navigation system below."
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_next_directives_from_status",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "from_directive",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Usually 'aifp_status'"
+        },
+        {
+          "name": "status_object",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Status returned from aifp_status()"
+        }
+      ],
+      "purpose": "Get all possible next directives with condition evaluation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of objects:",
+        "Returns both matching and non-matching for transparency"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_matching_next_directives",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get ONLY directives whose conditions match current state",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Filtered array with only `matches: true`",
+        "Convenience wrapper for most common use case"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_completion_loop_target",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get where to loop back after completing directive",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Single directive name (usually 'aifp_status')",
+        "Work directives use this to determine where to return after completion"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_conditional_work_paths",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "from_directive",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "e.g., 'task_item_work'"
+        },
+        {
+          "name": "work_context",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Current item/task context"
+        }
+      ],
+      "purpose": "Get conditional next steps during work execution",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of conditional work directives with descriptions and priorities",
+        "Used when work items have different requirements (file creation, function creation, etc.)"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_helper_by_name",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get specific helper function details (high-frequency)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Helper object with all metadata",
+        "Zero cognitive load for common helper lookups"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_helpers_by_database",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all helpers for a specific database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of helper objects"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_helpers_are_tool",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all MCP tools (is_tool=true)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of tool helpers"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_helpers_not_tool_not_sub",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all directive-callable helpers",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of directive helpers"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_helpers_are_sub",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all sub-helpers (is_sub_helper=true)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of sub-helper objects"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_helpers_for_directive",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "include_helpers_data",
+          "type": "boolean",
+          "required": true,
+          "default": null,
+          "description": "If true, includes full helper_functions data"
+        }
+      ],
+      "purpose": "Get all helpers used by a directive",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "- If false: Array of directive_helpers records"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_directives_for_helper",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all directives that use a helper (reciprocal lookup)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "- If false: Array of directive_helpers records"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_category_by_name",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get category by name (fairly frequent)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Category object or null"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_categories",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all directive categories",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of category objects"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_directives_by_category",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get all directives in a category",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of directives"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_directives_by_type",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "One of: 'fp', 'project', 'git', 'user_system', 'user_preference'"
+        },
+        {
+          "name": "include_md_content",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Include full MD file content"
+        }
+      ],
+      "purpose": "Get all directives filtered by type (orchestration vs reference)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of directive objects filtered by type",
+        "Key for separating orchestration queries from FP reference queries. See DIRECTIVE_ARCHITECTURE.md for usage patterns."
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-core.json",
+    "count": 33,
+    "status": "converted from markdown - used_by_directives empty",
+    "note": "All 33 core helpers consolidated into single file"
+  }
+}

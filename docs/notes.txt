@@ -105,6 +105,44 @@ docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md
 
 used_by_directive field in the helper json files needs to be evaluated when re-evaluating directives
 
+
+> Read:
+README.md
+sys-prompt/aifp_system_prompt.txt
+.aifp/ProjectBlueprint.md\
+\
+We have directives and helpers. We need to map directives in 
+preparation for the directive_flow table and while we do this, 
+we need to add the used_by_directive list for each helper \
+\\
+\
+consolidated helpers:
+docs/helpers/consolidated/helpers-consolidated-user-custom.md
+docs/helpers/consolidated/helpers-consolidated-core.md
+docs/helpers/consolidated/helpers-consolidated-git.md
+docs/helpers/consolidated/helpers-consolidated-index.md
+docs/helpers/consolidated/helpers-consolidated-orchestrators.md
+docs/helpers/consolidated/helpers-consolidated-project.md
+docs/helpers/consolidated/helpers-consolidated-settings.md\
+\
+directives json are in docs/directives-json/
+directives md are in src/aifp/resource/directives/
+Everything above src/aifp/ is dev. \
+\
+
+docs/directives-json/DIRECTIVE_ARCHITECTURE.md
+docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md
+docs/DIRECTIVE_JSON_CLEANUP_REPORT_2025-12-16.md
+docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md\ 
+
+Here are our contextual files for the mapping work:
+docs/helpers/json/README.md
+docs/MAPPING_SETUP_COMPLETE.md
+docs/directives-json/Tasks/DIRECTIVES_MAPPING_PROGRESS.md
+docs/directives-json/Tasks/HELPER_FUNCTIONS_MAPPING_PROGRESS.md
+
+helpers json file path updates needed
+
 OLD, but still useful info:
 
 for docs/directive-graph.txt please review. Should we incorporate this path system into our core database for AI clarity in directive usage? We have example helper functions but we don't need to implement those right away. We should first work with and assess the core project management system. Later we can reviwe our consolidated helpers and determine what we should add for any new tables and directive querying for AI we improved. 

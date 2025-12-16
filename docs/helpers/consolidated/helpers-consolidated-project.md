@@ -235,25 +235,6 @@ For the master index and design philosophy, see [helpers-consolidated-index.md](
 - **Returns**: `{"changed": boolean, "method": "git|filesystem"}`
 - **Classification**: is_tool=true, is_sub_helper=false
 
-**`get_project_status()`** NOTE: should return only the status field in project db. REMOVE?
-- **Purpose**: Check if project initialized, get comprehensive status
-- **Returns**: Object with initialization status and metadata
-- **Note**: High-level orchestrator for project state
-- **Classification**: is_tool=true, is_sub_helper=false
-
-**`get_project_context(type)`** NOTE: REMOVE. This is incorrect. This function should be moved to a helpers-consolidated-orchestrators file and we need to fine tune the parameters and returns. Should review registry and helper docs
-- **Purpose**: Get structured project overview
-- **Parameters**: `type` (String) - "blueprint", "metadata", "status"
-- **Returns**: Contextual project data based on type
-- **Note**: Orchestrator for project context
-- **Classification**: is_tool=true, is_sub_helper=false
-
-**`get_status_tree()`** NOTE: same as above
-- **Purpose**: Get hierarchical status view (sidequests → subtasks → tasks with priorities)
-- **Returns**: Tree structure with nested work items
-- **Note**: Complex orchestrator for work visualization
-- **Classification**: is_tool=true, is_sub_helper=false
-
 ### Infrastructure
 
 **Low-frequency table - use generic operations:**
@@ -1106,31 +1087,6 @@ Use `delete_project_entry()` for both flow_themes and file_flows tables.
   }
   ```
 - **Return Statements**: "WARNING: Note deletion removes important context. Deleted data returned for potential restoration. Consider if deletion was necessary."
-- **Classification**: is_tool=false, is_sub_helper=false
-
----
-
-## Context Helpers (Orchestrators)
-
-**`get_work_context()`**
-- **Purpose**: Get comprehensive work context for AI (complex orchestrator)
-- **Returns**:
-  ```json
-  {
-    "current_task": {task object},
-    "current_flows": [{flow objects}],
-    "related_files": [{file objects}],
-    "active_sidequests": [{sidequest objects}]
-  }
-  ```
-- **Note**: Single call provides complete context for current work
-- **Classification**: is_tool=true, is_sub_helper=false
-
-**`get_files_by_flow_context(flow_id)`**
-- **Purpose**: Get files with embedded functions for a flow (orchestrator)
-- **Parameters**: `flow_id` (Integer)
-- **Returns**: Array of file objects with functions array embedded
-- **Note**: Useful for understanding complete flow implementation
 - **Classification**: is_tool=false, is_sub_helper=false
 
 ---

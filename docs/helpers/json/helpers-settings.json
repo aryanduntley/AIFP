@@ -1,0 +1,302 @@
+{
+  "helpers": [
+    {
+      "name": "get_settings_tables",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "List all tables in user settings database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of table names"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_settings_fields",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Get field names and types for a specific table",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of field objects"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_settings_schema",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Get complete schema for user settings database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Object mapping table names to field arrays"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_settings_json_parameters",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Get available fields for table to use with generic add/update operations",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Object with fields array, examples (similar to `get_project_json_parameters()`)",
+        "Use with `add_settings_entry()` or `update_settings_entry()` for tables without specialized functions. Only include fields being set/updated in JSON."
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_from_settings",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "id_array",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "**MUST contain at least one ID**"
+        }
+      ],
+      "purpose": "Get records by ID(s) - **EMPTY ARRAY NOT ALLOWED**",
+      "error_handling": "Return error if id_array is empty",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of records",
+        "Settings are mutable - prevent huge results"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_from_settings_where",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [
+        {
+          "name": "conditions",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs (AND logic)"
+        }
+      ],
+      "purpose": "Flexible filtering with structured JSON conditions",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching records"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "query_settings",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Execute complex SQL WHERE clause (advanced, rare use)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching rows",
+        "Use Tier 2 whenever possible"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_settings_entry",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Add entry to user settings database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_settings_entry",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Update entry in user settings database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_settings_entry",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Delete entry from user settings",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "load_directive_preferences",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Load all active preferences for a directive (high-frequency)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Object mapping preference_key to preference_value",
+        "Only returns active preferences (active=1)",
+        "Zero cognitive load - called before every directive execution"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_directive_preference",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Add/update user preference for directive",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`",
+        "Atomic key-value structure (one preference per row)"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_user_setting",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Get project-wide user setting (fairly frequent)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Setting value or null",
+        "Simple lookup for global settings"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_user_preferences",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [
+        {
+          "name": "user_request",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "User's customization request"
+        },
+        {
+          "name": "mapped_directive",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Directive name to apply to"
+        },
+        {
+          "name": "preferences",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Key-value pairs"
+        }
+      ],
+      "purpose": "Map user request to directive preferences (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"updated_count\": integer}`",
+        "Used by user_preferences_update directive"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "apply_preferences_to_context",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Apply loaded preferences to execution context",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Modified context object",
+        "Used before directive execution"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_tracking_settings",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Get all tracking feature flags",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Object with feature flags (all default false)"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    },
+    {
+      "name": "toggle_tracking_feature",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Enable/disable tracking feature",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Shows cost warning when enabling"
+      ],
+      "target_database": "settings",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-settings.json",
+    "count": 17,
+    "status": "converted from markdown - used_by_directives empty"
+  }
+}

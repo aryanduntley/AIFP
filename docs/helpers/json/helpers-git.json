@@ -1,0 +1,183 @@
+{
+  "helpers": [
+    {
+      "name": "get_current_commit_hash",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get current Git HEAD commit hash",
+      "error_handling": "Return null if not Git repository",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "String commit hash or null if Git unavailable"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_current_branch",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get current Git branch name",
+      "error_handling": "Return null if Git unavailable",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "String branch name or null"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_git_status",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get comprehensive Git state snapshot (orchestrator)",
+      "error_handling": "Returns git_available=false if Git unavailable",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "detect_external_changes",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Compare current Git HEAD with project.last_known_git_hash",
+      "error_handling": "Return empty changes if Git unavailable",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "create_user_branch",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "user",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Username"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Branch purpose description"
+        }
+      ],
+      "purpose": "Create work branch following aifp-{user}-{number} convention",
+      "error_handling": "Auto-increment number if branch exists",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_user_name_for_branch",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Detect username from git config/environment/system",
+      "error_handling": "Fallback to \"user\" if all detection fails",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "String username (never null)",
+        "Checks git config, then environment, then system user"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "list_active_branches",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "List all AIFP work branches from work_branches table",
+      "error_handling": "Return empty array if table doesn't exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of branch objects with name, created_at, purpose"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "detect_conflicts_before_merge",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "FP-powered conflict analysis before merging (complex orchestrator)",
+      "error_handling": "Fall back to file-level conflicts if DB query fails",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Queries project.db from both branches for FP analysis"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "merge_with_fp_intelligence",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Git merge with FP-powered conflict auto-resolution (complex orchestrator)",
+      "error_handling": "Abort merge (git merge --abort) if unresolvable",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Auto-resolves conflicts >0.8 confidence using purity rules"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "sync_git_state",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update project.last_known_git_hash with current Git HEAD",
+      "error_handling": "Log warning if Git unavailable, continue with cached",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json",
+        "Called after commits and during session boot"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "project_update_git_status",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Update last_known_git_hash and last_git_sync in project table",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"hash\": string, \"sync_time\": timestamp}`",
+        "Convenience wrapper for common sync operation"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-git.json",
+    "count": 11,
+    "status": "converted from markdown - used_by_directives empty"
+  }
+}

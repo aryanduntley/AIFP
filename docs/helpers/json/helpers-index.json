@@ -1,0 +1,25 @@
+{
+  "helpers": [
+    {
+      "name": "get_databases",
+      "file_path": "TODO_helpers/global/database_info.py",
+      "parameters": [],
+      "purpose": "Get list of all available databases with metadata",
+      "error_handling": "Return empty array if none found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of database objects with file_path, name, short_name, description",
+        "Includes all 4 databases: core, project, settings, user_custom"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-index.json",
+    "count": 1,
+    "status": "converted from markdown - used_by_directives empty",
+    "note": "Global cross-database helper from index file"
+  }
+}
