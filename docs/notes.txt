@@ -46,38 +46,9 @@ docs/helpers/generic-tools-mcp.md
 
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
-docs/directives-json/sync-directives.py
-review available_helpers in directives json files. can remove completely? We must match helpers to directives in directive_helpers table. also directive_interactions and categories with directive_categories. All directive schema data should be available in directives json files as well as all interactions and helper function relationships.
-docs/directive-json-schema-alignment-analysis.md
-in this analysis, it's conforming to docs/directives-json/sync-directives.py. We can have a better structure for categories, etc. if needed, but I don't know if we need separate files for the linking/relationships. 
+docs/directives-json/sync-directives.py needs full overhaul based on new schema, structure and decisions
 
-separate file for directive_interactions. This would have to be ran after directives entered to get directives by name, return id, so that entries into directive_interactions can happen using ID
-
-separate file for helpers. Each helper json should have directives association by name(s). As a helper is entered into database, gets all listed directives from db by name, retrieves ID, adds directive_helpers relationship to database.
-
--- ===============================================================
--- Directive-Helper Mapping: Many-to-many relationship
--- ===============================================================
-
-CREATE TABLE IF NOT EXISTS directive_helpers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    directive_id INTEGER NOT NULL,
-    helper_function_id INTEGER NOT NULL,
-    execution_context TEXT,                  -- e.g., 'workflow_step_3', 'error_handler', 'validation'
-    sequence_order INTEGER DEFAULT 0,        -- Order of execution if multiple helpers in workflow
-    is_required BOOLEAN DEFAULT 1,           -- TRUE if helper must execute, FALSE if optional/conditional
-    parameters_mapping JSON,                 -- Optional: maps directive workflow params to helper params
-    description TEXT,                        -- Brief note on why this helper is used
-    UNIQUE(directive_id, helper_function_id, execution_context),
-    FOREIGN KEY (directive_id) REFERENCES directives(id) ON DELETE CASCADE,
-    FOREIGN KEY (helper_function_id) REFERENCES helper_functions(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_directive_helpers_directive ON directive_helpers (directive_id);
-CREATE INDEX IF NOT EXISTS idx_directive_helpers_helper ON directive_helpers (helper_function_id);
-
-
-So with this flow, directives don't need to list helper functions. AI should have only a reference to helpers and can use the helpers/tools:
+use the helpers/tools:
 docs/helpers/info-helpers-core.txt :
 get_helpers_for_directive(directive_id, include_helpers_data=false)
    include_helpers_data=false return all directive_helpers data for matches
@@ -90,7 +61,7 @@ get_directives_for_helper(helper_function_id, include_directives_data=false)
 
 need to flesh out return statements
 
-must handle existing projects that are oop
+must handle existing projects that are oop: NO. We will recommend NOT to use AIFP for existing OOP projects.
 
 Read:
 README.md
@@ -99,7 +70,6 @@ sys-prompt/aifp_system_prompt.txt
 
 =======
 
-our registry was created primarily from these:
 docs/helpers/info-helpers-user-settings.txt
 docs/helpers/info-helpers-project.txt
 docs/helpers/info-helpers-core.txt
@@ -110,13 +80,13 @@ docs/aifp-oop-policy.md
 docs/helpers/IMPLEMENTATION_LOG.md
 
 consolidated helpers:
-docs/helpers/helpers-consolidated-git.md
-docs/helpers/helpers-consolidated-index.md
-docs/helpers/helpers-consolidated-orchestrators.md
-docs/helpers/helpers-consolidated-core.md
-docs/helpers/helpers-consolidated-project.md
-docs/helpers/helpers-consolidated-settings.md
-docs/helpers/helpers-consolidated-user-custom.md
+docs/helpers/consolidated/helpers-consolidated-user-custom.md
+docs/helpers/consolidated/helpers-consolidated-core.md
+docs/helpers/consolidated/helpers-consolidated-git.md
+docs/helpers/consolidated/helpers-consolidated-index.md
+docs/helpers/consolidated/helpers-consolidated-orchestrators.md
+docs/helpers/consolidated/helpers-consolidated-project.md
+docs/helpers/consolidated/helpers-consolidated-settings.md
 
 directives next steps:
 docs/directives-json/Tasks/DIRECTIVE_CLEANUP_TASK.md
@@ -129,19 +99,13 @@ docs/directives-json/Tasks/MD_CLEANUP_CHECKLIST.md
 docs/directives-json/Tasks/SQL_CLEANUP_NEEDED.md
 docs/directives-json/DIRECTIVE_ARCHITECTURE.md
 
+docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md
+docs/DIRECTIVE_JSON_CLEANUP_REPORT_2025-12-16.md
+docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md
+
 used_by_directive field in the helper json files needs to be evaluated when re-evaluating directives
 
-src/aifp/reference/directives/user_preferences_update.md
-new simpler template with no helper functions. system prompt tells AI to use get_helpers_for_directive(directive_id, include_helpers_data=true) so no need to add that even to the md files. Keep them clean with conceptual information not function calls.
-
- -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
- file and blueprint file checksum removed from poject database. Should be no reason for it as we have git for historical reference. 
-
- intent_keywords_json removed from core replaced with directives_intent_keywords table
- have now intent_keywords table for separation similar to categories. 
- CHECK to ensure helper functions and directives json and md match new schema
-docs/SCHEMA_NORMALIZATION_V1.9.md
-
+OLD, but still useful info:
 
 for docs/directive-graph.txt please review. Should we incorporate this path system into our core database for AI clarity in directive usage? We have example helper functions but we don't need to implement those right away. We should first work with and assess the core project management system. Later we can reviwe our consolidated helpers and determine what we should add for any new tables and directive querying for AI we improved. 
 This is very linear. I proposed a tree because it really does 

@@ -1983,7 +1983,9 @@
           "if": "parse_complete",
           "then": "return_structured_data",
           "details": {
-            "return_structured_data": true
+            "include_checksum": true,
+            "compare_with_db": true,
+            "db_checksum_field": "project.blueprint_checksum"
           }
         },
         {
@@ -2080,6 +2082,15 @@
         },
         {
           "if": "write_complete",
+          "then": "update_blueprint_checksum",
+          "details": {
+            "update_checksum": true,
+            "table": "project",
+            "field": "blueprint_checksum"
+          }
+        },
+        {
+          "if": "update_complete",
           "then": "return_success",
           "details": {
             "show_new_version": true

@@ -1278,7 +1278,7 @@
       "name": "control_flow",
       "description": "Enforces tail recursion for loops to avoid stack overflows."
     },
-    "description": "Detects loops or recursion and refactors them to tail-recursive form for stack safety and FP compliance. Ensures recursion efficiency and prevents stack overflows in AI-generated code. Links to project_update_db to track recursion depth in function interactions table (project.interactions).",
+    "description": "Detects loops or recursion and refactors them to tail-recursive form for stack safety and FP compliance. Ensures recursion efficiency and prevents stack overflows in AI-generated code. Links to project_update_db to track recursion depth in interactions table.",
     "md_file_path": "directives/fp_recursion_enforcement.md",
     "workflow": {
       "trunk": "detect_loops_or_recursion",
@@ -1343,7 +1343,7 @@
       "name": "composition",
       "description": "Composes functions monadically for error handling and data flow."
     },
-    "description": "Chains functions using monadic bind/map operations for composable error handling with Result/Option types. Improves composability and error handling clarity. Links to project_update_db to store monadic dependencies in function interactions table (project.interactions).",
+    "description": "Chains functions using monadic bind/map operations for composable error handling with Result/Option types. Improves composability and error handling clarity. Links to project_update_db to store monadic dependencies in interactions table.",
     "md_file_path": "directives/fp_monadic_composition.md",
     "workflow": {
       "trunk": "analyze_function_composition",

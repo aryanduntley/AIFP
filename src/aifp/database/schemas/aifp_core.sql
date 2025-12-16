@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS helper_functions (
     is_sub_helper BOOLEAN NOT NULL DEFAULT 0,-- TRUE if internal utility (only called by other helpers, no direct AI access)
     return_statements JSON,                  -- JSON array of AI guidance after execution (e.g., next steps, validation checks)
     target_database TEXT CHECK (target_database IN (
-        'core',              -- aifp_core.db (directives, helpers, interactions)
+        'core',              -- aifp_core.db (directives, helpers, directive_flow)
         'project',           -- project.db (single-database CRUD operations)
         'user_preferences',  -- user_preferences.db (settings and preferences)
         'user_directives',   -- user_directives.db (user-defined automation)
