@@ -141,7 +141,17 @@ docs/MAPPING_SETUP_COMPLETE.md
 docs/directives-json/Tasks/DIRECTIVES_MAPPING_PROGRESS.md
 docs/directives-json/Tasks/HELPER_FUNCTIONS_MAPPING_PROGRESS.md
 
+docs/DIRECTIVE_WORKFLOW_PATH.md
+docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
+
+docs/PHASE_1_COMPLETE.md
+
 helpers json file path updates needed
+
+MUST make OOP wrapper examples
+
+docs/directives-json/directive_flow.json
+verify number of project directives. 38 mentioned
 
 OLD, but still useful info:
 
@@ -187,7 +197,7 @@ flow_type, priority, condition_description)
 In your examples here, project init is next step, but if project
  is initialized, is there an automatic jump to blueprint_read? \
 \
-aifp_run should actually first strat with aifp_status. Status 
+aifp_run should actually first start with aifp_status. Status 
 should accurately get current state programmatically for AI to 
 process and determine what to do (init, continue working, etc.).
  We could potentially offer starting points based on the 

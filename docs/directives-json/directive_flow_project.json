@@ -1,0 +1,568 @@
+{
+  "flows": [
+    {
+      "from_directive": "aifp_run",
+      "to_directive": "aifp_status",
+      "flow_type": "status_branch",
+      "condition_key": "get_status",
+      "condition_value": "true",
+      "condition_description": "get_status parameter is true (first interaction, major state change, or explicit request)",
+      "priority": 100,
+      "description": "Entry point always routes to status when comprehensive state needed"
+    },
+    {
+      "from_directive": "aifp_run",
+      "to_directive": "user_preferences_sync",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Load user preferences before any customizable directive execution",
+      "priority": 100,
+      "description": "Preferences loaded before executing directives that can be customized"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "git_detect_external_changes",
+      "flow_type": "canonical",
+      "condition_key": "session_start",
+      "condition_value": "true",
+      "condition_description": "Always sync git state on session start",
+      "priority": 100,
+      "description": "Git sync is standard workflow - detect changes made outside AIFP"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_init",
+      "flow_type": "conditional",
+      "condition_key": "project_initialized",
+      "condition_value": "false",
+      "condition_description": "No .aifp-project/ folder found and no git backup",
+      "priority": 100,
+      "description": "Project not initialized - initialize first"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "user_directive_parse",
+      "flow_type": "conditional",
+      "condition_key": "user_directives_status",
+      "condition_value": "null_and_directive_files_exist",
+      "condition_description": "Use Case 2: User provided directive files but not yet parsed",
+      "priority": 100,
+      "description": "Detect Use Case 2 - parse user directive files"
+    },
+    {
+      "from_directive": "project_init",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Initialization complete",
+      "priority": 100,
+      "description": "After init, loop back to status to determine next action"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_task_decomposition",
+      "flow_type": "conditional",
+      "condition_key": "has_incomplete_tasks",
+      "condition_value": "false",
+      "condition_description": "Project initialized but no tasks exist",
+      "priority": 90,
+      "description": "No tasks found - create initial task hierarchy from blueprint"
+    },
+    {
+      "from_directive": "project_task_decomposition",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Task decomposition complete",
+      "priority": 100,
+      "description": "After creating tasks, loop back to status to show new tasks"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_file_write",
+      "flow_type": "conditional",
+      "condition_key": "has_incomplete_items",
+      "condition_value": "true",
+      "condition_description": "Active work exists and user requests code work",
+      "priority": 80,
+      "description": "Active work detected - proceed with file operations"
+    },
+    {
+      "from_directive": "project_file_write",
+      "to_directive": "git_sync_state",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Always sync git after file write",
+      "priority": 100,
+      "description": "Update last_known_git_hash after file operations"
+    },
+    {
+      "from_directive": "project_file_write",
+      "to_directive": "project_update_db",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Always update database after file write",
+      "priority": 100,
+      "description": "Sync files, functions, interactions tables after code changes"
+    },
+    {
+      "from_directive": "project_task_complete",
+      "to_directive": "project_milestone_complete",
+      "flow_type": "conditional",
+      "condition_key": "all_milestone_tasks_complete",
+      "condition_value": "true",
+      "condition_description": "All tasks in milestone marked complete",
+      "priority": 100,
+      "description": "Auto-detect milestone completion and delegate to milestone complete directive"
+    },
+    {
+      "from_directive": "project_task_complete",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": "all_milestone_tasks_complete",
+      "condition_value": "false",
+      "condition_description": "Task complete but milestone still has incomplete tasks",
+      "priority": 100,
+      "description": "Task done, loop back to status to show next task in milestone"
+    },
+    {
+      "from_directive": "project_subtask_complete",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Subtask complete, resume parent task",
+      "priority": 100,
+      "description": "Subtask done, loop back to status to show parent task context"
+    },
+    {
+      "from_directive": "project_sidequest_complete",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Sidequest complete, resume original work",
+      "priority": 100,
+      "description": "Sidequest done, loop back to status to resume original task"
+    },
+    {
+      "from_directive": "project_milestone_complete",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Milestone complete",
+      "priority": 100,
+      "description": "Milestone done, loop back to status to show next milestone or completion_path progress"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_completion_check",
+      "flow_type": "conditional",
+      "condition_key": "all_milestones_complete",
+      "condition_value": "true",
+      "condition_description": "All milestones complete, no incomplete items",
+      "priority": 90,
+      "description": "All work complete - validate completion criteria"
+    },
+    {
+      "from_directive": "project_completion_check",
+      "to_directive": "project_archive",
+      "flow_type": "conditional",
+      "condition_key": "completion_criteria_met",
+      "condition_value": "true",
+      "condition_description": "Project meets all completion criteria",
+      "priority": 80,
+      "description": "Completion validated - proceed to archive"
+    },
+    {
+      "from_directive": "project_completion_check",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": "completion_criteria_met",
+      "condition_value": "false",
+      "condition_description": "Gaps found, not ready for completion",
+      "priority": 100,
+      "description": "Completion validation failed - loop back to create missing work"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_task_create",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_new_task",
+      "condition_value": "true",
+      "condition_description": "User explicitly requests new task creation",
+      "priority": 70,
+      "description": "User wants to create specific task"
+    },
+    {
+      "from_directive": "project_task_create",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Task created",
+      "priority": 100,
+      "description": "New task created, loop back to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_subtask_create",
+      "flow_type": "conditional",
+      "condition_key": "task_needs_decomposition",
+      "condition_value": "true",
+      "condition_description": "Task too large, needs breakdown into subtasks",
+      "priority": 75,
+      "description": "Task decomposition needed"
+    },
+    {
+      "from_directive": "project_subtask_create",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Subtask created",
+      "priority": 100,
+      "description": "Subtask created, loop back to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_sidequest_create",
+      "flow_type": "conditional",
+      "condition_key": "unexpected_work_discovered",
+      "condition_value": "true",
+      "condition_description": "Unexpected work discovered during task execution",
+      "priority": 75,
+      "description": "Unexpected work needs tracking as sidequest"
+    },
+    {
+      "from_directive": "project_sidequest_create",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Sidequest created",
+      "priority": 100,
+      "description": "Sidequest created, loop back to status"
+    },
+    {
+      "from_directive": "user_directive_parse",
+      "to_directive": "user_directive_validate",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Use Case 2: After parsing, validate directives",
+      "priority": 100,
+      "description": "Parsed directives must be validated via Q&A"
+    },
+    {
+      "from_directive": "user_directive_validate",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Use Case 2: Validation complete, project.user_directives_status set to in_progress",
+      "priority": 100,
+      "description": "Validation done, loop to status (now in Use Case 2 mode)"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "user_directive_implement",
+      "flow_type": "conditional",
+      "condition_key": "user_directives_status",
+      "condition_value": "in_progress",
+      "condition_description": "Use Case 2: Directives validated, infrastructure generation needed",
+      "priority": 100,
+      "description": "Generate entire codebase for directive execution infrastructure"
+    },
+    {
+      "from_directive": "user_directive_implement",
+      "to_directive": "project_file_write",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Use Case 2: AI generates infrastructure files",
+      "priority": 100,
+      "description": "AI self-manages project, generates all infrastructure code"
+    },
+    {
+      "from_directive": "user_directive_implement",
+      "to_directive": "user_directive_approve",
+      "flow_type": "conditional",
+      "condition_key": "infrastructure_generation_complete",
+      "condition_value": "true",
+      "condition_description": "Use Case 2: All infrastructure code generated",
+      "priority": 100,
+      "description": "Infrastructure complete, present for user approval"
+    },
+    {
+      "from_directive": "user_directive_approve",
+      "to_directive": "user_directive_activate",
+      "flow_type": "conditional",
+      "condition_key": "user_approves",
+      "condition_value": "true",
+      "condition_description": "Use Case 2: User tested and approved generated infrastructure",
+      "priority": 100,
+      "description": "User approved, activate directive execution"
+    },
+    {
+      "from_directive": "user_directive_approve",
+      "to_directive": "project_file_write",
+      "flow_type": "conditional",
+      "condition_key": "user_approves",
+      "condition_value": "false",
+      "condition_description": "Use Case 2: User requests modifications",
+      "priority": 90,
+      "description": "User feedback - AI modifies code and re-presents"
+    },
+    {
+      "from_directive": "user_directive_activate",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Use Case 2: Directives activated, project.user_directives_status = active",
+      "priority": 100,
+      "description": "Activation complete, project now in monitoring mode"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "user_directive_monitor",
+      "flow_type": "conditional",
+      "condition_key": "user_directives_status",
+      "condition_value": "active",
+      "condition_description": "Use Case 2: Directives active, ongoing monitoring",
+      "priority": 80,
+      "description": "Monitor directive execution, track errors and successes"
+    },
+    {
+      "from_directive": "user_directive_monitor",
+      "to_directive": "user_directive_update",
+      "flow_type": "conditional",
+      "condition_key": "directive_file_changed",
+      "condition_value": "true",
+      "condition_description": "Use Case 2: User modified directive files",
+      "priority": 90,
+      "description": "Directive files changed - re-parse and update infrastructure"
+    },
+    {
+      "from_directive": "user_directive_update",
+      "to_directive": "project_file_write",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Use Case 2: Apply infrastructure changes",
+      "priority": 100,
+      "description": "Update infrastructure code based on directive changes"
+    },
+    {
+      "from_directive": "user_directive_update",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Use Case 2: Updates applied",
+      "priority": 100,
+      "description": "Directive updates complete, back to monitoring"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_blueprint_read",
+      "flow_type": "conditional",
+      "condition_key": "blueprint_context_needed",
+      "condition_value": "true",
+      "condition_description": "Need to read ProjectBlueprint.md for context",
+      "priority": 70,
+      "description": "Load blueprint for project context"
+    },
+    {
+      "from_directive": "project_blueprint_read",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Blueprint read complete",
+      "priority": 100,
+      "description": "Blueprint loaded, return to status with context"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_blueprint_update",
+      "flow_type": "conditional",
+      "condition_key": "blueprint_update_needed",
+      "condition_value": "true",
+      "condition_description": "Project goals/scope changed, blueprint needs update",
+      "priority": 75,
+      "description": "Update blueprint to reflect project evolution"
+    },
+    {
+      "from_directive": "project_blueprint_update",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Blueprint updated",
+      "priority": 100,
+      "description": "Blueprint updated, loop back to status"
+    },
+    {
+      "from_directive": "project_file_write",
+      "to_directive": "project_compliance_check",
+      "flow_type": "conditional",
+      "condition_key": "check_fp_compliance",
+      "condition_value": "true",
+      "condition_description": "Validate FP compliance after code write",
+      "priority": 80,
+      "description": "Optional FP compliance validation (user preference)"
+    },
+    {
+      "from_directive": "project_compliance_check",
+      "to_directive": "project_file_write",
+      "flow_type": "conditional",
+      "condition_key": "violations_found",
+      "condition_value": "true",
+      "condition_description": "FP violations detected, auto-fix enabled",
+      "priority": 90,
+      "description": "Auto-fix FP violations and rewrite file"
+    },
+    {
+      "from_directive": "project_compliance_check",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": "violations_found",
+      "condition_value": "false",
+      "condition_description": "No violations or violations reported only",
+      "priority": 100,
+      "description": "Compliance check complete"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_error_handling",
+      "flow_type": "error_handler",
+      "condition_key": "errors_detected",
+      "condition_value": "true",
+      "condition_description": "Errors or roadblocks detected during work",
+      "priority": 70,
+      "description": "Handle errors and provide resolution guidance"
+    },
+    {
+      "from_directive": "project_error_handling",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Error handling complete",
+      "priority": 100,
+      "description": "Error resolved or escalated, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_metrics",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_metrics",
+      "condition_value": "true",
+      "condition_description": "User wants project metrics analysis",
+      "priority": 60,
+      "description": "Generate project metrics report"
+    },
+    {
+      "from_directive": "project_metrics",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Metrics generated",
+      "priority": 100,
+      "description": "Metrics reported, return to status"
+    },
+    {
+      "from_directive": "git_create_branch",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Branch created for collaborative work",
+      "priority": 100,
+      "description": "Work branch created, proceed with work on branch"
+    },
+    {
+      "from_directive": "git_detect_conflicts",
+      "to_directive": "git_merge_branch",
+      "flow_type": "conditional",
+      "condition_key": "conflicts_detected_and_auto_resolvable",
+      "condition_value": "true",
+      "condition_description": "Conflicts detected with high confidence resolution (FP-powered)",
+      "priority": 90,
+      "description": "Auto-resolve conflicts using FP purity analysis"
+    },
+    {
+      "from_directive": "git_detect_conflicts",
+      "to_directive": "project_user_referral",
+      "flow_type": "conditional",
+      "condition_key": "conflicts_detected_and_manual_resolution_needed",
+      "condition_value": "true",
+      "condition_description": "Conflicts detected with low confidence, need user input",
+      "priority": 90,
+      "description": "Escalate to user for manual conflict resolution"
+    },
+    {
+      "from_directive": "git_merge_branch",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Branch merge complete",
+      "priority": 100,
+      "description": "Merge complete, git_sync_state updated"
+    },
+    {
+      "from_directive": "project_user_referral",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "User decision received",
+      "priority": 100,
+      "description": "User provided decision, continue work"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2025-12-17",
+    "total_flows": 52,
+    "flow_types": {
+      "status_branch": "Flow from status to next directive based on state",
+      "completion_loop": "Flow back to aifp_status after state change",
+      "conditional": "Flow based on specific conditions",
+      "canonical": "Standard workflow sequence",
+      "error_handler": "Flow to handle errors/roadblocks"
+    },
+    "priority_levels": {
+      "100": "Critical/mandatory flows",
+      "90": "High priority conditional flows",
+      "80": "Standard conditional flows",
+      "70": "Secondary workflows",
+      "60": "Optional/analysis workflows"
+    },
+    "coverage": {
+      "use_case_1": "Regular software development workflows",
+      "use_case_2": "User directive automation workflows",
+      "git_integration": "Git sync and collaboration workflows",
+      "user_preferences": "Preference loading integration",
+      "completion_loops": "All completion directives loop back to aifp_status",
+      "fp_directives": "Not included - FP directives are reference documentation, not execution flow"
+    },
+    "notes": [
+      "All completion directives (task_complete, subtask_complete, sidequest_complete, milestone_complete) loop back to aifp_status",
+      "Git integration is standard workflow, not conditional",
+      "User preferences loaded before customizable directive execution",
+      "Use Case 2 detection via project.user_directives_status field",
+      "FP directives not in flow - they are reference documentation consulted inline"
+    ]
+  }
+}

@@ -11,30 +11,52 @@
     "description": "Gateway entry point for AIFP system. Returns guidance to AI assistant on when and how to use AIFP directives. Does NOT execute directives itself - AI receives guidance and decides next action based on task type (coding, project management, or simple discussion). Always assume AIFP applies unless user explicitly rejects. First action should be calling aifp_status to understand current project state.",
     "md_file_path": "directives/aifp_run.md",
     "workflow": {
-      "trunk": "return_guidance",
+      "trunk": "evaluate_get_status_parameter",
       "branches": [
         {
-          "then": "return_simple_guidance_message",
+          "if": "get_status_true",
+          "then": "fetch_comprehensive_status",
           "details": {
+            "call_helper": "aifp_status",
+            "cache_in_context": true,
+            "return_with_suggestions": true,
+            "message": "Fetching comprehensive project state",
+            "guidance": {
+              "cache_status": "Cache this status in your context to avoid re-fetching on subsequent aifp_run calls",
+              "when_to_refresh": "Call aifp_run(get_status=true) again after major state changes (init complete, milestone complete, multiple tasks done, long break)",
+              "use_for_navigation": "Use returned state with get_next_directives_from_status() to find appropriate next directives"
+            }
+          }
+        },
+        {
+          "if": "get_status_false_or_default",
+          "then": "return_common_starting_points",
+          "details": {
+            "assume_ai_has_cached_status": true,
             "message": "AIFP MCP available",
+            "common_starting_points": [
+              "aifp_status - Get comprehensive project state (if not cached)",
+              "project_init - Initialize new AIFP project",
+              "project_file_write - Write code and update database",
+              "project_task_create - Create new tasks",
+              "project_task_complete - Mark task as complete and loop back to status"
+            ],
             "guidance": {
               "directive_access": "Call get_all_directives() if you don't have them in memory. Call get_directive(name) or search_directives(keyword, category, type) for specific details.",
               "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
               "assumption": "Always assume AIFP applies unless user explicitly rejects it with 'do not use aifp for this task'.",
-              "first_action": "If user says 'continue', 'status', 'what's next', 'resume work', or starts session without clear context, call aifp_status first to understand project state.",
-              "status_triggers": [
-                "continue",
-                "status",
-                "what's next",
-                "resume",
-                "resume work",
-                "show status",
-                "project status"
+              "status_based_navigation": "If you have status cached, query directive_flow table with get_next_directives_from_status(current_directive, state_object) to find next steps",
+              "directive_flow_queries": [
+                "get_next_directives_from_status(current_directive, state_object)",
+                "get_conditional_work_paths(state_object)",
+                "get_completion_loop_target(completion_directive_name)"
               ],
+              "when_to_get_fresh_status": "Call aifp_run(get_status=true) if: (1) first interaction, (2) after major state change, (3) unsure of current state, (4) user asks for status",
               "available_helpers": [
                 "get_all_directives",
                 "get_directive",
                 "search_directives",
+                "get_next_directives_from_status",
                 "query_mcp_db",
                 "get_project_context",
                 "get_project_status",
@@ -45,15 +67,16 @@
               ]
             },
             "ai_decision_flow": [
-              "1. Check: Is this a status/continuation request? → Call aifp_status",
+              "1. If first interaction or unclear context: Consider calling aifp_run(get_status=true) for fresh status",
               "2. Check project type: Query project.user_directives_status (NULL=Use Case 1, 'in_progress'/'active'/'disabled'=Use Case 2)",
               "3. Evaluate: Is this coding, project management, or user directive automation?",
               "4. Check: Do I have directives in memory?",
-              "5. If no directives: Call get_all_directives() to load 120 directives",
-              "6. If coding: Apply FP directives (how to code) + project directives (DB updates)",
-              "7. If project management: Apply project directives",
-              "8. If user directive task (Use Case 2): Apply user directive system directives (parse/validate/implement/approve/activate pipeline)",
-              "9. If simple discussion: No directives needed unless decision impacts project"
+              "5. If no directives: Call get_all_directives() to load 125 directives",
+              "6. If you have cached status: Use directive_flow queries to determine next appropriate directive",
+              "7. If coding: Apply FP directives (how to code) + project directives (DB updates)",
+              "8. If project management: Apply project directives based on status and user intent",
+              "9. If user directive task (Use Case 2): Apply user directive system directives (parse/validate/implement/approve/activate pipeline)",
+              "10. If simple discussion: No directives needed unless decision impacts project"
             ]
           }
         }

@@ -1,6 +1,48 @@
 {
   "helpers": [
     {
+      "name": "aifp_run",
+      "file_path": "helpers/orchestrators/orchestrators.py",
+      "parameters": [
+        {
+          "name": "user_request",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "The user's natural language request"
+        },
+        {
+          "name": "get_status",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Whether to fetch comprehensive status. Use true for first interaction or after major state changes. Use false (default) for continuation work."
+        }
+      ],
+      "purpose": "Main entry point orchestrator. Routes requests and optionally fetches comprehensive status.",
+      "error_handling": "Returns error message if database not accessible. Returns empty suggestions if no directives match.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If get_status=true: Returns comprehensive project state from aifp_status",
+        "If get_status=false: Returns common directive starting points only",
+        "Always includes: Guidance on querying directive_flow table with get_next_directives_from_status()",
+        "Always includes: Suggestion on when to call aifp_run(get_status=true) for fresh status",
+        "Directive suggestions based on user_request keywords"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "self_invocation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "aifp_run directive uses aifp_run helper as entry point orchestrator"
+        }
+      ]
+    },
+    {
       "name": "get_current_progress",
       "file_path": "TODO_helpers/orchestrator/module.py",
       "parameters": [
@@ -341,8 +383,8 @@
   ],
   "metadata": {
     "file": "helpers-orchestrators.json",
-    "count": 11,
-    "status": "converted from markdown - used_by_directives empty",
-    "note": "All 11 orchestrator helpers consolidated into single file"
+    "count": 12,
+    "status": "Phase 0 complete - aifp_run helper added with get_status parameter",
+    "note": "All 12 orchestrator helpers consolidated into single file"
   }
 }

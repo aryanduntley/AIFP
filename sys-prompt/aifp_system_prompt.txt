@@ -50,11 +50,54 @@ Flow: User Request -> [Auto: aifp_run] -> [Auto: Load directives] -> [Apply dire
 === FIRST INTERACTION SETUP ===
 
 On first interaction:
-1. Call aifp_run with user request
-2. Receive guidance on directive usage
-3. Evaluate task type (coding, project management, discussion)
-4. Check memory: Have directives? No -> Call get_all_directives() to load all directives -> Cache
-5. Proceed with cached directives
+1. Call aifp_run(user_request, get_status=true) - Fetch comprehensive status
+2. Receive guidance + comprehensive project state
+3. Cache status in your context (avoid re-fetching)
+4. Evaluate task type (coding, project management, discussion)
+5. Check memory: Have directives? No -> Call get_all_directives() to load all directives -> Cache
+6. Proceed with cached status + directives
+
+=== STATUS MANAGEMENT: EFFICIENCY OPTIMIZATION ===
+
+**Critical**: aifp_run has a get_status parameter to control status fetching
+
+**When to use get_status=true** (fetch comprehensive status):
+- First interaction of session
+- After major state changes (project init complete, milestone complete, multiple tasks done)
+- After long breaks between interactions
+- User explicitly asks for status ("what's the status?", "continue", "resume")
+- You're unsure of current state
+
+**When to use get_status=false** (default - do NOT fetch status):
+- Continuation work within same session
+- You have status cached in context from previous aifp_run call
+- Normal workflow operations (file writes, task updates, etc.)
+- Most interactions (this is the default)
+
+**How to use cached status**:
+1. After aifp_run(get_status=true), cache the returned status object
+2. Use cached status with directive_flow queries:
+   - get_next_directives_from_status(current_directive, status_object)
+   - get_conditional_work_paths(status_object)
+   - get_completion_loop_target(completion_directive_name)
+3. These queries determine next appropriate directive without re-fetching status
+
+**Example flow**:
+```
+First interaction:
+  aifp_run(user_request="Initialize project", get_status=true)
+  -> Returns: Comprehensive status + suggestions
+  -> Cache status in context
+
+Continuation (same session):
+  aifp_run(user_request="Add login function", get_status=false)  # default
+  -> Returns: Common starting points + directive_flow guidance
+  -> Use cached status + directive_flow queries to find next steps
+  -> No wasteful status re-fetch
+```
+aifp_status is also available as a standalone MCP tool (is_tool=true). AI can call it directly whenever comprehensive status is needed, independently of aifp_run. Both patterns are valid:
+- Direct: aifp_status() - Returns status only
+- Via aifp_run: aifp_run(..., get_status=true) - Returns status + suggestions + guidance
 
 === TASK TYPE EVALUATION ===
 
