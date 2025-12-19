@@ -49,13 +49,20 @@ All file structures and tracking systems are now in place for the directive flow
 
 ---
 
-### Directive Flow File (1 file)
+### Directive Flow Files (1+ files)
 
 **Location**: `docs/directives-json/`
 
-- `directive_flow.json` - 430 bytes (empty, ready for mapping)
+**Primary File**:
+- `directive_flow_project.json` - Complete project management workflow (53 flows)
+  - Includes: Project directives, orchestrators (aifp_run/aifp_status), git integration, Use Case 2 flows
 
-**Note**: If more than 900 lines needed, create `directive_flow_2.json`
+**Additional Files** (created as needed in later phases):
+- `directive_flow_user_preferences.json` - User preference meta-directives (Phase 7)
+- `directive_flow_fp.json` - FP directive reference consultation flows (Phase 4)
+- `directive_flow_core.json` - Core MCP operations (if needed, TBD)
+
+**Naming Convention**: Files organized by directive category to keep file size manageable (<900 lines)
 
 ---
 
@@ -118,7 +125,7 @@ docs/
     │   ├── HELPER_FUNCTIONS_QUICK_REF.md        ✅ Existing (verified)
     │   ├── DIRECTIVES_MAPPING_PROGRESS.md       ✅ NEW (tracking)
     │   └── HELPER_FUNCTIONS_MAPPING_PROGRESS.md ✅ NEW (tracking)
-    ├── directive_flow.json                      ✅ CREATED (empty)
+    ├── directive_flow_project.json              ✅ CREATED (53 flows)
     ├── directives-fp-aux.json                   ✅ Existing (source)
     ├── directives-fp-core.json                  ✅ Existing (source)
     ├── directives-git.json                      ✅ Existing (source)
@@ -140,7 +147,7 @@ docs/
    - What directives can this flow to?
    - What conditions trigger each flow?
    - What priority?
-5. Add entry to `docs/directives-json/directive_flow.json`
+5. Add entry to `docs/directives-json/directive_flow_project.json`
 6. Check checkbox in tracking file
 7. Repeat
 
@@ -190,7 +197,7 @@ cat docs/helpers/consolidated/helpers-consolidated-core.md | grep "^### \`"
 jq '.' docs/helpers/json/helpers-core.json
 
 # Pretty print for review
-jq '.' docs/directives-json/directive_flow.json
+jq '.' docs/directives-json/directive_flow_project.json
 
 # Count completed helpers
 jq '.helpers | length' docs/helpers/json/helpers-core.json
@@ -203,13 +210,15 @@ jq -s 'map(.helpers | length) | add' docs/helpers/json/helpers-*.json
 
 ## Next Steps
 
-### Priority 1: Map Core Navigation (directive_flow.json)
-Start with the most critical flows (~20 mappings):
-1. `aifp_run` → `aifp_status`
-2. `aifp_status` → [all possible next directives based on conditions]
-3. All completion directives → `aifp_status` (completion loops)
+### Priority 1: Map Core Navigation (directive_flow_project.json) ✅ COMPLETE
+Core project workflow flows mapped (53 flows):
+1. `aifp_run` → `aifp_status` ✅
+2. `aifp_status` → [all possible next directives based on conditions] ✅
+3. All completion directives → `aifp_status` (completion loops) ✅
+4. Git integration flows (6 flows) ✅
+5. Use Case 2 flows (10 flows) ✅
 
-**File**: `docs/directives-json/directive_flow.json`
+**File**: `docs/directives-json/directive_flow_project.json` ✅ CREATED (Phase 1 complete)
 **Tracking**: `docs/directives-json/Tasks/DIRECTIVES_MAPPING_PROGRESS.md`
 
 ### Priority 2: Map Orchestrator Helpers (helpers JSON)
@@ -234,7 +243,8 @@ Most numerous (112 helpers), but follow patterns:
 
 ## Success Criteria
 
-- [ ] directive_flow.json has 60-80 flow mappings
+- [x] directive_flow_project.json has 53 core flow mappings ✅ (Phase 1 complete)
+- [ ] directive_flow_project.json expanded to 80-100 total flows (Phase 2-3)
 - [ ] All 9 helper JSON files fully complete (consolidated from 14)
 - [ ] Each helper has:
   - [ ] file_path assigned (currently placeholders)

@@ -249,11 +249,17 @@ Cache status in your context. Don't re-fetch unless needed.
 - `docs/notes.txt` (workflow thinking)
 - `docs/directives-json/directives-project.json` (project directives)
 
-**Output File**:
-- `docs/DIRECTIVE_WORKFLOW_PATH.md` (documentation)
-- `docs/directives-json/directive_flow.json` (20-30 core flows)
+**Output Files**:
+- `docs/DIRECTIVE_WORKFLOW_PATH.md` (comprehensive documentation) ✅ CREATED
+- `docs/directives-json/directive_flow_project.json` (53 project flows) ✅ CREATED
 
-NOTE: Changed directive_flow.json to directive_flow_project.json. Had 58 project flows. No core flows. Core flows is for phase 2. This document needs to be updated to reflect that. Subsequent files should be directive_flow_core.json, directive_flow_settings.json, directive_flow_fp.json, directive_flow_user_custom.json, directive_flow_orchestrators.json (maybe, if orchestrators were not already covered in project, must verify).
+**File Organization** (verified 2025-12-18):
+- **directive_flow_project.json** - Complete project management workflow (53 flows)
+  - Includes: Project directives, orchestrators (aifp_run/aifp_status), git integration (6 flows), Use Case 2 flows (10 flows)
+  - Git and orchestrators stay here (they ARE the project workflow, not separate)
+- **directive_flow_user_preferences.json** - User preference meta-directives (Phase 7, ~8-12 flows)
+- **directive_flow_fp.json** - FP directive reference flows (Phase 4, ~5-10 flows)
+- **directive_flow_core.json** - Core MCP operations if needed (TBD, ~3-5 flows)
 
 #### Workflow Path Structure
 
@@ -325,11 +331,11 @@ ALL completion directives → aifp_status
 - Explain loop-back pattern
 - Reference notes.txt thinking
 
-**Step 1.2**: Translate to directive_flow.json
-- Add 20-30 core flow entries
-- Set priorities (100 for critical paths, 80 for alternatives)
-- Document conditions clearly
-- Use flow_types: status_branch, completion_loop, conditional, canonical
+**Step 1.2**: Translate to directive_flow_project.json ✅ COMPLETE
+- ✅ Added 53 core flow entries (exceeded 20-30 target)
+- ✅ Set priorities (100 for critical paths, 90-80 for alternatives, 70-60 for optional)
+- ✅ Documented conditions clearly
+- ✅ Used flow_types: status_branch, completion_loop, conditional, canonical, error_handler
 
 **Step 1.3**: Create helper to query directive_flow
 - Ensure helpers exist (already defined in core helpers):
@@ -339,15 +345,16 @@ ALL completion directives → aifp_status
 
 **Success Criteria**:
 - [x] DIRECTIVE_WORKFLOW_PATH.md created with full path documentation ✅
-- [x] directive_flow.json has 52 core flow entries (exceeded target) ✅
+- [x] directive_flow_project.json has 53 core flow entries (exceeded 20-30 target) ✅
 - [x] All completion directives have loop-back to aifp_status ✅
 - [x] All conditional branches documented with conditions ✅
-- [x] Priority values assigned (100 = primary, 80 = secondary, etc.) ✅
+- [x] Priority values assigned (100 = primary, 90-80 = secondary, etc.) ✅
 - [x] User preferences integration documented ✅
-- [x] Git integration documented as standard workflow ✅
-- [x] Use Case 2 complete workflow documented ✅
+- [x] Git integration documented as standard workflow (6 flows included) ✅
+- [x] Use Case 2 complete workflow documented (10 flows included) ✅
 - [x] FP directives reference flow documented ✅
 - [x] All 38 project directives listed and categorized ✅
+- [x] File organization verified (git/orchestrators stay in project file) ✅
 
 ---
 
@@ -405,7 +412,7 @@ cat docs/directives-json/directives-project.json | jq '.[] | select(.name=="proj
 - What are the branch conditions?
 - What helpers does it call? (look for database operations, queries, etc.)
 
-**C. Map Additional Directive Flows** (add to directive_flow.json)
+**C. Map Additional Directive Flows** (add to directive_flow_project.json)
 - What directives can this flow to? (beyond core path)
 - What are the conditions?
 - What are the priorities?
@@ -441,7 +448,7 @@ For each helper used, add entry to its `used_by_directives` array:
 
 **Success Criteria**:
 - [ ] All 20-30 core directives fully mapped
-- [ ] directive_flow.json has 60-80 total flow entries
+- [ ] directive_flow_project.json expanded to 80-100 total flow entries (currently 53)
 - [ ] Core helpers have used_by_directives populated (orchestrators, high-frequency project helpers)
 - [ ] Tracking checklists updated
 
@@ -472,7 +479,7 @@ For each helper used, add entry to its `used_by_directives` array:
 
 **Success Criteria**:
 - [ ] All project directives mapped
-- [ ] directive_flow.json has 90-110 total flow entries
+- [ ] directive_flow_project.json has 100-120 total flow entries (currently 53)
 - [ ] Most project helpers have used_by_directives populated
 
 ---
@@ -489,7 +496,7 @@ For each helper used, add entry to its `used_by_directives` array:
 **Approach**:
 
 **A. FP Reference Directives** (~60 directives)
-- Skip directive_flow mapping (they're consulted, not executed)
+- Create directive_flow_fp.json with minimal consultation flows (~5-10 flows)
 - Map minimal helper usage:
   - `query_core` (to query FP directive content)
   - `get_directive_content` (to load MD documentation)
@@ -505,13 +512,14 @@ These actually get invoked in workflows:
 - fp_compliance_check (called by project_compliance_check)
 
 Map these like project directives:
-- directive_flow entries to/from project directives
+- Add entries to directive_flow_project.json for enforcement directives
 - used_by_directives for helpers they use
 
 **Success Criteria**:
 - [ ] 6 FP enforcement directives fully mapped
 - [ ] 60 FP reference directives marked with minimal helper usage
-- [ ] directive_flow.json has 95-115 total flow entries
+- [ ] directive_flow_fp.json created with ~5-10 consultation flows
+- [ ] directive_flow_project.json has ~110-125 total flow entries (enforcement directives added)
 
 ---
 
@@ -539,11 +547,11 @@ user_directive_parse → validate → implement → approve → activate → mon
                                               deactivate
 ```
 
-**Process**: Map as a distinct sub-workflow within directive_flow.json
+**Process**: Map as a distinct sub-workflow within directive_flow_project.json (already partially complete - 10 flows exist)
 
 **Success Criteria**:
-- [ ] All 9 user system directives mapped
-- [ ] User directive sub-workflow documented in directive_flow.json
+- [x] User directive sub-workflow documented in directive_flow_project.json (10 flows) ✅
+- [ ] All 9 user system directives fully mapped with helper usage
 - [ ] User custom helpers have used_by_directives populated
 
 ---
@@ -568,9 +576,9 @@ git_merge_branch → git_detect_conflicts → FP-powered resolution
 ```
 
 **Success Criteria**:
-- [ ] All 6 git directives mapped
+- [x] Git integration workflows documented in directive_flow_project.json (6 flows) ✅
+- [ ] All 6 git directives fully mapped with helper usage
 - [ ] Git helpers have used_by_directives populated
-- [ ] Git integration points with project directives documented
 
 ---
 
@@ -591,6 +599,7 @@ git_merge_branch → git_detect_conflicts → FP-powered resolution
 
 **Success Criteria**:
 - [ ] All 7 user preference directives mapped
+- [ ] directive_flow_user_preferences.json created (~8-12 flows)
 - [ ] Settings helpers have used_by_directives populated
 
 ---
@@ -644,7 +653,7 @@ git_merge_branch → git_detect_conflicts → FP-powered resolution
 
 ```
 docs/
-├── DIRECTIVE_WORKFLOW_PATH.md           ⚡ NEW - Phase 1
+├── DIRECTIVE_WORKFLOW_PATH.md           ✅ CREATED - Phase 1
 ├── DIRECTIVE_HELPER_MAPPING_COMPLETE.md ⚡ NEW - Phase 8 (completion report)
 ├── helpers/
 │   └── json/
@@ -658,7 +667,10 @@ docs/
 │       ├── helpers-settings.json        ✅ file_path + used_by_directives complete
 │       └── helpers-user-custom.json     ✅ file_path + used_by_directives complete
 └── directives-json/
-    ├── directive_flow.json              ✅ 120-150 flows complete
+    ├── directive_flow_project.json      ✅ 53 flows (Phase 1), target 100-120 total
+    ├── directive_flow_user_preferences.json ⚡ Phase 7 (~8-12 flows)
+    ├── directive_flow_fp.json           ⚡ Phase 4 (~5-10 flows)
+    ├── directive_flow_core.json         ⚡ TBD (~3-5 flows if needed)
     ├── validate_mappings.py             ⚡ NEW - Phase 8
     └── Tasks/
         ├── DIRECTIVES_MAPPING_PROGRESS.md  ✅ All checked
@@ -741,7 +753,11 @@ docs/
 - ✅ 125/125 directives evaluated (100%)
 - ✅ 201/201 helpers have file_path (100%)
 - ✅ 195+/201 helpers have directive usage (>95%)
-- ✅ 120-150 directive flows mapped
+- ✅ 120-140 directive flows mapped across multiple files:
+  - directive_flow_project.json: 100-120 flows
+  - directive_flow_user_preferences.json: 8-12 flows
+  - directive_flow_fp.json: 5-10 flows
+  - directive_flow_core.json: 3-5 flows (if needed)
 
 **Quality**:
 - ✅ Validation script passes (no orphaned references)

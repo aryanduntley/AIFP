@@ -140,11 +140,16 @@ docs/helpers/json/README.md
 docs/MAPPING_SETUP_COMPLETE.md
 docs/directives-json/Tasks/DIRECTIVES_MAPPING_PROGRESS.md
 docs/directives-json/Tasks/HELPER_FUNCTIONS_MAPPING_PROGRESS.md
+docs/DIRECTIVE_NAVIGATION_SYSTEM.md
 
 docs/DIRECTIVE_WORKFLOW_PATH.md
 docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
+docs/DIRECTIVE_FLOW_GAP_ANALYSIS.md
 
 docs/PHASE_1_COMPLETE.md
+
+docs/COMPREHENSIVE_SETTINGS_SPEC.md
+docs/settings-specification.json
 
 helpers json file path updates needed
 
@@ -152,6 +157,7 @@ MUST make OOP wrapper examples
 
 docs/directives-json/directive_flow.json
 verify number of project directives. 38 mentioned
+read note in docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
 
 OLD, but still useful info:
 

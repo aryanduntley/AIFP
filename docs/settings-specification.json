@@ -1,0 +1,342 @@
+{
+  "version": "2.0",
+  "created": "2025-12-18",
+  "description": "Comprehensive AIFP settings specification - replaces schemaExampleSettings.sql",
+  "database": "user_preferences.db",
+  "location": ".aifp-project/user_preferences.db",
+
+  "user_settings": {
+    "description": "Project-wide settings (user_settings table)",
+    "settings": [
+      {
+        "key": "fp_strictness_level",
+        "default": "{\"level\": \"standard\", \"exceptions\": []}",
+        "type": "json",
+        "description": "How strict to enforce FP directives (relaxed/standard/strict)",
+        "scope": "project"
+      },
+      {
+        "key": "prefer_explicit_returns",
+        "default": "true",
+        "type": "boolean",
+        "description": "Always use explicit return statements",
+        "scope": "project"
+      },
+      {
+        "key": "suppress_warnings",
+        "default": "[]",
+        "type": "json_array",
+        "description": "Directives to suppress low-confidence warnings",
+        "scope": "project"
+      },
+      {
+        "key": "default_task_priority",
+        "default": "medium",
+        "type": "enum",
+        "values": ["low", "medium", "high"],
+        "description": "Default priority for new tasks",
+        "scope": "project"
+      },
+      {
+        "key": "auto_check_compliance",
+        "default": "false",
+        "type": "boolean",
+        "description": "Run FP compliance check after every file write (NEW - critical)",
+        "scope": "project",
+        "added_in": "2.0",
+        "priority": "critical"
+      },
+      {
+        "key": "enable_git_hooks",
+        "default": "true",
+        "type": "boolean",
+        "description": "Enable git integration and hooks",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "milestone_quality_gates",
+        "default": "true",
+        "type": "boolean",
+        "description": "Require compliance checks before milestone completion",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "default_docstring_style",
+        "default": "google",
+        "type": "enum",
+        "values": ["google", "numpy", "sphinx", "none"],
+        "description": "Docstring format",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "max_function_complexity",
+        "default": "10",
+        "type": "integer",
+        "range": [1, 50],
+        "description": "Maximum cyclomatic complexity allowed",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "prefer_type_hints",
+        "default": "true",
+        "type": "boolean",
+        "description": "Add type hints to function signatures",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "error_handling_style",
+        "default": "result_type",
+        "type": "enum",
+        "values": ["result_type", "exceptions", "both"],
+        "description": "Error handling approach",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "task_granularity_default",
+        "default": "medium",
+        "type": "enum",
+        "values": ["low", "medium", "high"],
+        "description": "Default task breakdown detail",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "auto_create_task_items",
+        "default": "true",
+        "type": "boolean",
+        "description": "Automatically create items when task created",
+        "scope": "project",
+        "added_in": "2.0",
+        "priority": "high"
+      },
+      {
+        "key": "task_naming_convention",
+        "default": "verb_noun",
+        "type": "enum",
+        "values": ["verb_noun", "descriptive", "user_choice"],
+        "description": "Task naming style",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "show_historical_context",
+        "default": "true",
+        "type": "boolean",
+        "description": "Show previous completed items for context",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "verbose_status_reports",
+        "default": "false",
+        "type": "boolean",
+        "description": "Include detailed information in status reports",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "show_completion_estimates",
+        "default": "true",
+        "type": "boolean",
+        "description": "Display estimated completion percentages",
+        "scope": "project",
+        "added_in": "2.0"
+      },
+      {
+        "key": "highlight_ambiguities",
+        "default": "true",
+        "type": "boolean",
+        "description": "Highlight unclear decisions in status",
+        "scope": "project",
+        "added_in": "2.0"
+      }
+    ]
+  },
+
+  "directive_preferences": {
+    "description": "Per-directive behavior customizations (directive_preferences table)",
+    "directives": {
+      "aifp_status": [
+        {"key": "include_git_status", "default": "true", "type": "boolean", "description": "Include git status in report", "added_in": "2.0"},
+        {"key": "show_priority_queue", "default": "true", "type": "boolean", "description": "Show prioritized work queue", "added_in": "2.0"},
+        {"key": "max_historical_items", "default": "5", "type": "integer", "range": [0, 20], "description": "Number of previous completed items to show", "added_in": "2.0"},
+        {"key": "highlight_blockers", "default": "true", "type": "boolean", "description": "Emphasize roadblocks and ambiguities", "added_in": "2.0"}
+      ],
+
+      "project_init": [
+        {"key": "create_git_backup", "default": "true", "type": "boolean", "description": "Create .git/.aifp backup on init", "added_in": "2.0"},
+        {"key": "auto_detect_language", "default": "true", "type": "boolean", "description": "Automatically detect project language", "added_in": "2.0"},
+        {"key": "prompt_for_blueprint", "default": "true", "type": "boolean", "description": "Ask for project blueprint details", "added_in": "2.0"}
+      ],
+
+      "project_task_decomposition": [
+        {"key": "task_granularity", "default": "medium", "type": "enum", "values": ["low", "medium", "high"], "description": "Level of task breakdown detail"},
+        {"key": "naming_convention", "default": "verb_noun", "type": "enum", "values": ["verb_noun", "descriptive", "user_choice"], "description": "Task naming style"},
+        {"key": "auto_create_items", "default": "true", "type": "boolean", "description": "Auto-create items for each task"},
+        {"key": "default_priority", "default": "medium", "type": "enum", "values": ["low", "medium", "high"], "description": "Default task priority"},
+        {"key": "max_tasks_per_milestone", "default": "10", "type": "integer", "range": [1, 50], "description": "Maximum tasks per milestone", "added_in": "2.0"},
+        {"key": "create_milestone_structure", "default": "true", "type": "boolean", "description": "Auto-create milestone hierarchy", "added_in": "2.0"}
+      ],
+
+      "project_task_create": [
+        {"key": "auto_create_items", "default": "true", "type": "boolean", "description": "Auto-create items when task created", "added_in": "2.0", "priority": "critical"},
+        {"key": "require_description", "default": "true", "type": "boolean", "description": "Require task description", "added_in": "2.0"},
+        {"key": "default_status", "default": "pending", "type": "enum", "values": ["pending", "in_progress"], "description": "Initial task status", "added_in": "2.0"},
+        {"key": "assign_to_milestone", "default": "true", "type": "boolean", "description": "Require milestone assignment", "added_in": "2.0"}
+      ],
+
+      "project_task_update": [
+        {"key": "log_progress_changes", "default": "true", "type": "boolean", "description": "Log task progress updates to notes", "added_in": "2.0"},
+        {"key": "notify_on_completion", "default": "true", "type": "boolean", "description": "Alert when task becomes complete", "added_in": "2.0"}
+      ],
+
+      "project_file_write": [
+        {"key": "always_add_docstrings", "default": "true", "type": "boolean", "description": "Always add docstrings to functions"},
+        {"key": "max_function_length", "default": "50", "type": "integer", "range": [10, 200], "description": "Maximum function length in lines"},
+        {"key": "prefer_guard_clauses", "default": "true", "type": "boolean", "description": "Use guard clauses over nested conditionals"},
+        {"key": "code_style", "default": "explicit", "type": "enum", "values": ["explicit", "implicit"], "description": "Code style preference"},
+        {"key": "indent_style", "default": "spaces_2", "type": "enum", "values": ["spaces_2", "spaces_4", "tabs"], "description": "Indentation style"},
+        {"key": "add_type_hints", "default": "true", "type": "boolean", "description": "Add type hints to function signatures", "added_in": "2.0"},
+        {"key": "line_length_limit", "default": "100", "type": "integer", "range": [80, 120], "description": "Maximum line length", "added_in": "2.0"},
+        {"key": "import_sorting", "default": "alphabetical", "type": "enum", "values": ["alphabetical", "grouped", "none"], "description": "Import sorting style", "added_in": "2.0"},
+        {"key": "use_trailing_commas", "default": "true", "type": "boolean", "description": "Use trailing commas in lists/dicts", "added_in": "2.0"}
+      ],
+
+      "project_file_read": [
+        {"key": "include_context", "default": "true", "type": "boolean", "description": "Include surrounding context when reading", "added_in": "2.0"},
+        {"key": "context_lines", "default": "10", "type": "integer", "range": [0, 50], "description": "Number of context lines before/after", "added_in": "2.0"}
+      ],
+
+      "project_file_delete": [
+        {"key": "require_confirmation", "default": "true", "type": "boolean", "description": "Ask for confirmation before deletion", "added_in": "2.0"},
+        {"key": "cleanup_database_refs", "default": "true", "type": "boolean", "description": "Cleanup all database references", "added_in": "2.0"},
+        {"key": "create_backup", "default": "true", "type": "boolean", "description": "Create backup before deletion", "added_in": "2.0"}
+      ],
+
+      "project_compliance_check": [
+        {"key": "auto_check_enabled", "default": "false", "type": "boolean", "description": "Run check after every file write (NEW - critical)", "added_in": "2.0", "priority": "critical"},
+        {"key": "auto_fix_violations", "default": "false", "type": "boolean", "description": "Automatically fix FP violations"},
+        {"key": "skip_warnings", "default": "false", "type": "boolean", "description": "Skip low-severity warnings"},
+        {"key": "strict_mode", "default": "false", "type": "boolean", "description": "Enable strictest FP enforcement"},
+        {"key": "check_on_milestone_complete", "default": "true", "type": "boolean", "description": "Quality gate before milestone completion (NEW)", "added_in": "2.0", "priority": "high"},
+        {"key": "report_format", "default": "detailed", "type": "enum", "values": ["detailed", "summary", "minimal"], "description": "Report format", "added_in": "2.0"},
+        {"key": "fail_on_violations", "default": "false", "type": "boolean", "description": "Fail operation if violations found", "added_in": "2.0"}
+      ],
+
+      "project_metrics": [
+        {"key": "include_completion_percentage", "default": "true", "type": "boolean", "description": "Show completion %", "added_in": "2.0"},
+        {"key": "include_task_distribution", "default": "true", "type": "boolean", "description": "Show task breakdown", "added_in": "2.0"},
+        {"key": "include_compliance_score", "default": "false", "type": "boolean", "description": "Show FP compliance score", "added_in": "2.0"},
+        {"key": "format", "default": "summary", "type": "enum", "values": ["summary", "detailed", "json"], "description": "Report format", "added_in": "2.0"}
+      ],
+
+      "project_performance_summary": [
+        {"key": "enabled", "default": "false", "type": "boolean", "description": "Enable performance tracking (requires tracking_settings.helper_function_logging)", "added_in": "2.0", "requires_tracking": true},
+        {"key": "rolling_window_days", "default": "7", "type": "integer", "range": [1, 30], "description": "Days of history to include", "added_in": "2.0"},
+        {"key": "include_retry_counts", "default": "true", "type": "boolean", "description": "Show retry statistics", "added_in": "2.0"},
+        {"key": "include_failure_reasons", "default": "true", "type": "boolean", "description": "Show failure reason breakdown", "added_in": "2.0"}
+      ],
+
+      "project_error_handling": [
+        {"key": "suggest_resolution", "default": "true", "type": "boolean", "description": "Suggest error resolution strategies", "added_in": "2.0"},
+        {"key": "log_to_notes", "default": "true", "type": "boolean", "description": "Log errors to project notes", "added_in": "2.0"},
+        {"key": "escalate_to_user", "default": "true", "type": "boolean", "description": "Escalate unresolved errors to user", "added_in": "2.0"}
+      ],
+
+      "git_detect_external_changes": [
+        {"key": "run_on_session_start", "default": "true", "type": "boolean", "description": "Always check on session start", "added_in": "2.0"},
+        {"key": "show_diff", "default": "true", "type": "boolean", "description": "Show diff of external changes", "added_in": "2.0"},
+        {"key": "prompt_for_sync", "default": "true", "type": "boolean", "description": "Ask if database should sync", "added_in": "2.0"}
+      ],
+
+      "git_detect_conflicts": [
+        {"key": "auto_resolve_threshold", "default": "0.8", "type": "float", "range": [0.0, 1.0], "description": "Confidence threshold for auto-resolution", "added_in": "2.0"},
+        {"key": "prefer_higher_purity", "default": "true", "type": "boolean", "description": "Prefer code with higher FP purity in conflicts", "added_in": "2.0"},
+        {"key": "prefer_passing_tests", "default": "true", "type": "boolean", "description": "Prefer code with passing tests", "added_in": "2.0"}
+      ],
+
+      "git_merge_branch": [
+        {"key": "run_tests_after_merge", "default": "true", "type": "boolean", "description": "Run tests after merging", "added_in": "2.0"},
+        {"key": "require_clean_working_tree", "default": "true", "type": "boolean", "description": "Require clean tree before merge", "added_in": "2.0"}
+      ],
+
+      "user_directive_validate": [
+        {"key": "validation_strictness", "default": "standard", "type": "enum", "values": ["relaxed", "standard", "strict"], "description": "Validation level", "added_in": "2.0"},
+        {"key": "require_api_credentials", "default": "true", "type": "boolean", "description": "Validate API credentials during Q&A", "added_in": "2.0"},
+        {"key": "check_for_conflicts", "default": "true", "type": "boolean", "description": "Check for directive conflicts", "added_in": "2.0"}
+      ],
+
+      "user_directive_implement": [
+        {"key": "code_generation_style", "default": "explicit", "type": "enum", "values": ["explicit", "implicit"], "description": "Generated code style", "added_in": "2.0"},
+        {"key": "add_error_handling", "default": "true", "type": "boolean", "description": "Add comprehensive error handling", "added_in": "2.0"},
+        {"key": "generate_tests", "default": "true", "type": "boolean", "description": "Generate test files", "added_in": "2.0"},
+        {"key": "use_async", "default": "auto", "type": "enum", "values": ["auto", "always", "never"], "description": "Use async/await", "added_in": "2.0"}
+      ],
+
+      "user_preferences_learn": [
+        {"key": "enabled", "default": "false", "type": "boolean", "description": "Learn from corrections (requires tracking_settings.ai_interaction_log)", "added_in": "2.0", "requires_tracking": true},
+        {"key": "confidence_threshold", "default": "0.7", "type": "float", "range": [0.0, 1.0], "description": "Confidence to auto-apply learned preferences", "added_in": "2.0"},
+        {"key": "require_confirmation", "default": "true", "type": "boolean", "description": "Ask before applying learned preferences", "added_in": "2.0"}
+      ]
+    }
+  },
+
+  "tracking_settings": {
+    "description": "Feature flags for opt-in tracking/logging (tracking_settings table) - all disabled by default",
+    "privacy_note": "Users should be warned about token overhead before enabling",
+    "features": [
+      {
+        "name": "fp_flow_tracking",
+        "enabled": false,
+        "description": "Track FP directive compliance over time",
+        "token_overhead": "~5% per file write",
+        "used_by": ["FP analysis"]
+      },
+      {
+        "name": "issue_reports",
+        "enabled": false,
+        "description": "Enable detailed issue report compilation",
+        "token_overhead": "~2% on errors",
+        "used_by": ["Error reporting"]
+      },
+      {
+        "name": "ai_interaction_log",
+        "enabled": false,
+        "description": "Log all AI interactions for learning",
+        "token_overhead": "~3% overall",
+        "used_by": ["user_preferences_learn"]
+      },
+      {
+        "name": "helper_function_logging",
+        "enabled": false,
+        "description": "Log helper function errors and execution details",
+        "token_overhead": "~1% on errors",
+        "used_by": ["project_performance_summary"]
+      }
+    ]
+  },
+
+  "statistics": {
+    "total_settings": 92,
+    "user_settings": 18,
+    "directive_preferences": 73,
+    "tracking_flags": 4,
+    "new_in_v2": 61,
+    "critical_priority": 3,
+    "high_priority": 2
+  },
+
+  "critical_settings": [
+    "user_settings.auto_check_compliance",
+    "project_compliance_check.auto_check_enabled",
+    "project_task_create.auto_create_items"
+  ],
+
+  "migration_notes": "See COMPREHENSIVE_SETTINGS_SPEC.md Section 8 for migration SQL from v1.0 to v2.0"
+}

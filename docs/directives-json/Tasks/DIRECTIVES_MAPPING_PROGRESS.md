@@ -176,7 +176,11 @@
 ## Mapping Tasks Per Directive
 
 For each directive, document:
-1. **Directive flows** (add to directive_flow.json):
+1. **Directive flows** (add to appropriate directive_flow_*.json file):
+   - Project directives → `directive_flow_project.json`
+   - User preference directives → `directive_flow_user_preferences.json`
+   - FP directives → `directive_flow_fp.json`
+   - Core MCP directives → `directive_flow_core.json` (if needed)
    - What directives can this flow to?
    - What conditions trigger each flow?
    - What's the priority?
@@ -186,6 +190,8 @@ For each directive, document:
    - In what execution context?
    - In what sequence order?
    - Required or optional?
+
+**Phase 1 Complete**: `directive_flow_project.json` created with 53 flows (includes orchestrators, git, Use Case 2)
 
 ---
 
