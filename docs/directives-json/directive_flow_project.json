@@ -13,12 +13,42 @@
     {
       "from_directive": "aifp_run",
       "to_directive": "user_preferences_sync",
-      "flow_type": "canonical",
-      "condition_key": null,
-      "condition_value": null,
+      "flow_type": "conditional",
+      "condition_key": "directive_is_customizable",
+      "condition_value": "true",
       "condition_description": "Load user preferences before any customizable directive execution",
       "priority": 100,
       "description": "Preferences loaded before executing directives that can be customized"
+    },
+    {
+      "from_directive": "aifp_run",
+      "to_directive": "aifp_help",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_help",
+      "condition_value": "true",
+      "condition_description": "User asks for help or directive documentation",
+      "priority": 90,
+      "description": "User needs directive help/documentation"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "aifp_help",
+      "flow_type": "conditional",
+      "condition_key": "directive_guidance_needed",
+      "condition_value": "true",
+      "condition_description": "AI needs directive clarification during work",
+      "priority": 70,
+      "description": "AI uncertain about directive usage - fetch documentation"
+    },
+    {
+      "from_directive": "aifp_help",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Help/documentation provided",
+      "priority": 100,
+      "description": "Directive guidance loaded, return to status"
     },
     {
       "from_directive": "aifp_status",
@@ -82,6 +112,26 @@
     },
     {
       "from_directive": "aifp_status",
+      "to_directive": "project_task_update",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_task_update",
+      "condition_value": "true",
+      "condition_description": "User wants to update task progress/status without completing",
+      "priority": 75,
+      "description": "Track incremental task progress updates"
+    },
+    {
+      "from_directive": "project_task_update",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Task updated",
+      "priority": 100,
+      "description": "Task progress updated, loop back to status"
+    },
+    {
+      "from_directive": "aifp_status",
       "to_directive": "project_file_write",
       "flow_type": "conditional",
       "condition_key": "has_incomplete_items",
@@ -102,13 +152,83 @@
     },
     {
       "from_directive": "project_file_write",
+      "to_directive": "project_reserve_finalize",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Reserve file/function IDs before database writes",
+      "priority": 100,
+      "description": "Pre-allocate IDs to avoid database conflicts"
+    },
+    {
+      "from_directive": "project_reserve_finalize",
       "to_directive": "project_update_db",
       "flow_type": "canonical",
       "condition_key": null,
       "condition_value": null,
-      "condition_description": "Always update database after file write",
+      "condition_description": "After reserving IDs, proceed with database update",
       "priority": 100,
-      "description": "Sync files, functions, interactions tables after code changes"
+      "description": "Sync files, functions, interactions tables with reserved IDs"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_file_read",
+      "flow_type": "conditional",
+      "condition_key": "file_context_needed",
+      "condition_value": "true",
+      "condition_description": "Need to read file content to gather context for work",
+      "priority": 70,
+      "description": "Read file with project context before making changes"
+    },
+    {
+      "from_directive": "project_file_read",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "File read complete",
+      "priority": 100,
+      "description": "File content loaded, return context to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_file_delete",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_file_delete",
+      "condition_value": "true",
+      "condition_description": "User wants to remove file from project",
+      "priority": 75,
+      "description": "Delete file and cleanup database references"
+    },
+    {
+      "from_directive": "project_file_delete",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "File deleted, database cleaned up",
+      "priority": 100,
+      "description": "File removed from disk and database, loop back"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_add_path",
+      "flow_type": "conditional",
+      "condition_key": "user_adds_existing_file",
+      "condition_value": "true",
+      "condition_description": "User wants to track existing file in AIFP",
+      "priority": 70,
+      "description": "Add existing file to AIFP project tracking"
+    },
+    {
+      "from_directive": "project_add_path",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "File added to tracking",
+      "priority": 100,
+      "description": "Existing file now tracked by AIFP, loop back"
     },
     {
       "from_directive": "project_task_complete",
@@ -202,13 +322,33 @@
     },
     {
       "from_directive": "project_task_create",
+      "to_directive": "project_item_create",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Auto-create task items when task is created",
+      "priority": 100,
+      "description": "Task created - immediately auto-create items for work tracking"
+    },
+    {
+      "from_directive": "project_item_create",
       "to_directive": "aifp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
-      "condition_description": "Task created",
+      "condition_description": "Items created",
       "priority": 100,
-      "description": "New task created, loop back to status"
+      "description": "Task items created, loop back to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_item_create",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_new_item",
+      "condition_value": "true",
+      "condition_description": "User manually adds item to existing task",
+      "priority": 70,
+      "description": "Manual item creation for existing task"
     },
     {
       "from_directive": "aifp_status",
@@ -414,11 +554,11 @@
       "from_directive": "project_file_write",
       "to_directive": "project_compliance_check",
       "flow_type": "conditional",
-      "condition_key": "check_fp_compliance",
+      "condition_key": "auto_check_compliance_enabled",
       "condition_value": "true",
-      "condition_description": "Validate FP compliance after code write",
+      "condition_description": "Auto-check enabled in user preferences (opt-in)",
       "priority": 80,
-      "description": "Optional FP compliance validation (user preference)"
+      "description": "Optional FP compliance validation (user preference: auto-check after write)"
     },
     {
       "from_directive": "project_compliance_check",
@@ -439,6 +579,26 @@
       "condition_description": "No violations or violations reported only",
       "priority": 100,
       "description": "Compliance check complete"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_compliance_check",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_compliance_check",
+      "condition_value": "true",
+      "condition_description": "User explicitly requests compliance check",
+      "priority": 70,
+      "description": "On-demand compliance check when user requests validation"
+    },
+    {
+      "from_directive": "project_milestone_complete",
+      "to_directive": "project_compliance_check",
+      "flow_type": "conditional",
+      "condition_key": "milestone_quality_gate_enabled",
+      "condition_value": "true",
+      "condition_description": "Quality gate before milestone completion (opt-in)",
+      "priority": 90,
+      "description": "Optional quality gate: check compliance before marking milestone complete"
     },
     {
       "from_directive": "aifp_status",
@@ -479,6 +639,206 @@
       "condition_description": "Metrics generated",
       "priority": 100,
       "description": "Metrics reported, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_evolution",
+      "flow_type": "conditional",
+      "condition_key": "significant_changes_detected",
+      "condition_value": "true",
+      "condition_description": "Track project evolution after significant architectural changes",
+      "priority": 60,
+      "description": "Log project evolution patterns and decisions"
+    },
+    {
+      "from_directive": "project_evolution",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Evolution tracked",
+      "priority": 100,
+      "description": "Project evolution logged, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_dependency_sync",
+      "flow_type": "conditional",
+      "condition_key": "dependencies_need_sync",
+      "condition_value": "true",
+      "condition_description": "Package dependencies changed or out of sync",
+      "priority": 70,
+      "description": "Sync project dependencies with package manager"
+    },
+    {
+      "from_directive": "project_dependency_sync",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Dependencies synced",
+      "priority": 100,
+      "description": "Dependencies updated, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_integrity_check",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_integrity_check",
+      "condition_value": "true",
+      "condition_description": "User wants to validate database integrity",
+      "priority": 60,
+      "description": "Validate project database integrity"
+    },
+    {
+      "from_directive": "project_integrity_check",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Integrity check complete",
+      "priority": 100,
+      "description": "Database integrity validated, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_auto_resume",
+      "flow_type": "conditional",
+      "condition_key": "session_start_with_incomplete_work",
+      "condition_value": "true",
+      "condition_description": "New session with incomplete work items from previous session",
+      "priority": 80,
+      "description": "Auto-resume work from where it was left off"
+    },
+    {
+      "from_directive": "project_auto_resume",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Work context restored",
+      "priority": 100,
+      "description": "Previous work context loaded, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_auto_summary",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_summary",
+      "condition_value": "true",
+      "condition_description": "User wants auto-generated progress summary",
+      "priority": 60,
+      "description": "Generate automated progress summary"
+    },
+    {
+      "from_directive": "project_auto_summary",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Summary generated",
+      "priority": 100,
+      "description": "Progress summary generated, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_dependency_map",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_dependency_visualization",
+      "condition_value": "true",
+      "condition_description": "User wants dependency visualization",
+      "priority": 60,
+      "description": "Generate dependency map visualization"
+    },
+    {
+      "from_directive": "project_dependency_map",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Dependency map generated",
+      "priority": 100,
+      "description": "Dependency visualization created, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_theme_flow_mapping",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_theme_flow_analysis",
+      "condition_value": "true",
+      "condition_description": "User wants theme/flow mapping analysis",
+      "priority": 60,
+      "description": "Analyze and map project themes and flows"
+    },
+    {
+      "from_directive": "project_theme_flow_mapping",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Theme/flow mapping complete",
+      "priority": 100,
+      "description": "Theme and flow analysis complete, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_backup_restore",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_backup_or_restore",
+      "condition_value": "true",
+      "condition_description": "User wants to backup or restore project state",
+      "priority": 70,
+      "description": "Backup project to .git/.aifp/ or restore from backup"
+    },
+    {
+      "from_directive": "project_backup_restore",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Backup/restore operation complete",
+      "priority": 100,
+      "description": "Backup created or restore complete, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_refactor_path",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_path_refactor",
+      "condition_value": "true",
+      "condition_description": "User wants to refactor file paths across project",
+      "priority": 70,
+      "description": "Refactor file paths and update database references"
+    },
+    {
+      "from_directive": "project_refactor_path",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Path refactoring complete",
+      "priority": 100,
+      "description": "Paths refactored and database updated, return to status"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_performance_summary",
+      "flow_type": "conditional",
+      "condition_key": "helper_function_logging_enabled",
+      "condition_value": "true",
+      "condition_description": "Performance tracking opt-in via tracking_toggle (user preference)",
+      "priority": 60,
+      "description": "Generate performance summary (TRACKING OPT-IN ONLY)"
+    },
+    {
+      "from_directive": "project_performance_summary",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Performance summary generated",
+      "priority": 100,
+      "description": "Directive performance metrics logged, return to status"
     },
     {
       "from_directive": "git_create_branch",
@@ -532,9 +892,11 @@
     }
   ],
   "metadata": {
-    "version": "1.0.0",
+    "version": "1.2.0",
     "created": "2025-12-17",
-    "total_flows": 52,
+    "updated": "2025-12-19",
+    "phase": "Phase 2-3 Complete",
+    "total_flows": 89,
     "flow_types": {
       "status_branch": "Flow from status to next directive based on state",
       "completion_loop": "Flow back to aifp_status after state change",
@@ -562,7 +924,10 @@
       "Git integration is standard workflow, not conditional",
       "User preferences loaded before customizable directive execution",
       "Use Case 2 detection via project.user_directives_status field",
-      "FP directives not in flow - they are reference documentation consulted inline"
+      "FP directives not in flow - they are reference documentation consulted inline",
+      "FP compliance checking is OPT-IN ONLY (default = AI writes FP code automatically)",
+      "Performance tracking is OPT-IN ONLY (helper_function_logging_enabled user preference)",
+      "All 38 project directives now have flows (100% coverage)"
     ]
   }
 }

@@ -9,9 +9,9 @@
 
 ## Executive Summary
 
-The `directive_flow_project.json` file successfully implements the **core workflow architecture** with excellent structural integrity. However, coverage analysis reveals **76% directive coverage** (29 of 38 project directives), with **7 critical directives** explicitly mentioned in the workflow documentation but missing from flows.
+The `directive_flow_project.json` file successfully implements the **core workflow architecture** with excellent structural integrity. However, coverage analysis reveals **55% directive coverage** (21 of 38 project directives), with **7 critical directives** explicitly mentioned in the workflow documentation but missing from flows.
 
-**Verdict**: ✅ **Strong foundation, incomplete implementation**
+**Verdict**: ⚠️ **Strong architecture, moderate coverage (55%)**
 
 **Recommendation**: Proceed with **Phase 2 additions** to complete the workflow mapping as documented.
 
@@ -553,11 +553,13 @@ project_item_create → aifp_status (completion_loop)
 
 ---
 
-### 5. Clarify project_compliance_check frequency and purpose
+### 5. Clarify project_compliance_check frequency and purpose ✅ CLARIFIED
 
 **Issue**: Compliance checking could run too frequently, causing AI to spend more time checking code than writing it. FP directives were designed as **reference material**, not step-by-step execution.
 
-**Current Flow** (already in directive_flow_project.json):
+**Resolution**: ALL compliance check flows are OPT-IN ONLY. No automatic checking by default.
+
+**Current Flows** (in directive_flow_project.json):
 ```json
 {
   "from_directive": "project_file_write",
@@ -648,7 +650,7 @@ project_item_create → aifp_status (completion_loop)
 |----------|-----------|----------|----------|
 | **Entry & Status** | 3 | 2 | 67% |
 | **Initialization** | 3 | 3 | 100% ✓ |
-| **Task Management** | 10 | 7 | 70% |
+| **Task Management** | 10 | 8 | 80% |
 | **File & Code** | 5 | 1 | 20% |
 | **Database & State** | 2 | 1 | 50% |
 | **Analysis** | 7 | 4 | 57% |
@@ -656,7 +658,7 @@ project_item_create → aifp_status (completion_loop)
 | **Archival** | 3 | 1 | 33% |
 | **Git Integration** | 6 | 6 | 100% ✓ |
 | **User Directives** | 9 | 9 | 100% ✓ |
-| **TOTAL** | 38 | 29 | **76%** |
+| **TOTAL (PROJECT)** | 38 | 21 | **55%** |
 
 ### Flow Type Distribution
 
@@ -838,10 +840,10 @@ jq -r '.flows[].flow_type' docs/directives-json/directive_flow_project.json | so
 4. **Structural integrity**: No violations of architectural principles
 
 ### Gaps ⚠️
-1. **Active work directives**: 3 of 5 missing (task_update, item_create, reserve_finalize)
-2. **File management**: 3 of 4 missing (file_read, file_delete, add_path)
+1. **Active work directives**: 3 critical missing (task_update, item_create, reserve_finalize)
+2. **File management**: 4 of 5 missing (file_read, file_delete, add_path, reserve_finalize)
 3. **Help system**: aifp_help not integrated
-4. **Overall coverage**: 76% (29 of 38 directives)
+4. **Overall coverage**: 55% (21 of 38 directives)
 
 ### Clarifications Added ℹ️
 1. **Task/Item creation**: Items auto-created immediately when task created (not manual)
@@ -865,7 +867,181 @@ The foundation is solid and follows the documented architecture correctly. The m
 ---
 
 **Analysis Date**: 2025-12-18
+**Last Updated**: 2025-12-19
 **Analyst**: Claude Sonnet 4.5
-**Next Action**: Begin Phase 2 - Week 1 (Critical Flows)
+**Next Action**: Phase 4 (FP reference flows) or Phase 7 (User preference flows)
 
-**Document Status**: ✅ Ready for Implementation
+**Document Status**: ✅ Phase 2-3 Complete (100% Project Directive Coverage)
+
+---
+
+## 📝 Phase 2 - Week 1 Completion Report (2025-12-19)
+
+### Implementation Summary
+
+**Status**: ✅ COMPLETE
+**Flows Added**: 16 (53 → 69)
+**Project Directive Coverage**: 55% → 74% (21 → 28 of 38 directives)
+**Duration**: 1 session
+
+### Critical Directives Added (7 total)
+
+1. ✅ **project_task_update** (2 flows) - Track incremental task progress
+2. ✅ **project_item_create** (3 flows) - Auto-create items when task created + manual creation
+3. ✅ **project_reserve_finalize** (2 flows) - Reserve IDs before database writes
+4. ✅ **project_file_read** (2 flows) - Read file with context
+5. ✅ **project_file_delete** (2 flows) - Delete file + cleanup database
+6. ✅ **project_add_path** (2 flows) - Add existing file to tracking
+7. ✅ **aifp_help** (3 flows) - Help system integration
+
+### Critical Amendments (2 total)
+
+1. ✅ **user_preferences_sync** - Changed from `canonical` to `conditional` with `directive_is_customizable = true`
+   - **Clarification**: This condition applies to BOTH use cases (regular project + custom directives)
+   - Any directive that supports user preference customization checks this before execution
+   - Examples: `project_file_write` (code style), `project_task_create` (default priorities), etc.
+
+2. ✅ **project_compliance_check** - Updated all flows with opt-in conditions
+   - Changed: `check_fp_compliance` → `auto_check_compliance_enabled`
+   - Added: On-demand check flow (`user_requests_compliance_check`)
+   - Added: Milestone quality gate flow (`milestone_quality_gate_enabled`)
+   - **Critical**: ALL compliance checking is OPT-IN ONLY (default = OFF)
+
+### Architectural Clarifications
+
+#### FP Compliance Check Placement
+
+**Question**: Should FP compliance flows be in `directive_flow_project.json` or separate `directive_flow_fp.json`?
+
+**Resolution**: Keep in `directive_flow_project.json` because:
+1. `project_compliance_check` is a **project management directive** (in directives-project.json)
+2. ALL flows are **opt-in only** via user preferences (no automatic checking)
+3. Default behavior: AI writes FP-compliant code automatically (via system prompt)
+4. FP directives (65 total) remain as **reference documentation** consulted inline when needed
+5. Separate `directive_flow_fp.json` will contain FP reference consultation flows (Phase 4)
+
+**Current FP Compliance Flows** (5 total, all opt-in):
+1. `project_file_write → project_compliance_check` - Condition: `auto_check_compliance_enabled` (opt-in)
+2. `project_compliance_check → project_file_write` - Auto-fix if violations found
+3. `project_compliance_check → aifp_status` - Completion loop
+4. `aifp_status → project_compliance_check` - Condition: `user_requests_compliance_check` (explicit)
+5. `project_milestone_complete → project_compliance_check` - Condition: `milestone_quality_gate_enabled` (opt-in)
+
+**FP Default Behavior** (NO checking):
+- ✅ AI writes FP-compliant code by default (system prompt trained)
+- ✅ FP directives = reference documentation only (consulted when AI uncertain)
+- ✅ No automatic validation after file writes (unless user enables)
+- ✅ Compliance check = quality gate tool, not automatic workflow step
+
+#### user_preferences_sync Condition
+
+**Condition**: `directive_is_customizable = true`
+
+**Applies To**: BOTH use cases
+- **Use Case 1** (Regular Project): User preferences control AI behavior for project directives
+  - `project_file_write` → code style, docstrings, max function length
+  - `project_task_create` → task granularity, default priorities
+  - `project_task_decomposition` → how detailed to break down tasks
+  - `project_compliance_check` → auto-fix violations vs. report only
+- **Use Case 2** (Custom Directives): User preferences control behavior for directive system
+  - `user_directive_validate` → validation strictness
+  - `user_directive_implement` → code generation preferences
+
+**NOT Use Case 2 Only** - applies to any directive that can be customized via user_preferences.db
+
+### Coverage Improvements
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| **Total Flows** | 53 | 69 | +16 flows |
+| **Project Directives in Flows** | 21/38 (55%) | 28/38 (74%) | +7 directives |
+| **Entry & Status Category** | 2/3 (67%) | 3/3 (100%) | +1 (aifp_help) |
+| **Task Management Category** | 8/10 (80%) | 10/10 (100%) | +2 (task_update, item_create) |
+| **File & Code Category** | 1/5 (20%) | 5/5 (100%) | +4 (all remaining) |
+| **Completion Loops** | 21 | 26 | +5 |
+| **Conditional Flows** | 23 | 33 | +10 |
+
+### Validation Results
+
+✅ **JSON Syntax**: Valid
+✅ **Total Flows**: 69 (metadata updated to v1.1.0)
+✅ **Loop-Back Pattern**: All 26 completion loops → `aifp_status`
+✅ **Git Integration**: All 6 git directives covered in project flows
+✅ **User System Integration**: All 9 user-system directives covered in project flows
+✅ **Architectural Integrity**: No violations, all opt-in conditions preserved
+
+---
+
+## 📋 Phase 2-3 Week 2 - ✅ COMPLETE (2025-12-19)
+
+### Secondary Project Directives (10 completed)
+
+All flows added:
+1. ✅ project_auto_resume (2 flows)
+2. ✅ project_auto_summary (2 flows)
+3. ✅ project_backup_restore (2 flows)
+4. ✅ project_dependency_map (2 flows)
+5. ✅ project_dependency_sync (2 flows)
+6. ✅ project_evolution (2 flows)
+7. ✅ project_integrity_check (2 flows)
+8. ✅ project_performance_summary (2 flows with tracking opt-in condition) ⚠️
+9. ✅ project_refactor_path (2 flows)
+10. ✅ project_theme_flow_mapping (2 flows)
+
+**Result**: 89 total flows in directive_flow_project.json (v1.2.0)
+**Coverage**: 100% (38/38 project directives)
+
+---
+
+## 📋 Additional Flow Files Needed (Phase 4-7)
+
+### Flow File Inventory
+
+**Created**:
+- ✅ `directive_flow_project.json` - 69 flows (Phase 1-2, v1.1.0)
+
+**Need to Create**:
+
+1. **directive_flow_fp.json** (Phase 4)
+   - **Purpose**: FP reference consultation flows (NOT execution flows)
+   - **Directives**: 65 total (29 fp-core + 36 fp-aux)
+   - **Flow Type**: Reference lookups, consultation patterns
+   - **NOT** step-by-step execution (FP compliance already opt-in in project flows)
+   - **Example Flows**:
+     - `ai_uncertain_about_currying → search_fp_directives(keyword="currying")`
+     - `need_monad_composition_guidance → get_directive_content("fp_monadic_composition")`
+   - **Estimated**: 5-10 consultation flows (minimal, reference-only)
+
+2. **directive_flow_user_preferences.json** (Phase 7)
+   - **Purpose**: User preference management meta-directives
+   - **Directives**: 7 total
+     - user_preferences_sync
+     - user_preferences_update
+     - user_preferences_learn
+     - user_preferences_export
+     - user_preferences_import
+     - project_notes_log
+     - tracking_toggle
+   - **Estimated**: 8-12 flows
+
+**NOT Needed** (already integrated in project flows):
+- ❌ `directive_flow_git.json` - All 6 git directives in project flows (standard workflow)
+- ❌ `directive_flow_user_system.json` - All 9 user-system directives in project flows (Use Case 2)
+
+**Legacy File** (ignore):
+- ❌ `directives-interactions.json` - Old format, replaced by directive_flow_*.json files
+
+### Final Flow File Structure
+
+```
+docs/directives-json/
+├── directive_flow_project.json       ✅ 69 flows (v1.1.0) - Phase 1-2 complete, Phase 3 in progress
+├── directive_flow_fp.json            ⚡ Phase 4 - FP reference consultation (~5-10 flows)
+└── directive_flow_user_preferences.json  ⚡ Phase 7 - User preference meta-directives (~8-12 flows)
+
+TOTAL ESTIMATED: 82-91 flows across all files
+```
+
+---
+
+**Document Status**: ✅ Phase 2 Week 1 Complete - Ready for Week 2-3

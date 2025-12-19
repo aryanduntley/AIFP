@@ -358,9 +358,12 @@ ALL completion directives → aifp_status
 
 ---
 
-### Phase 2: Map Core Directive Details (1 week)
+### Phase 2: Map Core Directive Details (1-2 weeks) ✅ COMPLETE
 
 **Goal**: Complete mapping for the ~20-30 core directives used in the workflow path
+
+**Status**: COMPLETE (2025-12-19) - Week 1: 7 critical + 2 amendments, Week 2: 10 secondary
+**Progress**: 53 → 89 flows (+36), 55% → 100% directive coverage
 
 **Directives to Map** (in priority order):
 
@@ -446,86 +449,95 @@ For each helper used, add entry to its `used_by_directives` array:
 - Mark directive as complete in `DIRECTIVES_MAPPING_PROGRESS.md`
 - Mark helpers as complete in `HELPER_FUNCTIONS_MAPPING_PROGRESS.md`
 
+**Week 1 Complete** (2025-12-19):
+- [x] 7 critical directives added (task_update, item_create, reserve_finalize, file_read, file_delete, add_path, aifp_help)
+- [x] 2 critical amendments (user_preferences_sync condition, compliance_check opt-in clarification)
+- [x] directive_flow_project.json: 53 → 69 flows (+16)
+- [x] Project directive coverage: 55% → 74% (21 → 28 of 38)
+- [x] Category coverage improvements:
+  - Entry & Status: 67% → 100%
+  - Task Management: 80% → 100%
+  - File & Code: 20% → 100%
+
+**Week 2 Complete** (2025-12-19):
+- [x] 10 secondary directives (auto_resume, auto_summary, backup_restore, dependency_map, dependency_sync, evolution, integrity_check, performance_summary, refactor_path, theme_flow_mapping)
+- [x] 20 additional flows added → 89 total flows
+- [x] directive_flow_project.json complete (100% coverage)
+
 **Success Criteria**:
-- [ ] All 20-30 core directives fully mapped
-- [ ] directive_flow_project.json expanded to 80-100 total flow entries (currently 53)
-- [ ] Core helpers have used_by_directives populated (orchestrators, high-frequency project helpers)
-- [ ] Tracking checklists updated
+- [x] 7/7 critical directives mapped (Week 1) ✅
+- [x] 10/10 secondary directives mapped (Week 2) ✅
+- [x] directive_flow_project.json: 89 total flows (v1.2.0) ✅
+- [x] 100% project directive coverage (38/38) ✅
+- [ ] Core helpers have used_by_directives populated (Phase 8)
+- [ ] Tracking checklists updated (in progress)
 
 ---
 
-### Phase 3: Map Remaining Project Directives (1 week)
+### Phase 3: Map Remaining Project Directives ✅ MERGED WITH PHASE 2
 
-**Goal**: Complete mapping for all remaining project management directives (~15 remaining)
+**Goal**: Complete mapping for all remaining project management directives
 
-**Remaining Directives**:
-- project_add_path
-- project_archive
-- project_auto_resume
-- project_auto_summary
-- project_backup_restore
-- project_dependency_map
-- project_dependency_sync
-- project_file_delete
-- project_file_read
-- project_integrity_check
-- project_metrics
-- project_performance_summary
-- project_refactor_path
-- project_theme_flow_mapping
-- project_user_referral
+**Status**: COMPLETE (merged into Phase 2-3) - All project directives now have flows
 
-**Process**: Same as Phase 2, but faster since pattern is established
+**All Directives Mapped** (38/38):
+- ✅ All critical directives (Phase 2 Week 1)
+- ✅ All secondary directives (Phase 2 Week 2)
+- ✅ All categories at 100% coverage
 
 **Success Criteria**:
-- [ ] All project directives mapped
-- [ ] directive_flow_project.json has 100-120 total flow entries (currently 53)
-- [ ] Most project helpers have used_by_directives populated
+- [x] All project directives mapped ✅
+- [x] directive_flow_project.json: 89 total flows (v1.2.0) ✅
+- [x] 100% project directive coverage ✅
+- [ ] Project helpers have used_by_directives populated (Phase 8)
 
 ---
 
-### Phase 4: Map FP Directives (1-2 weeks)
+### Phase 4: Map FP Reference Consultation Flows (2-3 days) ⚡ UPDATED SCOPE
 
-**Goal**: Map FP Core and FP Aux directives
+**Goal**: Create FP reference consultation flows (NOT execution flows)
 
-**Key Insight**: Most FP directives are **reference documents**, not workflow directives. They:
-- Don't have directive_flow entries (they don't "flow" to other directives)
-- Use minimal helpers (mostly just for logging if fp_flow_tracking enabled)
-- Are queried by type='fp' when AI needs clarification
+**Key Architectural Clarification** (2025-12-19):
 
-**Approach**:
+**FP Compliance Already Handled**:
+- `project_compliance_check` flows already in directive_flow_project.json (5 flows, all opt-in)
+- ALL compliance checking is opt-in only (default = AI writes FP code automatically)
+- FP enforcement directives do NOT need separate flows
 
-**A. FP Reference Directives** (~60 directives)
-- Create directive_flow_fp.json with minimal consultation flows (~5-10 flows)
+**FP Directives = Reference Documentation**:
+- 65 FP directives (29 core + 36 aux) are **reference material only**
+- AI consults them inline when uncertain (via search/lookup helpers)
+- They do NOT execute as part of workflow
+- They do NOT have traditional directive flows
+
+**New Approach**:
+
+**Create directive_flow_fp.json** with consultation pattern flows (~5-10 flows):
+- Reference lookup patterns (not directive → directive flows)
+- Consultation flows (when/how AI queries FP references)
+- Example patterns:
+  - AI uncertain about currying → search_fp_directives(keyword="currying")
+  - Need monad composition guidance → get_directive_content("fp_monadic_composition")
+  - Wrapping OOP library → get_directive_content("fp_wrapper_generation")
 - Map minimal helper usage:
   - `query_core` (to query FP directive content)
   - `get_directive_content` (to load MD documentation)
+  - `search_fp_directives` (keyword search)
   - Optional: `add_note` if fp_flow_tracking enabled (opt-in)
 
-**B. FP Enforcement Directives** (~6 directives)
-These actually get invoked in workflows:
-- fp_purity (called by project_file_write for validation)
-- fp_immutability (called by project_file_write for validation)
-- fp_side_effect_detection (called by project_file_write for validation)
-- fp_no_oop (called by project_file_write for validation)
-- fp_wrapper_generation (called when wrapping external libraries)
-- fp_compliance_check (called by project_compliance_check)
-
-Map these like project directives:
-- Add entries to directive_flow_project.json for enforcement directives
-- used_by_directives for helpers they use
-
 **Success Criteria**:
-- [ ] 6 FP enforcement directives fully mapped
-- [ ] 60 FP reference directives marked with minimal helper usage
-- [ ] directive_flow_fp.json created with ~5-10 consultation flows
-- [ ] directive_flow_project.json has ~110-125 total flow entries (enforcement directives added)
+- [ ] directive_flow_fp.json created with ~5-10 consultation pattern flows
+- [ ] All 65 FP directives documented with reference lookup patterns
+- [ ] FP reference helpers mapped with used_by_directives
+- [ ] Clear separation: FP compliance (opt-in, in project) vs FP reference (consultation, in fp)
 
 ---
 
-### Phase 5: Map User System Directives (2-3 days)
+### Phase 5: Map User System Directives (2-3 days) ✅ COMPLETE (in directive_flow_project.json)
 
 **Goal**: Map user directive automation system directives (9 directives)
+
+**Status**: COMPLETE - All 9 user-system directives already integrated in directive_flow_project.json (Phase 1)
 
 **Directives**:
 - user_directive_parse
@@ -551,14 +563,16 @@ user_directive_parse → validate → implement → approve → activate → mon
 
 **Success Criteria**:
 - [x] User directive sub-workflow documented in directive_flow_project.json (10 flows) ✅
-- [ ] All 9 user system directives fully mapped with helper usage
-- [ ] User custom helpers have used_by_directives populated
+- [x] All 9 user system directives integrated in project flows ✅
+- [ ] User custom helpers have used_by_directives populated (Phase 8 - helper mapping)
 
 ---
 
-### Phase 6: Map Git Directives (1-2 days)
+### Phase 6: Map Git Directives (1-2 days) ✅ COMPLETE (in directive_flow_project.json)
 
 **Goal**: Map Git integration directives (6 directives)
+
+**Status**: COMPLETE - All 6 git directives already integrated in directive_flow_project.json (Phase 1)
 
 **Directives**:
 - git_init
@@ -577,8 +591,8 @@ git_merge_branch → git_detect_conflicts → FP-powered resolution
 
 **Success Criteria**:
 - [x] Git integration workflows documented in directive_flow_project.json (6 flows) ✅
-- [ ] All 6 git directives fully mapped with helper usage
-- [ ] Git helpers have used_by_directives populated
+- [x] All 6 git directives integrated as standard workflow (not conditional) ✅
+- [ ] Git helpers have used_by_directives populated (Phase 8 - helper mapping)
 
 ---
 
@@ -679,20 +693,29 @@ docs/
 
 ---
 
-## Timeline Estimate
+## Timeline Estimate (Updated 2025-12-19)
 
-| Phase | Duration | Effort |
-|-------|----------|--------|
-| Phase 0: Fix aifp_run | 1 day | High priority, must do first |
-| Phase 1: Core workflow path | 2-3 days | Documentation + 20-30 flows |
-| Phase 2: Core directive details | 1 week | 20-30 directives fully mapped |
-| Phase 3: Remaining project directives | 1 week | 15 directives |
-| Phase 4: FP directives | 1-2 weeks | 66 directives (mostly minimal mapping) |
-| Phase 5: User system directives | 2-3 days | 9 directives |
-| Phase 6: Git directives | 1-2 days | 6 directives |
-| Phase 7: User preference directives | 1 day | 7 directives |
-| Phase 8: Finalize & validate | 2-3 days | Cleanup, file paths, validation |
-| **TOTAL** | **4-6 weeks** | Full mapping completion |
+| Phase | Duration | Status | Deliverable |
+|-------|----------|--------|-------------|
+| Phase 0: Fix aifp_run | 1 day | ✅ COMPLETE | aifp_run helper/directive updated |
+| Phase 1: Core workflow path | 2-3 days | ✅ COMPLETE | directive_flow_project.json (53 flows) |
+| **Phase 2-3: All project directives** | **1 day** | **✅ COMPLETE** | **directive_flow_project.json (89 flows, 100% coverage)** |
+| Phase 4: FP reference flows | 2-3 days | ⚡ NEXT | directive_flow_fp.json (~5-10 flows) |
+| Phase 5: User system directives | ~~2-3 days~~ | ✅ IN PHASE 1 | Already in project flows |
+| Phase 6: Git directives | ~~1-2 days~~ | ✅ IN PHASE 1 | Already in project flows |
+| Phase 7: User preference directives | 1 day | ⚡ PENDING | directive_flow_user_preferences.json (~8-12 flows) |
+| Phase 8: Finalize & validate | 2-3 days | ⚡ PENDING | Helper mapping, file paths, validation |
+| **TOTAL** | **~1 week remaining** | **70% COMPLETE** | **3 flow files total** |
+
+**Completed Phases**:
+- ✅ Phase 0-1: Complete (aifp_run optimization + core workflow)
+- ✅ Phase 2-3: Complete (all 38 project directives, 89 flows, v1.2.0)
+- ✅ Phase 5-6: Complete (integrated in Phase 1)
+
+**Remaining Phases**:
+- ⚡ Phase 4: FP reference consultation flows (2-3 days)
+- ⚡ Phase 7: User preference flows (1 day)
+- ⚡ Phase 8: Helper mapping + validation (2-3 days)
 
 ---
 
