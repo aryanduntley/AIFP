@@ -146,6 +146,8 @@ docs/DIRECTIVE_WORKFLOW_PATH.md
 docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
 docs/DIRECTIVE_FLOW_GAP_ANALYSIS.md
 
+docs/HELPER_MAPPING_ANALYSIS.md
+
 docs/PHASE_1_COMPLETE.md
 
 docs/COMPREHENSIVE_SETTINGS_SPEC.md
@@ -160,3 +162,5 @@ verify number of project directives. 38 mentioned
 read note in docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
 
 project_auto_summary directive, where is this auto summary recorded? Notes?
+
+helper function json parameters need review against schema

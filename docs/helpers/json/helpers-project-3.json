@@ -484,17 +484,24 @@
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "source",
+          "name": "content",
           "type": "string",
           "required": true,
           "default": null,
+          "description": "Note content/message"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "default": "ai",
           "description": "\"ai\" or \"user\" (default \"ai\")"
         },
         {
           "name": "severity",
           "type": "string",
-          "required": true,
-          "default": null,
+          "required": false,
+          "default": "info",
           "description": "\"info\", \"warning\", \"error\" (default \"info\")"
         },
         {
@@ -506,14 +513,28 @@
         }
       ],
       "purpose": "Add note to project database",
-      "error_handling": "",
+      "error_handling": "Returns error if project.db not initialized, otherwise continues silently",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "`{\"success\": true, \"id\": new_id}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_notes_log",
+          "execution_context": "insert_note",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "content": "clarification, reasoning, or context to log",
+            "source": "ai (default) or user",
+            "severity": "info (default), warning, or error",
+            "directive_name": "optional directive context"
+          },
+          "description": "Log clarifications, reasoning, and directive execution context to project.db notes table. Used by other directives for transparent reasoning trails."
+        }
+      ]
     },
     {
       "name": "get_notes_comprehensive",

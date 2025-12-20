@@ -186,9 +186,17 @@
     {
       "name": "get_directive_content",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Name of directive to load MD documentation for"
+        }
+      ],
       "purpose": "Load full MD documentation for directive",
-      "error_handling": "",
+      "error_handling": "Returns error if directive not found or MD file missing",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -196,14 +204,47 @@
         "Retrieves comprehensive directive guidance from MD files"
       ],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "fp_reference_consultation",
+          "execution_context": "inline_during_code_writing",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {
+            "directive_name": "identified_fp_directive_name"
+          },
+          "description": "AI consults FP directive MD documentation when implementation details unclear. Used for all 65 FP directives (29 core + 36 aux) as reference material."
+        }
+      ]
     },
     {
       "name": "search_directives",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Keyword to search in directive names, descriptions, and intent_keywords"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Directive type filter: 'fp', 'project', 'user-system', 'user-pref', 'git'"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Directive category filter (e.g., 'purity', 'error_handling', 'task_management')"
+        }
+      ],
       "purpose": "Search directives with filters (orchestrator)",
-      "error_handling": "",
+      "error_handling": "Returns empty array if no matches found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -211,12 +252,42 @@
         "Higher-level search functionality beyond simple queries"
       ],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "fp_reference_consultation",
+          "execution_context": "inline_during_code_writing",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {
+            "keyword": "implementation_topic (e.g., 'currying', 'monad', 'lazy evaluation')",
+            "type": "'fp' (always for FP consultations)"
+          },
+          "description": "AI searches for relevant FP directives by keyword when uncertain about implementation. Returns list of candidate directives, then AI uses get_directive_content() to load full documentation."
+        },
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "keyword": "user_search_term",
+            "type": "directive_type_filter (optional)"
+          },
+          "description": "User searches for directives by keyword or topic"
+        }
+      ]
     },
     {
       "name": "find_directive_by_intent",
       "file_path": "TODO_helpers/core/module.py",
       "parameters": [
+        {
+          "name": "user_request",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "User's natural language request describing behavior to change"
+        },
         {
           "name": "threshold",
           "type": "float",
@@ -226,7 +297,7 @@
         }
       ],
       "purpose": "Map user intent to directives using NLP/keyword matching",
-      "error_handling": "",
+      "error_handling": "Returns empty array if no matches above threshold",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -234,7 +305,19 @@
         "High-level NLP search that uses AI reasoning to determine intent keywords, then calls `find_directives_by_intent_keyword()` internally"
       ],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_update",
+          "execution_context": "parse_preference_request",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "user_request": "user's preference change request (e.g., 'always add docstrings')",
+            "threshold": "0.6 (lower threshold for preference updates)"
+          },
+          "description": "Map user preference request to specific directive name for storing in directive_preferences table. Searches directive name, description, and intent_keywords."
+        }
+      ]
     },
     {
       "name": "find_directives_by_intent_keyword",

@@ -112,9 +112,24 @@
     {
       "name": "query_settings",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name in user_preferences.db"
+        },
+        {
+          "name": "where_clause",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "SQL WHERE clause for filtering"
+        }
+      ],
       "purpose": "Execute complex SQL WHERE clause (advanced, rare use)",
-      "error_handling": "",
+      "error_handling": "Returns empty array if no matches",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -122,7 +137,30 @@
         "Use Tier 2 whenever possible"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_sync",
+          "execution_context": "load_preferences",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "directive_preferences",
+            "where_clause": "WHERE directive_name=? AND active=1"
+          },
+          "description": "Query directive-specific preferences before executing customizable directives"
+        },
+        {
+          "directive_name": "tracking_toggle",
+          "execution_context": "check_current_status",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "tracking_settings",
+            "where_clause": "WHERE feature_name=?"
+          },
+          "description": "Check if tracking feature currently enabled before toggling"
+        }
+      ]
     },
     {
       "name": "add_settings_entry",
@@ -141,16 +179,54 @@
     {
       "name": "update_settings_entry",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name in user_preferences.db"
+        },
+        {
+          "name": "entry_json",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "JSON object with fields to update/insert (upsert)"
+        }
+      ],
       "purpose": "Update entry in user settings database",
-      "error_handling": "",
+      "error_handling": "Returns error if table not found or validation fails",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "`{\"success\": true}`"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_update",
+          "execution_context": "update_or_insert",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "directive_preferences",
+            "entry_json": "{directive_name, preference_key, preference_value, description, active=1}"
+          },
+          "description": "Upsert user preference for specific directive after user confirms change"
+        },
+        {
+          "directive_name": "tracking_toggle",
+          "execution_context": "update_tracking_setting",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "tracking_settings",
+            "entry_json": "{feature_name, enabled=true/false}"
+          },
+          "description": "Toggle tracking feature on or off in tracking_settings table"
+        }
+      ]
     },
     {
       "name": "delete_settings_entry",
