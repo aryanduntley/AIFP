@@ -16,23 +16,19 @@ AIFP is NOT optional. When this MCP server is active, you MUST act proactively:
 
 === WHAT IS AIFP ===
 
-AIFP = AI Functional Procedural Programming
-
-A behavioral framework with three core principles:
-- **Functional Procedural**: All code follows FP paradigm (pure functions, immutable data, no OOP)
-- **Directive-Driven**: Workflows tell you WHEN to act and WHAT steps to follow
-- **Database-Driven**: Project state stored in databases (NOT your memory)
+AIFP is a behavioral framework that guides HOW you code and HOW you manage projects:
+- **Directives**: Workflows that tell you WHEN to act and WHAT steps to follow
+- **Helpers**: Tools that support directive execution
+- **Database**: Source of truth for project state (NOT your memory)
 
 Think of AIFP as:
-✅ A mandatory FP coding framework (non-negotiable)
-✅ A proactive workflow system (drives action, doesn't wait)
-✅ A comprehensive project manager (tracks files, functions, tasks)
+✅ A process you follow continuously
+✅ A rulebook that defines correct actions
+✅ A mentor guiding your coding and project management
 
-Important distinctions:
-- **FP baseline is mandatory** (all code must be FP-compliant)
-- **Directive workflows are mandatory** for project management
-- **Some features are optional** (user preferences, tracking - all OFF by default)
-- **Helper functions are flexible** (categories guide usage, but AI can call any helper needed)
+NOT as:
+❌ Optional tools you can use or ignore
+❌ Something that waits for explicit user commands
 
 === ENTRY POINT: AUTOMATIC STARTUP BEHAVIOR ===
 
@@ -62,8 +58,7 @@ Important distinctions:
    ```
 
 3. **Load directives if not in memory**:
-   - Call search_directives(type="project") to load project directives
-   - Load FP directives only when needed: search_directives(type="fp")
+   - Call get_all_directives() to cache all directives
    - These guide your behavior for entire session
 
 4. **Act or present options**:
@@ -263,12 +258,12 @@ Directives tell you WHEN to act and WHAT steps to follow. All directives use **t
 
 Helpers support directive execution. **Query database for available helpers** (never assume):
 
-**Three Categories** (guidance, not hard limits):
-1. **Directive-used helpers**: Typically called BY directives (has used_by_directives entries)
+**Three Categories**:
+1. **Directive-used helpers**: Called BY directives (has used_by_directives entries)
    - Query: get_helpers_for_directive(directive_id)
-   - Directives guide when to use these, but AI can call directly if needed
+   - Directives tell you WHEN to use these
 
-2. **AI-only tools** (is_tool=true): Designed for direct AI usage
+2. **AI-only tools** (is_tool=true): Called BY YOU directly
    - Schema/query tools: get_project_schema, get_project_tables
    - Batch operations: reserve_files, finalize_functions
    - Delete operations: delete_task, delete_milestone
@@ -290,28 +285,21 @@ Helpers support directive execution. **Query database for available helpers** (n
   - Used after code generation
   - All-or-nothing transaction mode
 
-**Database Query Policy** (priority order):
-1. **Use helpers first** - Query available helpers (get_incomplete_tasks, get_project_schema)
-2. **Use orchestrators** - For complex operations (get_current_progress, update_project_state)
-3. **Use directives** - For writes (project_file_write, project_task_complete)
-4. **Direct SQL as last resort** - Only if no helper exists (extremely rare)
-
-**Rules**:
-- **Never use raw SQL for writes** (always use directives or helpers)
-- **Prefer helpers over raw SQL for reads** (helpers provide validation and formatting)
-- **READ operations always safe** (but prefer helpers)
+**Database Operations**:
+- **Strongly prefer directives** for writes (files, functions, tasks)
+- **Use orchestrators** for complex multi-step operations
+- **Direct SQL acceptable** for edge cases (notes, quick fixes)
+- **READ operations** always safe
 
 === FOUR DATABASES ===
 
 1. **aifp_core.db** (global, read-only)
    - Directives, helpers, flows, interactions
-   - Query: get_all_directives() or search_directives(type, keyword)
-   - Avoid: query_mcp_db(sql) - prefer helpers
+   - Query: query_mcp_db(sql) or get_all_directives()
 
 2. **project.db** (per-project, mutable)
    - Files, functions, tasks, milestones, notes, completion_path
-   - Query: Use specific helpers (get_incomplete_tasks, get_project_files)
-   - Avoid: query_project_db(sql) - only if no helper exists
+   - Query: query_project_db(sql) or use specific helpers
 
 3. **user_preferences.db** (per-project, mutable)
    - Atomic key-value overrides (directive_name.preference_key = value)

@@ -11,10 +11,16 @@
 
 `project_init` initializes a new AIFP project by creating the `.aifp-project/` directory structure, initializing databases, and generating the ProjectBlueprint.md file. This directive sets up the foundation for all subsequent AIFP project management operations.
 
+**CRITICAL: AIFP is FP-only**. This directive scans existing code for OOP patterns and **aborts initialization** if OOP is detected. AIFP cannot manage OOP projects.
+
 **Use this directive when**:
-- Starting a new AIFP-managed project
-- Converting an existing project to use AIFP
+- Starting a new AIFP-managed project (empty directory or FP-compliant code)
+- Converting an existing **FP-compliant** project to use AIFP
 - Initializing for automation projects (Use Case 2)
+
+**DO NOT use when**:
+- Existing codebase is OOP-based (classes, inheritance, mutable objects)
+- Project uses class-based patterns
 
 ---
 
@@ -106,7 +112,49 @@ if status['initialized']:
     }
 ```
 
-**Step 2: Gather Project Information**
+**Step 2: Scan for OOP Patterns (if existing code present)**
+
+```python
+# Check if directory has existing code (not empty or only config files)
+existing_files = scan_code_files(project_root, extensions=['.py', '.js', '.ts', '.java', '.cpp', '.cs', '.rb', '.php'])
+
+if len(existing_files) > 0:
+    # Scan for OOP patterns
+    oop_patterns = {
+        "python": ["class .*\\(.*\\):", "self\\.", "__init__", "def .*\\(self"],
+        "javascript": ["class ", "this\\.", "extends ", "constructor\\("],
+        "typescript": ["class ", "this\\.", "extends ", "implements ", "interface "],
+        "java": ["class ", "extends ", "implements ", "interface ", "abstract class"],
+        "cpp": ["class ", "this->", "virtual ", "override"],
+        "other": ["class ", "self\\.", "this\\.", "extends ", "implements "]
+    }
+
+    # Detect OOP usage (threshold: 3+ patterns across multiple files)
+    oop_detected = scan_for_patterns(existing_files, oop_patterns, threshold=3)
+
+    if oop_detected:
+        return {
+            "success": false,
+            "error": "OOP_INCOMPATIBLE_PROJECT",
+            "message": """
+🛑 AIFP Incompatible Project Detected
+
+This directory contains existing OOP-based code. AIFP is designed exclusively for Functional Procedural (FP) codebases.
+
+Your options:
+1. Convert this project to FP first (major refactor - use AIFP in a separate directory to help)
+2. Disable/uninstall AIFP MCP server for this project
+3. Start a new FP-compliant project in a different directory
+
+AIFP cannot manage OOP projects - it enforces pure functions, immutability, and no classes with methods.
+            """,
+            "detected_patterns": oop_detected['patterns'],
+            "affected_files": oop_detected['files'],
+            "recommendation": "Disable AIFP MCP server or convert project to FP"
+        }
+```
+
+**Step 3: Gather Project Information**
 
 ```python
 # Prompt user for project details
@@ -118,7 +166,7 @@ project_info = {
 }
 ```
 
-**Step 3: Create Directory Structure**
+**Step 4: Create Directory Structure**
 
 ```bash
 {project_root}/
@@ -136,7 +184,7 @@ project_info = {
 
 **Note**: `aifp_core.db` is NOT copied - it remains in the MCP server and is accessed via MCP tools.
 
-**Step 4: Initialize project.db**
+**Step 5: Initialize project.db**
 
 ```python
 # Load schema from src/aifp/database/schemas/schemaExampleProject.sql
@@ -166,7 +214,7 @@ conn.execute("""
 conn.commit()
 ```
 
-**Step 5: Initialize user_preferences.db**
+**Step 6: Initialize user_preferences.db**
 
 ```python
 # Load schema from src/aifp/database/schemas/schemaExampleSettings.sql
@@ -187,7 +235,7 @@ conn.execute("""
 conn.commit()
 ```
 
-**Step 6: Create config.json**
+**Step 7: Create config.json**
 
 ```python
 # Create project-specific configuration
@@ -231,7 +279,7 @@ if project_is_automation:
 write_json(f"{project_root}/.aifp-project/config.json", config)
 ```
 
-**Step 7: Generate ProjectBlueprint.md**
+**Step 8: Generate ProjectBlueprint.md**
 
 ```python
 # Call create_project_blueprint() helper
@@ -259,7 +307,7 @@ backup_file(
 )
 ```
 
-**Step 8: Create .gitkeep (Optional but Recommended)**
+**Step 9: Create .gitkeep (Optional but Recommended)**
 
 ```python
 # Ensure .aifp-project/ is tracked in Git even if empty subdirectories
@@ -271,7 +319,7 @@ if project_is_automation:
     os.makedirs(f"{project_root}/.aifp-project/logs/errors/", exist_ok=True)
 ```
 
-**Step 9: Return Success**
+**Step 10: Return Success**
 
 ```python
 return {
@@ -391,15 +439,15 @@ Next steps:
 
 ---
 
-### Example 3: Converting Existing Project
+### Example 3: Converting Existing FP Project
 
 **User**: "Convert my existing project to AIFP"
 
 **AI Processing**:
 1. Checks `get_project_status()` → Not initialized
-2. Scans existing codebase
+2. Scans existing codebase for OOP patterns → None detected ✅
 3. Detects language: Python
-4. Detects existing files: src/main.py, src/utils.py
+4. Detects existing files: src/main.py, src/utils.py (all pure functions)
 5. Prompts: "Import existing code into AIFP tracking?"
 6. User: "Yes"
 7. Initializes + indexes existing files
@@ -408,9 +456,11 @@ Next steps:
 ```
 ✅ Project converted to AIFP: MyApp
 
+Scanned existing code: FP-compliant ✅
+
 Indexed existing files:
-  • src/main.py (3 functions)
-  • src/utils.py (5 functions)
+  • src/main.py (3 pure functions)
+  • src/utils.py (5 pure functions)
 
 Databases created:
   • .aifp-project/project.db (8 functions tracked)
@@ -418,6 +468,37 @@ Databases created:
   • .aifp-project/ProjectBlueprint.md (generated from existing code)
 
 Next: Run FP compliance check to identify issues
+```
+
+---
+
+### Example 4: OOP Project Rejected
+
+**User**: "Convert my Django project to AIFP"
+
+**AI Processing**:
+1. Checks `get_project_status()` → Not initialized
+2. Scans existing codebase for OOP patterns
+3. Detects: 15+ class definitions, inheritance, self references
+4. **Aborts initialization**
+
+**Result**:
+```
+🛑 AIFP Incompatible Project Detected
+
+This directory contains OOP-based code in:
+  • myapp/models.py (5 Django model classes)
+  • myapp/views.py (3 class-based views)
+  • myapp/serializers.py (4 serializer classes)
+
+AIFP is designed for Functional Procedural codebases only.
+
+Your options:
+1. Convert to FP first (major refactor - use AIFP in separate directory)
+2. Disable/uninstall AIFP MCP server for this project
+3. Start new FP-compliant project elsewhere
+
+Initialization aborted.
 ```
 
 ---
@@ -446,7 +527,43 @@ Use "status" to view current state or "continue" to resume work.
 
 ---
 
-### Case 2: No Write Permissions
+### Case 2: OOP Code Detected
+
+**Trigger**: Existing codebase contains OOP patterns (3+ detected)
+
+**Response**:
+```json
+{
+  "success": false,
+  "error": "OOP_INCOMPATIBLE_PROJECT",
+  "message": "🛑 AIFP Incompatible Project Detected\n\nThis directory contains existing OOP-based code. AIFP is designed exclusively for Functional Procedural (FP) codebases.\n\nYour options:\n1. Convert this project to FP first\n2. Disable/uninstall AIFP MCP server\n3. Start new FP project elsewhere",
+  "detected_patterns": ["class definitions", "self references", "inheritance"],
+  "affected_files": ["src/main.py", "src/models.py"],
+  "recommendation": "Disable AIFP MCP server or convert project to FP"
+}
+```
+
+**AI presents**:
+```
+🛑 AIFP Incompatible Project Detected
+
+This directory contains OOP-based code in:
+  • src/main.py (class User, class Database)
+  • src/models.py (class inheritance detected)
+
+AIFP is designed for Functional Procedural codebases only.
+
+Your options:
+1. Convert to FP first (major refactor - use AIFP in separate directory to help)
+2. Disable/uninstall AIFP MCP server for this project
+3. Start new FP-compliant project elsewhere
+```
+
+**Rationale**: AIFP cannot effectively manage OOP projects. The system enforces pure functions, immutability, and no classes with methods. Attempting to manage OOP code would require constant refactoring that contradicts the project's existing design.
+
+---
+
+### Case 3: No Write Permissions
 
 **Trigger**: Cannot create `.aifp-project/` directory
 
@@ -461,7 +578,7 @@ Use "status" to view current state or "continue" to resume work.
 
 ---
 
-### Case 3: Invalid Project Root
+### Case 4: Invalid Project Root
 
 **Trigger**: project_root not provided or invalid
 

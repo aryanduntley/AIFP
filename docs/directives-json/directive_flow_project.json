@@ -84,11 +84,21 @@
       "from_directive": "project_init",
       "to_directive": "aifp_status",
       "flow_type": "completion_loop",
-      "condition_key": null,
-      "condition_value": null,
-      "condition_description": "Initialization complete",
+      "condition_key": "initialization_successful",
+      "condition_value": "true",
+      "condition_description": "Initialization complete successfully",
       "priority": 100,
-      "description": "After init, loop back to status to determine next action"
+      "description": "After successful init, loop back to status to determine next action"
+    },
+    {
+      "from_directive": "project_init",
+      "to_directive": "aifp_status",
+      "flow_type": "error_handler",
+      "condition_key": "oop_detected_in_existing_code",
+      "condition_value": "true",
+      "condition_description": "OOP patterns detected in existing codebase - initialization aborted",
+      "priority": 100,
+      "description": "OOP detected - abort init and return to status with error message"
     },
     {
       "from_directive": "aifp_status",

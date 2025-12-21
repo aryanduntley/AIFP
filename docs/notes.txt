@@ -110,11 +110,7 @@ used_by_directive field in the helper json files needs to be evaluated when re-e
 README.md
 sys-prompt/aifp_system_prompt.txt
 .aifp/ProjectBlueprint.md\
-\
-We have directives and helpers. We need to map directives in 
-preparation for the directive_flow table and while we do this, 
-we need to add the used_by_directive list for each helper \
-\\
+
 \
 consolidated helpers:
 docs/helpers/consolidated/helpers-consolidated-user-custom.md
@@ -127,6 +123,7 @@ docs/helpers/consolidated/helpers-consolidated-settings.md\
 \
 directives json are in docs/directives-json/
 directives md are in src/aifp/resource/directives/
+helpers json is in docs/helpers/json/
 Everything above src/aifp/ is dev. \
 \
 
@@ -165,6 +162,8 @@ read note in docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
 project_auto_summary directive, where is this auto summary recorded? Notes?
 
 helper function json parameters need review against schema
+
+return_statements
 
 ============================
 Do we need more context (a separate architectual doc?)

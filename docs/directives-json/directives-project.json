@@ -123,7 +123,7 @@
       "name": "initialization",
       "description": "Handles creation and setup of new AIFP projects with ProjectBlueprint.md creation."
     },
-    "description": "Initializes a new AIFP project by creating .aifp-project/ folder structure, generating ProjectBlueprint.md through interactive prompts, initializing project.db and user_preferences.db, and populating with initial infrastructure, themes, flows, and completion path. Wraps the standalone initialization script (aifp.scripts.init_aifp_project) helper functions to ensure consistent setup. Checks for existing .aifp-project/ or .git/.aifp/ folders before initialization. Offers restoration from .git/.aifp/ backup if found.",
+    "description": "Initializes a new AIFP project by creating .aifp-project/ folder structure, generating ProjectBlueprint.md through interactive prompts, initializing project.db and user_preferences.db, and populating with initial infrastructure, themes, flows, and completion path. Wraps the standalone initialization script (aifp.scripts.init_aifp_project) helper functions to ensure consistent setup. Checks for existing .aifp-project/ or .git/.aifp/ folders before initialization. Scans existing codebase for OOP patterns and aborts initialization if OOP detected (AIFP is FP-only). Offers restoration from .git/.aifp/ backup if found.",
     "md_file_path": "directives/project_init.md",
     "workflow": {
       "trunk": "check_existing_state",
@@ -133,6 +133,47 @@
           "then": "call_aifp_status",
           "details": {
             "message": ".aifp-project/ folder already exists"
+          }
+        },
+        {
+          "if": "existing_code_detected_no_aifp",
+          "then": "scan_for_oop_patterns",
+          "details": {
+            "scan_patterns": {
+              "oop_indicators": [
+                "class .*\\(.*\\):",
+                "self\\.",
+                "this\\.",
+                "__init__",
+                "def .*\\(self",
+                "extends ",
+                "implements ",
+                "interface ",
+                "abstract class"
+              ],
+              "file_types": ["*.py", "*.js", "*.ts", "*.java", "*.cpp", "*.cs", "*.rb", "*.php"],
+              "threshold": "3+ OOP patterns detected across multiple files"
+            },
+            "trigger": "fp_no_oop directive for pattern detection",
+            "note": "Scans existing codebase before initialization to detect OOP patterns"
+          }
+        },
+        {
+          "if": "oop_detected_in_existing_code",
+          "then": "abort_initialization_with_message",
+          "details": {
+            "action": "abort_without_init",
+            "message": "🛑 AIFP Incompatible Project Detected\n\nThis directory contains existing OOP-based code. AIFP is designed exclusively for Functional Procedural (FP) codebases.\n\nYour options:\n1. Convert this project to FP first (major refactor - use AIFP in a separate directory to help)\n2. Disable/uninstall AIFP MCP server for this project\n3. Start a new FP-compliant project in a different directory\n\nAIFP cannot manage OOP projects - it enforces pure functions, immutability, and no classes with methods.",
+            "exit_directive": true,
+            "do_not_initialize": true
+          }
+        },
+        {
+          "if": "existing_code_is_fp_or_empty",
+          "then": "proceed_with_initialization",
+          "details": {
+            "message": "Existing code appears FP-compliant or directory is empty. Proceeding with initialization.",
+            "continue_to_next_branch": true
           }
         },
         {
@@ -313,6 +354,10 @@
       }
     },
     "roadblocks_json": [
+      {
+        "issue": "oop_detected_in_existing_code",
+        "resolution": "Abort initialization and inform user that AIFP cannot manage OOP projects. Suggest: 1) Convert to FP first, 2) Disable AIFP MCP server, 3) Start new FP project elsewhere"
+      },
       {
         "issue": "db_creation_failed",
         "resolution": "Check file permissions or re-run as admin"
