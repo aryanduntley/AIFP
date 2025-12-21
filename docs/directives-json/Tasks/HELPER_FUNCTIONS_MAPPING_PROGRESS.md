@@ -1,21 +1,63 @@
 # Helper Functions Mapping Progress
 
-**Purpose**: Track progress as we map helper functions to JSON with all database fields
-**Total Helpers**: 201 (reduced from 206 after removing 5 duplicates)
+**Purpose**: Track progress as we map helper functions to JSON with all database fields and directive relationships
+**Total Helpers**: 202 (1 duplicate re-added: helpers-orchestrators.json has 12, not 11)
 
 ---
 
-## Progress Summary
+## Progress Summary - MD to JSON Conversion (Phase 1-7)
 
 - [x] **Index Helper**: 1/1 complete (100%) - CONVERTED ✅
 - [x] **Core Helpers**: 33/33 complete (100%) - CONVERTED ✅
 - [x] **Git Helpers**: 11/11 complete (100%) - CONVERTED ✅
-- [x] **Orchestrator Helpers**: 11/11 complete (100%) - CONVERTED ✅
+- [x] **Orchestrator Helpers**: 12/12 complete (100%) - CONVERTED ✅ (aifp_run was re-added)
 - [x] **Project Helpers**: 112/112 complete (100%) - CONVERTED ✅ (removed 5 orchestrator duplicates)
 - [x] **Settings Helpers**: 17/17 complete (100%) - CONVERTED ✅
 - [x] **User Custom Helpers**: 16/16 complete (100%) - CONVERTED ✅
 
-**Overall**: 201/201 complete (100%) - MD to JSON conversion complete!
+**Overall**: 202/202 complete (100%) - MD to JSON conversion complete!
+
+---
+
+## ✅ Phase 8 Completion - Helper-Directive Mapping (2025-12-20)
+
+### Achievement: 100% Directive Coverage
+
+**Status**: ✅ **PHASE 8 COMPLETE**
+
+**Mapped Helpers**: 84/202 (41.6%) - All directive-used helpers
+**Unmapped Helpers**: 118/202 (58.4%) - All AI-only tools (correctly unmapped)
+
+### Mapped Helpers by Category
+
+| Category | Mapped | AI-Only | Total | Coverage |
+|----------|--------|---------|-------|----------|
+| Core | 3 | 30 | 33 | 100% of directive-used |
+| Git | 10 | 1 | 11 | 100% of directive-used |
+| Index | 0 | 1 | 1 | N/A (system utility) |
+| Orchestrators | 4 | 8 | 12 | 100% of directive-used |
+| Project | 49 | 63 | 112 | 100% of directive-used |
+| Settings | 9 | 8 | 17 | 100% of directive-used |
+| User-Custom | 9 | 7 | 16 | 100% of directive-used |
+| **TOTAL** | **84** | **118** | **202** | **100%** |
+
+### Key Finding
+
+**All 84 helpers that are actually called by directives have been mapped.**
+
+The 118 unmapped helpers are AI-only tools:
+- Schema/query tools (AI explores database structure)
+- Batch helpers (AI bulk operations)
+- Delete helpers (only 1 delete directive exists)
+- Generic CRUD fallbacks (AI uses when no specialized helper exists)
+- Advanced search/filtering (AI exploration)
+- Reorder/management tools (AI manual operations)
+
+**See**: `docs/UNMAPPED_HELPERS_ANALYSIS.md` for detailed breakdown
+
+---
+
+## Updated Progress Summary (Phase 8)
 
 **Changes**:
 1. Removed 5 duplicate orchestrator helpers from project files

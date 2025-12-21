@@ -99,57 +99,6 @@ aifp_status is also available as a standalone MCP tool (is_tool=true). AI can ca
 - Direct: aifp_status() - Returns status only
 - Via aifp_run: aifp_run(..., get_status=true) - Returns status + suggestions + guidance
 
-=== DIRECTIVE FLOW SYSTEM ===
-
-**Directive flows define workflow navigation**: "After this directive, what comes next?"
-
-**Flow Files** (stored in aifp_core.db directive_flow table):
-- directive_flow_project.json (89 flows) - Project management workflows
-- directive_flow_user_preferences.json (14 flows) - User preference workflows
-- directive_flow_fp.json (future) - FP reference consultation patterns (deferred)
-
-**Flow Types**:
-- conditional: Branch based on state (if project_initialized=false → project_init)
-- completion_loop: Always loop back to aifp_status after completion
-- canonical: Standard next step (project_file_write → project_reserve_finalize)
-- status_branch: Branch from aifp_status based on state
-- utility: Side operations (any_directive → project_notes_log)
-
-**Flow Query Functions** (use after aifp_run with cached status):
-```python
-# Get next directives based on current position and state
-get_next_directives_from_status(current_directive, status_object)
-# Returns: Array of next possible directives with conditions
-
-# Get conditional branches available from current state
-get_conditional_work_paths(status_object)
-# Returns: Available paths based on current project state
-
-# Find where completion directives loop back to
-get_completion_loop_target(completion_directive_name)
-# Returns: Target directive (usually aifp_status)
-```
-
-**Workflow Pattern**:
-1. Execute directive
-2. Query directive_flow to find next steps
-3. Evaluate conditions against cached status
-4. Select appropriate next directive
-5. Repeat
-
-**Example Navigation**:
-```
-project_task_complete executed
-  ↓ Query: get_completion_loop_target("project_task_complete")
-  ↓ Returns: "aifp_status" (all completion directives loop back)
-  ↓ Execute: aifp_status
-  ↓ Query: get_next_directives_from_status("aifp_status", status)
-  ↓ Returns: [project_task_create, project_task_update, ...] based on state
-  ↓ Select: Based on user request + state conditions
-```
-
-**Key Principle**: Directive flows guide workflow navigation. Use cached status + flow queries instead of re-fetching status.
-
 === TASK TYPE EVALUATION ===
 
 Coding Tasks - FP baseline + Project directives:
@@ -224,16 +173,11 @@ Project Directives - Project lifecycle management:
 - Plus more for file operations, status tracking, path management, and project evolution
 
 User Preference Directives - Customize AI behavior:
-- user_preferences_sync: Load preferences before directive execution (auto-called before customizable directives)
+- user_preferences_sync: Load preferences before directive execution
 - user_preferences_update: Map user requests to directives, update preferences
-- user_preferences_learn: Learn from user corrections (requires ai_interaction_log enabled + user confirmation)
-- user_preferences_export: Backup preferences to JSON file
-- user_preferences_import: Restore preferences from JSON file
-- project_notes_log: Log clarifications and reasoning to project.db notes table (utility, called by any directive)
-- tracking_toggle: Enable/disable tracking features (fp_flow_tracking, ai_interaction_log, helper_function_logging, issue_reports)
+- user_preferences_learn: Learn from user corrections (requires confirmation)
 - Preferences override default directive behavior (atomic key-value structure)
-- Examples: always_add_docstrings, max_function_length, prefer_guard_clauses, auto_fix_violations
-- Flows: 14 directive flows in directive_flow_user_preferences.json
+- Examples: always_add_docstrings, max_function_length, prefer_guard_clauses
 
 User Directive System - FOR USE CASE 2 ONLY (Automation Projects):
 - user_directive_parse: Parse YAML/JSON/TXT directive files from user's project
@@ -302,35 +246,13 @@ Git Collaboration:
 **Source of Truth**: aifp_core.db helper_functions table
 **Query all helpers**: SELECT name, file_path, purpose FROM helper_functions ORDER BY file_path
 
-**Helper Classification** (is_tool, is_sub_helper, used_by_directives fields):
+**Helper Classification** (is_tool, is_sub_helper fields):
+- is_tool = TRUE: MCP tool (you can call directly via MCP)
+- is_sub_helper = TRUE: Sub-helper (only called by other helpers, not directives)
+- Both FALSE: Directive helper (called via directive workflows)
 
-**Three Categories of Helpers**:
-
-**1. Directive-Used Helpers** (84 helpers, 41.6%)
-- Have entries in `used_by_directives` array (not empty)
-- Called BY directive workflows
-- Let directives instruct you when to use them
-- Examples: reserve_file, finalize_function, add_task, update_milestone, add_note
-
-**2. AI-Only Tools** (118 helpers, 58.4%)
-- is_tool = TRUE and used_by_directives = [] (empty array)
-- Called BY YOU directly for exploration, querying, batch operations
-- NOT called by directives - these exist for your direct use
-- Examples: get_project_schema, get_incomplete_tasks, query_settings, delete_settings_entry
-- Categories:
-  - Schema/query tools: Explore database structure (get_project_tables, get_settings_schema)
-  - Batch helpers: Bulk operations (reserve_files, finalize_types, add_interactions)
-  - Delete helpers: Manual cleanup (delete_task, delete_milestone, delete_note)
-  - Generic CRUD: Fallbacks when no specialized helper exists (add_project_entry, update_settings_entry)
-  - Advanced filtering: Complex queries and searches (get_incomplete_tasks, get_tasks_comprehensive)
-  - Reorder/management: Manual adjustments (reorder_completion_path, swap_completion_paths_order)
-
-**3. Sub-Helpers**
-- is_sub_helper = TRUE
-- Called BY other helpers, not directly by you
-- Examples: apply_preferences_to_context, update_file_timestamp
-
-**Important**: Most helpers (58.4%) are AI-only tools you call directly. The other 41.6% are directive-used helpers that directives will instruct you to use.
+**Important**: Most helpers are called through directive workflows. Directives will instruct you when to use them.
+Only call MCP tools (is_tool=TRUE) directly. For other helpers, follow directive instructions.
 
 **Helper-Directive Relationships (Database-Driven)**:
 - Helper-directive relationships are stored in the `directive_helpers` junction table in aifp_core.db
@@ -349,35 +271,6 @@ get_directives_for_helper(helper_function_id, include_directives_data=true)
 # Returns: directive_helpers data + full directives data
 ```
 
-**Two Patterns for Helper Usage**:
-
-**Pattern 1: Directive-Guided** (for 84 directive-used helpers)
-```python
-# When executing project_file_write directive:
-1. Query: get_helpers_for_directive("project_file_write")
-2. Returns: [reserve_file, update_file, finalize_file, add_interaction, ...]
-3. Follow directive workflow using these helpers
-4. Directive instructs WHEN and HOW to call each helper
-```
-
-**Pattern 2: Direct AI Usage** (for 118 AI-only tools)
-```python
-# When exploring project state or performing utility operations:
-- Call get_incomplete_tasks() directly → See what's pending
-- Call get_project_schema() directly → Understand database structure
-- Call query_settings() directly → Check user preferences
-- Call get_tasks_comprehensive() directly → Detailed task analysis
-- Call delete_task() directly → Manual cleanup (no delete directive exists)
-- Call reserve_files() directly → Batch reserve operations
-
-# No directive needed - these are YOUR exploration and utility tools
-```
-
-**How to Know Which Pattern**:
-- Check `used_by_directives` array in helper data
-- Empty array [] = AI-only tool, call directly for exploration/utilities
-- Has entries = Directive-used, let directive guide you
-
 **When executing any directive:**
 1. Query `get_helpers_for_directive(directive_id, include_helpers_data=true)` first
 2. Review available helpers and their purposes
@@ -387,7 +280,7 @@ get_directives_for_helper(helper_function_id, include_directives_data=true)
 **DO NOT:**
 - Assume specific helper function names exist
 - Use helper names from MD file examples (those are conceptual only)
-- Call directive-used helpers without verifying they exist in the returned data
+- Call helpers without verifying they exist in the returned data
 
 **Key examples by category** (query database for complete list):
 
@@ -581,57 +474,16 @@ Examples:
 - project_task_decomposition.task_granularity = medium
 
 Workflow:
-1. Before executing customizable directive, user_preferences_sync is auto-called
+1. Before executing directive, call user_preferences_sync
 2. Load preferences for directive from directive_preferences table
 3. Apply preferences to execution context
 4. Execute directive with user preferences applied
 
 Learning from corrections:
 - user_preferences_learn detects user corrections
-- Logs to ai_interaction_log (opt-in only, OFF by default)
+- Logs to ai_interaction_log (opt-in only)
 - Infers preference changes
 - Prompts user for confirmation before saving
-
-=== PRIVACY & TRACKING (OPT-IN ONLY) ===
-
-**Default State: ALL TRACKING OFF**
-
-AIFP respects user privacy. All tracking features are disabled by default to minimize:
-- API token costs
-- Context overhead
-- Data collection
-
-**Tracking Features** (user_preferences.db tracking_settings table):
-1. **fp_flow_tracking** - Track FP directive consultations (OFF by default)
-   - Purpose: Understand which FP patterns AI references most
-   - Logs to: user_preferences.db fp_flow_tracking table
-
-2. **ai_interaction_log** - Log user corrections and feedback (OFF by default)
-   - Purpose: Enable user_preferences_learn to infer preferences from user behavior
-   - Logs to: user_preferences.db ai_interaction_log table
-   - Required for: user_preferences_learn directive to detect correction patterns
-
-3. **helper_function_logging** - Log directive execution performance (OFF by default)
-   - Purpose: Track directive execution outcomes (successes, retries, failures)
-   - Logs to: project.db notes table (with severity and directive_name)
-   - Required for: project_performance_summary directive
-
-4. **issue_reports** - Log errors and roadblocks (OFF by default)
-   - Purpose: Error tracking and debugging
-   - Logs to: project.db notes table
-
-**Enabling Tracking**:
-- User must explicitly enable via tracking_toggle directive
-- Show token overhead warning before enabling
-- Granular per-feature control
-- User can disable anytime without confirmation
-
-**Privacy Principles**:
-- No tracking unless explicitly enabled by user
-- User controls what's logged (granular per-feature)
-- Tracking data stays in local databases (never sent externally)
-- Clear purpose for each tracking feature
-- All features OFF by default (privacy-first design)
 
 === DATABASE ARCHITECTURE (FOUR DATABASES) ===
 
