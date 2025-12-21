@@ -1,0 +1,844 @@
+{
+  "statistics": {
+    "total_helpers": 201,
+    "helpers_with_matches": 64,
+    "total_suggestions": 104,
+    "high_confidence": 12,
+    "medium_confidence": 66,
+    "low_confidence": 26
+  },
+  "suggestions": [
+    {
+      "helper": "add_directive_intent_keyword",
+      "helper_file": "helpers-core.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.325,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "aifp_run",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "aifp_run",
+      "category": "project",
+      "confidence": 0.5176470588235295,
+      "level": "HIGH"
+    },
+    {
+      "helper": "aifp_run",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "aifp_status",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "aifp_run",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "aifp_help",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "update_project_state",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.5551515151515152,
+      "level": "HIGH"
+    },
+    {
+      "helper": "update_project_state",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_task_update",
+      "category": "project",
+      "confidence": 0.3878787878787879,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_project_state",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_blueprint_update",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_project_state",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_item_create",
+      "category": "project",
+      "confidence": 0.21884057971014492,
+      "level": "LOW"
+    },
+    {
+      "helper": "update_project_state",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_completion_check",
+      "category": "project",
+      "confidence": 0.21466666666666667,
+      "level": "LOW"
+    },
+    {
+      "helper": "query_project_state",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_metrics",
+      "category": "project",
+      "confidence": 0.21111111111111108,
+      "level": "LOW"
+    },
+    {
+      "helper": "query_project_state",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_auto_summary",
+      "category": "project",
+      "confidence": 0.20804597701149424,
+      "level": "LOW"
+    },
+    {
+      "helper": "query_project_state",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_dependency_map",
+      "category": "project",
+      "confidence": 0.20266666666666666,
+      "level": "LOW"
+    },
+    {
+      "helper": "aifp_status",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "aifp_status",
+      "category": "project",
+      "confidence": 0.5439024390243903,
+      "level": "HIGH"
+    },
+    {
+      "helper": "aifp_status",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "aifp_help",
+      "category": "project",
+      "confidence": 0.3,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "aifp_status",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "aifp_run",
+      "category": "project",
+      "confidence": 0.2852941176470588,
+      "level": "LOW"
+    },
+    {
+      "helper": "get_project_status",
+      "helper_file": "helpers-orchestrators.json",
+      "directive": "project_archive",
+      "category": "project",
+      "confidence": 0.20416666666666666,
+      "level": "LOW"
+    },
+    {
+      "helper": "detect_external_changes",
+      "helper_file": "helpers-git.json",
+      "directive": "git_detect_external_changes",
+      "category": "git",
+      "confidence": 0.6166666666666667,
+      "level": "HIGH"
+    },
+    {
+      "helper": "detect_external_changes",
+      "helper_file": "helpers-git.json",
+      "directive": "git_detect_conflicts",
+      "category": "git",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "create_user_branch",
+      "helper_file": "helpers-git.json",
+      "directive": "git_create_branch",
+      "category": "git",
+      "confidence": 0.5633333333333332,
+      "level": "HIGH"
+    },
+    {
+      "helper": "detect_conflicts_before_merge",
+      "helper_file": "helpers-git.json",
+      "directive": "git_detect_conflicts",
+      "category": "git",
+      "confidence": 0.45,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "detect_conflicts_before_merge",
+      "helper_file": "helpers-git.json",
+      "directive": "git_detect_external_changes",
+      "category": "git",
+      "confidence": 0.325,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "merge_with_fp_intelligence",
+      "helper_file": "helpers-git.json",
+      "directive": "git_merge_branch",
+      "category": "git",
+      "confidence": 0.34593023255813954,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "sync_git_state",
+      "helper_file": "helpers-git.json",
+      "directive": "git_sync_state",
+      "category": "git",
+      "confidence": 0.7357142857142858,
+      "level": "HIGH"
+    },
+    {
+      "helper": "project_update_git_status",
+      "helper_file": "helpers-git.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "project_update_git_status",
+      "helper_file": "helpers-git.json",
+      "directive": "project_blueprint_update",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "project_update_git_status",
+      "helper_file": "helpers-git.json",
+      "directive": "project_task_update",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "add_settings_entry",
+      "helper_file": "helpers-settings.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_settings_entry",
+      "helper_file": "helpers-settings.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_directive_preference",
+      "helper_file": "helpers-settings.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_user_preferences",
+      "helper_file": "helpers-settings.json",
+      "directive": "user_preferences_update",
+      "category": "user_pref",
+      "confidence": 0.5342857142857143,
+      "level": "HIGH"
+    },
+    {
+      "helper": "update_user_preferences",
+      "helper_file": "helpers-settings.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.38303030303030305,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_user_preferences",
+      "helper_file": "helpers-settings.json",
+      "directive": "user_preferences_sync",
+      "category": "user_pref",
+      "confidence": 0.3708333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_user_preferences",
+      "helper_file": "helpers-settings.json",
+      "directive": "user_preferences_learn",
+      "category": "user_pref",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_user_preferences",
+      "helper_file": "helpers-settings.json",
+      "directive": "user_preferences_export",
+      "category": "user_pref",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "toggle_tracking_feature",
+      "helper_file": "helpers-settings.json",
+      "directive": "tracking_toggle",
+      "category": "user_pref",
+      "confidence": 0.5333333333333333,
+      "level": "HIGH"
+    },
+    {
+      "helper": "add_user_custom_entry",
+      "helper_file": "helpers-user-custom.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.325,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_user_custom_entry",
+      "helper_file": "helpers-user-custom.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.325,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_user_custom_entry",
+      "helper_file": "helpers-user-custom.json",
+      "directive": "user_preferences_update",
+      "category": "user_pref",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "get_project_tables",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_dependency_sync",
+      "category": "project",
+      "confidence": 0.20757575757575755,
+      "level": "LOW"
+    },
+    {
+      "helper": "get_project_fields",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_performance_summary",
+      "category": "project",
+      "confidence": 0.20579710144927535,
+      "level": "LOW"
+    },
+    {
+      "helper": "get_project_fields",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_dependency_map",
+      "category": "project",
+      "confidence": 0.20266666666666666,
+      "level": "LOW"
+    },
+    {
+      "helper": "query_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_init",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "query_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_evolution",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "query_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_metrics",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "query_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_archive",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "add_project_entry",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.5333333333333333,
+      "level": "HIGH"
+    },
+    {
+      "helper": "update_project_entry",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.5333333333333333,
+      "level": "HIGH"
+    },
+    {
+      "helper": "update_project_entry",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_blueprint_update",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_project_entry",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_task_update",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "delete_project_entry",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_file_delete",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "create_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "git_create_branch",
+      "category": "git",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "create_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_task_create",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "create_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_subtask_create",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "create_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_item_create",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "create_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_sidequest_create",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "get_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_init",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "get_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_evolution",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "get_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_metrics",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "get_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_archive",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "update_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.5333333333333333,
+      "level": "HIGH"
+    },
+    {
+      "helper": "update_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_blueprint_update",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_task_update",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_init",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "update_project",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_evolution",
+      "category": "project",
+      "confidence": 0.25,
+      "level": "LOW"
+    },
+    {
+      "helper": "blueprint_has_changed",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_blueprint_read",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "blueprint_has_changed",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_blueprint_update",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "reserve_file",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_reserve_finalize",
+      "category": "project",
+      "confidence": 0.3850340136054422,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "reserve_files",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_reserve_finalize",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_file",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "file_has_changed",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_file_read",
+      "category": "project",
+      "confidence": 0.4012820512820513,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "file_has_changed",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_file_write",
+      "category": "project",
+      "confidence": 0.3814207650273224,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "file_has_changed",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_file_delete",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_file_timestamp",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3884848484848485,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "delete_file",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_file_delete",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "reserve_function",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_reserve_finalize",
+      "category": "project",
+      "confidence": 0.3850340136054422,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "reserve_functions",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_reserve_finalize",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_function",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_functions_for_file",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.325,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_function_file_location",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.34136363636363637,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "reserve_type",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_reserve_finalize",
+      "category": "project",
+      "confidence": 0.3850340136054422,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "reserve_types",
+      "helper_file": "helpers-project-1.json",
+      "directive": "project_reserve_finalize",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_type",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_types_functions",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_type_function_role",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.325,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_interaction",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_interactions",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_interaction",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_theme",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_theme",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_flow",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_flow",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_completion_path",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.5333333333333333,
+      "level": "HIGH"
+    },
+    {
+      "helper": "update_completion_path",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_milestone",
+      "helper_file": "helpers-project-2.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_milestone",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_task",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_task",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_task",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_task_update",
+      "category": "project",
+      "confidence": 0.3333333333333333,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_subtask",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_subtask",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_sidequest",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_sidequest",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "add_note",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_add_path",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    },
+    {
+      "helper": "update_note",
+      "helper_file": "helpers-project-3.json",
+      "directive": "project_update_db",
+      "category": "project",
+      "confidence": 0.3666666666666667,
+      "level": "MEDIUM"
+    }
+  ]
+}

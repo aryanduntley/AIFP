@@ -734,7 +734,11 @@
   "metadata": {
     "file": "helpers-core.json",
     "count": 33,
-    "status": "converted from markdown - used_by_directives empty",
-    "note": "All 33 core helpers consolidated into single file"
+    "status": "Phase 8 Priority 5 COMPLETE - Core helpers mapped (3 already done in Priority 0)",
+    "mapped_helpers": 3,
+    "unmapped_helpers": 30,
+    "note": "30 helpers are AI query/navigation tools (get_directive_by_name, get_all_directives, get_next_directives_from_status, get_helper_by_name, get_categories, etc.) - intentionally not mapped to directives. These are tools FOR the AI to query/navigate the directive system, not called BY directives.",
+    "total_mappings": 4,
+    "last_updated": "2025-12-20"
   }
 }

@@ -305,7 +305,24 @@
         "Complete status object with:"
       ],
       "target_database": "orchestrator",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "self_invocation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "aifp_status directive uses aifp_status helper as main orchestrator - retrieves comprehensive project state, builds priority status tree, checks completion flags, provides next-step suggestions"
+        },
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "get_status_when_requested",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Called by aifp_run when get_status=true parameter is passed - provides comprehensive status for fresh context"
+        }
+      ]
     },
     {
       "name": "get_project_status",
@@ -314,13 +331,22 @@
       "purpose": "Analyze entire work hierarchy and return comprehensive project status",
       "error_handling": "",
       "is_tool": true,
-      "is_sub_helper": false,
+      "is_sub_helper": true,
       "return_statements": [
         "```json",
         "This is NOT a simple field getter - it analyzes the entire work hierarchy and provides detailed status analysis for AI to understand project progress."
       ],
       "target_database": "orchestrator",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "analyze_work_hierarchy",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Sub-helper used by aifp_status to analyze complete work hierarchy (completion paths, milestones, tasks, subtasks, sidequests) and calculate progress metrics"
+        }
+      ]
     },
     {
       "name": "get_project_context",
@@ -349,13 +375,22 @@
       "purpose": "Get hierarchical view of all work items with nested structure",
       "error_handling": "",
       "is_tool": true,
-      "is_sub_helper": false,
+      "is_sub_helper": true,
       "return_statements": [
         "```json",
         "Provides complete hierarchical view for visualization and progress tracking"
       ],
       "target_database": "orchestrator",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "build_status_tree",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Sub-helper used by aifp_status to build hierarchical tree view of work items with nested structure - used for priority status display"
+        }
+      ]
     },
     {
       "name": "get_files_by_flow_context",
@@ -384,7 +419,11 @@
   "metadata": {
     "file": "helpers-orchestrators.json",
     "count": 12,
-    "status": "Phase 0 complete - aifp_run helper added with get_status parameter",
-    "note": "All 12 orchestrator helpers consolidated into single file"
+    "status": "Phase 8 Priority 4 COMPLETE - Orchestrator helpers mapped to 2 directives (aifp_run, aifp_status)",
+    "mapped_helpers": 4,
+    "unmapped_helpers": 8,
+    "note": "8 helpers are query/convenience tools for AI (get_current_progress, update_project_state, batch_update_progress, query_project_state, validate_initialization, get_work_context, get_project_context, get_files_by_flow_context) - intentionally not mapped to directives. These are AI tools, not directive tools.",
+    "total_mappings": 5,
+    "last_updated": "2025-12-20"
   }
 }

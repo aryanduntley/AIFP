@@ -296,7 +296,16 @@
         "last_known_git_hash and last_git_sync auto-populated"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_init",
+          "execution_context": "create_project_structure",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Initialize project entry during .aifp-project/ creation - creates single project record with metadata"
+        }
+      ]
     },
     {
       "name": "get_project",
@@ -310,7 +319,24 @@
         "Project object"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_blueprint_read",
+          "execution_context": "database_fallback",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Fallback to database when ProjectBlueprint.md missing - retrieves project metadata from database"
+        },
+        {
+          "directive_name": "project_blueprint_update",
+          "execution_context": "read_current_blueprint",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Get current project version before updating blueprint - checks version for increment"
+        }
+      ]
     },
     {
       "name": "update_project",
@@ -324,7 +350,19 @@
         "`{\"success\": true}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_blueprint_update",
+          "execution_context": "update_version_and_date",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {
+            "version": "incremented_version",
+            "last_updated": "current_timestamp"
+          },
+          "description": "Increment project version after blueprint update - updates version and last_updated timestamp in database"
+        }
+      ]
     },
     {
       "name": "blueprint_has_changed",
@@ -338,7 +376,24 @@
         "`{\"changed\": boolean, \"method\": \"git|filesystem\"}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_blueprint_read",
+          "execution_context": "parse_complete",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Check if blueprint changed since last read - uses Git diff or filesystem timestamp for staleness detection"
+        },
+        {
+          "directive_name": "project_blueprint_update",
+          "execution_context": "validate_parameters",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Pre-check if blueprint already modified - prevents conflicting updates"
+        }
+      ]
     },
     {
       "name": "get_infrastructure_by_type",
@@ -352,7 +407,24 @@
         "Array of infrastructure objects"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_init",
+          "execution_context": "create_project_structure",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check and populate initial infrastructure during project initialization - verifies database, language, build tool"
+        },
+        {
+          "directive_name": "project_blueprint_read",
+          "execution_context": "database_fallback",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Query infrastructure when blueprint missing - retrieves language, runtime, build tool from database"
+        }
+      ]
     },
     {
       "name": "reserve_file",
@@ -367,7 +439,24 @@
         "Sets is_reserved=true, created_at auto-set by trigger"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "reserve_file_name",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve file ID before writing code - AI embeds ID in filename for instant lookups (filename_id_42.py)"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "reserve_before_write",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve file ID before generating file content - enables rename-proof references"
+        }
+      ]
     },
     {
       "name": "reserve_files",
@@ -425,7 +514,32 @@
         "Checks file exists, sets is_reserved=false"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "finalize_reservation",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize file after code written - sets is_reserved=false and confirms file exists on filesystem"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "finalize_after_write",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize file reservation after successful file generation"
+        },
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "finalize_new_files",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize file reservations when updating database with new file metadata"
+        }
+      ]
     },
     {
       "name": "finalize_files",
@@ -469,7 +583,24 @@
         "Most common file lookup method"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_read",
+          "execution_context": "load_with_context",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Load file metadata from database by path - provides full context including functions, dependencies, theme/flow associations"
+        },
+        {
+          "directive_name": "project_file_delete",
+          "execution_context": "check_file_tracked",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if file exists in database before deletion - ensures proper cleanup of DB records"
+        }
+      ]
     },
     {
       "name": "update_file",
@@ -484,7 +615,16 @@
         "Timestamp automatically updated"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "update_files_table",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update file metadata after code generation - synchronizes checksum and file information"
+        }
+      ]
     },
     {
       "name": "file_has_changed",
@@ -499,7 +639,16 @@
         "Uses Git diff if available, falls back to filesystem timestamp comparison"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_read",
+          "execution_context": "check_checksum_mismatch",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Detect if file changed since last DB update - warns user about potential staleness"
+        }
+      ]
     },
     {
       "name": "update_file_timestamp",
@@ -526,7 +675,16 @@
       "is_sub_helper": false,
       "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_delete",
+          "execution_context": "delete_file_and_db_records",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Delete file from filesystem and database with cascade cleanup of functions and interactions"
+        }
+      ]
     },
     {
       "name": "reserve_function",
@@ -541,7 +699,24 @@
         "Sets is_reserved=true"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "reserve_function_name",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve function ID before writing code - AI embeds ID in function name for instant lookups (function_name_id_99)"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "reserve_before_write",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve function IDs before generating function code - enables rename-proof references"
+        }
+      ]
     },
     {
       "name": "reserve_functions",
@@ -570,7 +745,32 @@
         "Sets is_reserved=false, calls update_file_timestamp(file_id)"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "finalize_reservation",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize function after code written - sets is_reserved=false and updates file timestamp"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "finalize_after_write",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize function reservations after successful code generation"
+        },
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "finalize_new_functions",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize function reservations when updating database with new function metadata"
+        }
+      ]
     },
     {
       "name": "finalize_functions",
@@ -614,7 +814,16 @@
         "Array of function objects with interaction data"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_read",
+          "execution_context": "load_with_context",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Load all functions for file with context - provides complete file metadata including function dependencies"
+        }
+      ]
     },
     {
       "name": "update_function",
@@ -629,7 +838,16 @@
         "Calls update_file_timestamp(file_id) "
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "update_functions_table",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update function metadata after code generation - synchronizes dependencies and function information"
+        }
+      ]
     },
     {
       "name": "update_functions_for_file",
@@ -644,7 +862,16 @@
         "Single update_file_timestamp call at end"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "update_functions_table",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch update multiple functions in same file - more efficient than individual updates"
+        }
+      ]
     },
     {
       "name": "update_function_file_location",
@@ -674,7 +901,16 @@
         "- Deletes all types with function_id"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_delete",
+          "execution_context": "delete_file_and_db_records",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Cascade delete all functions in file - automatically deletes types and interactions"
+        }
+      ]
     },
     {
       "name": "reserve_type",
@@ -689,7 +925,16 @@
         "Sets is_reserved=true"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "reserve_type_name",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve type ID before writing code - AI embeds ID in type name for instant lookups (TypeName_id_7)"
+        }
+      ]
     },
     {
       "name": "reserve_types",
@@ -710,7 +955,11 @@
     "file": "helpers-project-1.json",
     "count": 37,
     "range": "helpers 1-37 of 112",
-    "status": "converted from markdown - used_by_directives empty",
-    "note": "Consolidated from original 6 project files into 3 files (~600 lines each)"
+    "status": "Phase 8 Priority 6, 7 & 8 COMPLETE - File/function, blueprint, infrastructure helpers mapped",
+    "mapped_helpers": 20,
+    "unmapped_helpers": 17,
+    "note": "17 helpers are schema/query/batch/CRUD tools for AI use only (get_project_tables, get_project_fields, get_project_schema, get_project_json_parameters, get_from_project, get_from_project_where, query_project, add_project_entry, update_project_entry, delete_project_entry, reserve_files, finalize_files, reserve_functions, finalize_functions, reserve_types, finalize_types, get_file_by_name) - intentionally not mapped to directives",
+    "total_mappings": 28,
+    "last_updated": "2025-12-20"
   }
 }

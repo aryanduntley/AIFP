@@ -12,7 +12,20 @@
         "`{\"success\": true}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_milestone_complete",
+          "execution_context": "mark_milestone_complete",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.milestone_id",
+            "status": "completed",
+            "completed_at": "current_timestamp"
+          },
+          "description": "Mark milestone as completed after all tasks finish - updates status and logs completion time"
+        }
+      ]
     },
     {
       "name": "delete_milestone",
@@ -55,7 +68,36 @@
         "`{\"success\": true, \"id\": new_id}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.created_milestone_id",
+            "name": "workflow.parsed_task_name",
+            "description": "workflow.task_description",
+            "flow_ids": "workflow.identified_flows",
+            "priority": "workflow.task_priority"
+          },
+          "description": "Create tasks for milestone during user request decomposition - generates task hierarchy from high-level goals"
+        },
+        {
+          "directive_name": "project_task_create",
+          "execution_context": "create_task_record",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.validated_milestone_id",
+            "name": "workflow.task_name",
+            "description": "workflow.task_description",
+            "flow_ids": "workflow.flow_ids",
+            "priority": "workflow.priority"
+          },
+          "description": "Atomic task creation - validates inputs and creates task record in database"
+        }
+      ]
     },
     {
       "name": "get_incomplete_tasks_by_milestone",
@@ -78,7 +120,19 @@
         "Ensures status=in_progress tasks included"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "check_milestone_status",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.milestone_id",
+            "skip_pending": false
+          },
+          "description": "Check if all tasks in milestone are complete after task completion - determines if milestone_complete should be called"
+        }
+      ]
     },
     {
       "name": "get_incomplete_tasks",
@@ -107,7 +161,18 @@
         "Array of task objects"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_create",
+          "execution_context": "check_duplicate_tasks",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.validated_milestone_id"
+          },
+          "description": "Check for duplicate task names before creating new task - prevents naming conflicts"
+        }
+      ]
     },
     {
       "name": "get_tasks_comprehensive",
@@ -164,7 +229,48 @@
         "`{\"success\": true}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_update",
+          "execution_context": "update_task_status_or_priority",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Central task state manager - updates status, priority, and metadata fields"
+        },
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "mark_complete_and_items",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark task as completed - sets status=completed and logs timestamp"
+        },
+        {
+          "directive_name": "project_subtask_create",
+          "execution_context": "pause_parent_task",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Pause parent task when subtask created - blocks parent progress until subtask complete"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "resume_parent_task",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Resume parent task when all subtasks complete - automatically continues parent work"
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "resume_paused_task",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Resume paused task after sidequest completion if user chooses to continue original work"
+        }
+      ]
     },
     {
       "name": "delete_task",
@@ -193,7 +299,24 @@
         "Subtasks inherit task's milestone and flows"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Create subtasks for tasks during decomposition if user request includes subtask-level granularity"
+        },
+        {
+          "directive_name": "project_subtask_create",
+          "execution_context": "create_subtask_record",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Atomic subtask creation - creates focused, high-priority subtask and pauses parent"
+        }
+      ]
     },
     {
       "name": "get_incomplete_subtasks",
@@ -221,7 +344,24 @@
         "Array of subtask objects"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_subtask_create",
+          "execution_context": "check_active_subtasks",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check for existing active subtasks before creating new one - warns about context switching"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "check_parent_subtasks",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if all subtasks complete to determine if parent task should resume"
+        }
+      ]
     },
     {
       "name": "get_subtasks_by_task",
@@ -235,7 +375,16 @@
         "Array of subtask objects"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "notify_remaining_work",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Show remaining pending subtasks to user after one subtask completes"
+        }
+      ]
     },
     {
       "name": "get_subtasks_comprehensive",
@@ -263,7 +412,24 @@
         "`{\"success\": true}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_update",
+          "execution_context": "update_subtask_status",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update subtask status and metadata through central update directive"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "mark_complete",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark subtask as completed - sets status=completed and logs timestamp"
+        }
+      ]
     },
     {
       "name": "delete_subtask",
@@ -306,7 +472,24 @@
         "`{\"success\": true, \"id\": new_id}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Create sidequests during decomposition if user request includes exploratory or fix work"
+        },
+        {
+          "directive_name": "project_sidequest_create",
+          "execution_context": "create_sidequest_record",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Atomic sidequest creation - creates exploratory interruption with optional task link"
+        }
+      ]
     },
     {
       "name": "get_incomplete_sidequests",
@@ -377,7 +560,24 @@
         "`{\"success\": true}`"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_update",
+          "execution_context": "update_sidequest_status",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update sidequest status and metadata through central update directive"
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "mark_complete_and_log",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark sidequest as completed - sets status=completed, logs timestamp and outcome"
+        }
+      ]
     },
     {
       "name": "delete_sidequest",
@@ -405,7 +605,16 @@
         "Array of item objects"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_item_create",
+          "execution_context": "check_duplicate_items",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check for duplicate item names before creating new item - prevents naming conflicts"
+        }
+      ]
     },
     {
       "name": "get_items_for_subtask",
@@ -533,6 +742,14 @@
             "directive_name": "optional directive context"
           },
           "description": "Log clarifications, reasoning, and directive execution context to project.db notes table. Used by other directives for transparent reasoning trails."
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "capture_lessons_learned",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Log sidequest outcome and lessons learned to notes table - captures exploratory work results for future reference"
         }
       ]
     },
@@ -548,7 +765,24 @@
         "Array of filtered note objects"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_auto_summary",
+          "execution_context": "summarize_project_state",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query notes for project summary generation - retrieves logged summaries, metrics, and project history"
+        },
+        {
+          "directive_name": "project_metrics",
+          "execution_context": "gather_metrics",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Read logged metrics from notes - retrieves historical metric data for analysis"
+        }
+      ]
     },
     {
       "name": "search_notes",
@@ -570,7 +804,24 @@
         "Array of matching notes"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_auto_summary",
+          "execution_context": "summarize_project_state",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Search specific keywords in notes for targeted summary - finds relevant context by search string"
+        },
+        {
+          "directive_name": "project_metrics",
+          "execution_context": "gather_metrics",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Search for specific metrics by keyword - targeted metric retrieval from notes"
+        }
+      ]
     },
     {
       "name": "update_note",
@@ -605,7 +856,11 @@
     "file": "helpers-project-3.json",
     "count": 35,
     "range": "helpers 78-112 of 112",
-    "status": "converted from markdown - used_by_directives empty",
-    "note": "Consolidated from original 6 project files into 3 files (~600 lines each)"
+    "status": "Phase 8 Priority 6 & 8 COMPLETE - Task/milestone/subtask/sidequest/item/note helpers mapped to 12 directives",
+    "mapped_helpers": 15,
+    "unmapped_helpers": 20,
+    "note": "20 helpers are query/CRUD tools for AI use only (get_incomplete_tasks, get_tasks_comprehensive, get_task_flows, get_task_files, delete_task, get_incomplete_subtasks, get_subtasks_comprehensive, delete_subtask, get_incomplete_sidequests, get_sidequests_comprehensive, get_sidequest_flows, get_sidequest_files, delete_sidequest, get_items_for_subtask, get_items_for_sidequest, get_incomplete_items, delete_item, update_note, delete_note, delete_milestone) - intentionally not mapped to directives",
+    "total_mappings": 28,
+    "last_updated": "2025-12-20"
   }
 }

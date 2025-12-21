@@ -12,7 +12,24 @@
         "String commit hash or null if Git unavailable"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_init",
+          "execution_context": "get_current_hash_after_init",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Get current Git HEAD to store in project.last_known_git_hash for external change tracking"
+        },
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "get_current_git_hash",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Get current Git HEAD to compare with stored hash and detect external changes"
+        }
+      ]
     },
     {
       "name": "get_current_branch",
@@ -26,7 +43,24 @@
         "String branch name or null"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_init",
+          "execution_context": "report_success",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Display current branch in success report after Git initialization"
+        },
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "return_success",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Display current branch in sync success report"
+        }
+      ]
     },
     {
       "name": "get_git_status",
@@ -40,7 +74,16 @@
         "```json"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_init",
+          "execution_context": "report_success",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Show comprehensive Git status (branch, tracking status, uncommitted files) in initialization success report"
+        }
+      ]
     },
     {
       "name": "detect_external_changes",
@@ -54,7 +97,24 @@
         "```json"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_detect_external_changes",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements the git_detect_external_changes directive - compares stored hash with current HEAD, analyzes changed files, queries theme/function impact"
+        },
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "compare_hashes",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Detect if external changes occurred during sync - triggers git_detect_external_changes if hash differs"
+        }
+      ]
     },
     {
       "name": "create_user_branch",
@@ -83,7 +143,19 @@
         "```json"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_create_branch",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "user": "workflow.detected_user",
+            "purpose": "workflow.branch_purpose"
+          },
+          "description": "Tool that implements git_create_branch directive - detects user, formats branch name (aifp-{user}-{number}), creates Git branch, stores metadata in work_branches table"
+        }
+      ]
     },
     {
       "name": "get_user_name_for_branch",
@@ -92,13 +164,22 @@
       "purpose": "Detect username from git config/environment/system",
       "error_handling": "Fallback to \"user\" if all detection fails",
       "is_tool": false,
-      "is_sub_helper": false,
+      "is_sub_helper": true,
       "return_statements": [
         "String username (never null)",
         "Checks git config, then environment, then system user"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_create_branch",
+          "execution_context": "get_user_identification",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Detect username from git config, environment variables (USER, USERNAME), or system user - used to format branch name aifp-{user}-{number}"
+        }
+      ]
     },
     {
       "name": "list_active_branches",
@@ -127,7 +208,24 @@
         "Queries project.db from both branches for FP analysis"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_detect_conflicts",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements git_detect_conflicts directive - performs dry-run merge analysis, compares branches at file/function level, queries function metadata (purity, dependencies, tests), classifies conflicts, assigns confidence scores for auto-resolution"
+        },
+        {
+          "directive_name": "git_merge_branch",
+          "execution_context": "call_git_detect_conflicts",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Called before merge to analyze potential conflicts and determine if auto-resolution possible - prevents merge failures"
+        }
+      ]
     },
     {
       "name": "merge_with_fp_intelligence",
@@ -142,7 +240,16 @@
         "Auto-resolves conflicts >0.8 confidence using purity rules"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_merge_branch",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements git_merge_branch directive - validates merge request, calls detect_conflicts_before_merge, auto-resolves high-confidence conflicts (>0.8), presents manual conflicts to user with AI recommendations, logs merge history, updates work_branches status"
+        }
+      ]
     },
     {
       "name": "sync_git_state",
@@ -157,7 +264,16 @@
         "Called after commits and during session boot"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements git_sync_state directive - gets current Git HEAD, compares with stored hash, triggers external change detection if hash differs, updates last_known_git_hash and last_git_sync timestamp"
+        }
+      ]
     },
     {
       "name": "project_update_git_status",
@@ -166,18 +282,47 @@
       "purpose": "Update last_known_git_hash and last_git_sync in project table",
       "error_handling": "",
       "is_tool": false,
-      "is_sub_helper": false,
+      "is_sub_helper": true,
       "return_statements": [
         "`{\"success\": true, \"hash\": string, \"sync_time\": timestamp}`",
         "Convenience wrapper for common sync operation"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "git_init",
+          "execution_context": "update_project_last_known_git_hash",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Store initial Git hash in project table after repository initialization or integration"
+        },
+        {
+          "directive_name": "git_detect_external_changes",
+          "execution_context": "update_project_table",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update stored hash after user acknowledges external changes - keeps tracking in sync"
+        },
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "initialize_hash_or_update_sync_timestamp",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update last_known_git_hash and last_git_sync timestamp in project table"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-git.json",
     "count": 11,
-    "status": "converted from markdown - used_by_directives empty"
+    "status": "Phase 8 Priority 1 COMPLETE - All 11 git helpers mapped to 6 git directives",
+    "mapped_helpers": 11,
+    "unmapped_helpers": 0,
+    "total_mappings": 17,
+    "last_updated": "2025-12-20"
   }
 }

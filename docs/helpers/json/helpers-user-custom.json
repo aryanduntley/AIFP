@@ -127,7 +127,27 @@
         "`{\"success\": true, \"id\": new_id}`"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_parse",
+          "execution_context": "store_raw_directives",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_directives",
+            "fields": "status=pending_validation, raw_content, source_file_reference"
+          },
+          "description": "Insert parsed directives into user_directives table with pending_validation status"
+        },
+        {
+          "directive_name": "user_directive_update",
+          "execution_context": "handle_new_directives",
+          "sequence_order": 5,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Insert new directives found in updated source file"
+        }
+      ]
     },
     {
       "name": "update_user_custom_entry",
@@ -141,7 +161,74 @@
         "`{\"success\": true}`"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_validate",
+          "execution_context": "store_validated_directives",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_directives",
+            "fields": "status=validated, validated_content, validated_at"
+          },
+          "description": "Update directive with validated configuration after Q&A resolution"
+        },
+        {
+          "directive_name": "user_directive_implement",
+          "execution_context": "write_implementation_files",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_directives",
+            "fields": "status=implemented, implementation_status=completed, implementation_file_path"
+          },
+          "description": "Update directive with implementation details after code generation"
+        },
+        {
+          "directive_name": "user_directive_approve",
+          "execution_context": "mark_approved",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_directives",
+            "fields": "approved=true, approved_at=current_timestamp"
+          },
+          "description": "Mark directive as approved after user testing confirmation"
+        },
+        {
+          "directive_name": "user_directive_activate",
+          "execution_context": "initialize_execution_tracking",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_directives",
+            "fields": "status=active, activated_at=current_timestamp"
+          },
+          "description": "Set directive status to active after successful deployment"
+        },
+        {
+          "directive_name": "user_directive_deactivate",
+          "execution_context": "update_status",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_directives",
+            "fields": "status=paused"
+          },
+          "description": "Set directive status to paused after stopping execution"
+        },
+        {
+          "directive_name": "user_directive_update",
+          "execution_context": "handle_modified_directives",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_directives",
+            "fields": "approved=false, status=pending_validation"
+          },
+          "description": "Reset approval status when directive modified - requires re-validation and re-approval"
+        }
+      ]
     },
     {
       "name": "delete_user_custom_entry",
@@ -155,7 +242,18 @@
         "`{\"success\": true}`"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_update",
+          "execution_context": "handle_removed_directives",
+          "sequence_order": 6,
+          "is_required": false,
+          "parameters_mapping": {
+            "table": "user_directives"
+          },
+          "description": "Delete or mark deprecated directives removed from source file - alternative to updating status=deprecated"
+        }
+      ]
     },
     {
       "name": "parse_directive_file",
@@ -170,7 +268,26 @@
         "Tracks file reference in source_files table"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_parse",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "file_path": "workflow.user_provided_path"
+          },
+          "description": "Tool that implements user_directive_parse directive - locates file, detects format (YAML/JSON/TXT), parses content, extracts directives, identifies ambiguities, stores in source_files and user_directives tables, calculates checksum"
+        },
+        {
+          "directive_name": "user_directive_update",
+          "execution_context": "parse_updated_file",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Called when source file checksum changes - re-parses file, compares new vs existing directives, identifies modifications/additions/deletions"
+        }
+      ]
     },
     {
       "name": "validate_directive_config",
@@ -185,7 +302,24 @@
         "Updates validated config in user_directives table"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_validate",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements user_directive_validate directive - conducts interactive Q&A to resolve ambiguities, applies user answers, generates validated_content JSON, confirms understanding, stores validated directives in database"
+        },
+        {
+          "directive_name": "user_directive_update",
+          "execution_context": "handle_modified_directives",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Called for modified directives after re-parsing - validates changes before re-implementation"
+        }
+      ]
     },
     {
       "name": "generate_handler_code",
@@ -200,7 +334,24 @@
         "Creates src/ files, updates project.db, generates tests"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_implement",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements user_directive_implement directive - analyzes requirements, handles dependencies (prompts user), generates FP-compliant Python code, writes to src/ files, creates tests, updates project.db, stores implementation in directive_implementations table"
+        },
+        {
+          "directive_name": "user_directive_update",
+          "execution_context": "handle_modified_directives",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Called after validation to regenerate code for modified directives - re-implements with new validated config"
+        }
+      ]
     },
     {
       "name": "deploy_background_service",
@@ -215,7 +366,16 @@
         "Starts scheduler/event handler"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_activate",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements user_directive_activate directive - verifies approval & implementation, deploys (registers with scheduler/starts service/registers event handler), initializes execution tracking in directive_executions table, sets up logging, updates project.user_directives_status to 'active'"
+        }
+      ]
     },
     {
       "name": "get_user_directive_status",
@@ -229,7 +389,16 @@
         "Directive status object(s) with execution stats"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_status",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements user_directive_status directive - checks user_directives.db existence, queries directive statistics grouped by status, queries directive_executions for execution stats, builds comprehensive status report with log paths"
+        }
+      ]
     },
     {
       "name": "monitor_directive_execution",
@@ -244,12 +413,26 @@
         "Detailed logs in .aifp-project/logs/, not database"
       ],
       "target_database": "user_custom",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_monitor",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements user_directive_monitor directive - tracks executions (logs start/end times to file, updates directive_executions stats), handles errors (logs to error log file, increments error counts), rotates logs, performs health checks on background services"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-user-custom.json",
     "count": 16,
-    "status": "converted from markdown - used_by_directives empty"
+    "status": "Phase 8 Priority 2 COMPLETE - All 16 user-custom helpers mapped to 9 user directive system directives",
+    "mapped_helpers": 9,
+    "unmapped_helpers": 7,
+    "note": "7 helpers are query tools for AI (get_user_custom_tables, get_user_custom_fields, get_user_custom_schema, get_user_custom_json_parameters, get_from_user_custom, get_from_user_custom_where, query_user_custom) - intentionally not mapped to directives",
+    "total_mappings": 15,
+    "last_updated": "2025-12-20"
   }
 }

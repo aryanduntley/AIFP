@@ -159,6 +159,16 @@
             "where_clause": "WHERE feature_name=?"
           },
           "description": "Check if tracking feature currently enabled before toggling"
+        },
+        {
+          "directive_name": "user_preferences_export",
+          "execution_context": "query_preferences",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_settings, directive_preferences, (optional) ai_interaction_log, fp_flow_tracking"
+          },
+          "description": "Query all preferences and optionally tracking data for export to JSON file"
         }
       ]
     },
@@ -174,7 +184,19 @@
         "`{\"success\": true, \"id\": new_id}`"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_import",
+          "execution_context": "import_preferences",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "table": "user_settings, directive_preferences",
+            "entry_json": "workflow.imported_preferences"
+          },
+          "description": "Insert imported preferences from JSON file - bulk insert for user_settings and directive_preferences tables"
+        }
+      ]
     },
     {
       "name": "update_settings_entry",
@@ -256,7 +278,18 @@
         "Zero cognitive load - called before every directive execution"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_sync",
+          "execution_context": "load_preferences",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "directive_name": "workflow.current_directive"
+          },
+          "description": "Load active preferences for directive before execution - returns preference key-value pairs for current directive context"
+        }
+      ]
     },
     {
       "name": "add_directive_preference",
@@ -271,7 +304,28 @@
         "Atomic key-value structure (one preference per row)"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_update",
+          "execution_context": "update_or_insert",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "directive_name": "workflow.confirmed_directive",
+            "preference_key": "workflow.extracted_key",
+            "preference_value": "workflow.extracted_value"
+          },
+          "description": "Add or update directive-specific preference after user confirms - atomic key-value upsert"
+        },
+        {
+          "directive_name": "user_preferences_learn",
+          "execution_context": "update_directive_preferences",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Store learned preference from user corrections after user confirms - inferred from user behavior patterns"
+        }
+      ]
     },
     {
       "name": "get_user_setting",
@@ -323,7 +377,20 @@
         "Used by user_preferences_update directive"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_update",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "user_request": "workflow.user_request",
+            "mapped_directive": "workflow.confirmed_directive",
+            "preferences": "workflow.parsed_preferences"
+          },
+          "description": "Orchestrator tool that implements user_preferences_update directive - parses request, finds directive by intent (using find_directive_by_intent from core), extracts key-value preferences, updates directive_preferences table"
+        }
+      ]
     },
     {
       "name": "apply_preferences_to_context",
@@ -332,13 +399,22 @@
       "purpose": "Apply loaded preferences to execution context",
       "error_handling": "",
       "is_tool": false,
-      "is_sub_helper": false,
+      "is_sub_helper": true,
       "return_statements": [
         "Modified context object",
         "Used before directive execution"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_sync",
+          "execution_context": "apply_to_context",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Apply loaded directive preferences to execution context before running directive - modifies context with user's customization preferences"
+        }
+      ]
     },
     {
       "name": "get_tracking_settings",
@@ -352,7 +428,16 @@
         "Object with feature flags (all default false)"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_sync",
+          "execution_context": "enable_logging",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Check which tracking features are enabled (fp_flow_tracking, ai_interaction_log, helper_function_logging, issue_reports) to enable appropriate logging"
+        }
+      ]
     },
     {
       "name": "toggle_tracking_feature",
@@ -367,12 +452,29 @@
         "Shows cost warning when enabling"
       ],
       "target_database": "settings",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "tracking_toggle",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "feature_name": "workflow.identified_feature",
+            "enabled": "workflow.enable_or_disable"
+          },
+          "description": "Tool that implements tracking_toggle directive - shows token overhead warning when enabling, toggles tracking feature flag in tracking_settings table, confirms new status with user"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-settings.json",
     "count": 17,
-    "status": "converted from markdown - used_by_directives empty"
+    "status": "Phase 8 Priority 3 COMPLETE - Settings helpers mapped to 6 user preference directives (project_notes_log uses helpers-project)",
+    "mapped_helpers": 9,
+    "unmapped_helpers": 8,
+    "note": "8 helpers are query tools for AI (get_settings_tables, get_settings_fields, get_settings_schema, get_settings_json_parameters, get_from_settings, get_from_settings_where, delete_settings_entry, get_user_setting) - intentionally not mapped to directives",
+    "total_mappings": 13,
+    "last_updated": "2025-12-20"
   }
 }

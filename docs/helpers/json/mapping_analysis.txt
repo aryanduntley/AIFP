@@ -1,0 +1,427 @@
+Loading directives...
+Loaded 52 non-FP directives
+
+Loading helpers...
+Loaded 201 helpers from 8 files
+
+================================================================================
+MAPPING SUGGESTIONS
+================================================================================
+
+================================================================================
+FILE: helpers-core.json
+================================================================================
+
+HELPER: add_directive_intent_keyword
+  Purpose: Add an intent keyword to a directive...
+  Matches (1):
+    [MEDIUM] 0.33 - project_add_path (project)
+
+
+================================================================================
+FILE: helpers-orchestrators.json
+================================================================================
+
+HELPER: aifp_run
+  Purpose: Main entry point orchestrator. Routes requests and optionally fetches comprehensive status....
+  Matches (3):
+    [HIGH  ] 0.52 - aifp_run (project)
+    [LOW   ] 0.25 - aifp_status (project)
+    [LOW   ] 0.25 - aifp_help (project)
+
+HELPER: update_project_state
+  Purpose: Single entry point for common project state updates. Simplifies task lifecycle management and progre...
+  Matches (11):
+    [HIGH  ] 0.56 - project_update_db (project)
+    [MEDIUM] 0.39 - project_task_update (project)
+    [MEDIUM] 0.33 - project_blueprint_update (project)
+    [LOW   ] 0.22 - project_item_create (project)
+    [LOW   ] 0.21 - project_completion_check (project)
+
+HELPER: query_project_state
+  Purpose: Flexible SQL-like query interface for complex project queries. Provides powerful filtering and joini...
+  Matches (3):
+    [LOW   ] 0.21 - project_metrics (project)
+    [LOW   ] 0.21 - project_auto_summary (project)
+    [LOW   ] 0.20 - project_dependency_map (project)
+
+HELPER: aifp_status
+  Purpose: Status orchestrator optimized for directive navigation decision tree. Returns comprehensive project ...
+  Matches (3):
+    [HIGH  ] 0.54 - aifp_status (project)
+    [MEDIUM] 0.30 - aifp_help (project)
+    [LOW   ] 0.29 - aifp_run (project)
+
+HELPER: get_project_status
+  Purpose: Analyze entire work hierarchy and return comprehensive project status...
+  Matches (1):
+    [LOW   ] 0.20 - project_archive (project)
+
+
+================================================================================
+FILE: helpers-git.json
+================================================================================
+
+HELPER: detect_external_changes
+  Purpose: Compare current Git HEAD with project.last_known_git_hash...
+  Matches (2):
+    [HIGH  ] 0.62 - git_detect_external_changes (git)
+    [MEDIUM] 0.37 - git_detect_conflicts (git)
+
+HELPER: create_user_branch
+  Purpose: Create work branch following aifp-{user}-{number} convention...
+  Matches (1):
+    [HIGH  ] 0.56 - git_create_branch (git)
+
+HELPER: detect_conflicts_before_merge
+  Purpose: FP-powered conflict analysis before merging (complex orchestrator)...
+  Matches (2):
+    [MEDIUM] 0.45 - git_detect_conflicts (git)
+    [MEDIUM] 0.33 - git_detect_external_changes (git)
+
+HELPER: merge_with_fp_intelligence
+  Purpose: Git merge with FP-powered conflict auto-resolution (complex orchestrator)...
+  Matches (1):
+    [MEDIUM] 0.35 - git_merge_branch (git)
+
+HELPER: sync_git_state
+  Purpose: Update project.last_known_git_hash with current Git HEAD...
+  Matches (1):
+    [HIGH  ] 0.74 - git_sync_state (git)
+
+HELPER: project_update_git_status
+  Purpose: Update last_known_git_hash and last_git_sync in project table...
+  Matches (3):
+    [LOW   ] 0.25 - project_update_db (project)
+    [LOW   ] 0.25 - project_blueprint_update (project)
+    [LOW   ] 0.25 - project_task_update (project)
+
+
+================================================================================
+FILE: helpers-settings.json
+================================================================================
+
+HELPER: add_settings_entry
+  Purpose: Add entry to user settings database...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_settings_entry
+  Purpose: Update entry in user settings database...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_directive_preference
+  Purpose: Add/update user preference for directive...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_user_preferences
+  Purpose: Map user request to directive preferences (orchestrator)...
+  Matches (7):
+    [HIGH  ] 0.53 - user_preferences_update (user_pref)
+    [MEDIUM] 0.38 - project_update_db (project)
+    [MEDIUM] 0.37 - user_preferences_sync (user_pref)
+    [MEDIUM] 0.33 - user_preferences_learn (user_pref)
+    [MEDIUM] 0.33 - user_preferences_export (user_pref)
+
+HELPER: toggle_tracking_feature
+  Purpose: Enable/disable tracking feature...
+  Matches (1):
+    [HIGH  ] 0.53 - tracking_toggle (user_pref)
+
+
+================================================================================
+FILE: helpers-user-custom.json
+================================================================================
+
+HELPER: add_user_custom_entry
+  Purpose: Add entry to user custom directives database...
+  Matches (1):
+    [MEDIUM] 0.33 - project_add_path (project)
+
+HELPER: update_user_custom_entry
+  Purpose: Update entry in user custom directives database...
+  Matches (2):
+    [MEDIUM] 0.33 - project_update_db (project)
+    [LOW   ] 0.25 - user_preferences_update (user_pref)
+
+
+================================================================================
+FILE: helpers-project-1.json
+================================================================================
+
+HELPER: get_project_tables
+  Purpose: List all tables in project database...
+  Matches (1):
+    [LOW   ] 0.21 - project_dependency_sync (project)
+
+HELPER: get_project_fields
+  Purpose: Get field names and types for a specific table...
+  Matches (2):
+    [LOW   ] 0.21 - project_performance_summary (project)
+    [LOW   ] 0.20 - project_dependency_map (project)
+
+HELPER: query_project
+  Purpose: Execute complex SQL WHERE clause (advanced, rare use)...
+  Matches (4):
+    [LOW   ] 0.25 - project_init (project)
+    [LOW   ] 0.25 - project_evolution (project)
+    [LOW   ] 0.25 - project_metrics (project)
+    [LOW   ] 0.25 - project_archive (project)
+
+HELPER: add_project_entry
+  Purpose: Add new entry to project database...
+  Matches (1):
+    [HIGH  ] 0.53 - project_add_path (project)
+
+HELPER: update_project_entry
+  Purpose: Update existing entry...
+  Matches (3):
+    [HIGH  ] 0.53 - project_update_db (project)
+    [MEDIUM] 0.33 - project_blueprint_update (project)
+    [MEDIUM] 0.33 - project_task_update (project)
+
+HELPER: delete_project_entry
+  Purpose: Smart delete with automatic routing to specialized functions when needed...
+  Matches (1):
+    [MEDIUM] 0.33 - project_file_delete (project)
+
+HELPER: create_project
+  Purpose: Initialize project entry (one per database)...
+  Matches (9):
+    [MEDIUM] 0.37 - git_create_branch (git)
+    [MEDIUM] 0.33 - project_task_create (project)
+    [MEDIUM] 0.33 - project_subtask_create (project)
+    [MEDIUM] 0.33 - project_item_create (project)
+    [MEDIUM] 0.33 - project_sidequest_create (project)
+
+HELPER: get_project
+  Purpose: Get project metadata (single entry)...
+  Matches (4):
+    [LOW   ] 0.25 - project_init (project)
+    [LOW   ] 0.25 - project_evolution (project)
+    [LOW   ] 0.25 - project_metrics (project)
+    [LOW   ] 0.25 - project_archive (project)
+
+HELPER: update_project
+  Purpose: Update project metadata...
+  Matches (7):
+    [HIGH  ] 0.53 - project_update_db (project)
+    [MEDIUM] 0.33 - project_blueprint_update (project)
+    [MEDIUM] 0.33 - project_task_update (project)
+    [LOW   ] 0.25 - project_init (project)
+    [LOW   ] 0.25 - project_evolution (project)
+
+HELPER: blueprint_has_changed
+  Purpose: Check if ProjectBlueprint.md has changed using Git or filesystem timestamp...
+  Matches (2):
+    [MEDIUM] 0.37 - project_blueprint_read (project)
+    [MEDIUM] 0.37 - project_blueprint_update (project)
+
+HELPER: reserve_file
+  Purpose: Reserve file ID for naming before creation...
+  Matches (1):
+    [MEDIUM] 0.39 - project_reserve_finalize (project)
+
+HELPER: reserve_files
+  Purpose: Reserve multiple file IDs at once...
+  Matches (1):
+    [MEDIUM] 0.37 - project_reserve_finalize (project)
+
+HELPER: update_file
+  Purpose: Update file metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: file_has_changed
+  Purpose: Check if file changed using Git (if available) or filesystem timestamp...
+  Matches (3):
+    [MEDIUM] 0.40 - project_file_read (project)
+    [MEDIUM] 0.38 - project_file_write (project)
+    [MEDIUM] 0.37 - project_file_delete (project)
+
+HELPER: update_file_timestamp
+  Purpose: Update file timestamp (called automatically after function updates)...
+  Matches (1):
+    [MEDIUM] 0.39 - project_update_db (project)
+
+HELPER: delete_file
+  Purpose: Delete file with comprehensive cross-reference validation...
+  Matches (1):
+    [MEDIUM] 0.33 - project_file_delete (project)
+
+HELPER: reserve_function
+  Purpose: Reserve function ID for naming before creation...
+  Matches (1):
+    [MEDIUM] 0.39 - project_reserve_finalize (project)
+
+HELPER: reserve_functions
+  Purpose: Reserve multiple function IDs...
+  Matches (1):
+    [MEDIUM] 0.37 - project_reserve_finalize (project)
+
+HELPER: update_function
+  Purpose: Update function metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: update_functions_for_file
+  Purpose: Update multiple functions in a single file...
+  Matches (1):
+    [MEDIUM] 0.33 - project_update_db (project)
+
+HELPER: update_function_file_location
+  Purpose: Move function to different file (rarely used)...
+  Matches (1):
+    [MEDIUM] 0.34 - project_update_db (project)
+
+HELPER: reserve_type
+  Purpose: Reserve type ID for naming before creation...
+  Matches (1):
+    [MEDIUM] 0.39 - project_reserve_finalize (project)
+
+HELPER: reserve_types
+  Purpose: Reserve multiple type IDs...
+  Matches (1):
+    [MEDIUM] 0.37 - project_reserve_finalize (project)
+
+
+================================================================================
+FILE: helpers-project-2.json
+================================================================================
+
+HELPER: update_type
+  Purpose: Update type metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_types_functions
+  Purpose: Add type-function relationship(s)...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_type_function_role
+  Purpose: Update relationship role only...
+  Matches (1):
+    [MEDIUM] 0.33 - project_update_db (project)
+
+HELPER: add_interaction
+  Purpose: Add function dependency/interaction...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: add_interactions
+  Purpose: Add multiple interactions at once...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_interaction
+  Purpose: Update interaction metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_theme
+  Purpose: Add project theme...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_theme
+  Purpose: Update theme metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_flow
+  Purpose: Add project flow...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_flow
+  Purpose: Update flow metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_completion_path
+  Purpose: Add completion path stage...
+  Matches (1):
+    [HIGH  ] 0.53 - project_add_path (project)
+
+HELPER: update_completion_path
+  Purpose: Update completion path...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_milestone
+  Purpose: Add milestone to completion path...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+
+================================================================================
+FILE: helpers-project-3.json
+================================================================================
+
+HELPER: update_milestone
+  Purpose: Update milestone metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_task
+  Purpose: Add task to milestone...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_task
+  Purpose: Update task metadata...
+  Matches (2):
+    [MEDIUM] 0.37 - project_update_db (project)
+    [MEDIUM] 0.33 - project_task_update (project)
+
+HELPER: add_subtask
+  Purpose: Add subtask to task...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_subtask
+  Purpose: Update subtask metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_sidequest
+  Purpose: Add sidequest (urgent interruption)...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_sidequest
+  Purpose: Update sidequest metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+HELPER: add_note
+  Purpose: Add note to project database...
+  Matches (1):
+    [MEDIUM] 0.37 - project_add_path (project)
+
+HELPER: update_note
+  Purpose: Update note metadata...
+  Matches (1):
+    [MEDIUM] 0.37 - project_update_db (project)
+
+
+================================================================================
+STATISTICS
+================================================================================
+Total helpers analyzed: 201
+Helpers with matches: 64 (31.8%)
+Total suggestions: 104
+  High confidence (≥0.5): 12 (11.5%)
+  Medium confidence (0.3-0.5): 66 (63.5%)
+  Low confidence (<0.3): 26 (25.0%)
+
+Suggestions saved to: docs/helpers/json/mapping_suggestions.json
+
+Next steps:
+1. Review HIGH confidence suggestions first
+2. Manually verify MEDIUM confidence suggestions
+3. Skip or carefully review LOW confidence suggestions
+4. Add used_by_directives entries to helper JSON files
