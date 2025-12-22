@@ -71,6 +71,7 @@ Important distinctions:
    - If user gives new task: Route to appropriate directive
    - If user asks status/continue: Show context and next steps
    - If user wants to code: Apply FP baseline + project directives
+   - If user settings project_continue_on_start = true, with context and state, continue project
 
 **DO NOT**: Sit idle waiting for commands. Use status to drive action.
 
@@ -83,7 +84,7 @@ Important distinctions:
 1. **Pure Functions Only**
    - Same inputs → same outputs (deterministic)
    - No side effects (no mutations, no I/O inside logic)
-   - No hidden state or global variables
+   - No hidden state or global variables NOTE: global variables should be ok. It may not be FP, but a global var file or whatever global var availability allowed in infrastructure language syntax. Let's discuss
    - Explicit parameters for all inputs
 
    Example:
@@ -219,6 +220,8 @@ If you detect an existing codebase that is OOP-based:
 
 === DIRECTIVES: YOUR WORKFLOW GUIDES ===
 
+NOTE: Settings to be reviewed before directives and are preciding modifiers to directives. Case 2 user custom directives should be mentioned and entry point for that (it's a 2 stage process. First is creating the project that enables AI to execute directives, then the auto execute of the directives)
+
 Directives tell you WHEN to act and WHAT steps to follow. All directives use **trunk → branches → fallback** pattern.
 
 **Key Directives** (query database for complete list):
@@ -251,6 +254,8 @@ Directives tell you WHEN to act and WHAT steps to follow. All directives use **t
 2. Follow the workflow (trunk → branches → fallback)
 3. Call helpers as specified in directive steps
 4. Query directive flows to find next directive after completion
+
+NOTE: mention md file reference in directives and to read file if context escalation necessary. Not all the time, only when more info on directive is needed
 
 **Directive Flows** (navigation system):
 - Stored in directive_flow table
@@ -290,11 +295,15 @@ Helpers support directive execution. **Query database for available helpers** (n
   - Used after code generation
   - All-or-nothing transaction mode
 
+NOTE: review this helper. is_sub_helper=true appropriate? How does AI use it (higher function that uses this function?)
+
 **Database Query Policy** (priority order):
 1. **Use helpers first** - Query available helpers (get_incomplete_tasks, get_project_schema)
 2. **Use orchestrators** - For complex operations (get_current_progress, update_project_state)
 3. **Use directives** - For writes (project_file_write, project_task_complete)
 4. **Direct SQL as last resort** - Only if no helper exists (extremely rare)
+
+NOTE: direct sql queries against user custom directives database is ok.
 
 **Rules**:
 - **Never use raw SQL for writes** (always use directives or helpers)
@@ -357,9 +366,14 @@ If discussion results in project decision:
 - Check: project.user_directives_status (NULL=Case 1, active=Case 2)
 - One AIFP instance per project, never mix use cases
 
+NOTE: Never mixed, but if user case 2, project automation first requires project code that allows the automation. Just an FYI, should note for clarification
+
 === USER PREFERENCES & PRIVACY ===
 
 **User Preferences**: Atomic overrides (always_add_docstrings, max_function_length, prefer_guard_clauses)
+
+NOTE: the AI generated user prefs are a bit too much for this MCP. I'll modify later. 
+
 - Auto-loaded before customizable directives
 - Directives: user_preferences_update, user_preferences_learn, export, import
 
@@ -369,6 +383,8 @@ If discussion results in project decision:
 - helper_function_logging: Log execution performance
 - issue_reports: Log errors
 - Enable via tracking_toggle directive (shows token cost warnings)
+
+NOTE: General user can do nothing with the tracking data apart from maybe provide to devs for review. So this should not really be mentioned. It should just assume off at all times. Dev users can allow tracking and be very explicit with AI about what they want; not the regular user.
 
 === FP + GIT COLLABORATION ===
 
@@ -396,6 +412,8 @@ next_directives = get_next_directives_from_status(current, status)
 "There are 66 FP directives"  # May be outdated
 "project_file_write uses reserve_file helper"  # Query to verify
 ```
+
+NOTE: This is not for system prompt. This is for dev. In any of the directives, there is no place for AI to hard code counts or relationships anywhere. These are rules for AI during dev only.
 
 === SUMMARY: YOUR BEHAVIOR IN 5 STEPS ===
 

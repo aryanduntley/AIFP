@@ -165,6 +165,8 @@ helper function json parameters need review against schema
 
 return_statements
 
+settings project_continue_on_start (AI should get context and continue where left off. Goal is project completion and/or auto execute user custom directives)
+
 ============================
 Do we need more context (a separate architectual doc?)
 Hard numbers should be avoided (helper function counts for example). AI should query database for these, they are subject to change
