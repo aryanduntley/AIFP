@@ -17,7 +17,15 @@
     {
       "name": "get_settings_fields",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to get fields for"
+        }
+      ],
       "purpose": "Get field names and types for a specific table",
       "error_handling": "",
       "is_tool": true,
@@ -45,7 +53,15 @@
     {
       "name": "get_settings_json_parameters",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to get available fields for"
+        }
+      ],
       "purpose": "Get available fields for table to use with generic add/update operations",
       "error_handling": "",
       "is_tool": true,
@@ -175,7 +191,22 @@
     {
       "name": "add_settings_entry",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs"
+        }
+      ],
       "purpose": "Add entry to user settings database",
       "error_handling": "",
       "is_tool": true,
@@ -253,7 +284,50 @@
     {
       "name": "delete_settings_entry",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Record ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete entry from user settings",
       "error_handling": "",
       "is_tool": true,
@@ -267,7 +341,15 @@
     {
       "name": "load_directive_preferences",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Directive name to load preferences for"
+        }
+      ],
       "purpose": "Load all active preferences for a directive (high-frequency)",
       "error_handling": "",
       "is_tool": true,
@@ -294,7 +376,36 @@
     {
       "name": "add_directive_preference",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Directive name"
+        },
+        {
+          "name": "preference_key",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Preference key"
+        },
+        {
+          "name": "preference_value",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Preference value"
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Whether preference is active"
+        }
+      ],
       "purpose": "Add/update user preference for directive",
       "error_handling": "",
       "is_tool": true,
@@ -330,7 +441,15 @@
     {
       "name": "get_user_setting",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "setting_key",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Setting key to retrieve"
+        }
+      ],
       "purpose": "Get project-wide user setting (fairly frequent)",
       "error_handling": "",
       "is_tool": true,
@@ -395,7 +514,15 @@
     {
       "name": "apply_preferences_to_context",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "preferences",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Preference key-value pairs to apply"
+        }
+      ],
       "purpose": "Apply loaded preferences to execution context",
       "error_handling": "",
       "is_tool": false,
@@ -442,7 +569,22 @@
     {
       "name": "toggle_tracking_feature",
       "file_path": "TODO_helpers/settings/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "feature_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Tracking feature name"
+        },
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": true,
+          "default": null,
+          "description": "Enable or disable"
+        }
+      ],
       "purpose": "Enable/disable tracking feature",
       "error_handling": "",
       "is_tool": true,

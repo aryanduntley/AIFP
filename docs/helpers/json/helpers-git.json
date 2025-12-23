@@ -3,7 +3,15 @@
     {
       "name": "get_current_commit_hash",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
       "purpose": "Get current Git HEAD commit hash",
       "error_handling": "Return null if not Git repository",
       "is_tool": false,
@@ -34,7 +42,15 @@
     {
       "name": "get_current_branch",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
       "purpose": "Get current Git branch name",
       "error_handling": "Return null if Git unavailable",
       "is_tool": false,
@@ -65,7 +81,15 @@
     {
       "name": "get_git_status",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
       "purpose": "Get comprehensive Git state snapshot (orchestrator)",
       "error_handling": "Returns git_available=false if Git unavailable",
       "is_tool": true,
@@ -88,7 +112,15 @@
     {
       "name": "detect_external_changes",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
       "purpose": "Compare current Git HEAD with project.last_known_git_hash",
       "error_handling": "Return empty changes if Git unavailable",
       "is_tool": true,
@@ -198,7 +230,22 @@
     {
       "name": "detect_conflicts_before_merge",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "source_branch",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Branch to merge from"
+        },
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
       "purpose": "FP-powered conflict analysis before merging (complex orchestrator)",
       "error_handling": "Fall back to file-level conflicts if DB query fails",
       "is_tool": true,
@@ -230,7 +277,22 @@
     {
       "name": "merge_with_fp_intelligence",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "source_branch",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Branch to merge from"
+        },
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
       "purpose": "Git merge with FP-powered conflict auto-resolution (complex orchestrator)",
       "error_handling": "Abort merge (git merge --abort) if unresolvable",
       "is_tool": true,
@@ -254,7 +316,15 @@
     {
       "name": "sync_git_state",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
       "purpose": "Update project.last_known_git_hash with current Git HEAD",
       "error_handling": "Log warning if Git unavailable, continue with cached",
       "is_tool": true,

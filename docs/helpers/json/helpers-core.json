@@ -156,7 +156,15 @@
     {
       "name": "get_directive_by_name",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Directive name to look up"
+        }
+      ],
       "purpose": "Get specific directive by name (high-frequency operation)",
       "error_handling": "",
       "is_tool": true,
@@ -389,7 +397,22 @@
     {
       "name": "add_directive_intent_keyword",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Directive ID"
+        },
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Intent keyword to add"
+        }
+      ],
       "purpose": "Add an intent keyword to a directive",
       "error_handling": "",
       "is_tool": false,
@@ -404,7 +427,22 @@
     {
       "name": "remove_directive_intent_keyword",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Directive ID"
+        },
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Intent keyword to remove"
+        }
+      ],
       "purpose": "Remove an intent keyword from a directive",
       "error_handling": "",
       "is_tool": false,
@@ -419,7 +457,15 @@
     {
       "name": "get_directive_keywords",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Directive ID"
+        }
+      ],
       "purpose": "Get all intent keywords for a specific directive",
       "error_handling": "",
       "is_tool": true,
@@ -494,7 +540,22 @@
     {
       "name": "get_matching_next_directives",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "from_directive",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Directive name (usually 'aifp_status')"
+        },
+        {
+          "name": "status_object",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Status object from aifp_status()"
+        }
+      ],
       "purpose": "Get ONLY directives whose conditions match current state",
       "error_handling": "",
       "is_tool": true,
@@ -509,7 +570,15 @@
     {
       "name": "get_completion_loop_target",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "from_directive",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Directive name"
+        }
+      ],
       "purpose": "Get where to loop back after completing directive",
       "error_handling": "",
       "is_tool": true,
@@ -554,7 +623,15 @@
     {
       "name": "get_helper_by_name",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "helper_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Helper name to look up"
+        }
+      ],
       "purpose": "Get specific helper function details (high-frequency)",
       "error_handling": "",
       "is_tool": true,
@@ -569,7 +646,15 @@
     {
       "name": "get_helpers_by_database",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "target_database",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Database name ('core', 'project', 'settings', 'user_custom')"
+        }
+      ],
       "purpose": "Get all helpers for a specific database",
       "error_handling": "",
       "is_tool": true,
@@ -647,7 +732,15 @@
     {
       "name": "get_directives_for_helper",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "helper_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Helper name"
+        }
+      ],
       "purpose": "Get all directives that use a helper (reciprocal lookup)",
       "error_handling": "",
       "is_tool": true,
@@ -661,7 +754,15 @@
     {
       "name": "get_category_by_name",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "category_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Category name"
+        }
+      ],
       "purpose": "Get category by name (fairly frequent)",
       "error_handling": "",
       "is_tool": true,
@@ -689,7 +790,15 @@
     {
       "name": "get_directives_by_category",
       "file_path": "TODO_helpers/core/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "category_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Category name"
+        }
+      ],
       "purpose": "Get all directives in a category",
       "error_handling": "",
       "is_tool": true,

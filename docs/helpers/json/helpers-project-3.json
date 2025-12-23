@@ -3,7 +3,43 @@
     {
       "name": "update_milestone",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Milestone ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "completion_path_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New completion path ID (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        }
+      ],
       "purpose": "Update milestone metadata",
       "error_handling": "",
       "is_tool": true,
@@ -30,7 +66,43 @@
     {
       "name": "delete_milestone",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Milestone ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete milestone with task validation",
       "error_handling": "- Calls `get_incomplete_tasks_by_milestone(milestone_id, skip_pending=false)`",
       "is_tool": true,
@@ -152,7 +224,15 @@
     {
       "name": "get_tasks_by_milestone",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "milestone_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Milestone ID"
+        }
+      ],
       "purpose": "Get all tasks for a milestone (any status)",
       "error_handling": "",
       "is_tool": true,
@@ -177,7 +257,50 @@
     {
       "name": "get_tasks_comprehensive",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum results"
+        },
+        {
+          "name": "date_range_created",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "date_range_updated",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "milestone_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by milestone"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical'"
+        }
+      ],
       "purpose": "Advanced task search with multiple filters",
       "error_handling": "",
       "is_tool": true,
@@ -191,7 +314,15 @@
     {
       "name": "get_task_flows",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        }
+      ],
       "purpose": "Get flow IDs for a task",
       "error_handling": "",
       "is_tool": true,
@@ -205,14 +336,22 @@
     {
       "name": "get_task_files",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        }
+      ],
       "purpose": "Get all files related to task via flows (orchestrator)",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "Array of file objects with full data",
-        "Chains get_task_flows → get_file_ids_from_flows → get_from_project()"
+        "Chains get_task_flows \u2192 get_file_ids_from_flows \u2192 get_from_project()"
       ],
       "target_database": "project",
       "used_by_directives": []
@@ -220,7 +359,57 @@
     {
       "name": "update_task",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "milestone_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New milestone ID (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        },
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Array of flow IDs [1, 3, 5] (NULL = don't update)"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
+        }
+      ],
       "purpose": "Update task metadata",
       "error_handling": "",
       "is_tool": true,
@@ -275,7 +464,43 @@
     {
       "name": "delete_task",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete task with item validation",
       "error_handling": "- Calls `get_items_for_task(task_id)` (all statuses)",
       "is_tool": true,
@@ -289,7 +514,43 @@
     {
       "name": "add_subtask",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Subtask name"
+        },
+        {
+          "name": "parent_task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Parent task ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "default": "pending",
+          "description": "'pending', 'in_progress', 'completed', 'blocked'"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Subtask description"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": true,
+          "default": "high",
+          "description": "'low', 'medium', 'high', 'critical'"
+        }
+      ],
       "purpose": "Add subtask to task",
       "error_handling": "",
       "is_tool": true,
@@ -335,7 +596,15 @@
     {
       "name": "get_incomplete_subtasks_by_task",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        }
+      ],
       "purpose": "Get incomplete subtasks for specific task",
       "error_handling": "",
       "is_tool": true,
@@ -366,7 +635,22 @@
     {
       "name": "get_subtasks_by_task",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+        }
+      ],
       "purpose": "Get subtasks for task, optionally filtered by status",
       "error_handling": "",
       "is_tool": true,
@@ -389,7 +673,50 @@
     {
       "name": "get_subtasks_comprehensive",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum results"
+        },
+        {
+          "name": "date_range_created",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "date_range_updated",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by task"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical'"
+        }
+      ],
       "purpose": "Advanced subtask search",
       "error_handling": "",
       "is_tool": true,
@@ -403,7 +730,50 @@
     {
       "name": "update_subtask",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Subtask ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New task ID (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
+        }
+      ],
       "purpose": "Update subtask metadata",
       "error_handling": "",
       "is_tool": true,
@@ -434,7 +804,43 @@
     {
       "name": "delete_subtask",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Subtask ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete subtask with item validation (same logic as delete_task)",
       "error_handling": "",
       "is_tool": true,
@@ -508,7 +914,57 @@
     {
       "name": "get_sidequests_comprehensive",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum results"
+        },
+        {
+          "name": "date_range_created",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "date_range_updated",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by paused task"
+        },
+        {
+          "name": "subtask_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by paused subtask"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical'"
+        }
+      ],
       "purpose": "Advanced sidequest search",
       "error_handling": "",
       "is_tool": true,
@@ -522,7 +978,15 @@
     {
       "name": "get_sidequest_flows",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "sidequest_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        }
+      ],
       "purpose": "Get flow IDs for a sidequest",
       "error_handling": "",
       "is_tool": true,
@@ -536,14 +1000,22 @@
     {
       "name": "get_sidequest_files",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "sidequest_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        }
+      ],
       "purpose": "Get all files related to sidequest via flows (orchestrator)",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "Array of file objects",
-        "Chains get_sidequest_flows → get_file_ids_from_flows → get_from_project()"
+        "Chains get_sidequest_flows \u2192 get_file_ids_from_flows \u2192 get_from_project()"
       ],
       "target_database": "project",
       "used_by_directives": []
@@ -551,7 +1023,64 @@
     {
       "name": "update_sidequest",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "paused_task_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New paused task ID (NULL = don't update)"
+        },
+        {
+          "name": "paused_subtask_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New paused subtask ID (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        },
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Array of flow IDs (NULL = don't update)"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
+        }
+      ],
       "purpose": "Update sidequest metadata",
       "error_handling": "",
       "is_tool": true,
@@ -582,7 +1111,43 @@
     {
       "name": "delete_sidequest",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete sidequest with item validation (same logic as delete_task)",
       "error_handling": "",
       "is_tool": true,
@@ -596,7 +1161,22 @@
     {
       "name": "get_items_for_task",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
+        }
+      ],
       "purpose": "Get items for task, optionally filtered by status",
       "error_handling": "",
       "is_tool": true,
@@ -619,7 +1199,22 @@
     {
       "name": "get_items_for_subtask",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "subtask_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Subtask ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
+        }
+      ],
       "purpose": "Get items for subtask",
       "error_handling": "",
       "is_tool": true,
@@ -633,7 +1228,22 @@
     {
       "name": "get_items_for_sidequest",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "sidequest_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
+        }
+      ],
       "purpose": "Get items for sidequest",
       "error_handling": "",
       "is_tool": true,
@@ -676,7 +1286,43 @@
     {
       "name": "delete_item",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Item ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete item with status validation",
       "error_handling": "Cannot delete in-progress/completed items, only pending",
       "is_tool": true,

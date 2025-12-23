@@ -296,7 +296,15 @@
     {
       "name": "aifp_status",
       "file_path": "TODO_helpers/orchestrator/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "default": "summary",
+          "description": "'quick', 'summary', 'detailed' - level of detail to return"
+        }
+      ],
       "purpose": "Status orchestrator optimized for directive navigation decision tree. Returns comprehensive project state with completion flags and next-step suggestions designed to feed the `get_next_directives_from_status()` system.",
       "error_handling": "",
       "is_tool": true,
@@ -327,7 +335,15 @@
     {
       "name": "get_project_status",
       "file_path": "TODO_helpers/orchestrator/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "default": "summary",
+          "description": "'quick', 'summary', 'detailed' - status detail level"
+        }
+      ],
       "purpose": "Analyze entire work hierarchy and return comprehensive project status",
       "error_handling": "",
       "is_tool": true,

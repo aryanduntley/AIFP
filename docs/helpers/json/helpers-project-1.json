@@ -17,9 +17,17 @@
     {
       "name": "get_project_fields",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to get fields for"
+        }
+      ],
       "purpose": "Get field names and types for a specific table",
-      "error_handling": "",
+      "error_handling": "Return error if table doesn't exist",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -45,9 +53,17 @@
     {
       "name": "get_project_json_parameters",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to get available fields for"
+        }
+      ],
       "purpose": "Get available fields for table to use with generic add/update operations",
-      "error_handling": "",
+      "error_handling": "Return error if table doesn't exist",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -286,9 +302,52 @@
     {
       "name": "create_project",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project name (e.g., 'MatrixCalculator')"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project purpose (e.g., 'Build a pure functional matrix math library')"
+        },
+        {
+          "name": "goals",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of goal strings (e.g., ['Fast computation', 'No OOP'])"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "default": "active",
+          "description": "'active', 'paused', 'completed', 'abandoned'"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "required": true,
+          "default": 1,
+          "description": "Tracks idea evolution (starts at 1)"
+        },
+        {
+          "name": "user_directives_status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "NULL (no user directives), 'in_progress', 'active', 'disabled'"
+        }
+      ],
       "purpose": "Initialize project entry (one per database)",
-      "error_handling": "",
+      "error_handling": "Return error if project already exists",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -341,13 +400,57 @@
     {
       "name": "update_project",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Project name (NULL = don't update)"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Project purpose (NULL = don't update)"
+        },
+        {
+          "name": "goals",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Array of goal strings (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'active', 'paused', 'completed', 'abandoned' (NULL = don't update)"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Version number (NULL = don't update)"
+        },
+        {
+          "name": "user_directives_status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "NULL, 'in_progress', 'active', 'disabled' (NULL = don't update)"
+        }
+      ],
       "purpose": "Update project metadata",
-      "error_handling": "",
+      "error_handling": "Return error if no project exists",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true}`"
+        "`{\"success\": true}`",
+        "Only updates fields with non-NULL values"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -398,9 +501,17 @@
     {
       "name": "get_infrastructure_by_type",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Infrastructure type (e.g., 'language', 'package', 'testing', 'database', 'build_tool')"
+        }
+      ],
       "purpose": "Get all infrastructure of specific type",
-      "error_handling": "",
+      "error_handling": "Return empty array if none found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -429,14 +540,38 @@
     {
       "name": "reserve_file",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Preliminary file name (will have -IDxxx appended)"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "File path relative to project root"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Programming language (e.g., 'python', 'javascript', 'typescript')"
+        }
+      ],
       "purpose": "Reserve file ID for naming before creation",
-      "error_handling": "",
+      "error_handling": "Return error if path already exists",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "`{\"success\": true, \"id\": reserved_id, \"is_reserved\": true}`",
-        "Sets is_reserved=true, created_at auto-set by trigger"
+        "Sets is_reserved=true, created_at auto-set by trigger",
+        "Use returned ID in filename as suffix -IDxx",
+        "Once created, call finalize_file()"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -461,18 +596,27 @@
     {
       "name": "reserve_files",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "files",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of file objects [{name, path, language}, ...]"
+        }
+      ],
       "purpose": "Reserve multiple file IDs at once",
-      "error_handling": "",
+      "error_handling": "Return error if any path already exists",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"ids\": [id1, id2, ...]}`"
+        "`{\"success\": true, \"ids\": [id1, id2, ...]}`",
+        "Use returned IDs in filenames as suffix -IDxx"
       ],
       "target_database": "project",
       "used_by_directives": []
     },
-     {
+    {
       "name": "finalize_file",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
@@ -544,13 +688,22 @@
     {
       "name": "finalize_files",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "files",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of file objects [{file_id, name, path, language}, ...]"
+        }
+      ],
       "purpose": "Finalize multiple reserved files",
-      "error_handling": "",
+      "error_handling": "Return error if any file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"finalized_ids\": [...]}`"
+        "`{\"success\": true, \"finalized_ids\": [...]}`",
+        "Checks each file exists, sets is_reserved=false for all"
       ],
       "target_database": "project",
       "used_by_directives": []
@@ -558,9 +711,17 @@
     {
       "name": "get_file_by_name",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "File name to look up (e.g., 'calculator-ID42.py')"
+        }
+      ],
       "purpose": "Get file by name (high-frequency lookup)",
-      "error_handling": "",
+      "error_handling": "Return null if not found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -573,9 +734,17 @@
     {
       "name": "get_file_by_path",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "File path to look up (e.g., 'src/calculator.py')"
+        }
+      ],
       "purpose": "Get file by path (very high-frequency lookup)",
-      "error_handling": "",
+      "error_handling": "Return null if not found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -605,14 +774,44 @@
     {
       "name": "update_file",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to update"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New file name (NULL = don't update)"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New file path (NULL = don't update)"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Language (NULL = don't update)"
+        }
+      ],
       "purpose": "Update file metadata",
-      "error_handling": "",
+      "error_handling": "Return error if file_id not found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "`{\"success\": true, \"file_id\": file_id}`",
-        "Timestamp automatically updated"
+        "Timestamp and checksum automatically updated",
+        "If name or path changed, ensure code references are updated"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -629,9 +828,17 @@
     {
       "name": "file_has_changed",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to check"
+        }
+      ],
       "purpose": "Check if file changed using Git (if available) or filesystem timestamp",
-      "error_handling": "",
+      "error_handling": "Return error if file_id not found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -653,14 +860,23 @@
     {
       "name": "update_file_timestamp",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to update timestamp for"
+        }
+      ],
       "purpose": "Update file timestamp (called automatically after function updates)",
-      "error_handling": "",
+      "error_handling": "Return error if file_id not found",
       "is_tool": false,
       "is_sub_helper": true,
       "return_statements": [
         "`{\"success\": true}`",
-        "Called automatically after function updates, sub-helper only"
+        "Called automatically after function updates, sub-helper only",
+        "Updates updated_at timestamp and recalculates checksum"
       ],
       "target_database": "project",
       "used_by_directives": []
@@ -668,12 +884,52 @@
     {
       "name": "delete_file",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete file with comprehensive cross-reference validation",
-      "error_handling": "",
+      "error_handling": "Return error if functions/flows exist for file - requires manual cleanup first",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "`{\"success\": true, \"deleted_file_id\": file_id}`",
+        "Cascades delete to functions and interactions",
+        "Logs deletion to notes table"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -689,7 +945,43 @@
     {
       "name": "reserve_function",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Function name (will have _idxxx appended)"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID where function will be defined"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Function purpose"
+        },
+        {
+          "name": "params",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Function parameters"
+        },
+        {
+          "name": "returns",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Return value specification"
+        }
+      ],
       "purpose": "Reserve function ID for naming before creation",
       "error_handling": "",
       "is_tool": true,
@@ -721,7 +1013,15 @@
     {
       "name": "reserve_functions",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "functions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of function objects [{name, file_id, purpose, params, returns}, ...]"
+        }
+      ],
       "purpose": "Reserve multiple function IDs",
       "error_handling": "",
       "is_tool": true,
@@ -735,7 +1035,50 @@
     {
       "name": "finalize_function",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Reserved function ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Final name with _idxx suffix"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Function purpose"
+        },
+        {
+          "name": "params",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Function parameters"
+        },
+        {
+          "name": "returns",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Return value specification"
+        }
+      ],
       "purpose": "Finalize reserved function after creation",
       "error_handling": "",
       "is_tool": true,
@@ -775,7 +1118,15 @@
     {
       "name": "finalize_functions",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "functions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of function objects [{function_id, name, file_id, purpose, params, returns}, ...]"
+        }
+      ],
       "purpose": "Finalize multiple reserved functions",
       "error_handling": "",
       "is_tool": true,
@@ -790,7 +1141,15 @@
     {
       "name": "get_function_by_name",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "function_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Function name to look up"
+        }
+      ],
       "purpose": "Get function by name (very high-frequency lookup)",
       "error_handling": "",
       "is_tool": true,
@@ -805,7 +1164,15 @@
     {
       "name": "get_functions_by_file",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to get functions for"
+        }
+      ],
       "purpose": "Get all functions in a file (high-frequency)",
       "error_handling": "",
       "is_tool": true,
@@ -828,7 +1195,43 @@
     {
       "name": "update_function",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID to update"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New function name (NULL = don't update)"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New purpose (NULL = don't update)"
+        },
+        {
+          "name": "parameters",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "New parameters (NULL = don't update)"
+        },
+        {
+          "name": "returns",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "New return specification (NULL = don't update)"
+        }
+      ],
       "purpose": "Update function metadata",
       "error_handling": "",
       "is_tool": true,
@@ -852,7 +1255,22 @@
     {
       "name": "update_functions_for_file",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID"
+        },
+        {
+          "name": "functions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of function update objects [{function_id, name, purpose, parameters, returns}, ...]"
+        }
+      ],
       "purpose": "Update multiple functions in a single file",
       "error_handling": "",
       "is_tool": true,
@@ -876,7 +1294,29 @@
     {
       "name": "update_function_file_location",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID to move"
+        },
+        {
+          "name": "old_file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Current file ID"
+        },
+        {
+          "name": "new_file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "New file ID"
+        }
+      ],
       "purpose": "Move function to different file (rarely used)",
       "error_handling": "Return error if function_id/file_ids not found",
       "is_tool": false,
@@ -891,7 +1331,43 @@
     {
       "name": "delete_function",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete function with cascade cleanup",
       "error_handling": "",
       "is_tool": true,
@@ -915,7 +1391,43 @@
     {
       "name": "reserve_type",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Type name (will have _idxxx appended)"
+        },
+        {
+          "name": "definition_json",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "ADT definition (e.g., {'type': 'enum', 'variants': ['A', 'B']})"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Type description"
+        },
+        {
+          "name": "links",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Links to related functions"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "File ID where type is defined"
+        }
+      ],
       "purpose": "Reserve type ID for naming before creation",
       "error_handling": "",
       "is_tool": true,
@@ -939,7 +1451,15 @@
     {
       "name": "reserve_types",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "types",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of type objects [{name, definition_json, description, links, file_id}, ...]"
+        }
+      ],
       "purpose": "Reserve multiple type IDs",
       "error_handling": "",
       "is_tool": true,

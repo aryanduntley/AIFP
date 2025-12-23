@@ -17,7 +17,15 @@
     {
       "name": "get_user_custom_fields",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to get fields for"
+        }
+      ],
       "purpose": "Get field names and types for a specific table",
       "error_handling": "",
       "is_tool": true,
@@ -45,7 +53,15 @@
     {
       "name": "get_user_custom_json_parameters",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to get available fields for"
+        }
+      ],
       "purpose": "Get available fields for table to use with generic add/update operations",
       "error_handling": "",
       "is_tool": true,
@@ -104,7 +120,22 @@
     {
       "name": "query_user_custom",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "WHERE clause without 'WHERE' keyword"
+        }
+      ],
       "purpose": "Execute complex SQL WHERE clause (advanced, rare use)",
       "error_handling": "",
       "is_tool": true,
@@ -118,7 +149,22 @@
     {
       "name": "add_user_custom_entry",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs"
+        }
+      ],
       "purpose": "Add entry to user custom directives database",
       "error_handling": "",
       "is_tool": true,
@@ -152,7 +198,29 @@
     {
       "name": "update_user_custom_entry",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Record ID"
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs to update"
+        }
+      ],
       "purpose": "Update entry in user custom directives database",
       "error_handling": "",
       "is_tool": true,
@@ -233,7 +301,50 @@
     {
       "name": "delete_user_custom_entry",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Record ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
       "purpose": "Delete entry from user custom directives",
       "error_handling": "",
       "is_tool": true,
@@ -258,7 +369,15 @@
     {
       "name": "parse_directive_file",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to user directive file (YAML/JSON/TXT)"
+        }
+      ],
       "purpose": "Parse YAML/JSON/TXT directive file (orchestrator)",
       "error_handling": "",
       "is_tool": true,
@@ -292,7 +411,15 @@
     {
       "name": "validate_directive_config",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Directive ID to validate"
+        }
+      ],
       "purpose": "Interactive validation for parsed directive (orchestrator)",
       "error_handling": "",
       "is_tool": true,
@@ -324,7 +451,15 @@
     {
       "name": "generate_handler_code",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Directive ID to generate code for"
+        }
+      ],
       "purpose": "Generate FP-compliant implementation code (orchestrator)",
       "error_handling": "",
       "is_tool": true,
@@ -356,7 +491,15 @@
     {
       "name": "deploy_background_service",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Directive ID to activate"
+        }
+      ],
       "purpose": "Activate directive for real-time execution (orchestrator)",
       "error_handling": "",
       "is_tool": true,
@@ -380,7 +523,15 @@
     {
       "name": "get_user_directive_status",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Directive ID (returns all if omitted)"
+        }
+      ],
       "purpose": "Get status of user directive(s) (orchestrator)",
       "error_handling": "",
       "is_tool": true,
@@ -403,7 +554,15 @@
     {
       "name": "monitor_directive_execution",
       "file_path": "TODO_helpers/user_custom/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "directive_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Directive ID to monitor"
+        }
+      ],
       "purpose": "Get execution statistics and errors (orchestrator)",
       "error_handling": "",
       "is_tool": true,
