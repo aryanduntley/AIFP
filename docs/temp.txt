@@ -1,218 +1,184 @@
-/Desktop/Projects/AIFP/src/aifp/reference/directives$ find . -maxdepth 1 -type f -exec grep -H "helper" {} +
-./fp_lazy_computation.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-lazy-computation)
-./fp_const_refactoring.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./fp_state_elimination.md:  - Database helpers - Updates functions table
-./fp_state_elimination.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./fp_dependency_tracking.md:from b import helper_b
-./fp_dependency_tracking.md:    return helper_b() + 1
-./fp_dependency_tracking.md:def helper_b():
-./fp_dependency_tracking.md:# a.function_a → b.helper_b → a.function_a
-./fp_optionals.md:# ✅ Better: Use helper function
-./fp_optionals.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-error-handling)
-./aifp_help.md:# Use search_directives helper
-./aifp_help.md:# Call get_directive_content helper
-./aifp_help.md:- **Module**: `src/aifp/helpers/mcp.py`
-./aifp_help.md:  - Module: `src/aifp/helpers/mcp.py`
-./aifp_help.md:  - Module: `src/aifp/helpers/mcp.py`
-./aifp_help.md:  - Module: `src/aifp/helpers/mcp.py`
-./aifp_help.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#mcp-helpers)
-./git_detect_external_changes.md:  - Git CLI commands via helpers
-./git_detect_external_changes.md:  - Database query helpers for impact analysis
-./git_detect_external_changes.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-./project_update_db.md:- `query_project_db(query: str, params: tuple) -> Result` - Database query helper
-./project_update_db.md:- `begin_transaction()`, `commit_transaction()`, `rollback_transaction()` - Transaction helpers
-./project_update_db.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-helpers)
-./fp_dead_code_elimination.md:# ✅ REFACTORED: Unused helpers removed
-./fp_dead_code_elimination.md:def internal_helper(x: int) -> int:
-./fp_dead_code_elimination.md:    """Internal helper (not exported) - safe to remove if unused."""
-./fp_dead_code_elimination.md:# - internal_helper: Not in __all__, not called → Can remove if unused
-./fp_dead_code_elimination.md:   def helper(): pass
-./fp_dead_code_elimination.md:   def main(): helper()
-./fp_dead_code_elimination.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-dead-code-elimination)
-./git_create_branch.md:  - Git CLI commands via helpers
-./git_create_branch.md:  - Database query/update helpers
-./git_create_branch.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-./project_blueprint_update.md:**Priority**: HIGH - Standard helper for ProjectBlueprint.md modifications
-./project_blueprint_update.md:  - Call `project_blueprint_read` helper
-./user_directive_monitor.md:- [Helper Functions Reference](../helper-functions-reference.md#monitoring-helpers)
-./project_dependency_map.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-dependency-map)
-./project_theme_flow_mapping.md:**File**: `src/utils/helpers.py` (generic name, no metadata)
-./project_theme_flow_mapping.md:   Unable to infer theme/flow for: src/utils/helpers.py
-./fp_constant_folding.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-constant-folding)
-./project_init.md:# Call create_project_blueprint() helper
-./project_init.md:- **`get_project_status()`** - Pre-check helper
-./fp_encoding_consistency.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-encoding-consistency)
-./user_directive_implement.md:  - Generate helper functions
-./user_directive_implement.md:- [Helper Functions Reference](../helper-functions-reference.md#code-generation)
-./fp_error_pipeline.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-composition)
-./fp_purity_caching_analysis.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-cache-analysis)
-./fp_keyword_alignment.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-keyword-alignment)
-./fp_null_elimination.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-null-elimination)
-./fp_metadata_annotation.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-metadata-annotation)
-./fp_parallel_evaluation.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-parallel-evaluation)
-./project_archive.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-archive)
-./fp_map_reduce.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-map-reduce)
-./fp_syntax_normalization.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-syntax-normalization)
-./tracking_toggle.md:4. **helper_function_logging** (~1% token increase on errors)
-./tracking_toggle.md:   - Logs helper function errors and execution details
-./tracking_toggle.md:1. **Identify feature** - Which tracking feature (fp_flow, ai_log, issue_reports, helper_log)?
-./tracking_toggle.md:    • helper_function_logging: Disabled
-./tracking_toggle.md:    4. helper_function_logging
-./tracking_toggle.md:       • Log helper function errors
-./tracking_toggle.md:#    • helper_function_logging: Disabled
-./tracking_toggle.md:#    • helper_function_logging: ~1% on errors
-./tracking_toggle.md:#    • helper_function_logging: Enabled ✓
-./tracking_toggle.md:valid_features = ["fp_flow_tracking", "issue_reports", "ai_interaction_log", "helper_function_logging"]
-./tracking_toggle.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)
-./aifp_run.md:    "available_helpers": [
-./aifp_run.md:- Isolated in helper function calls
-./fp_ownership_safety.md:  - Database helpers - Updates functions table
-./fp_ownership_safety.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./project_sidequest_create.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-sidequest-create)
-./project_task_decomposition.md:     - Item 2: "Write validate_dimensions helper"
-./aifp_status.md:- File reads (effect isolated in helper)
-./aifp_status.md:- Database queries (effect isolated in helper)
-./fp_data_filtering.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-data-filtering)
-./project_task_complete.md:  - Calls helper: `get_project_tasks(milestone_id, status='pending')`
-./project_task_complete.md:- `get_project_tasks` (helper) - Queries pending tasks
-./fp_function_inlining.md:- **Single-use helper functions** - Function called only once
-./fp_function_inlining.md:# BEFORE: Single-use trivial helper
-./fp_function_inlining.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-inlining)
-./project_compliance_check.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)
-./fp_call_graph_generation.md:    helper()
-./fp_call_graph_generation.md:def helper():
-./fp_call_graph_generation.md:    assert 'helper' in graph.nodes
-./fp_call_graph_generation.md:    assert ('main', 'helper') in graph.edges
-./fp_pattern_unpacking.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-pattern-unpacking)
-./git_sync_state.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-./user_directive_validate.md:- [Helper Functions Reference](../helper-functions-reference.md#validation-helpers)
-./fp_inheritance_flattening.md:  - Database helpers - Updates functions table
-./fp_inheritance_flattening.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./fp_list_operations.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-list-operations)
-./fp_function_indexing.md:        """Inner helper."""
-./fp_function_indexing.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-function-indexing)
-./user_directive_activate.md:- [Helper Functions Reference](../helper-functions-reference.md#deployment-helpers)
-./fp_borrow_check.md:  - Database helpers - Updates functions table
-./fp_borrow_check.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./git_detect_conflicts.md:  - Database query helpers for metadata
-./git_detect_conflicts.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-./fp_test_purity.md:**Resolution**: Abstraction layer, pure helpers on top of framework
-./fp_immutability.md:# ✅ Better: Use immutable dataclasses with helper
-./fp_immutability.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)
-./fp_language_standardization.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-language-standardization)
-./user_preferences_learn.md:  - Database helpers for ai_interaction_log
-./user_preferences_learn.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#pattern-detection)
-./user_directive_approve.md:- [Helper Functions Reference](../helper-functions-reference.md#approval-helpers)
-./fp_evaluation_order_control.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-evaluation-order-control)
-./project_file_delete.md:**User**: "Delete src/old_helper.py"
-./project_file_delete.md:1. Validates path: `src/old_helper.py` ✓ Valid
-./project_file_delete.md:6. Prompts: "Delete src/old_helper.py? (No dependencies found)"
-./project_file_delete.md:10. Creates backup: `.aifp-project/backups/deleted/old_helper.py_20251027_143000`
-./project_file_delete.md:    VALUES ('File hard-deleted: src/old_helper.py. Removed 1 function. Backup: backups/deleted/old_helper.py_20251027_143000', 'deletion', 'directive', 'project_file_delete');
-./project_file_delete.md:16. Reports: "✓ File deleted. Backup: .aifp-project/backups/deleted/old_helper.py_20251027_143000"
-./project_file_delete.md:   - Functions: 2 (helper, validator)
-./git_merge_branch.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-./project_notes_log.md:# Only log if ai_interaction_log or helper_function_logging enabled
-./project_notes_log.md:if tracking_enabled('helper_function_logging'):
-./project_notes_log.md:  - Database helpers for notes table operations
-./project_notes_log.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)
-./fp_purity.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-analysis)
-./fp_symbol_map_validation.md:# Private helper (not exported)
-./fp_symbol_map_validation.md:// Private helper (not exported)
-./fp_symbol_map_validation.md:- Private helper not exported
-./fp_symbol_map_validation.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-symbol-map-validation)
-./fp_no_reassignment.md:  - Database helpers - Updates functions table
-./fp_no_reassignment.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./fp_side_effect_detection.md:**Issue**: Pure function calls impure helper
-./fp_side_effect_detection.md:# Function appears pure but calls impure helper
-./fp_side_effect_detection.md:    return helper(data)  # helper() has I/O!
-./fp_side_effect_detection.md:def helper(data):
-./fp_side_effect_detection.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./fp_lazy_evaluation.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-lazy-evaluation)
-./project_refactor_path.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-refactor-path)
-./fp_result_types.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-error-handling)
-./project_auto_summary.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-auto-summary)
-./fp_monadic_composition.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-monadic-composition)
-./project_backup_restore.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-backup-restore)
-./project_milestone_complete.md:   - Implement pattern matching helpers
-./user_preferences_update.md:The `user_preferences_update` directive handles **explicit user requests to modify AI behavior preferences**, translating natural language customization requests into structured database updates. This directive uses the `find_directive_by_intent` helper to intelligently map user requests like "always add docstrings" to specific directives like `project_file_write`, then stores preferences in the atomic key-value `directive_preferences` table.
-./user_preferences_update.md:- **Intent-based matching**: Uses `find_directive_by_intent` helper to search directive names, descriptions, and keywords
-./user_preferences_update.md:2. **Find matching directive** - Use `find_directive_by_intent` helper for intelligent matching
-./user_preferences_update.md:- **Details**: Use helper to find matching directive
-./user_preferences_update.md:  - Call helper:
-./user_preferences_update.md:# ✅ Use helper to find directive
-./user_preferences_update.md:  - `find_directive_by_intent` helper - Maps user request to directives
-./user_preferences_update.md:  - Database update helpers
-./user_preferences_update.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#intent-matching)
-./fp_documentation.md:6. **Factory functions**: Construction helpers
-./fp_documentation.md:    - validation: General validation helpers
-./fp_documentation.md:**Scenario**: Internal helper functions not in public API
-./fp_cost_analysis.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-cost-analysis)
-./fp_docstring_enforcement.md:# Private helper (still needs docstring)
-./fp_docstring_enforcement.md:    Private helper function for input validation.
-./fp_docstring_enforcement.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-docstring-enforcement)
-./fp_memoization.md:    """Memoized helper for expensive per-value computation."""
-./fp_reflection_block.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-reflection-block)
-./fp_wrapper_generation.md:  - Database helpers - Logs wrapper generation
-./fp_wrapper_generation.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./fp_recursion_enforcement.md:  - Convert to: Tail-recursive helper with accumulator
-./fp_recursion_enforcement.md:    def sum_helper(nums: list[int], accumulator: int) -> int:
-./fp_recursion_enforcement.md:        return sum_helper(tail, accumulator + head)
-./fp_recursion_enforcement.md:    return sum_helper(numbers, 0)
-./fp_recursion_enforcement.md:    def factorial_helper(n: int, accumulator: int) -> int:
-./fp_recursion_enforcement.md:        return factorial_helper(n - 1, accumulator * n)
-./fp_recursion_enforcement.md:    return factorial_helper(n, 1)
-./fp_recursion_enforcement.md:    def sum_helper(nums: list[int], acc: int) -> int:
-./fp_recursion_enforcement.md:        return sum_helper(tail, acc + head)
-./fp_recursion_enforcement.md:    return sum_helper(numbers, 0)
-./fp_recursion_enforcement.md:    def factorial_helper(n: int, acc: int) -> int:
-./fp_recursion_enforcement.md:        return factorial_helper(n - 1, acc * n)
-./fp_recursion_enforcement.md:    return factorial_helper(n, 1)
-./fp_recursion_enforcement.md:    def sum_helper(nums: list[int], acc: int) -> int:
-./fp_recursion_enforcement.md:        return sum_helper(tail, acc + head)
-./fp_recursion_enforcement.md:    return sum_helper(numbers, 0)
-./fp_recursion_enforcement.md:    def sum_helper(nums: list[int], acc: int) -> int:
-./fp_recursion_enforcement.md:        return sum_helper(tail, acc + head)
-./fp_recursion_enforcement.md:    return sum_helper(numbers, 0)
-./fp_recursion_enforcement.md:    def helper(items: list[T], acc: R) -> R:
-./fp_recursion_enforcement.md:        return helper(tail, new_acc)
-./fp_recursion_enforcement.md:    return helper(items, initial_accumulator)
-./fp_recursion_enforcement.md:   # After: Tail-recursive helper with accumulator
-./fp_recursion_enforcement.md:**Resolution**: Convert to tail-recursive helper with accumulator parameter
-./fp_recursion_enforcement.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-recursion-enforcement)
-./fp_try_monad.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-error-handling)
-./git_init.md:  - Git CLI commands via helpers
-./git_init.md:  - Database helpers for hash storage
-./git_init.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#git-helpers)
-./fp_currying.md:  - Database helpers - Logs currying transformations
-./fp_currying.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./fp_ai_reasoning_trace.md:# Pure helper predicates
-./fp_ai_reasoning_trace.md:    # Dependencies: All helper functions are pure (validate_invoice, compute_subtotal)
-./fp_ai_reasoning_trace.md:- Multi-level reasoning traces (main function + helpers)
-./fp_ai_reasoning_trace.md:    # Pure: All helper functions are pure, no mutations
-./fp_ai_reasoning_trace.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-ai-reasoning-trace)
-./project_blueprint_read.md:  - Database helpers: `query_project_db()`, `get_project_status()`
-./project_blueprint_read.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#project-helpers)
-./fp_pattern_matching.md:- Use helper functions for complex condition checking
-./fp_pattern_matching.md:# Complex nested pattern - extract to helper
-./fp_pattern_matching.md:# ✅ Good: Extract to helper
-./project_dependency_sync.md:**Context**: Function `helper_a` was deleted but interactions still reference it
-./project_dependency_sync.md:- src/utils/helper.py: Parse error (syntax)
-./project_item_create.md:    "Write validate_dimensions helper",
-./project_item_create.md:   (42, 'Write validate_dimensions helper', 'pending', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-./user_directive_parse.md:   - Use helper: `read_file(file_path)`
-./user_directive_parse.md:   - Use NLP helper: `parse_natural_language_directive(text)`
-./user_directive_parse.md:- [Helper Functions Reference](../helper-functions-reference.md#user-directive-helpers)
-./fp_cross_language_wrappers.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-cross-language-wrappers)
-./user_preferences_sync.md:      ('helper_function_logging', 0, 'Log helper errors', '~1% token increase on errors');
-./user_preferences_sync.md:    - `helper_function_logging=1` → Log helper errors
-./user_preferences_sync.md:      "helper_function_logging": False
-./user_preferences_sync.md:  - Database query helpers
-./user_preferences_sync.md:  - Schema initialization helpers
-./user_preferences_sync.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#database-helpers)
-./fp_chaining.md:  - Database helpers - Logs chaining transformations
-./fp_chaining.md:- `generate_pipe_function() -> str` - Generate pipe helper code
-./fp_chaining.md:- `generate_compose_function() -> str` - Generate compose helper code
-./fp_chaining.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#fp-helpers)
-./fp_no_oop.md:- [Helper Functions Reference](../../../docs/helper-functions-reference.md#oop-detection)
-eveningb4dawn@eveningb4dawn-eliteminiseries:~/Desktop/Projects/AIFP/src/aifp/reference/directives$ 
+~/Desktop/Projects/AIFP/src/aifp/reference/directives$ grep -r "note_type"
+fp_lazy_computation.md:- **`notes`**: Logs lazy computation opportunities with `note_type = 'optimization'`
+user_preferences_import.md:    INSERT INTO notes (content, note_type, severity, source)
+fp_optionals.md:- **`notes`**: Logs Option compliance issues with `note_type = 'compliance'`
+git_detect_external_changes.md:- **`notes`**: Logs significant external changes with `note_type = 'external_change'`
+project_update_db.md:    conn.execute("INSERT INTO notes (content, note_type, reference_table, reference_id)
+fp_dead_code_elimination.md:- **`notes`**: Logs dead code findings with `note_type = 'cleanup'`
+project_subtask_create.md:    note_type,
+project_subtask_create.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_subtask_create.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_dependency_map.md:- **`notes`**: Stores dependency map with `note_type = 'dependency_map'`
+project_dependency_map.md:   WHERE note_type = 'dependency_map'
+project_metrics.md:    SUM(CASE WHEN note_type IN ('error', 'failure') THEN 1 ELSE 0 END) as failures,
+project_metrics.md:    SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) as successes,
+project_metrics.md:    ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
+project_metrics.md:  INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_metrics.md:   SELECT directive_name, note_type, COUNT(*)
+project_metrics.md:   GROUP BY directive_name, note_type;
+project_metrics.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_task_create.md:    note_type,
+project_task_create.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_task_create.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_theme_flow_mapping.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_theme_flow_mapping.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_theme_flow_mapping.md:INSERT INTO notes (content, note_type, source, directive_name)
+fp_constant_folding.md:- **`notes`**: Logs constant folding with `note_type = 'optimization'`
+fp_encoding_consistency.md:- **`notes`**: Logs encoding fixes with `note_type = 'formatting'`
+user_directive_update.md:    note_type,
+user_directive_implement.md:    note_type,              -- 'code_generation'
+fp_error_pipeline.md:- **`notes`**: Logs pipeline refactoring with `note_type = 'refactoring'`
+fp_purity_caching_analysis.md:- **`notes`**: Logs cache safety issues with `note_type = 'compliance'`
+fp_keyword_alignment.md:- **`notes`**: Logs keyword conflict resolutions with `note_type = 'refactoring'`
+fp_null_elimination.md:- **`notes`**: Logs null elimination issues with `note_type = 'compliance'`
+fp_metadata_annotation.md:- **`notes`**: Logs metadata generation with `note_type = 'metadata'`
+fp_parallel_evaluation.md:- **`notes`**: Logs parallelization with `note_type = 'optimization'`
+project_archive.md:- **`notes`**: Logs archival with `note_type = 'archival'`
+fp_map_reduce.md:- **`notes`**: Logs reduce conversions with `note_type = 'refactoring'`
+fp_syntax_normalization.md:- **`notes`**: Logs normalization issues with `note_type = 'normalization'`
+project_task_update.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_task_update.md:  INSERT INTO notes (content, note_type, source, directive_name)
+project_task_update.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_task_update.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_task_update.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_task_update.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
+project_performance_summary.md:    AND note_type IN ('error', 'failure', 'roadblock')
+project_performance_summary.md:    AND note_type IN ('error', 'failure')
+project_performance_summary.md:    SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) as successes,
+project_performance_summary.md:    SUM(CASE WHEN note_type IN ('error', 'failure') THEN 1 ELSE 0 END) as failures,
+project_performance_summary.md:    SUM(CASE WHEN note_type = 'warning' THEN 1 ELSE 0 END) as warnings,
+project_performance_summary.md:    ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
+project_performance_summary.md:    AND (content LIKE '%retry%' OR note_type = 'retry')
+project_performance_summary.md:      ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
+project_performance_summary.md:      ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
+project_performance_summary.md:  INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_performance_summary.md:   WHERE directive_name = 'fp_compliance_check' AND note_type = 'error'
+project_performance_summary.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_performance_summary.md:**Resolution**: Use explicit note_type values (success, error, failure, info)
+project_sidequest_create.md:- **`notes`**: Logs sidequest creation with `note_type = 'sidequest'`
+project_evolution.md:    INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_evolution.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_evolution.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+aifp_status.md:SELECT content, note_type, source, created_at
+aifp_status.md:SELECT content, note_type, directive_name, severity
+fp_data_filtering.md:- **`notes`**: Logs filter conversions with `note_type = 'refactoring'`
+project_task_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_task_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
+fp_function_inlining.md:- **`notes`**: Logs inlining decisions with `note_type = 'optimization'`
+project_compliance_check.md:- **`notes`**: Logs compliance violations with `note_type = 'compliance'` and `severity` levels
+fp_pattern_unpacking.md:- **`notes`**: Logs unpacking refactorings with `note_type = 'refactoring'`
+user_directive_validate.md:    note_type,              -- 'validation_session'
+fp_list_operations.md:- **`notes`**: Logs functional conversions with `note_type = 'refactoring'`
+fp_function_indexing.md:- **`notes`**: Logs indexing operations with `note_type = 'indexing'`
+project_integrity_check.md:  INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_integrity_check.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_integrity_check.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_integrity_check.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_integrity_check.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_integrity_check.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_sidequest_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
+project_sidequest_complete.md:  INSERT INTO notes (content, note_type, source, directive_name)
+project_sidequest_complete.md:     INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_sidequest_complete.md:     INSERT INTO notes (content, note_type, severity, source, directive_name)
+project_sidequest_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
+project_sidequest_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+fp_immutability.md:- **`notes`**: Logs immutability violations with `note_type = 'compliance'`
+fp_language_standardization.md:- **`notes`**: Logs standardization changes with `note_type = 'refactoring'`
+user_directive_approve.md:       note_type,
+user_directive_approve.md:    note_type,              -- 'approval', 'rejection', 'feedback'
+fp_evaluation_order_control.md:- **`notes`**: Logs evaluation order issues with `note_type = 'determinism'`
+project_error_handling.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
+project_error_handling.md:    note_type,
+project_error_handling.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_error_handling.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_error_handling.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_error_handling.md:  note_type,
+project_auto_resume.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source)
+project_auto_resume.md:INSERT INTO notes (content, note_type, source, directive_name)
+project_file_delete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_file_delete.md:  INSERT INTO notes (content, note_type, source, directive_name)
+project_file_delete.md:    INSERT INTO notes (content, note_type, source, directive_name)
+project_file_delete.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
+project_file_delete.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_file_delete.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_file_delete.md:INSERT INTO notes (content, note_type, source, directive_name)
+project_file_delete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+git_merge_branch.md:    INSERT INTO notes (content, note_type, severity)
+user_preferences_export.md:    INSERT INTO notes (content, note_type, severity, source)
+project_notes_log.md:      note_type,
+project_notes_log.md:      note_type,
+project_notes_log.md:      note_type,
+project_notes_log.md:      note_type,
+project_notes_log.md:      note_type,
+project_notes_log.md:      note_type,
+project_notes_log.md:  note_type,
+project_notes_log.md:  note_type,
+project_notes_log.md:  note_type,
+project_notes_log.md:  note_type,
+project_notes_log.md:  note_type,
+project_notes_log.md:INSERT INTO notes (content, note_type, source, severity)
+project_notes_log.md:INSERT INTO notes (content, note_type, source, severity)
+project_notes_log.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_notes_log.md:INSERT INTO notes (content, note_type, source, severity)
+project_notes_log.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, severity)
+project_notes_log.md:    INSERT INTO notes (content, note_type, source, severity)
+project_notes_log.md:    INSERT INTO notes (content, note_type, source, severity)
+project_notes_log.md:    VALUES (truncated_content, note_type, source, severity)
+project_notes_log.md:    INSERT INTO notes (content, note_type, source, severity)
+project_notes_log.md:    VALUES (note_content, note_type, source, severity)
+project_notes_log.md:     note_type="clarification",
+project_notes_log.md:   result = query_db("SELECT * FROM notes WHERE note_type='clarification'")
+project_notes_log.md:     note_type="research",
+project_notes_log.md:     note_type="roadblock",
+project_notes_log.md:   assert result[0]['note_type'] == 'roadblock'
+project_notes_log.md:     note_type="research",
+fp_purity.md:- **`notes`**: Logs purity uncertainties or violations with `note_type = 'compliance'`
+fp_symbol_map_validation.md:- **`notes`**: Logs symbol map discrepancies with `note_type = 'validation'`
+fp_lazy_evaluation.md:- **`notes`**: Logs lazy evaluation opportunities with `note_type = 'optimization'`
+project_refactor_path.md:- **`notes`**: Logs refactoring operations with `note_type = 'path_refactoring'`
+project_refactor_path.md:   WHERE note_type = 'path_refactoring'
+fp_result_types.md:- **`notes`**: Logs Result compliance issues with `note_type = 'compliance'`
+project_auto_summary.md:        note_type="auto_summary",
+project_auto_summary.md:- **`notes`**: Stores summary with `note_type = 'auto_summary'`
+project_auto_summary.md:   WHERE note_type = 'auto_summary'
+fp_monadic_composition.md:- **`notes`**: Logs monadic refactorings with `note_type = 'refactoring'`
+project_backup_restore.md:- **`notes`**: Logs backup and restore operations with `note_type = 'backup'` or `'restore'`
+project_backup_restore.md:   WHERE note_type = 'backup'
+project_milestone_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_milestone_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_milestone_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_user_referral.md:  - Use discovered helper with parameters: content, note_type="user_referral", reference_table="directives", source="user", directive_name="project_user_referral", severity="info"
+project_user_referral.md:  INSERT INTO notes (content, note_type, source, directive_name)
+project_user_referral.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_user_referral.md:  note_type,
+fp_cost_analysis.md:- **`notes`**: Logs complexity analysis with `note_type = 'performance'`
+fp_docstring_enforcement.md:- **`notes`**: Logs missing docstrings with `note_type = 'documentation'`
+project_subtask_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_subtask_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_subtask_complete.md:     INSERT INTO notes (content, note_type, severity, source, directive_name)
+project_subtask_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_subtask_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+fp_reflection_block.md:- **`notes`**: Logs reflection violations with `note_type = 'security'`
+fp_recursion_enforcement.md:- **`notes`**: Logs recursion transformations with `note_type = 'refactoring'`
+fp_try_monad.md:- **`notes`**: Logs Try compliance issues with `note_type = 'compliance'`
+fp_ai_reasoning_trace.md:- **`notes`**: Logs reasoning trace with `note_type = 'reasoning_trace'`
+fp_ai_reasoning_trace.md:   WHERE note_type = 'reasoning_trace'
+user_directive_status.md:  AND note_type = 'error'
+project_dependency_sync.md:  INSERT INTO notes (content, note_type, source, directive_name)
+project_dependency_sync.md:INSERT INTO notes (content, note_type, source, directive_name)
+project_item_create.md:    note_type,
+project_item_create.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_item_create.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_completion_check.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_completion_check.md:  INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_completion_check.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_completion_check.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_completion_check.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_completion_check.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_completion_check.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_add_path.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_add_path.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_add_path.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+user_directive_parse.md:    note_type,             -- 'directive_parse'
+fp_cross_language_wrappers.md:- **`notes`**: Logs wrapper generation with `note_type = 'wrapper'`
+fp_no_oop.md:- **`notes`**: Logs OOP violations with `note_type = 'compliance'` and details

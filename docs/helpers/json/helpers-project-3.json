@@ -700,25 +700,46 @@
           "description": "Note content/message"
         },
         {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'clarification', 'pivot', 'research', 'entry_deletion', 'warning', 'error', 'info', 'auto_summary'"
+        },
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Table name this note references (e.g., 'items', 'files', 'completion_path')"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "ID of the referenced table entry"
+        },
+        {
           "name": "source",
           "type": "string",
           "required": false,
           "default": "ai",
-          "description": "\"ai\" or \"user\" (default \"ai\")"
+          "description": "'ai', 'user', or 'directive' (default 'ai')"
         },
         {
           "name": "severity",
           "type": "string",
           "required": false,
           "default": "info",
-          "description": "\"info\", \"warning\", \"error\" (default \"info\")"
+          "description": "'info', 'warning', 'error' (default 'info')"
         },
         {
           "name": "directive_name",
           "type": "string",
           "required": false,
           "default": null,
-          "description": "Directive context"
+          "description": "Optional directive context for note"
         }
       ],
       "purpose": "Add note to project database",
@@ -756,7 +777,50 @@
     {
       "name": "get_notes_comprehensive",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by note_type"
+        },
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference table"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference ID"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by source ('ai', 'user', 'directive')"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by severity ('info', 'warning', 'error')"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by directive name"
+        }
+      ],
       "purpose": "Advanced note search with filters",
       "error_handling": "",
       "is_tool": true,
@@ -793,7 +857,49 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Required"
+          "description": "Search string for note content"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by note_type"
+        },
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by reference table"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by reference ID"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by source"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by severity"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by directive name"
         }
       ],
       "purpose": "Search note content with optional filters",
@@ -826,7 +932,64 @@
     {
       "name": "update_note",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Note ID to update"
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update note content"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update note_type"
+        },
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update reference table"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Update reference ID"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update source"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update severity"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update directive name"
+        }
+      ],
       "purpose": "Update note metadata",
       "error_handling": "",
       "is_tool": true,
@@ -840,7 +1003,15 @@
     {
       "name": "delete_note",
       "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Note ID to delete"
+        }
+      ],
       "purpose": "Delete note (discouraged)",
       "error_handling": "",
       "is_tool": false,

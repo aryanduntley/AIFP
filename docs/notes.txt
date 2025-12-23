@@ -3,129 +3,44 @@ README.md
 sys-prompt/aifp_system_prompt.txt
 .aifp/ProjectBlueprint.md
 
-docs/directives-project-updates-needed.md
-docs/directive-review-master-checklist.md
-docs/schema-updates-decisions.md
-docs/directive-review-plan.md
-docs/directive-json-schema-alignment-analysis.md
+directives json are in docs/directives-json/
+directives md are in src/aifp/resource/directives/
+helpers json is in docs/helpers/json/
+Everything above src/aifp/ is dev. \
 
-dev blueprints are in docs/blueprints/{}.md and the directive json files are located in docs/directives-json/{}, production directive md files located in src/aifp/reference/directives/{}.md. .aifp/ is our project management folder for dev, our project management/tracking database is there. We are following the FP coding style and managing the project through the project database in .aifp to ensure consistent and updated status. After every batch of completions, update the database to reflect the completed work.
+Have to tone down the settings. There really shouldn't be so many
+docs/COMPREHENSIVE_SETTINGS_SPEC.md
+docs/settings-specification.json
 
-src/aifp/database/schemas/user_preferences.sql
-src/aifp/database/schemas/aifp_core.sql
-src/aifp/database/schemas/project.sql
-src/aifp/database/schemas/user_directives.sql
-docs/sync-directives.py
-docs/implementation-plans/phase-1-mcp-server-bootstrap.md
-docs/implementation-plans/overview-all-phases.md
+settings project_continue_on_start (AI should get context and continue where left off. Goal is project completion and/or auto execute user custom directives)
 
-docs/helpers/helper-functions-reference.md
+check directives for settings to see what is currently mentioned about them (any setting values already defined in directives?)
 
-docs/db-schema/schemaExampleMCP.sql
-docs/db-schema/schemaExampleProject.sql
-docs/db-schema/schemaExampleSettings.sql
-docs/db-schema/schemaExampleUserDirectives.sql
-docs/blueprints/blueprint_system_prompt.md
-docs/blueprints/blueprint_aifp_project_structure.md
-docs/directives-markdown-reference.md
+helpers json file path updates needed. Let's do this as the helper functions are being coded.
 
-docs/directive-documentation-status.md
-docs/directive-md-mapping.csv
+MUST make OOP wrapper examples
 
-Notes are md examples and init structuring are the idea evolution files
-docs/directiveNotes/*
-docs/initialStructuring/*
+docs/directives-json/directive_flow.json
+verify number of project directives. 38 mentioned
+read note in docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
 
-docs/directives-json/helpers_parsed.json
-update with new helpers, fix paths (tools/ subdir and file names)
+return_statements need to be mapped to next diretives and helpful notes. They are NOT return VALUES.
 
-docs/directives-json/sync-directives.py
-docs/helpers/helper-architecture.md
-docs/helpers/generic-tools-project.md
-docs/helpers/generic-tools-mcp.md
+ALL HELPER function parameters need to be verified aginst the corresponding database. Some are missing parameters, so it's likely this might be a mess.
 
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
 docs/directives-json/sync-directives.py needs full overhaul based on new schema, structure and decisions
 
-use the helpers/tools:
-docs/helpers/info-helpers-core.txt :
-get_helpers_for_directive(directive_id, include_helpers_data=false)
-   include_helpers_data=false return all directive_helpers data for matches
-   include_helpers_data=true calls get_helpers_by_id(helper_id array)
-      returns all directive_helpers data AND helper_functions data for matches
-get_directives_for_helper(helper_function_id, include_directives_data=false)
-   include_directives_data=false return all directive_helpers data for matches
-   include_directives_data=true calls get_directives(directive_id array)
-      returns all directive_helpers data AND directives data for matches
+docs/temp.txt note_type has massive list. Let's analyze.
 
-need to flesh out return statements
-
-must handle existing projects that are oop: NO. We will recommend NOT to use AIFP for existing OOP projects.
-
-Read:
-README.md
-sys-prompt/aifp_system_prompt.txt
-.aifp/ProjectBlueprint.md
-
-=======
-
-docs/helpers/info-helpers-user-settings.txt
-docs/helpers/info-helpers-project.txt
-docs/helpers/info-helpers-core.txt
-docs/helpers/info-helpers-user-custom.txt
-
+helpers not consoldiated correctly. 
+docs/helpers/REMOVE-helpers-consolidated.md
 docs/helpers/CONSOLIDATION_COMPLETE.md
-docs/aifp-oop-policy.md
-docs/helpers/IMPLEMENTATION_LOG.md
+docs/directives-json/Tasks/HELPER_FUNCTIONS_MAPPING_PROGRESS.md
+docs/helpers/JSON_HELPERS_CONSOLIDATION_ISSUE.md
 
-consolidated helpers:
-docs/helpers/consolidated/helpers-consolidated-user-custom.md
-docs/helpers/consolidated/helpers-consolidated-core.md
-docs/helpers/consolidated/helpers-consolidated-git.md
-docs/helpers/consolidated/helpers-consolidated-index.md
-docs/helpers/consolidated/helpers-consolidated-orchestrators.md
-docs/helpers/consolidated/helpers-consolidated-project.md
-docs/helpers/consolidated/helpers-consolidated-settings.md
-
-directives next steps:
-docs/directives-json/Tasks/DIRECTIVE_CLEANUP_TASK.md
-docs/directives-json/Tasks/DIRECTIVES_QUICK_REF.md
-docs/directives-json/Tasks/HELPER_FUNCTIONS_QUICK_REF.md
-docs/directives-json/Tasks/MD_HELPER_REFS_ANALYSIS.md
-docs/temp.txt
-docs/directives-json/Tasks/MD_CLEANUP_CHECKLIST.md
-
-docs/directives-json/Tasks/SQL_CLEANUP_NEEDED.md
-docs/directives-json/DIRECTIVE_ARCHITECTURE.md
-
-docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md
-docs/DIRECTIVE_JSON_CLEANUP_REPORT_2025-12-16.md
-docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md
-
-used_by_directive field in the helper json files needs to be evaluated when re-evaluating directives
-
-
-> Read:
-README.md
-sys-prompt/aifp_system_prompt.txt
-.aifp/ProjectBlueprint.md\
-
-\
-consolidated helpers:
-docs/helpers/consolidated/helpers-consolidated-user-custom.md
-docs/helpers/consolidated/helpers-consolidated-core.md
-docs/helpers/consolidated/helpers-consolidated-git.md
-docs/helpers/consolidated/helpers-consolidated-index.md
-docs/helpers/consolidated/helpers-consolidated-orchestrators.md
-docs/helpers/consolidated/helpers-consolidated-project.md
-docs/helpers/consolidated/helpers-consolidated-settings.md\
-\
-directives json are in docs/directives-json/
-directives md are in src/aifp/resource/directives/
-helpers json is in docs/helpers/json/
-Everything above src/aifp/ is dev. \
-\
+=============================
 
 docs/directives-json/DIRECTIVE_ARCHITECTURE.md
 docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md
@@ -148,359 +63,11 @@ docs/PHASE_8_HELPER_MAPPING_STRATEGY.md
 
 docs/PHASE_1_COMPLETE.md
 
-docs/COMPREHENSIVE_SETTINGS_SPEC.md
-docs/settings-specification.json
 
-helpers json file path updates needed
-
-MUST make OOP wrapper examples
-
-docs/directives-json/directive_flow.json
-verify number of project directives. 38 mentioned
-read note in docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
-
-project_auto_summary directive, where is this auto summary recorded? Notes?
-
-helper function json parameters need review against schema
-
-return_statements
-
-settings project_continue_on_start (AI should get context and continue where left off. Goal is project completion and/or auto execute user custom directives)
-
-============================
-Do we need more context (a separate architectual doc?)
-Hard numbers should be avoided (helper function counts for example). AI should query database for these, they are subject to change
-should we consolidate for efficient reads?
-compare old to new
-============================
-
-System Prompt Analysis Before Updates
-
-  ✅ What's Good
-
-  1. Core Concepts (lines 3-24)
-  - Excellent framing: AIFP as mentor/rulebook, not toolbox
-  - Clear distinction: Directives guide, helpers support
-  - This is solid ✅
-
-  2. Status Efficiency (lines 60-101)
-  - get_status parameter usage well explained
-  - Caching strategy documented
-  - This is perfect ✅
-
-  3. Database Architecture (lines 488-514)
-  - Four databases well documented
-  - Clear ownership and mutability rules
-  - This is excellent ✅
-
-  ---
-  ⚠️ What Needs Improvement
-
-  Issue 1: Helper Classification is INCORRECT (lines 233-256)
-
-  Current text (lines 254-255):
-  "Most helpers are called through directive workflows. Directives will instruct you when to use them.
-  Only call MCP tools (is_tool=TRUE) directly. For other helpers, follow directive instructions."
-
-  Problem: This is misleading based on Phase 8 findings!
-
-  The Truth:
-  - 84 directive-used helpers (41.6%) - Called by directive workflows ✅ Prompt is correct
-  - 118 AI-only helpers (58.4%) - Called DIRECTLY by AI (not through directives) ❌ Prompt is wrong!
-
-  AI-only helpers include:
-  - Schema/query tools (explore database: get_settings_schema, get_project_tables)
-  - Batch helpers (bulk operations: reserve_files, finalize_functions)
-  - Delete helpers (manual cleanup: delete_task, delete_milestone)
-  - Generic CRUD fallbacks (add_project_entry, update_settings_entry when no specialized helper)
-  - Advanced filtering (get_incomplete_tasks, get_tasks_comprehensive)
-  - Reorder/management (reorder_completion_path, swap_completion_paths_order)
-
-  The Reality:
-  Helpers fall into 3 categories:
-  1. Directive-used helpers (84) - Called BY directives → used_by_directives not empty
-  2. AI-only tools (118) - Called BY AI directly → used_by_directives empty, is_tool=true
-  3. Sub-helpers - Called by other helpers → is_sub_helper=true
-
-  Suggested Fix:
-  **Helper Classification** (is_tool, is_sub_helper, used_by_directives fields):
-
-  1. **Directive-Used Helpers** (84 helpers, 41.6%)
-     - Have entries in used_by_directives array
-     - Called BY directive workflows
-     - Let directives instruct you when to use them
-     - Examples: reserve_file, finalize_function, add_task, update_milestone
-
-  2. **AI-Only Tools** (118 helpers, 58.4%)
-     - is_tool = TRUE, used_by_directives = empty []
-     - Called BY YOU directly for exploration, querying, batch operations
-     - Examples: get_project_schema, get_incomplete_tasks, query_settings, delete_settings_entry
-     - Categories:
-       - Schema/query tools: Explore database structure
-       - Batch helpers: Bulk operations (reserve_files, finalize_types)
-       - Delete helpers: Manual cleanup (only 1 delete directive exists)
-       - Generic CRUD: Fallbacks when no specialized helper exists
-       - Advanced filtering: Complex queries and searches
-       - Reorder/management: Manual adjustments
-
-  3. **Sub-Helpers** 
-     - is_sub_helper = TRUE
-     - Called BY other helpers, not directly
-     - Examples: apply_preferences_to_context, update_file_timestamp
-
-  **When executing directives:**
-  - Query get_helpers_for_directive() to discover directive-used helpers
-  - Follow directive instructions for these helpers
-
-  **For exploration and querying:**
-  - Use AI-only tools directly (schema queries, advanced filters, batch operations)
-  - These are NOT called by directives - they exist for your direct use
-
-  ---
-  Issue 2: Directive Flow Files NOT Mentioned
-
-  Missing entirely: The directive flow files that define workflow relationships!
-
-  What's Missing:
-  - directive_flow_project.json (89 flows)
-  - directive_flow_user_preferences.json (14 flows)
-  - These define "what directive comes next" based on conditions and state
-
-  Lines 79-83 mention flow query functions but don't explain WHERE the flows come from:
-  - get_next_directives_from_status(current_directive, state_object)
-  - get_conditional_work_paths(state_object)
-  - get_completion_loop_target(completion_directive_name)
-
-  Suggested Addition (after line 56 or in new section):
-  === DIRECTIVE FLOW SYSTEM ===
-
-  **Directive flows define workflow navigation**: "After this directive, what comes next?"
-
-  **Flow Files** (stored in aifp_core.db directive_flow table):
-  - directive_flow_project.json (89 flows) - Project management workflows
-  - directive_flow_user_preferences.json (14 flows) - User preference workflows
-  - directive_flow_fp.json (future) - FP reference consultation patterns
-
-  **Flow Types**:
-  - conditional: Branch based on state (if project_initialized=false → project_init)
-  - completion_loop: Always loop back to aifp_status after completion
-  - canonical: Standard next step (project_file_write → project_reserve_finalize)
-  - status_branch: Branch from aifp_status based on state
-  - utility: Side operations (any_directive → project_notes_log)
-
-  **Flow Query Functions** (use after aifp_run with cached status):
-  ```python
-  # Get next directives based on current position and state
-  get_next_directives_from_status(current_directive, status_object)
-
-  # Get conditional branches available from current state
-  get_conditional_work_paths(status_object)
-
-  # Find where completion directives loop back to
-  get_completion_loop_target(completion_directive_name)
-
-  Workflow Pattern:
-  1. Execute directive
-  2. Query directive_flow to find next steps
-  3. Evaluate conditions against cached status
-  4. Select appropriate next directive
-  5. Repeat
-
-  Example:
-  project_task_complete executed
-    ↓ Query: get_completion_loop_target("project_task_complete")
-    ↓ Returns: "aifp_status" (all completion directives loop back)
-    ↓ Execute: aifp_status
-    ↓ Query: get_next_directives_from_status("aifp_status", status)
-    ↓ Returns: [project_task_create, project_task_update, ...] based on state
-    ↓ Select: Based on user request + state conditions
-
-  ---
-
-  ### **Issue 3: Privacy/Tracking Underemphasized**
-
-  **Current**: Briefly mentioned (line 504)
-  **Should Be**: Prominent section emphasizing privacy-by-default
-
-  **Suggested Addition** (after User Preference section around line 487):
-  ```markdown
-  === PRIVACY & TRACKING (OPT-IN ONLY) ===
-
-  **Default State: ALL TRACKING OFF**
-
-  AIFP respects user privacy. All tracking features are disabled by default to minimize:
-  - API token costs
-  - Context overhead
-  - Data collection
-
-  **Tracking Features** (user_preferences.db tracking_settings table):
-  1. **fp_flow_tracking** - Track FP directive consultations (OFF by default)
-  2. **ai_interaction_log** - Log user corrections for learning (OFF by default, required for user_preferences_learn)
-  3. **helper_function_logging** - Log directive execution performance (OFF by default, required for project_performance_summary)
-  4. **issue_reports** - Log errors and roadblocks (OFF by default)
-
-  **Enabling Tracking**:
-  - User must explicitly enable via tracking_toggle directive
-  - Show token overhead warning before enabling
-  - Granular per-feature control
-  - User can disable anytime without confirmation
-
-  **Privacy Principles**:
-  - No tracking unless explicitly enabled
-  - User controls what's logged
-  - Tracking data stays in local databases (never sent externally)
-  - Clear purpose for each tracking feature
-
-  ---
-  Issue 4: Helper-Directive Relationship Section is Good but Could Be Clearer
-
-  Current: Lines 257-284 explain the junction table approach
-  Improvement: Add examples showing both patterns
-
-  Suggested Enhancement (after line 284):
-  **Two Patterns for Helper Usage**:
-
-  **Pattern 1: Directive-Guided** (for 84 directive-used helpers)
-  ```python
-  # When executing project_file_write directive:
-  1. Query: get_helpers_for_directive("project_file_write")
-  2. Returns: [reserve_file, update_file, finalize_file, add_interaction, ...]
-  3. Follow directive workflow using these helpers
-  4. Directive instructs WHEN and HOW to call each helper
-
-  Pattern 2: Direct AI Usage (for 118 AI-only tools)
-  # When exploring project state:
-  - Call get_incomplete_tasks() directly → See what's pending
-  - Call get_project_schema() directly → Understand database structure
-  - Call query_settings() directly → Check user preferences
-  - Call get_tasks_comprehensive() directly → Detailed task analysis
-
-  # No directive needed - these are YOUR exploration tools
-
-  How to Know Which Pattern:
-  - Check used_by_directives array in helper data
-  - Empty array [] = AI-only tool, call directly
-  - Has entries = Directive-used, let directive guide you
-
-  ---
-
-  ### ✅ What's Accurate and Should Stay
-
-  1. **FP Baseline** (lines 351-360) - Perfect ✅
-  2. **Reserve Before Write** (lines 362-366) - Critical, well explained ✅
-  3. **Database Write Policy** (lines 339-348) - Good balance ✅
-  4. **Two Use Cases** (lines 416-431) - Clear distinction ✅
-  5. **Status-First Pattern** (lines 390-396) - Essential, well documented ✅
-
-  ---
-
-  ## Recommendations
-
-  ### **Priority 1: Fix Helper Classification** (Critical)
-  The current description is misleading. AI needs to know 118 helpers are for direct use, not "only through directive workflows."
-
-  ### **Priority 2: Add Directive Flow Section** (Important)
-  The flow query functions are mentioned but the flow files and workflow navigation pattern aren't explained.
-
-  ### **Priority 3: Emphasize Privacy** (Important)
-  Make it crystal clear that all tracking is OFF by default and requires explicit opt-in.
-
-  ### **Priority 4: Add Helper Usage Patterns** (Nice to have)
-  Show both patterns side-by-side so AI understands when to use each approach.
-
-  ---
-
-  ## Length Assessment
-
-  **Current**: 577 lines
-  **With additions**: ~650-700 lines (13-21% increase)
-
-  **Is this too much?**
-  - ✅ No, these are critical architectural clarifications
-  - ✅ The helper classification fix is essential for correct behavior
-  - ✅ Directive flows are fundamental to workflow navigation
-  - ⚠️ Could condense some sections if needed
-
-  **Alternative**: Create a separate "AIFP Architecture Deep Dive" document and keep system prompt focused on behavioral rules. But the helper classification fix is NON-NEGOTIABLE for the main prompt.
-
-  ---
-
-  ## Bottom Line
-
-  **Critical Issue**: Helper classification section is factually wrong and will cause AI to not use 118 AI-only tools correctly.
-
-  **Must Fix**: Helper classification (Priority 1)
-  **Should Add**: Directive flows (Priority 2), Privacy emphasis (Priority 3)
-  **Nice to Have**: Usage pattern examples (Priority 4)
-
-=================================
-
-System Prompt Updates Complete
-
-  Changes Made
-
-  1. Added DIRECTIVE FLOW SYSTEM Section (lines 102-151)
-  - Explains directive flow files (89 project flows + 14 user preference flows)
-  - Documents flow types (conditional, completion_loop, canonical, status_branch, utility)
-  - Shows flow query functions with examples
-  - Demonstrates workflow navigation pattern
-  - Why: This was completely missing - flow files are fundamental to workflow navigation
-
-  2. Fixed HELPER CLASSIFICATION Section (lines 300-328)
-  - CRITICAL FIX: Changed from misleading "most helpers called through directives" to accurate three-category system
-  - 84 directive-used helpers (41.6%) - Called BY directives
-  - 118 AI-only tools (58.4%) - Called BY AI directly (schema, batch, delete, query, CRUD, reorder)
-  - Sub-helpers - Called by other helpers
-  - Added clear breakdown with examples for each category
-  - Why: Original text was factually incorrect and would cause AI to not use 118 tools properly
-
-  3. Added TWO PATTERNS FOR HELPER USAGE (lines 347-385)
-  - Pattern 1: Directive-Guided (for 84 directive-used helpers)
-  - Pattern 2: Direct AI Usage (for 118 AI-only tools)
-  - Shows concrete examples for each pattern
-  - Explains how to know which pattern to use
-  - Why: Makes it crystal clear when to use each approach
-
-  4. Updated USER PREFERENCE DIRECTIVES (lines 226-236)
-  - Added all 7 directives (was missing 4)
-  - Added tracking_toggle, project_notes_log, export, import
-  - Documented 14 flows in directive_flow_user_preferences.json
-  - Why: Reflects Phase 7 completion
-
-  5. Added PRIVACY & TRACKING Section (lines 595-634)
-  - NEW SECTION - Emphasizes privacy-by-default
-  - Documents all 4 tracking features with clear purposes
-  - Shows token overhead warnings
-  - Explains granular control
-  - Lists privacy principles
-  - Why: Makes privacy stance explicit and prominent
-
-  6. Updated USER PREFERENCES HIERARCHY (lines 583-593)
-  - Changed "call user_preferences_sync" to "auto-called before customizable directives"
-  - Added "(opt-in only, OFF by default)" to ai_interaction_log
-  - Why: Reflects automatic prerequisite pattern from Phase 7
-
-  Statistics
-
-  Before: 577 lines
-  After: 635 lines (+58 lines, 10% increase)
-
-  What's Now Accurate
-
-  ✅ Helper classification matches Phase 8 findings (84/118 split)
-  ✅ Directive flows documented (103 total flows)
-  ✅ Privacy stance clear and prominent
-  ✅ User preference directives complete (7/7)
-  ✅ Two helper usage patterns explained
-  ✅ All changes reflect current architectural decisions
-
-  Ready for Production
-
-  The system prompt now accurately reflects:
-  - Phase 7 completion (user preferences)
-  - Phase 8 completion (helper mapping)
-  - Privacy-first design
-  - Workflow navigation via directive flows
-  - Correct helper classification
-
-  No condensation needed yet - all additions are critical architectural information. The 10% increase is justified by the importance and accuracy of the new content.
+src/aifp/database/schemas/user_preferences.sql
+src/aifp/database/schemas/aifp_core.sql
+src/aifp/database/schemas/project.sql
+src/aifp/database/schemas/user_directives.sql
+docs/sync-directives.py
+docs/implementation-plans/phase-1-mcp-server-bootstrap.md
+docs/implementation-plans/overview-all-phases.md

@@ -1,8 +1,8 @@
 # System Prompt Final Version - Summary
 
-**Date**: 2025-12-21
-**Final Version**: sys-prompt/aifp_system_prompt.txt (421 lines)
-**Status**: Ready for production
+**Date**: 2025-12-22 (Updated)
+**Final Version**: sys-prompt/aifp_system_prompt.txt (498 lines)
+**Status**: Production-ready with all user notes addressed
 
 ---
 
@@ -12,7 +12,9 @@
 |---------|-------|--------|--------|
 | **prev1** | 724 | ❌ Too verbose | Hard-coded numbers, excessive detail, reference manual style |
 | **prev2** | 275 | ❌ Too minimal | Removed critical behavioral instructions, "just query for details" approach |
-| **Current** | 421 | ✅ Balanced | Forces proactive behavior, detailed FP guidelines, no hard-coded numbers |
+| **prev3** | 429 | ⚠️ Good | Balanced but missing clarifications |
+| **prev4** | 438 | ⚠️ Better | Added fixes but had 9 embedded NOTEs |
+| **Current** | 498 | ✅ Production | All NOTEs addressed, critical clarifications added, no hard-coded numbers |
 
 ---
 
@@ -300,8 +302,36 @@ This version achieves the right balance:
 **Documentation**:
 - `docs/SYSTEM_PROMPT_COMPARISON.md` (detailed prev1 vs old comparison)
 - `docs/SYSTEM_PROMPT_CLEANUP_REPORT.md` (prev2 cleanup analysis)
+- `docs/SYSTEM_PROMPT_USER_NOTES_ANALYSIS.md` (analysis of 9 embedded NOTEs)
+- `docs/SYSTEM_PROMPT_IMPROVEMENTS.md` (recommendations for addressing NOTEs)
+- `docs/SYSTEM_PROMPT_CHANGES_APPLIED.md` (complete change log for current version)
 - `docs/SYSTEM_PROMPT_FINAL.md` (this file - final version summary)
 
 ---
 
-**Status**: ✅ Ready for production
+## Latest Update (2025-12-22)
+
+**Changes from prev4 (438 lines) to current (498 lines)**:
+
+### Additions (+74 lines)
+1. **Global Constants Exception** (+5 lines): Clarifies FP allows immutable config constants
+2. **Execution Order Section** (+26 lines): Critical preferences-first pattern + Use Case 2 two-stage workflow
+3. **MD File Guidance** (+16 lines): When to escalate to documentation vs using directive JSON
+4. **SQL Exception** (+5 lines): user_directives.db queries are acceptable
+5. **Use Case 2 Clarification** (+22 lines): AI builds infrastructure first, then executes directives
+
+### Removals (-14 lines)
+1. **All 9 NOTEs removed** (-9 lines): Clean, production-ready prompt
+2. **Tracking simplified** (-3 lines): Dev-only emphasis, removes user confusion
+3. **Dev-only section removed** (-16 lines): "QUERY, DON'T ASSUME" was wrong audience
+4. **batch_update_progress NOTE** (-1 line): Verified correct classification, no changes needed
+
+### Net Impact: +60 lines (13.7% increase)
+- All critical clarifications added
+- All ambiguities resolved
+- No hard-coded numbers
+- Production-ready
+
+---
+
+**Status**: ✅ Production-ready (all user notes addressed, 2025-12-22)

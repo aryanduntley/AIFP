@@ -9,7 +9,7 @@
 - [What is AIFP?](#what-is-aifp)
 - [Core Principles](#core-principles)
 - [Architecture Overview](#architecture-overview)
-- [Three-Database System](#three-database-system)
+- [Four-Database System](#four-database-system)
 - [How It Works](#how-it-works)
 - [Getting Started](#getting-started)
 - [Directives System](#directives-system)
@@ -135,7 +135,7 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 │                 MCP Server                           │
 │  - Routes commands via aifp_run                      │
 │  - Executes directives (FP + Project + User Pref)    │
-│  - Manages three-database connections                │
+│  - Manages four-database connections                 │
 │  - Provides helper functions                         │
 └───┬────────────────────┬─────────────────────────┬──┘
     │                    │                         │
@@ -144,12 +144,12 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 │  (Global,        │ │  (Per-Project,     │ │  (Per-Project,        │ │  (Per-Project,        │
 │   Read-Only)     │ │   Mutable)         │ │   Mutable)            │ │   Optional)           │
 │                  │ │                    │ │                       │ │                       │
-│ - 66 FP directs  │ │ - Project metadata │ │ - Directive prefs     │ │ - User directives     │
-│ - 32 Project     │ │ - Files & funcs    │ │ - User settings       │ │ - Execution stats     │
-│ - 7 User Pref    │ │ - Task hierarchy   │ │ - AI learning log     │ │ - Dependencies        │
-│ - 7 User Direct  │ │ - Themes & flows   │ │ - Tracking features   │ │ - Generated code refs │
-│ - Helper defs    │ │ - Completion path  │ │ - Issue reports       │ │ - Source file tracking│
-│ - Code templates │ │ - Runtime notes    │ │ (All opt-in)          │ │ (Logs in files)       │
+│ - FP directives  │ │ - Project metadata │ │ - Directive prefs     │ │ - User directives     │
+│ - Project mgmt   │ │ - Files & funcs    │ │ - User settings       │ │ - Execution stats     │
+│ - User prefs     │ │ - Task hierarchy   │ │ - AI learning log     │ │ - Dependencies        │
+│ - User systems   │ │ - Themes & flows   │ │ - Tracking features   │ │ - Generated code refs │
+│ - Helper defs    │ │ - Completion path  │ │ (All opt-in)          │ │ - Source file tracking│
+│ - Directive flow │ │ - Runtime notes    │ │                       │ │ (Logs in files)       │
 └──────────────────┘ └────────────────────┘ └───────────────────────┘ └───────────────────────┘
 ```
 
@@ -344,7 +344,7 @@ aifp run "Initialize project for calculator"
 1. Calls `aifp_run` → receives guidance
 2. Evaluates: "Project initialization = project management action"
 3. Checks memory: "Do I have directives? No."
-4. Calls `get_all_directives()` → receives all 125 directives (30 FP Core + 36 FP Aux + 37 Project + 7 User Prefs + 9 User System + 6 Git)
+4. Calls `get_all_directives()` → receives comprehensive directive library (FP, Project, User Preferences, User Systems, Git)
 5. Reviews directives: "This matches `project_init`"
 6. Checks prerequisites: "Should run `project_status` first?"
 7. Executes `project_init` directive workflow:
@@ -474,9 +474,9 @@ Add to Claude Desktop config (`claude_desktop_config.json`):
 
 ## Directives System
 
-### FP Directives (60+)
+### FP Directives
 
-Enforce functional programming standards:
+Comprehensive library enforcing functional programming standards:
 
 | Category | Directives | Purpose |
 |----------|------------|---------|
@@ -486,7 +486,7 @@ Enforce functional programming standards:
 | **OOP Elimination** | `fp_class_elimination`, `fp_inheritance_block`, `fp_wrapper_generation` | Convert OOP to FP patterns |
 | **Optimization** | `fp_memoization`, `fp_lazy_evaluation`, `fp_parallel_evaluation` | Optimize without breaking purity |
 
-### Project Directives (32)
+### Project Directives
 
 Manage project lifecycle:
 
@@ -498,7 +498,7 @@ Manage project lifecycle:
 | **Level 3** | `project_compliance_check`, `project_evolution` | State management |
 | **Level 4** | `project_completion_check`, `project_archival` | Validation & completion |
 
-### User Preference Directives (7)
+### User Preference Directives
 
 Manage AI behavior customization and learning:
 
@@ -512,7 +512,7 @@ Manage AI behavior customization and learning:
 | **project_notes_log** | Handles logging to project.db with directive context |
 | **tracking_toggle** | Enables/disables tracking features with token cost warnings |
 
-### User-Defined Directives (9)
+### User-Defined Directives
 
 **FOR USE CASE 2 ONLY**: Automation projects where AIFP generates and manages the codebase:
 
@@ -582,9 +582,9 @@ def turn_off_living_room_lights(ha_client: HomeAssistant) -> Result[None, str]:
 
 See [User Directives Blueprint](docs/blueprints/blueprint_user_directives.md) and [examples](docs/examples/) for more details.
 
-### Git Integration (6 Directives)
+### Git Integration
 
-**NEW**: FP-powered Git collaboration for multi-user and multi-AI development:
+FP-powered Git collaboration for multi-user and multi-AI development:
 
 | Directive | Purpose |
 |-----------|---------|
@@ -662,7 +662,7 @@ AI → aifp_run("Initialize AIFP for my matrix calculator")
     → Evaluates: "Project management action"
     → Checks: "No directives in memory"
     → Calls: get_all_directives()
-    → Receives: 108 directives + self-assessment questions
+    → Receives: Complete directive library + self-assessment questions
     → Matches: project_init directive
     → Checks: project_status first (no existing project)
     → Executes: project_init workflow
@@ -845,7 +845,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ### Current (v1.0)
 
-- ✅ Core directive system (120 total: 66 FP, 32 Project, 7 User Preference, 6 Git, 9 User Directives)
+- ✅ Comprehensive directive system (FP, Project, User Preference, Git, User Directives)
 - ✅ Four-database architecture (aifp_core, project, user_preferences, user_directives)
 - ✅ MCP server design with command routing
 - ✅ User preference system with directive mapping and AI learning
@@ -901,7 +901,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 It combines:
 - **Pure functional programming** for deterministic, composable code
-- **Three-database architecture** for immutable rules, runtime state, and user customization
+- **Four-database architecture** for immutable rules, runtime state, user customization, and optional automation
 - **Directive-based workflows** for consistent, automated compliance
 - **User preference learning** for AI that adapts to your coding style
 - **Finite completion paths** for goal-oriented development

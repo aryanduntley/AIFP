@@ -1760,7 +1760,7 @@
       "name": "metrics",
       "description": "Automatically summarizes project status and context."
     },
-    "description": "Generates a human-readable summary of project purpose, progress, and open tasks, stored in notes or output to the terminal. Provides quick, automated overviews of project state for both AI and user consumption.",
+    "description": "Generates a human-readable summary of project purpose, progress, and open tasks. Stores summary in notes table with note_type='auto_summary' for future reference and outputs to terminal. Provides quick, automated overviews of project state for both AI and user consumption.",
     "md_file_path": "directives/project_auto_summary.md",
     "workflow": {
       "trunk": "summarize_project_state",
