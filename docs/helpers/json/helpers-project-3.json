@@ -1,1683 +1,633 @@
 {
   "helpers": [
     {
-      "name": "update_milestone",
+      "name": "reserve_function",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "id",
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Function name (will have _idxxx appended)"
+        },
+        {
+          "name": "file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Milestone ID"
+          "description": "File ID where function will be defined"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Function purpose"
+        },
+        {
+          "name": "params",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Function parameters"
+        },
+        {
+          "name": "returns",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Return value specification"
+        }
+      ],
+      "purpose": "Reserve function ID for naming before creation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Creates function entry with is_reserved=1 - function not yet written in code",
+        "DATABASE CONTEXT: Returned ID MUST be embedded in function name using _idxxx suffix pattern (e.g., calculate_sum_id42)",
+        "DATABASE CONTEXT: Reserved functions excluded from interaction tracking until finalized",
+        "NEXT STEP: Write function in code with reserved ID in name: {function_name}_id{id}",
+        "NEXT STEP: After function written, call finalize_function(id, final_name, file_id, ...) to set is_reserved=0",
+        "NEXT STEP: After finalizing, call add_interaction() to track function call patterns",
+        "CHECK: Did you embed the ID in the function name correctly? Pattern is: basename_idxxx",
+        "CHECK: Does this function call other functions? Track with add_interaction() after finalization",
+        "CHECK: Is this function pure? FP analysis can determine purity_score for functional programming tracking",
+        "RELATED HELPERS: finalize_function() to complete reservation after function written in code",
+        "RELATED HELPERS: add_interaction() to track which functions call this function",
+        "RELATED HELPERS: Use get_function_by_name() or get_functions_by_file() to query after finalization",
+        "WORKFLOW: reserve_function() → write function with ID in name → finalize_function() → add_interaction()",
+        "DIRECTIVE: Used by project_reserve_finalize (sequence_order: 1) before writing code",
+        "DIRECTIVE: Used by project_file_write (sequence_order: 2) to enable rename-proof function references",
+        "DIRECTIVE FLOW: project_file_write → reserve_file() → reserve_function() batch → write code → finalize all",
+        "COMMON WORKFLOWS: Planning multiple functions → reserve_functions() for batch → write all → finalize_functions()",
+        "WARNING: Function MUST be written with ID in name - this is how function tracking works without fragile name dependencies",
+        "WARNING: Do not finalize until function actually written in file - finalize_function() will verify function exists"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "reserve_function_name",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve function ID before writing code - AI embeds ID in function name for instant lookups (function_name_id_99)"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "reserve_before_write",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve function IDs before generating function code - enables rename-proof references"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, id: reserved_id, is_reserved: true}",
+        "SQL: INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved) VALUES (?, ?, ?, ?, ?, 1) RETURNING id",
+        "Function name pattern: {name}_id{id} (e.g., calculate_sum_id42, parse_input_id15)"
+      ]
+    },
+    {
+      "name": "reserve_functions",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "functions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of function objects [{name, file_id, purpose, params, returns}, ...]"
+        }
+      ],
+      "purpose": "Reserve multiple function IDs",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Batch version of reserve_function() - atomically reserves multiple function IDs at once",
+        "DATABASE CONTEXT: All functions created with is_reserved=1 - more efficient than multiple reserve_function() calls",
+        "NEXT STEP: Write all functions with their reserved IDs embedded in names using _idxxx pattern",
+        "NEXT STEP: After all functions written, call finalize_functions() with batch of function metadata objects",
+        "CHECK: IDs returned in same order as functions array - map IDs back to function objects correctly",
+        "CHECK: Are all functions in the same file? Batch operations typically used for single-file function sets",
+        "RELATED HELPERS: finalize_functions() for batch finalization after writing all functions",
+        "RELATED HELPERS: Use reserve_function() for single function operations instead of batch with one element",
+        "WORKFLOW: reserve_functions([...]) → write all functions with IDs → finalize_functions([...]) → add_interaction() batch",
+        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple functions at once",
+        "COMMON WORKFLOWS: Large file with many functions → reserve_functions() → write all → finalize_functions()",
+        "WARNING: Batch operations are all-or-nothing - if any function reservation fails, entire operation fails"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, ids: [id1, id2, ...]} in same order as input functions array",
+        "SQL: Multiple INSERT INTO functions ... RETURNING id (in transaction)",
+        "IDs correspond to functions array indices: functions[0] gets ids[0], functions[1] gets ids[1], etc."
+      ]
+    },
+    {
+      "name": "finalize_function",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Reserved function ID"
         },
         {
           "name": "name",
           "type": "string",
-          "required": false,
+          "required": true,
           "default": null,
-          "description": "New name (NULL = don't update)"
+          "description": "Final name with _idxx suffix"
         },
         {
-          "name": "completion_path_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "New completion path ID (NULL = don't update)"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New description (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update milestone metadata",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_milestone_complete",
-          "execution_context": "mark_milestone_complete",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {
-            "milestone_id": "workflow.milestone_id",
-            "status": "completed",
-            "completed_at": "current_timestamp"
-          },
-          "description": "Mark milestone as completed after all tasks finish - updates status and logs completion time"
-        }
-      ]
-    },
-    {
-      "name": "delete_milestone",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
+          "name": "file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Milestone ID"
+          "description": "File ID"
         },
         {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete milestone with task validation",
-      "error_handling": "- Calls `get_incomplete_tasks_by_milestone(milestone_id, skip_pending=false)`",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Error if incomplete tasks exist, success otherwise"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "add_task",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "flow_ids",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "JSON array of flow IDs"
-        },
-        {
-          "name": "priority",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Default if not specified"
-        }
-      ],
-      "purpose": "Add task to milestone",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_task_decomposition",
-          "execution_context": "decompose_request",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {
-            "milestone_id": "workflow.created_milestone_id",
-            "name": "workflow.parsed_task_name",
-            "description": "workflow.task_description",
-            "flow_ids": "workflow.identified_flows",
-            "priority": "workflow.task_priority"
-          },
-          "description": "Create tasks for milestone during user request decomposition - generates task hierarchy from high-level goals"
-        },
-        {
-          "directive_name": "project_task_create",
-          "execution_context": "create_task_record",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {
-            "milestone_id": "workflow.validated_milestone_id",
-            "name": "workflow.task_name",
-            "description": "workflow.task_description",
-            "flow_ids": "workflow.flow_ids",
-            "priority": "workflow.priority"
-          },
-          "description": "Atomic task creation - validates inputs and creates task record in database"
-        }
-      ]
-    },
-    {
-      "name": "get_incomplete_tasks_by_milestone",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "skip_pending",
-          "type": "boolean",
-          "required": true,
-          "default": null,
-          "description": "If true, excludes pending tasks"
-        }
-      ],
-      "purpose": "Get open tasks for a milestone with related subtasks/sidequests",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "```json",
-        "Ensures status=in_progress tasks included"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_task_complete",
-          "execution_context": "check_milestone_status",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {
-            "milestone_id": "workflow.milestone_id",
-            "skip_pending": false
-          },
-          "description": "Check if all tasks in milestone are complete after task completion - determines if milestone_complete should be called"
-        }
-      ]
-    },
-    {
-      "name": "get_incomplete_tasks",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get all incomplete tasks with subtasks/sidequests",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Object with tasks, subtasks, sidequests arrays",
-        "Comprehensive work overview"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_tasks_by_milestone",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "milestone_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Milestone ID"
-        }
-      ],
-      "purpose": "Get all tasks for a milestone (any status)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of task objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_task_create",
-          "execution_context": "check_duplicate_tasks",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {
-            "milestone_id": "workflow.validated_milestone_id"
-          },
-          "description": "Check for duplicate task names before creating new task - prevents naming conflicts"
-        }
-      ]
-    },
-    {
-      "name": "get_tasks_comprehensive",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "status",
+          "name": "purpose",
           "type": "string",
           "required": false,
           "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+          "description": "Function purpose"
         },
         {
-          "name": "limit",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Maximum results"
-        },
-        {
-          "name": "date_range_created",
+          "name": "params",
           "type": "array",
           "required": false,
           "default": null,
-          "description": "[start_date, end_date]"
+          "description": "Function parameters"
         },
         {
-          "name": "date_range_updated",
-          "type": "array",
+          "name": "returns",
+          "type": "object",
           "required": false,
           "default": null,
-          "description": "[start_date, end_date]"
-        },
-        {
-          "name": "milestone_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Filter by milestone"
-        },
-        {
-          "name": "priority",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'low', 'medium', 'high', 'critical'"
+          "description": "Return value specification"
         }
       ],
-      "purpose": "Advanced task search with multiple filters",
+      "purpose": "Finalize reserved function after creation",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of filtered task objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_task_flows",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "task_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Task ID"
-        }
-      ],
-      "purpose": "Get flow IDs for a task",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of flow IDs from flow_ids JSON field"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_task_files",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "task_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Task ID"
-        }
-      ],
-      "purpose": "Get all files related to task via flows (orchestrator)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of file objects with full data",
-        "Chains get_task_flows \u2192 get_file_ids_from_flows \u2192 get_from_project()"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "update_task",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Task ID"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New name (NULL = don't update)"
-        },
-        {
-          "name": "milestone_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "New milestone ID (NULL = don't update)"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New description (NULL = don't update)"
-        },
-        {
-          "name": "flow_ids",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "Array of flow IDs [1, 3, 5] (NULL = don't update)"
-        },
-        {
-          "name": "priority",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update task metadata",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
+        "DATABASE CONTEXT: Sets is_reserved=0 after verifying function written in code",
+        "DATABASE CONTEXT: Automatically calls update_file_timestamp(file_id) to refresh parent file checksum",
+        "DATABASE CONTEXT: Function now tracked in interactions and can be queried for dependencies",
+        "NEXT STEP: Call add_interaction() to track which functions this function calls",
+        "NEXT STEP: If function operates on types, call add_types_functions() to link type-function relationships",
+        "CHECK: Did you include the _idxxx suffix in the name parameter? Must match function_id",
+        "CHECK: Is function actually written in the file? Verify it exists before finalizing",
+        "CHECK: Does this function call other functions? Track with add_interaction() for dependency graph",
+        "RELATED HELPERS: add_interaction() to track function calls (caller_id, callee_id)",
+        "RELATED HELPERS: add_types_functions() if function operates on types (factory, transformer, validator, etc.)",
+        "RELATED HELPERS: update_file_timestamp() automatically called to refresh parent file checksum",
+        "WORKFLOW: reserve_function() → write function → finalize_function() → add_interaction() → add_types_functions()",
+        "DIRECTIVE: Used by project_reserve_finalize (sequence_order: 2) after code written",
+        "DIRECTIVE: Used by project_file_write (sequence_order: 3) after successful code generation",
+        "DIRECTIVE: Used by project_update_db (sequence_order: 3) when batch finalizing new functions",
+        "DIRECTIVE FLOW: project_file_write → reserve functions → write code → finalize_function() batch → track interactions",
+        "COMMON WORKFLOWS: After finalization, function appears in dependency queries and can be referenced by other code",
+        "WARNING: Name parameter must include _idxxx suffix matching function_id - this is verified"
       ],
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_task_update",
-          "execution_context": "update_task_status_or_priority",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Central task state manager - updates status, priority, and metadata fields"
-        },
-        {
-          "directive_name": "project_task_complete",
-          "execution_context": "mark_complete_and_items",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Mark task as completed - sets status=completed and logs timestamp"
-        },
-        {
-          "directive_name": "project_subtask_create",
-          "execution_context": "pause_parent_task",
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "finalize_reservation",
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Pause parent task when subtask created - blocks parent progress until subtask complete"
+          "description": "Finalize function after code written - sets is_reserved=false and updates file timestamp"
         },
         {
-          "directive_name": "project_subtask_complete",
-          "execution_context": "resume_parent_task",
+          "directive_name": "project_file_write",
+          "execution_context": "finalize_after_write",
           "sequence_order": 3,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Resume parent task when all subtasks complete - automatically continues parent work"
+          "description": "Finalize function reservations after successful code generation"
         },
         {
-          "directive_name": "project_sidequest_complete",
-          "execution_context": "resume_paused_task",
+          "directive_name": "project_update_db",
+          "execution_context": "finalize_new_functions",
           "sequence_order": 3,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Resume paused task after sidequest completion if user chooses to continue original work"
-        }
-      ]
-    },
-    {
-      "name": "delete_task",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Task ID"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete task with item validation",
-      "error_handling": "- Calls `get_items_for_task(task_id)` (all statuses)",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Error if completed/in_progress items exist, success if only pending or no items"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "add_subtask",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Subtask name"
-        },
-        {
-          "name": "parent_task_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Parent task ID"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": true,
-          "default": "pending",
-          "description": "'pending', 'in_progress', 'completed', 'blocked'"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Subtask description"
-        },
-        {
-          "name": "priority",
-          "type": "string",
-          "required": true,
-          "default": "high",
-          "description": "'low', 'medium', 'high', 'critical'"
-        }
-      ],
-      "purpose": "Add subtask to task",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`",
-        "Subtasks inherit task's milestone and flows"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_task_decomposition",
-          "execution_context": "decompose_request",
-          "sequence_order": 3,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Create subtasks for tasks during decomposition if user request includes subtask-level granularity"
-        },
-        {
-          "directive_name": "project_subtask_create",
-          "execution_context": "create_subtask_record",
-          "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Atomic subtask creation - creates focused, high-priority subtask and pauses parent"
+          "description": "Finalize function reservations when updating database with new function metadata"
         }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, function_id: function_id, file_id: file_id}",
+        "Sets is_reserved=0, automatically calls update_file_timestamp(file_id)",
+        "SQL: UPDATE functions SET is_reserved=0, name=?, purpose=?, params=?, returns=? WHERE id=?",
+        "Name validation: must contain '_id{function_id}' pattern"
       ]
     },
     {
-      "name": "get_incomplete_subtasks",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get all non-completed subtasks",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of subtask objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_incomplete_subtasks_by_task",
+      "name": "finalize_functions",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "task_id",
-          "type": "integer",
+          "name": "functions",
+          "type": "array",
           "required": true,
           "default": null,
-          "description": "Task ID"
+          "description": "Array of function objects [{function_id, name, file_id, purpose, params, returns}, ...]"
         }
       ],
-      "purpose": "Get incomplete subtasks for specific task",
+      "purpose": "Finalize multiple reserved functions",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of subtask objects"
+        "DATABASE CONTEXT: Batch version of finalize_function() - atomically finalizes multiple functions at once",
+        "DATABASE CONTEXT: Sets is_reserved=0 for all, calls update_file_timestamp() for each unique file_id once",
+        "NEXT STEP: After batch finalization, batch add interactions with add_interaction() for all function calls",
+        "NEXT STEP: If functions operate on types, batch call add_types_functions() to link type relationships",
+        "CHECK: All functions in array must have matching _idxxx suffixes in their names",
+        "CHECK: Are functions across multiple files? Timestamps updated efficiently per unique file_id",
+        "RELATED HELPERS: Use finalize_function() for single function operations instead of batch with one element",
+        "RELATED HELPERS: After finalizing, batch add_interaction() for all caller-callee relationships",
+        "WORKFLOW: reserve_functions() → write all → finalize_functions() → batch add_interaction() → batch add_types_functions()",
+        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple functions",
+        "COMMON WORKFLOWS: Large file with many functions → finalize_functions() → timestamp updated once per file → efficient",
+        "WARNING: Batch operation is atomic - if any validation fails, entire batch fails"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, finalized_ids: [...]} confirming which IDs were finalized",
+        "Calls update_file_timestamp() once per unique file_id (not once per function)",
+        "SQL: Multiple UPDATE functions SET is_reserved=0 WHERE id=? (in transaction)",
+        "All operations succeed or all fail - no partial finalization"
+      ]
+    },
+    {
+      "name": "get_function_by_name",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "function_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Function name to look up"
+        }
+      ],
+      "purpose": "Get function by name (very high-frequency lookup)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Most common function lookup - queries by name field (includes _idxxx suffix)",
+        "DATABASE CONTEXT: Returns complete function object with metadata: id, name, file_id, purpose, params, returns, purity_score, is_reserved",
+        "NEXT STEP: Use returned function_id to query interactions with get_from_project_where('interactions', {caller_id})",
+        "NEXT STEP: Check is_reserved field - if true, function still in reservation state",
+        "NEXT STEP: Use file_id to get parent file context with get_file_by_path() or get_file_by_name()",
+        "RELATED HELPERS: Use get_functions_by_file(file_id) to get all functions in same file",
+        "RELATED HELPERS: Query interactions table to see which functions this function calls or is called by",
+        "RELATED HELPERS: Query types_functions table to see which types this function operates on",
+        "DIRECTIVE CONTEXT: Not directly used by directives - utility for ad-hoc function queries by name",
+        "COMMON WORKFLOWS: Have function name from code → get_function_by_name() → extract function_id → query dependencies",
+        "COMMON WORKFLOWS: Verifying function registration: get_function_by_name() → check if null (not registered) vs object (registered)",
+        "WARNING: Name must match exactly including _idxxx suffix - partial matching not supported"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns function object or null if not found",
+        "SQL: SELECT * FROM functions WHERE name=? LIMIT 1",
+        "Returns: {id, name, file_id, purpose, params, returns, purity_score, is_reserved, created_at, updated_at}"
+      ]
+    },
+    {
+      "name": "get_functions_by_file",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to get functions for"
+        }
+      ],
+      "purpose": "Get all functions in a file (high-frequency)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Returns all functions defined in specified file, ordered by creation",
+        "DATABASE CONTEXT: Each function includes complete metadata: id, name, purpose, params, returns, purity_score, is_reserved",
+        "NEXT STEP: Use function_ids to query interactions table for dependency graph within file",
+        "NEXT STEP: Check is_reserved field for each - reserved functions not yet finalized",
+        "RELATED HELPERS: After getting functions, query interactions to see call patterns between functions",
+        "RELATED HELPERS: Query types_functions to see which types these functions operate on",
+        "RELATED HELPERS: Use get_file_by_path() to get parent file metadata first if you only have path",
+        "DIRECTIVE: Used by project_file_read (sequence_order: 2) to load complete file context with functions",
+        "DIRECTIVE FLOW: project_file_read → get_file_by_path() → get_functions_by_file() → load interactions → complete context",
+        "COMMON WORKFLOWS: Working with file → get_file_by_path() → get_functions_by_file() → analyze function dependencies",
+        "COMMON WORKFLOWS: Before modifying file → get_functions_by_file() → check what functions exist → plan changes"
       ],
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_subtask_create",
-          "execution_context": "check_active_subtasks",
+          "directive_name": "project_file_read",
+          "execution_context": "load_with_context",
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Check for existing active subtasks before creating new one - warns about context switching"
-        },
-        {
-          "directive_name": "project_subtask_complete",
-          "execution_context": "check_parent_subtasks",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Check if all subtasks complete to determine if parent task should resume"
+          "description": "Load all functions for file with context - provides complete file metadata including function dependencies"
         }
+      ],
+      "implementation_notes": [
+        "Returns array of function objects",
+        "SQL: SELECT * FROM functions WHERE file_id=? ORDER BY created_at",
+        "Returns empty array if file has no functions"
       ]
     },
     {
-      "name": "get_subtasks_by_task",
+      "name": "update_function",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "task_id",
+          "name": "function_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Task ID"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
-        }
-      ],
-      "purpose": "Get subtasks for task, optionally filtered by status",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of subtask objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_subtask_complete",
-          "execution_context": "notify_remaining_work",
-          "sequence_order": 4,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Show remaining pending subtasks to user after one subtask completes"
-        }
-      ]
-    },
-    {
-      "name": "get_subtasks_comprehensive",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
-        },
-        {
-          "name": "limit",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Maximum results"
-        },
-        {
-          "name": "date_range_created",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "[start_date, end_date]"
-        },
-        {
-          "name": "date_range_updated",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "[start_date, end_date]"
-        },
-        {
-          "name": "task_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Filter by task"
-        },
-        {
-          "name": "priority",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'low', 'medium', 'high', 'critical'"
-        }
-      ],
-      "purpose": "Advanced subtask search",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of filtered subtask objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "update_subtask",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Subtask ID"
+          "description": "Function ID to update"
         },
         {
           "name": "name",
           "type": "string",
           "required": false,
           "default": null,
-          "description": "New name (NULL = don't update)"
+          "description": "New function name (NULL = don't update)"
         },
         {
-          "name": "task_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "New task ID (NULL = don't update)"
-        },
-        {
-          "name": "status",
+          "name": "purpose",
           "type": "string",
           "required": false,
           "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+          "description": "New purpose (NULL = don't update)"
         },
         {
-          "name": "description",
-          "type": "string",
+          "name": "parameters",
+          "type": "array",
           "required": false,
           "default": null,
-          "description": "New description (NULL = don't update)"
+          "description": "New parameters (NULL = don't update)"
         },
         {
-          "name": "priority",
-          "type": "string",
+          "name": "returns",
+          "type": "object",
           "required": false,
           "default": null,
-          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
+          "description": "New return specification (NULL = don't update)"
         }
       ],
-      "purpose": "Update subtask metadata",
+      "purpose": "Update function metadata",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true}`"
+        "DATABASE CONTEXT: Partial update for function metadata - only updates provided fields",
+        "DATABASE CONTEXT: Automatically calls update_file_timestamp(file_id) to refresh parent file checksum",
+        "NEXT STEP: If name changed, verify _idxxx suffix still matches function_id",
+        "NEXT STEP: If params/returns changed significantly, update interactions if call signatures changed",
+        "CHECK: Did function signature change? May need to update callers if params changed",
+        "CHECK: Did name change? Code references might break unless using ID-based lookups",
+        "RELATED HELPERS: Use update_functions_for_file() for batch updates to multiple functions in same file (more efficient)",
+        "RELATED HELPERS: After updating, parent file timestamp auto-updated via update_file_timestamp()",
+        "DIRECTIVE: Used by project_update_db (sequence_order: 2) after code generation to sync metadata",
+        "DIRECTIVE FLOW: project_update_db → update_file() → update_function() batch → update_file_timestamp() final refresh",
+        "COMMON WORKFLOWS: Function refactored → update metadata → checksum refreshed → verify no conflicts",
+        "WARNING: Changing name breaks references unless using ID-based function calls",
+        "WARNING: Single function update triggers file timestamp - use update_functions_for_file() for batch efficiency"
       ],
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_task_update",
-          "execution_context": "update_subtask_status",
+          "directive_name": "project_update_db",
+          "execution_context": "update_functions_table",
           "sequence_order": 2,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Update subtask status and metadata through central update directive"
-        },
-        {
-          "directive_name": "project_subtask_complete",
-          "execution_context": "mark_complete",
-          "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Mark subtask as completed - sets status=completed and logs timestamp"
+          "description": "Update function metadata after code generation - synchronizes dependencies and function information"
         }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, function_id: function_id, file_id: file_id}",
+        "Automatically calls update_file_timestamp(file_id) after update",
+        "SQL: UPDATE functions SET name=?, purpose=?, parameters=?, returns=? WHERE id=?",
+        "Only updates non-NULL parameters - partial updates supported"
       ]
     },
     {
-      "name": "delete_subtask",
+      "name": "update_functions_for_file",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "id",
+          "name": "file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Subtask ID"
+          "description": "File ID"
         },
         {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete subtask with item validation (same logic as delete_task)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Error or success based on item status"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "add_sidequest",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "paused_subtask_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "If sidequest during subtask"
-        },
-        {
-          "name": "flow_ids",
+          "name": "functions",
           "type": "array",
           "required": true,
           "default": null,
-          "description": "JSON array of flow IDs"
+          "description": "Array of function update objects [{function_id, name, purpose, parameters, returns}, ...]"
         }
       ],
-      "purpose": "Add sidequest (urgent interruption)",
+      "purpose": "Update multiple functions in a single file",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
+        "DATABASE CONTEXT: Batch update for multiple functions in same file - more efficient than individual update_function() calls",
+        "DATABASE CONTEXT: Calls update_file_timestamp(file_id) only ONCE at end, not once per function",
+        "NEXT STEP: After batch update, verify parent file checksum updated correctly",
+        "CHECK: Are all functions actually in the same file? file_id parameter must match all functions",
+        "RELATED HELPERS: Use update_function() for single function updates or functions across different files",
+        "RELATED HELPERS: Automatically calls update_file_timestamp() once at end - no manual call needed",
+        "DIRECTIVE: Used by project_update_db (sequence_order: 3) for batch function updates",
+        "DIRECTIVE FLOW: project_update_db → update_functions_for_file() batch → single timestamp update → efficient",
+        "COMMON WORKFLOWS: Refactored multiple functions in file → update_functions_for_file() → one timestamp refresh",
+        "WARNING: All functions must belong to specified file_id - validation will fail otherwise"
       ],
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_task_decomposition",
-          "execution_context": "decompose_request",
-          "sequence_order": 4,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Create sidequests during decomposition if user request includes exploratory or fix work"
-        },
-        {
-          "directive_name": "project_sidequest_create",
-          "execution_context": "create_sidequest_record",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Atomic sidequest creation - creates exploratory interruption with optional task link"
-        }
-      ]
-    },
-    {
-      "name": "get_incomplete_sidequests",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get all non-completed sidequests",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of sidequest objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_sidequests_comprehensive",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
-        },
-        {
-          "name": "limit",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Maximum results"
-        },
-        {
-          "name": "date_range_created",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "[start_date, end_date]"
-        },
-        {
-          "name": "date_range_updated",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "[start_date, end_date]"
-        },
-        {
-          "name": "task_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Filter by paused task"
-        },
-        {
-          "name": "subtask_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Filter by paused subtask"
-        },
-        {
-          "name": "priority",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'low', 'medium', 'high', 'critical'"
-        }
-      ],
-      "purpose": "Advanced sidequest search",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of filtered sidequest objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_sidequest_flows",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "sidequest_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Sidequest ID"
-        }
-      ],
-      "purpose": "Get flow IDs for a sidequest",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of flow IDs"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_sidequest_files",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "sidequest_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Sidequest ID"
-        }
-      ],
-      "purpose": "Get all files related to sidequest via flows (orchestrator)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of file objects",
-        "Chains get_sidequest_flows \u2192 get_file_ids_from_flows \u2192 get_from_project()"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "update_sidequest",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Sidequest ID"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New name (NULL = don't update)"
-        },
-        {
-          "name": "paused_task_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "New paused task ID (NULL = don't update)"
-        },
-        {
-          "name": "paused_subtask_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "New paused subtask ID (NULL = don't update)"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New description (NULL = don't update)"
-        },
-        {
-          "name": "flow_ids",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "Array of flow IDs (NULL = don't update)"
-        },
-        {
-          "name": "priority",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update sidequest metadata",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_task_update",
-          "execution_context": "update_sidequest_status",
+          "directive_name": "project_update_db",
+          "execution_context": "update_functions_table",
           "sequence_order": 3,
           "is_required": false,
           "parameters_mapping": {},
-          "description": "Update sidequest status and metadata through central update directive"
-        },
-        {
-          "directive_name": "project_sidequest_complete",
-          "execution_context": "mark_complete_and_log",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Mark sidequest as completed - sets status=completed, logs timestamp and outcome"
+          "description": "Batch update multiple functions in same file - more efficient than individual updates"
         }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, updated_count: count}",
+        "Calls update_file_timestamp(file_id) once at end (not per function)",
+        "SQL: Multiple UPDATE functions ... WHERE id=? (in transaction) + single timestamp update",
+        "Validates all functions belong to file_id before updating"
       ]
     },
     {
-      "name": "delete_sidequest",
+      "name": "update_function_file_location",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "id",
+          "name": "function_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Sidequest ID"
+          "description": "Function ID to move"
         },
         {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete sidequest with item validation (same logic as delete_task)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Error or success based on item status"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_items_for_task",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "task_id",
+          "name": "old_file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Task ID"
+          "description": "Current file ID"
         },
         {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
-        }
-      ],
-      "purpose": "Get items for task, optionally filtered by status",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of item objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_item_create",
-          "execution_context": "check_duplicate_items",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Check for duplicate item names before creating new item - prevents naming conflicts"
-        }
-      ]
-    },
-    {
-      "name": "get_items_for_subtask",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "subtask_id",
+          "name": "new_file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Subtask ID"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
+          "description": "New file ID"
         }
       ],
-      "purpose": "Get items for subtask",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of item objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_items_for_sidequest",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "sidequest_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Sidequest ID"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
-        }
-      ],
-      "purpose": "Get items for sidequest",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of item objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_incomplete_items",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "for_table",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "\"tasks\", \"subtasks\", \"sidequests\" (accepts singular)"
-        },
-        {
-          "name": "for_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Parent ID"
-        }
-      ],
-      "purpose": "Get incomplete items for any parent type",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of incomplete item objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_item",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Item ID"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete item with status validation",
-      "error_handling": "Cannot delete in-progress/completed items, only pending",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "- Error if status is \"completed\" or \"in_progress\"",
-        "Completed/in-progress items must stay, use notes for issues"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "add_note",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "content",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Note content/message"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'clarification', 'pivot', 'research', 'entry_deletion', 'warning', 'error', 'info', 'auto_summary'"
-        },
-        {
-          "name": "reference_table",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Table name this note references (e.g., 'items', 'files', 'completion_path')"
-        },
-        {
-          "name": "reference_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "ID of the referenced table entry"
-        },
-        {
-          "name": "source",
-          "type": "string",
-          "required": false,
-          "default": "ai",
-          "description": "'ai', 'user', or 'directive' (default 'ai')"
-        },
-        {
-          "name": "severity",
-          "type": "string",
-          "required": false,
-          "default": "info",
-          "description": "'info', 'warning', 'error' (default 'info')"
-        },
-        {
-          "name": "directive_name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Optional directive context for note"
-        }
-      ],
-      "purpose": "Add note to project database",
-      "error_handling": "Returns error if project.db not initialized, otherwise continues silently",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_notes_log",
-          "execution_context": "insert_note",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {
-            "content": "clarification, reasoning, or context to log",
-            "source": "ai (default) or user",
-            "severity": "info (default), warning, or error",
-            "directive_name": "optional directive context"
-          },
-          "description": "Log clarifications, reasoning, and directive execution context to project.db notes table. Used by other directives for transparent reasoning trails."
-        },
-        {
-          "directive_name": "project_sidequest_complete",
-          "execution_context": "capture_lessons_learned",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Log sidequest outcome and lessons learned to notes table - captures exploratory work results for future reference"
-        }
-      ]
-    },
-    {
-      "name": "get_notes_comprehensive",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Filter by note_type"
-        },
-        {
-          "name": "reference_table",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Filter by reference table"
-        },
-        {
-          "name": "reference_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Filter by reference ID"
-        },
-        {
-          "name": "source",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Filter by source ('ai', 'user', 'directive')"
-        },
-        {
-          "name": "severity",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Filter by severity ('info', 'warning', 'error')"
-        },
-        {
-          "name": "directive_name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Filter by directive name"
-        }
-      ],
-      "purpose": "Advanced note search with filters",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of filtered note objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_auto_summary",
-          "execution_context": "summarize_project_state",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Query notes for project summary generation - retrieves logged summaries, metrics, and project history"
-        },
-        {
-          "directive_name": "project_metrics",
-          "execution_context": "gather_metrics",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Read logged metrics from notes - retrieves historical metric data for analysis"
-        }
-      ]
-    },
-    {
-      "name": "search_notes",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "search_string",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Search string for note content"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Optional filter by note_type"
-        },
-        {
-          "name": "reference_table",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Optional filter by reference table"
-        },
-        {
-          "name": "reference_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Optional filter by reference ID"
-        },
-        {
-          "name": "source",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Optional filter by source"
-        },
-        {
-          "name": "severity",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Optional filter by severity"
-        },
-        {
-          "name": "directive_name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Optional filter by directive name"
-        }
-      ],
-      "purpose": "Search note content with optional filters",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of matching notes"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_auto_summary",
-          "execution_context": "summarize_project_state",
-          "sequence_order": 2,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Search specific keywords in notes for targeted summary - finds relevant context by search string"
-        },
-        {
-          "directive_name": "project_metrics",
-          "execution_context": "gather_metrics",
-          "sequence_order": 2,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Search for specific metrics by keyword - targeted metric retrieval from notes"
-        }
-      ]
-    },
-    {
-      "name": "update_note",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Note ID to update"
-        },
-        {
-          "name": "content",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Update note content"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Update note_type"
-        },
-        {
-          "name": "reference_table",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Update reference table"
-        },
-        {
-          "name": "reference_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "Update reference ID"
-        },
-        {
-          "name": "source",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Update source"
-        },
-        {
-          "name": "severity",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Update severity"
-        },
-        {
-          "name": "directive_name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Update directive name"
-        }
-      ],
-      "purpose": "Update note metadata",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_note",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Note ID to delete"
-        }
-      ],
-      "purpose": "Delete note (discouraged)",
-      "error_handling": "",
+      "purpose": "Move function to different file (rarely used)",
+      "error_handling": "Return error if function_id/file_ids not found",
       "is_tool": false,
       "is_sub_helper": false,
       "return_statements": [
-        "```json"
+        "DATABASE CONTEXT: Moves function from one file to another - updates file_id and refreshes both file timestamps",
+        "DATABASE CONTEXT: Rarely used - typically functions stay in their original files",
+        "NEXT STEP: After moving function in database, move actual function code in filesystem between files",
+        "NEXT STEP: Update any imports referencing old file location to point to new file",
+        "CHECK: Did you move the actual code in filesystem? Database change doesn't move code",
+        "CHECK: Are there interactions referencing this function? They remain valid (ID-based)",
+        "RELATED HELPERS: After moving, both old and new file timestamps updated via update_file_timestamp()",
+        "RELATED HELPERS: Interactions remain valid since they're ID-based, not name-based",
+        "DIRECTIVE CONTEXT: Not used by directives - manual operation for code refactoring",
+        "COMMON WORKFLOWS: Extract function to separate file → move in filesystem → update_function_file_location()",
+        "WARNING: Database update doesn't move code - you must manually move function code between files",
+        "WARNING: Imports will break - update all import statements referencing old file location"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true}",
+        "Calls update_file_timestamp() for both old_file_id and new_file_id",
+        "SQL: UPDATE functions SET file_id=? WHERE id=?",
+        "Not exposed as MCP tool (is_tool: false) - internal use only"
+      ]
+    },
+    {
+      "name": "delete_function",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete function with cascade cleanup",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Cascading delete - removes function, all interactions involving it, all type relationships",
+        "DATABASE CONTEXT: Automatically logged to notes table with reason, severity, source for audit trail",
+        "DATABASE CONTEXT: Deletes from interactions table where function is caller OR callee",
+        "CHECK: Is this function called by other functions? Those calls become broken references",
+        "CHECK: Does this function have type relationships via types_functions? They will be deleted",
+        "CHECK: Have you documented the deletion reason clearly in note_reason parameter?",
+        "NEXT STEP: Before deleting, query interactions to see what calls this function (impacts)",
+        "NEXT STEP: After deletion, remove function code from filesystem file",
+        "RELATED HELPERS: Query interactions table before deletion to preview impact",
+        "RELATED HELPERS: Query types_functions to see type relationships that will be deleted",
+        "RELATED HELPERS: After deletion, check notes table for audit log",
+        "DIRECTIVE: Used by project_file_delete (sequence_order: 2) when cascading file deletion",
+        "DIRECTIVE FLOW: project_file_delete → delete_file() → delete_function() cascade → delete interactions → remove filesystem",
+        "COMMON WORKFLOWS: Verify no critical dependencies → delete_function() → verify logged → remove from code",
+        "WARNING: Deletion is permanent and cascades to interactions and type relationships - no undo",
+        "WARNING: If other functions call this function, those calls become broken references"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_delete",
+          "execution_context": "delete_file_and_db_records",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Cascade delete all functions in file - automatically deletes types and interactions"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, file_id: file_id}",
+        "Cascade deletes: DELETE FROM interactions WHERE caller_id=? OR callee_id=?, DELETE FROM types_functions WHERE function_id=?",
+        "Logs to notes: {reason: note_reason, severity: note_severity, source: note_source, type: note_type}",
+        "SQL: DELETE FROM functions WHERE id=? (after cascade cleanup)"
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-project-3.json",
-    "count": 35,
-    "range": "helpers 78-112 of 112",
-    "status": "Phase 8 Priority 6 & 8 COMPLETE - Task/milestone/subtask/sidequest/item/note helpers mapped to 12 directives",
-    "mapped_helpers": 15,
-    "unmapped_helpers": 20,
-    "note": "20 helpers are query/CRUD tools for AI use only (get_incomplete_tasks, get_tasks_comprehensive, get_task_flows, get_task_files, delete_task, get_incomplete_subtasks, get_subtasks_comprehensive, delete_subtask, get_incomplete_sidequests, get_sidequests_comprehensive, get_sidequest_flows, get_sidequest_files, delete_sidequest, get_items_for_subtask, get_items_for_sidequest, get_incomplete_items, delete_item, update_note, delete_note, delete_milestone) - intentionally not mapped to directives",
-    "total_mappings": 28,
-    "last_updated": "2025-12-20"
+    "count": 10,
+    "range": "helpers 26-35 of 112",
+    "description": "Function reservation, finalization, and management operations",
+    "first_helper": "reserve_function",
+    "last_helper": "delete_function",
+    "status": "return_statements enhanced - ready for review",
+    "last_updated": "2025-12-29"
   }
 }

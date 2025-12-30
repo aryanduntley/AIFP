@@ -1,59 +1,176 @@
 {
   "helpers": [
     {
-      "name": "finalize_type",
+      "name": "reserve_file",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "type_id",
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Preliminary file name (will have -IDxxx appended)"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "File path relative to project root"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Programming language (e.g., 'python', 'javascript', 'typescript')"
+        }
+      ],
+      "purpose": "Reserve file ID for naming before creation",
+      "error_handling": "Return error if path already exists",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Creates file entry with is_reserved=1 - file not yet created on filesystem",
+        "DATABASE CONTEXT: Returned ID MUST be embedded in filename using -IDxxx suffix pattern (e.g., calculator-ID42.py)",
+        "DATABASE CONTEXT: Reserved files excluded from queries until finalized - not tracked in themes/flows yet",
+        "NEXT STEP: Create the actual file with reserved ID in filename: {name}-ID{id}.{ext}",
+        "NEXT STEP: After file created, call finalize_file(id, final_name, path, language) to set is_reserved=0",
+        "NEXT STEP: After finalizing file, call reserve_function() for each function in the file",
+        "CHECK: Did you embed the ID in the filename correctly? Pattern is: basename-IDxxx.extension",
+        "CHECK: Does the file need to be assigned to flows? Use file_flows table after finalization",
+        "RELATED HELPERS: finalize_file() to complete reservation after file created on filesystem",
+        "RELATED HELPERS: reserve_function() to reserve function IDs for functions in this file",
+        "RELATED HELPERS: Use get_file_by_name() or get_file_by_path() to query after finalization",
+        "WORKFLOW: reserve_file() → create file with ID in name → finalize_file() → reserve_function() → finalize_function()",
+        "DIRECTIVE: Used by project_reserve_finalize (sequence_order: 1) before writing code",
+        "DIRECTIVE: Used by project_file_write (sequence_order: 1) to enable rename-proof references",
+        "DIRECTIVE FLOW: project_file_write → reserve_file() → generate code → finalize_file() → project_update_db",
+        "COMMON WORKFLOWS: Planning multiple files → reserve_files() for batch → create all → finalize_files()",
+        "WARNING: File MUST be created with ID in filename - this is how file tracking works without fragile path dependencies",
+        "WARNING: Do not finalize until file actually exists on filesystem - finalize_file() will verify file exists"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "reserve_file_name",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve file ID before writing code - AI embeds ID in filename for instant lookups (filename_id_42.py)"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "reserve_before_write",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve file ID before generating file content - enables rename-proof references"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, id: reserved_id, is_reserved: true}",
+        "SQL: INSERT INTO files (name, path, language, is_reserved) VALUES (?, ?, ?, 1) RETURNING id",
+        "Filename pattern: {name}-ID{id}.{extension} (e.g., calculator-ID42.py, utils-ID15.js)"
+      ]
+    },
+    {
+      "name": "reserve_files",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "files",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of file objects [{name, path, language}, ...]"
+        }
+      ],
+      "purpose": "Reserve multiple file IDs at once",
+      "error_handling": "Return error if any path already exists",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Batch version of reserve_file() - atomically reserves multiple file IDs at once",
+        "DATABASE CONTEXT: All files created with is_reserved=1 - more efficient than multiple reserve_file() calls",
+        "NEXT STEP: Create all files with their reserved IDs embedded in filenames using -IDxxx pattern",
+        "NEXT STEP: After all files created, call finalize_files() with batch of {file_id, name, path, language} objects",
+        "CHECK: IDs returned in same order as files array - map IDs back to file objects correctly",
+        "RELATED HELPERS: finalize_files() for batch finalization after creating all files",
+        "RELATED HELPERS: Use reserve_file() for single file operations instead of batch with one element",
+        "WORKFLOW: reserve_files([...]) → create all files with IDs → finalize_files([...]) → batch reserve functions",
+        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple files at once",
+        "COMMON WORKFLOWS: Large refactorings creating many new files → reserve_files() → parallel creation → finalize_files()",
+        "WARNING: Batch operations are all-or-nothing - if any file path exists, entire operation fails"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, ids: [id1, id2, ...]} in same order as input files array",
+        "SQL: Multiple INSERT INTO files ... RETURNING id (in transaction)",
+        "IDs correspond to files array indices: files[0] gets ids[0], files[1] gets ids[1], etc."
+      ]
+    },
+    {
+      "name": "finalize_file",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Reserved type ID"
+          "description": "Reserved ID"
         },
         {
           "name": "name",
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Final name with _idxx suffix"
+          "description": "Final name with -ID_xx suffix"
         },
         {
-          "name": "definition_json",
-          "type": "object",
+          "name": "path",
+          "type": "string",
           "required": true,
           "default": null,
-          "description": "ADT definition"
+          "description": "File path"
         },
         {
-          "name": "description",
+          "name": "language",
           "type": "string",
-          "required": false,
+          "required": true,
           "default": null,
-          "description": "Type description"
-        },
-        {
-          "name": "links",
-          "type": "object",
-          "required": false,
-          "default": null,
-          "description": "Links to related functions"
-        },
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "File ID where type is defined"
+          "description": "Language"
         }
       ],
-      "purpose": "Finalize reserved type after creation",
-      "error_handling": "",
+      "purpose": "Finalize reserved file after creation",
+      "error_handling": "Return error if file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"type_id\": type_id, \"file_id\": file_id}`",
-        "Sets is_reserved=false, calls update_file_timestamp(file_id)"
+        "DATABASE CONTEXT: Sets is_reserved=0 after verifying file exists on filesystem",
+        "DATABASE CONTEXT: Computes checksum of file content for change detection",
+        "DATABASE CONTEXT: File now tracked in queries and can be assigned to themes/flows via file_flows table",
+        "NEXT STEP: Assign file to flows using file_flows table if it belongs to specific feature areas",
+        "NEXT STEP: Call reserve_function() for each function defined in the file",
+        "NEXT STEP: After functions finalized, call add_interaction() to track function call patterns",
+        "CHECK: Verify file actually exists at path before calling - finalize_file() checks filesystem",
+        "CHECK: Did you include the -IDxxx suffix in the name parameter? Must match reserved ID",
+        "CHECK: Are there functions in this file that need to be reserved and finalized?",
+        "RELATED HELPERS: reserve_function() to reserve function IDs for functions in this finalized file",
+        "RELATED HELPERS: Call update_file() later if file content changes (updates checksum)",
+        "RELATED HELPERS: Use get_from_project_where('file_flows', {file_id}) to see which flows this file belongs to",
+        "WORKFLOW: reserve_file() → create file → finalize_file() → reserve_function() → finalize_function() → add_interaction()",
+        "DIRECTIVE: Used by project_reserve_finalize (sequence_order: 2) after code written",
+        "DIRECTIVE: Used by project_file_write (sequence_order: 3) after successful file generation",
+        "DIRECTIVE: Used by project_update_db (sequence_order: 2) when batch finalizing new files",
+        "DIRECTIVE FLOW: project_file_write → reserve_file() → write code → finalize_file() → project_update_db",
+        "DIRECTIVE FLOW: project_reserve_finalize → finalize_file() → reserve functions → aifp_status",
+        "COMMON WORKFLOWS: After finalization, file appears in status queries and can be tracked in completion paths",
+        "WARNING: Finalization will fail if file doesn't exist at path - ensure file written before calling",
+        "WARNING: Name parameter must include -IDxxx suffix matching file_id - this is verified"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -63,949 +180,241 @@
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Finalize type after code written - sets is_reserved=false and updates file timestamp"
+          "description": "Finalize file after code written - sets is_reserved=false and confirms file exists on filesystem"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "finalize_after_write",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize file reservation after successful file generation"
+        },
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "finalize_new_files",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize file reservations when updating database with new file metadata"
         }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, file_id: file_id}",
+        "Verifies file exists at path using os.path.exists()",
+        "Computes file checksum (SHA-256) and stores in checksum field",
+        "SQL: UPDATE files SET is_reserved=0, name=?, path=?, language=?, checksum=? WHERE id=?",
+        "Name validation: must contain '-ID{file_id}' pattern"
       ]
     },
     {
-      "name": "finalize_types",
+      "name": "finalize_files",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "types",
+          "name": "files",
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of type objects [{type_id, name, definition_json, description, links, file_id}, ...]"
+          "description": "Array of file objects [{file_id, name, path, language}, ...]"
         }
       ],
-      "purpose": "Finalize multiple reserved types",
-      "error_handling": "",
+      "purpose": "Finalize multiple reserved files",
+      "error_handling": "Return error if any file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"finalized_ids\": [...]}`"
+        "DATABASE CONTEXT: Batch version of finalize_file() - atomically finalizes multiple files at once",
+        "DATABASE CONTEXT: Verifies all files exist, computes checksums, sets is_reserved=0 for all",
+        "NEXT STEP: After batch finalization, reserve and finalize functions for all files in batch",
+        "NEXT STEP: Assign files to flows using file_flows table based on their feature areas",
+        "CHECK: All files in array must have matching -IDxxx suffixes in their names",
+        "CHECK: Verify all files actually exist before calling - operation is all-or-nothing",
+        "RELATED HELPERS: Use finalize_file() for single file operations instead of batch with one element",
+        "RELATED HELPERS: After finalizing, use reserve_functions() and finalize_functions() for batch function tracking",
+        "WORKFLOW: reserve_files() → create all files → finalize_files() → reserve_functions() batch → finalize_functions() batch",
+        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple files at once",
+        "COMMON WORKFLOWS: Large feature implementation → batch reserve → batch create → batch finalize → batch function tracking",
+        "WARNING: Batch operation is atomic - if any file missing or validation fails, entire batch fails",
+        "WARNING: Order of files array must match file_ids - ensure correspondence when building batch"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, finalized_ids: [...]} confirming which IDs were finalized",
+        "Verifies each file exists, computes checksums for all",
+        "SQL: Multiple UPDATE files SET is_reserved=0, checksum=? WHERE id=? (in transaction)",
+        "All operations succeed or all fail - no partial finalization"
+      ]
     },
     {
-      "name": "update_type",
+      "name": "get_file_by_name",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "type_id",
+          "name": "file_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "File name to look up (e.g., 'calculator-ID42.py')"
+        }
+      ],
+      "purpose": "Get file by name (high-frequency lookup)",
+      "error_handling": "Return null if not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Lookup file by name field (includes -IDxxx suffix)",
+        "DATABASE CONTEXT: Returns complete file object with all metadata: id, name, path, language, checksum, is_reserved",
+        "NEXT STEP: Use returned file_id to query functions with get_functions_by_file(file_id)",
+        "NEXT STEP: Check is_reserved field - if true, file not yet finalized",
+        "RELATED HELPERS: Prefer get_file_by_path() when you have path - it's more common and unambiguous",
+        "RELATED HELPERS: Use get_functions_by_file(file_id) to get all functions in this file",
+        "RELATED HELPERS: Use get_flows_for_file(file_id) to see which flows this file belongs to",
+        "DIRECTIVE CONTEXT: Not directly used by directives - utility for ad-hoc file queries by name",
+        "COMMON WORKFLOWS: Have filename from context → get_file_by_name() → extract file_id → query functions/flows",
+        "COMMON WORKFLOWS: Verifying file registration: get_file_by_name() → check if null (not registered) vs object (registered)",
+        "WARNING: Name must match exactly including -IDxxx suffix - partial matching not supported"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns file object or null if not found",
+        "SQL: SELECT * FROM files WHERE name=? LIMIT 1",
+        "Returns: {id, name, path, language, checksum, is_reserved, created_at, updated_at}"
+      ]
+    },
+    {
+      "name": "get_file_by_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "file_path",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "File path to look up (e.g., 'src/calculator.py')"
+        }
+      ],
+      "purpose": "Get file by path (very high-frequency lookup)",
+      "error_handling": "Return null if not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Most common file lookup - queries by path field (e.g., 'src/calculator.py')",
+        "DATABASE CONTEXT: Returns complete file object including ID, name with suffix, language, checksum, reservation status",
+        "NEXT STEP: Use returned file_id to query related data: get_functions_by_file(file_id), get_flows_for_file(file_id)",
+        "NEXT STEP: Check is_reserved field - if true, file still in reservation state, not yet finalized",
+        "NEXT STEP: Compare checksum field with current file hash to detect external modifications (use file_has_changed)",
+        "RELATED HELPERS: get_functions_by_file(file_id) to get all functions defined in this file",
+        "RELATED HELPERS: get_flows_for_file(file_id) to see which feature flows this file contributes to",
+        "RELATED HELPERS: file_has_changed(file_id) to detect if file content changed since last checksum",
+        "DIRECTIVE: Used by project_file_read (sequence_order: 1) to load file metadata with full context",
+        "DIRECTIVE: Used by project_file_delete (sequence_order: 1) to check if file tracked before deletion",
+        "DIRECTIVE FLOW: project_file_read → get_file_by_path() → get_functions_by_file() → load complete file context",
+        "DIRECTIVE FLOW: project_file_delete → get_file_by_path() → if found, delete file & DB entry → cleanup relationships",
+        "COMMON WORKFLOWS: Working with file → get_file_by_path() → extract file_id → query functions/interactions/flows",
+        "COMMON WORKFLOWS: Before writing file → get_file_by_path() → if null, needs reservation → reserve_file()",
+        "WARNING: Path must be relative to project root - absolute paths not supported",
+        "WARNING: Returns null if file not in database - doesn't mean file doesn't exist on filesystem, just not tracked"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_read",
+          "execution_context": "load_with_context",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Load file metadata from database by path - provides full context including functions, dependencies, theme/flow associations"
+        },
+        {
+          "directive_name": "project_file_delete",
+          "execution_context": "check_file_tracked",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if file exists in database before deletion - ensures proper cleanup of DB records"
+        }
+      ],
+      "implementation_notes": [
+        "Returns file object or null if not found",
+        "SQL: SELECT * FROM files WHERE path=? LIMIT 1",
+        "Returns: {id, name, path, language, checksum, is_reserved, created_at, updated_at}"
+      ]
+    },
+    {
+      "name": "update_file",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Type ID to update"
+          "description": "File ID to update"
         },
         {
           "name": "name",
           "type": "string",
           "required": false,
           "default": null,
-          "description": "New name (NULL = don't update)"
+          "description": "New file name (NULL = don't update)"
         },
         {
-          "name": "file_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "New file_id (NULL = don't update)"
-        },
-        {
-          "name": "definition_json",
-          "type": "object",
-          "required": false,
-          "default": null,
-          "description": "New definition (NULL = don't update)"
-        },
-        {
-          "name": "description",
+          "name": "path",
           "type": "string",
           "required": false,
           "default": null,
-          "description": "New description (NULL = don't update)"
+          "description": "New file path (NULL = don't update)"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Language (NULL = don't update)"
         }
       ],
-      "purpose": "Update type metadata",
-      "error_handling": "",
+      "purpose": "Update file metadata",
+      "error_handling": "Return error if file_id not found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"type_id\": type_id, \"file_id\": file_id}`",
-        "Calls update_file_timestamp(file_id)"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_type",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "type_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Type ID to delete"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete type with relationship validation",
-      "error_handling": "- Calls `get_from_project_where(\"types_functions\", {\"type_id\": type_id})`",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Error if types_functions exist, success otherwise",
-        "Calls update_file_timestamp(file_id) on success"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "add_types_functions",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "relationships",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of tuples [(type_id, function_id, role), ...] - role: 'factory', 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator'"
-        }
-      ],
-      "purpose": "Add type-function relationship(s)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"ids\": [...]}`",
-        "For single relationship, pass array with one tuple: `[(type_id, function_id, role)]`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "update_type_function_role",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "type_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Type ID"
-        },
-        {
-          "name": "function_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Function ID"
-        },
-        {
-          "name": "role",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'factory', 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator'"
-        }
-      ],
-      "purpose": "Update relationship role only",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`",
-        "For other changes, delete old and add new"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_type_function",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "types_functions junction table ID"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Remove type-function relationship",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "add_interaction",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Source function name"
-        },
-        {
-          "name": "target",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Target function name"
-        },
-        {
-          "name": "type",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Interaction type"
-        }
-      ],
-      "purpose": "Add function dependency/interaction",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
+        "DATABASE CONTEXT: Partial update for file metadata - only updates provided fields",
+        "DATABASE CONTEXT: updated_at timestamp auto-updated by trigger, checksum recalculated if content changed",
+        "NEXT STEP: If name changed, verify -IDxxx suffix still matches file_id",
+        "NEXT STEP: If path changed, update any hardcoded path references in code that might exist",
+        "CHECK: Did name change? Ensure code references still work (ID-based references unaffected, but imports might break)",
+        "CHECK: Did path change? Filesystem file must be moved to match new path before calling this",
+        "RELATED HELPERS: Use file_has_changed() to detect if file content modified externally before updating metadata",
+        "RELATED HELPERS: Call update_file_timestamp() after batch function updates to refresh file checksum",
+        "DIRECTIVE: Used by project_update_db (sequence_order: 1) after code generation to sync checksums",
+        "DIRECTIVE FLOW: project_update_db → update_file() to sync metadata → update functions → update_file_timestamp()",
+        "COMMON WORKFLOWS: File refactored → update metadata → recalculate checksum → verify no external conflicts",
+        "WARNING: Changing name breaks imports unless using ID-based function references",
+        "WARNING: Changing path without moving filesystem file causes inconsistency - move file first"
       ],
       "target_database": "project",
       "used_by_directives": [
         {
           "directive_name": "project_update_db",
-          "execution_context": "add_function_interactions",
-          "sequence_order": 4,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Track function dependencies after code generation - creates interaction records for function relationships"
-        }
-      ]
-    },
-    {
-      "name": "add_interactions",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "interactions",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of tuples [(source_function_id, target_function_id, interaction_type, description), ...] - type: 'call', 'chain', 'borrow', 'compose', 'pipe'"
-        }
-      ],
-      "purpose": "Add multiple interactions at once",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"ids\": [...]}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "update_interaction",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Interaction ID"
-        },
-        {
-          "name": "source_function_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "New source (NULL = don't update)"
-        },
-        {
-          "name": "target_function_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "New target (NULL = don't update)"
-        },
-        {
-          "name": "interaction_type",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'call', 'chain', 'borrow', 'compose', 'pipe' (NULL = don't update)"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New description (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update interaction metadata",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_interaction",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Interaction ID"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete interaction",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_theme_by_name",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "theme_name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Theme name to look up"
-        }
-      ],
-      "purpose": "Get theme by name (fairly frequent)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Theme object or null"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_theme_flow_mapping",
-          "execution_context": "infer_metadata",
+          "execution_context": "update_files_table",
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Check if theme exists before mapping file - validates theme name from file metadata"
-        },
-        {
-          "directive_name": "project_init",
-          "execution_context": "create_project_structure",
-          "sequence_order": 3,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Check if default themes already exist during initialization - prevents duplicates"
+          "description": "Update file metadata after code generation - synchronizes checksum and file information"
         }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, file_id: file_id}",
+        "Recalculates checksum from current file content",
+        "SQL: UPDATE files SET name=?, path=?, language=?, checksum=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        "Only updates non-NULL parameters - partial updates supported"
       ]
     },
     {
-      "name": "get_flow_by_name",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "flow_name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Flow name to look up"
-        }
-      ],
-      "purpose": "Get flow by name (fairly frequent)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Flow object or null"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_theme_flow_mapping",
-          "execution_context": "infer_metadata",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Check if flow exists before mapping file - validates flow name from file metadata"
-        },
-        {
-          "directive_name": "project_init",
-          "execution_context": "create_project_structure",
-          "sequence_order": 4,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Check if default flows already exist during initialization - prevents duplicates"
-        }
-      ]
-    },
-    {
-      "name": "get_all_themes",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get all project themes",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of themes"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_blueprint_read",
-          "execution_context": "database_fallback",
-          "sequence_order": 3,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Query all themes when blueprint missing - retrieves theme list from database for fallback"
-        }
-      ]
-    },
-    {
-      "name": "get_all_flows",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get all project flows",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of flows"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_blueprint_read",
-          "execution_context": "database_fallback",
-          "sequence_order": 4,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Query all flows when blueprint missing - retrieves flow list from database for fallback"
-        }
-      ]
-    },
-    {
-      "name": "add_theme",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Theme name"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Theme description"
-        },
-        {
-          "name": "ai_generated",
-          "type": "boolean",
-          "required": true,
-          "default": true,
-          "description": "True if AI-generated, False if user-created"
-        },
-        {
-          "name": "confidence_score",
-          "type": "number",
-          "required": false,
-          "default": 0.0,
-          "description": "Confidence score 0-1"
-        }
-      ],
-      "purpose": "Add project theme",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_init",
-          "execution_context": "create_project_structure",
-          "sequence_order": 5,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Create initial project themes during initialization - populates themes from blueprint prompts"
-        },
-        {
-          "directive_name": "project_theme_flow_mapping",
-          "execution_context": "new_theme_created",
-          "sequence_order": 3,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Create new theme when mapping file with unknown theme - adds theme and triggers project_evolution"
-        }
-      ]
-    },
-    {
-      "name": "update_theme",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "theme_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Theme ID to update"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New name (NULL = don't update)"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New description (NULL = don't update)"
-        },
-        {
-          "name": "confidence_score",
-          "type": "number",
-          "required": false,
-          "default": null,
-          "description": "New confidence score (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update theme metadata",
-      "error_handling": "Error if no update fields provided",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_theme",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "theme_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Theme ID to delete"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete theme with flow validation",
-      "error_handling": "- Calls `get_flows_for_theme(theme_id)`",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Error if flows exist, success otherwise"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "add_flow",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Flow name"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Flow description"
-        },
-        {
-          "name": "ai_generated",
-          "type": "boolean",
-          "required": true,
-          "default": true,
-          "description": "True if AI-generated"
-        },
-        {
-          "name": "confidence_score",
-          "type": "number",
-          "required": false,
-          "default": 0.0,
-          "description": "Confidence score 0-1"
-        }
-      ],
-      "purpose": "Add project flow",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_init",
-          "execution_context": "create_project_structure",
-          "sequence_order": 6,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Create initial project flows during initialization - populates flows from blueprint prompts"
-        },
-        {
-          "directive_name": "project_theme_flow_mapping",
-          "execution_context": "new_flow_created",
-          "sequence_order": 4,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Create new flow when mapping file with unknown flow - adds flow and triggers project_evolution"
-        }
-      ]
-    },
-    {
-      "name": "get_file_ids_from_flows",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "flow_ids",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of flow IDs [1, 3, 5]"
-        }
-      ],
-      "purpose": "Get all file IDs associated with flows",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of file IDs"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "update_flow",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "flow_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Flow ID to update"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New name (NULL = don't update)"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New description (NULL = don't update)"
-        },
-        {
-          "name": "confidence_score",
-          "type": "number",
-          "required": false,
-          "default": null,
-          "description": "New confidence score (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update flow metadata",
-      "error_handling": "Error if no update fields provided",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_flow",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "flow_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Flow ID to delete"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete flow with file validation",
-      "error_handling": "- Calls `get_files_by_flow(flow_id)`",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Error if files exist, success otherwise"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_flows_for_theme",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "theme_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Theme ID"
-        }
-      ],
-      "purpose": "Get all flows for a theme",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of flow objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_theme_flow_mapping",
-          "execution_context": "update_flow_themes",
-          "sequence_order": 5,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Validate theme-flow relationships before mapping - ensures consistent theme-flow associations"
-        }
-      ]
-    },
-    {
-      "name": "get_themes_for_flow",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "flow_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Flow ID"
-        }
-      ],
-      "purpose": "Get all themes for a flow",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of theme objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_files_by_flow",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "flow_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Flow ID"
-        }
-      ],
-      "purpose": "Get all files for a flow",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of file objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_dependency_map",
-          "execution_context": "generate_dependency_graph",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Query files by flow for dependency graph generation - builds flow-based dependency relationships"
-        }
-      ]
-    },
-    {
-      "name": "get_flows_for_file",
+      "name": "file_has_changed",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
@@ -1013,215 +422,92 @@
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "File ID"
+          "description": "File ID to check"
         }
       ],
-      "purpose": "Get all flows for a file",
-      "error_handling": "",
+      "purpose": "Check if file changed using Git (if available) or filesystem timestamp",
+      "error_handling": "Return error if file_id not found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of flow objects"
+        "DATABASE CONTEXT: Detects external file modifications by comparing stored checksum with current file hash",
+        "DATABASE CONTEXT: Method 'git' uses git diff for precise change detection, 'filesystem' uses checksum comparison",
+        "NEXT STEP: If changed=true, call update_file() to refresh metadata and recalculate checksum",
+        "NEXT STEP: If changed externally, your function metadata may be stale - re-parse functions if significant changes",
+        "CHECK: Git method more reliable for content changes vs filesystem touches without modifications",
+        "CHECK: If file changed, were functions added/removed/modified? May need to update functions table",
+        "RELATED HELPERS: After detecting change, use update_file() to sync checksum and metadata",
+        "RELATED HELPERS: If functions changed, call update_functions_for_file() to refresh function tracking",
+        "RELATED HELPERS: Similar to blueprint_has_changed() but for individual files instead of blueprint",
+        "DIRECTIVE: Used by project_file_read (sequence_order: 2) to warn about staleness",
+        "DIRECTIVE FLOW: project_file_read → get_file_by_path() → file_has_changed() → warn if stale → proceed",
+        "COMMON WORKFLOWS: Before reading file context → file_has_changed() → warn user → offer to refresh",
+        "COMMON WORKFLOWS: Session start → check files changed → batch update checksums → continue work",
+        "WARNING: Filesystem method can give false positives if file touched but content unchanged",
+        "WARNING: If file changed externally, database state (functions, interactions) may be out of sync with reality"
       ],
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_dependency_map",
-          "execution_context": "generate_dependency_graph",
+          "directive_name": "project_file_read",
+          "execution_context": "check_checksum_mismatch",
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Reverse lookup - get flows for file in dependency graph - enables bidirectional flow-file navigation"
+          "description": "Detect if file changed since last DB update - warns user about potential staleness"
         }
+      ],
+      "implementation_notes": [
+        "Returns {changed: boolean, method: 'git'|'filesystem'}",
+        "Git method: git diff --quiet <path> (if git available)",
+        "Filesystem method: Compute SHA-256 of file content, compare with stored checksum",
+        "Prefers git method if available, falls back to filesystem checksum"
       ]
     },
     {
-      "name": "add_completion_path",
+      "name": "update_file_timestamp",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Completion path name (e.g., 'setup', 'core dev', 'finish')"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": true,
-          "default": "pending",
-          "description": "'pending', 'in_progress', 'completed'"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Description"
-        },
-        {
-          "name": "order_index",
+          "name": "file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Order position (1, 2, 3...)"
+          "description": "File ID to update timestamp for"
         }
       ],
-      "purpose": "Add completion path stage",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
+      "purpose": "Update file timestamp (called automatically after function updates)",
+      "error_handling": "Return error if file_id not found",
+      "is_tool": false,
+      "is_sub_helper": true,
       "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
+        "DATABASE CONTEXT: Sub-helper automatically called by finalize_type() after batch function updates to file",
+        "DATABASE CONTEXT: Recalculates file checksum from current content and updates updated_at timestamp",
+        "DATABASE CONTEXT: Not called directly - triggered by function/type finalization in same file",
+        "RELATED HELPERS: Called internally by finalize_type() when type finalized (updates parent file timestamp)",
+        "RELATED HELPERS: Ensures file checksum stays accurate when functions/types within file are modified",
+        "COMMON WORKFLOWS: finalize_function() batch → update_file_timestamp() called once → file checksum refreshed",
+        "COMMON WORKFLOWS: Never call directly - use update_file() if manual timestamp update needed"
       ],
       "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_task_decomposition",
-          "execution_context": "decompose_request",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Create completion path stages during user request decomposition - establishes project roadmap structure"
-        }
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true}",
+        "Sub-helper: not exposed as MCP tool, only called internally",
+        "Recalculates checksum from file content",
+        "SQL: UPDATE files SET updated_at=CURRENT_TIMESTAMP, checksum=? WHERE id=?"
       ]
     },
     {
-      "name": "get_all_completion_paths",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get all completion paths ordered by order_index",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of completion path objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_next_completion_path",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get lowest order_index with status != completed",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Next incomplete completion path"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_milestone_complete",
-          "execution_context": "move_to_next_milestone",
-          "sequence_order": 3,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Get next incomplete completion path after milestone completes - identifies next phase of project"
-        }
-      ]
-    },
-    {
-      "name": "get_completion_paths_by_status",
+      "name": "delete_file",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
         {
-          "name": "status",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed'"
-        }
-      ],
-      "purpose": "Get completion paths filtered by status",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array ordered by order_index"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_incomplete_completion_paths",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get all non-completed paths",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array ordered by order_index"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "update_completion_path",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
+          "name": "file_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Completion path ID"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New name (NULL = don't update)"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed' (NULL = don't update)"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New description (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update completion path",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_milestone_complete",
-          "execution_context": "mark_path_complete",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Mark completion path as completed when all milestones in path finish - updates path status"
-        }
-      ]
-    },
-    {
-      "name": "delete_completion_path",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Completion path ID"
+          "description": "File ID to delete"
         },
         {
           "name": "note_reason",
@@ -1252,219 +538,59 @@
           "description": "'entry_deletion'"
         }
       ],
-      "purpose": "Delete completion path with milestone validation",
-      "error_handling": "- Calls `get_milestones_by_path(path_id)`",
+      "purpose": "Delete file with comprehensive cross-reference validation",
+      "error_handling": "Return error if functions/flows exist for file - requires manual cleanup first",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Error if milestones exist, success otherwise"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "reorder_completion_path",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Completion path ID"
-        },
-        {
-          "name": "new_order_index",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "New order position"
-        }
-      ],
-      "purpose": "Change order_index for a completion path",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}` or error if order exists"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "reorder_all_completion_paths",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Fix gaps and duplicates in order_index",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [
-        "```json",
-        "Renumbers to consecutive sequence, reports duplicates"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "swap_completion_paths_order",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "id1",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "First completion path ID"
-        },
-        {
-          "name": "id2",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Second completion path ID"
-        }
-      ],
-      "purpose": "Swap order_index of two completion paths",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`",
-        "Temporarily allows duplicates during swap"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "add_milestone",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "completion_path_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Completion path ID this milestone belongs to"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Milestone name"
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "required": true,
-          "default": "pending",
-          "description": "'pending', 'in_progress', 'completed', 'blocked'"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Milestone description"
-        }
-      ],
-      "purpose": "Add milestone to completion path",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
+        "DATABASE CONTEXT: Cascading delete - removes file entry, all functions in file, all interactions involving those functions",
+        "DATABASE CONTEXT: Automatically logged to notes table with reason, severity, source for audit trail",
+        "DATABASE CONTEXT: Checks for dependencies before deletion - fails if file linked to flows via file_flows table",
+        "CHECK: Does this file have functions? They will be deleted too - are they referenced by other code?",
+        "CHECK: Is file assigned to flows via file_flows? Must remove flow assignments manually first",
+        "CHECK: Are there interactions tracking calls to/from functions in this file? They will be deleted too",
+        "CHECK: Have you documented the deletion reason clearly in note_reason parameter?",
+        "NEXT STEP: Before deleting, query get_functions_by_file(file_id) to see what functions will be removed",
+        "NEXT STEP: Before deleting, check file_flows table to see if file assigned to any flows",
+        "NEXT STEP: After deletion, remove file from filesystem if it still exists",
+        "RELATED HELPERS: Use get_functions_by_file(file_id) to preview what will be deleted",
+        "RELATED HELPERS: Use get_flows_for_file(file_id) to check flow assignments before deletion",
+        "RELATED HELPERS: After deletion, check notes table for audit log of what was removed",
+        "DIRECTIVE: Used by project_file_delete (sequence_order: 1) for filesystem+DB cleanup",
+        "DIRECTIVE FLOW: project_file_delete → check dependencies → delete_file() → remove from filesystem",
+        "COMMON WORKFLOWS: Verify no dependencies → delete_file() → verify logged to notes → clean up filesystem",
+        "WARNING: Deletion is permanent and cascades to functions and interactions - no undo",
+        "WARNING: Must manually remove file_flows entries first if file assigned to flows - prevents orphaned relationships",
+        "WARNING: If functions in this file are called by other files, those calls become broken references"
       ],
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_task_decomposition",
-          "execution_context": "decompose_request",
-          "sequence_order": 2,
+          "directive_name": "project_file_delete",
+          "execution_context": "delete_file_and_db_records",
+          "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Create milestones for completion paths during decomposition - defines project phases"
+          "description": "Delete file from filesystem and database with cascade cleanup of functions and interactions"
         }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, deleted_file_id: file_id}",
+        "Cascade deletes: DELETE FROM functions WHERE file_id=?, DELETE FROM interactions WHERE caller_id IN (...)",
+        "Logs to notes: {reason: note_reason, severity: note_severity, source: note_source, type: note_type}",
+        "SQL: DELETE FROM files WHERE id=? (after validation and cascade cleanup)",
+        "Validation: Checks file_flows table - fails if relationships exist"
       ]
-    },
-    {
-      "name": "get_milestones_by_path",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "completion_path_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Completion path ID"
-        }
-      ],
-      "purpose": "Get all milestones for a completion path",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of milestone objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_milestone_complete",
-          "execution_context": "check_path_completion",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Check if all milestones in completion path are complete - determines if path should be marked complete"
-        }
-      ]
-    },
-    {
-      "name": "get_milestones_by_status",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "status",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'pending', 'in_progress', 'completed', 'blocked'"
-        }
-      ],
-      "purpose": "Get milestones filtered by status",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of milestone objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_incomplete_milestones",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [],
-      "purpose": "Get all non-completed milestones",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of milestone objects"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-project-2.json",
-    "count": 40,
-    "range": "helpers 38-77 of 112",
-    "status": "Phase 8 Priority 6, 7 & 8 COMPLETE - Completion path, milestone, type, interaction, theme, flow helpers mapped",
-    "mapped_helpers": 16,
-    "unmapped_helpers": 24,
-    "note": "24 helpers are query/batch/CRUD tools for AI use only (get_all_completion_paths, get_completion_paths_by_status, get_incomplete_completion_paths, delete_completion_path, reorder_completion_path, reorder_all_completion_paths, swap_completion_paths_order, get_milestones_by_status, get_incomplete_milestones, finalize_types, reserve_types, update_type, delete_type, add_types_functions, update_type_function_role, delete_type_function, add_interactions, update_interaction, delete_interaction, update_theme, delete_theme, update_flow, delete_flow, get_file_ids_from_flows, get_themes_for_flow) - intentionally not mapped to directives",
-    "total_mappings": 20,
-    "last_updated": "2025-12-20"
+    "count": 10,
+    "range": "helpers 16-25 of 112",
+    "description": "File reservation, finalization, and management operations",
+    "first_helper": "reserve_file",
+    "last_helper": "delete_file",
+    "status": "return_statements enhanced - ready for review",
+    "last_updated": "2025-12-29"
   }
 }

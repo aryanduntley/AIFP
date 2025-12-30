@@ -1,0 +1,614 @@
+{
+  "helpers": [
+	{
+      "name": "get_theme_by_name",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "theme_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Theme name to look up"
+        }
+      ],
+      "purpose": "Get theme by name (fairly frequent)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - looks up theme by name (most common theme query)",
+        "NEXT STEP: If null returned, theme doesn't exist - may need to create with add_theme()",
+        "NEXT STEP: Use theme_id from returned object for theme-flow mappings and queries",
+        "CHECK: Theme names are unique - query returns single theme or null",
+        "RELATED HELPERS: get_all_themes() to list all themes",
+        "RELATED HELPERS: add_theme() to create new theme if not found",
+        "WORKFLOW: Before mapping file → get_theme_by_name() → verify theme exists",
+        "DIRECTIVE: Used by project_theme_flow_mapping (sequence_order: 1) - validates theme before mapping",
+        "DIRECTIVE: Used by project_init (sequence_order: 3, optional) - checks if default themes exist",
+        "DIRECTIVE FLOW: project_theme_flow_mapping → get_theme_by_name() → if null → add_theme() → project_evolution",
+        "COMMON WORKFLOWS: File metadata has theme → get_theme_by_name() → validate exists before linking"
+      ],
+      "implementation_notes": [
+        "Returns: Theme object {id, name, description, ai_generated, confidence_score} or null",
+        "Queries themes table WHERE name = theme_name"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_theme_flow_mapping",
+          "execution_context": "infer_metadata",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if theme exists before mapping file - validates theme name from file metadata"
+        },
+        {
+          "directive_name": "project_init",
+          "execution_context": "create_project_structure",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Check if default themes already exist during initialization - prevents duplicates"
+        }
+      ]
+    },
+    {
+      "name": "get_flow_by_name",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "flow_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Flow name to look up"
+        }
+      ],
+      "purpose": "Get flow by name (fairly frequent)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - looks up flow by name (most common flow query)",
+        "NEXT STEP: If null returned, flow doesn't exist - may need to create with add_flow()",
+        "NEXT STEP: Use flow_id from returned object for file-flow mappings and queries",
+        "CHECK: Flow names are unique - query returns single flow or null",
+        "RELATED HELPERS: get_all_flows() to list all flows",
+        "RELATED HELPERS: add_flow() to create new flow if not found",
+        "WORKFLOW: Before mapping file → get_flow_by_name() → verify flow exists",
+        "DIRECTIVE: Used by project_theme_flow_mapping (sequence_order: 2) - validates flow before mapping",
+        "DIRECTIVE: Used by project_init (sequence_order: 4, optional) - checks if default flows exist",
+        "DIRECTIVE FLOW: project_theme_flow_mapping → get_flow_by_name() → if null → add_flow() → link to theme",
+        "COMMON WORKFLOWS: File metadata has flow → get_flow_by_name() → validate exists before linking"
+      ],
+      "implementation_notes": [
+        "Returns: Flow object {id, name, description, theme_id} or null",
+        "Queries flows table WHERE name = flow_name"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_theme_flow_mapping",
+          "execution_context": "infer_metadata",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if flow exists before mapping file - validates flow name from file metadata"
+        },
+        {
+          "directive_name": "project_init",
+          "execution_context": "create_project_structure",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Check if default flows already exist during initialization - prevents duplicates"
+        }
+      ]
+    },
+    {
+      "name": "get_all_themes",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all project themes",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves all themes in project",
+        "NEXT STEP: Use for listing, selection UI, or understanding project organization",
+        "CHECK: Empty array if no themes created yet (fresh project)",
+        "RELATED HELPERS: get_theme_by_name() for specific theme lookup",
+        "RELATED HELPERS: add_theme() to create new themes",
+        "WORKFLOW: Display project structure → get_all_themes() → show theme list to user",
+        "DIRECTIVE: Used by project_blueprint_read (sequence_order: 3, optional) - database fallback when blueprint missing",
+        "COMMON WORKFLOWS: Project overview → get_all_themes() → understand organizational structure"
+      ],
+      "implementation_notes": [
+        "Returns: Array of theme objects [{id, name, description, ai_generated, confidence_score}, ...]",
+        "Queries SELECT * FROM themes"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_blueprint_read",
+          "execution_context": "database_fallback",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Query all themes when blueprint missing - retrieves theme list from database for fallback"
+        }
+      ]
+    },
+    {
+      "name": "get_all_flows",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all project flows",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves all flows in project",
+        "NEXT STEP: Use for listing flows, understanding code organization by flow",
+        "CHECK: Empty array if no flows created yet (fresh project)",
+        "RELATED HELPERS: get_flow_by_name() for specific flow lookup",
+        "RELATED HELPERS: add_flow() to create new flows",
+        "RELATED HELPERS: get_flows_for_theme() to filter flows by theme",
+        "WORKFLOW: Display project structure → get_all_flows() → show flow list to user",
+        "DIRECTIVE: Used by project_blueprint_read (sequence_order: 4, optional) - database fallback when blueprint missing",
+        "COMMON WORKFLOWS: Project overview → get_all_flows() → understand functional organization"
+      ],
+      "implementation_notes": [
+        "Returns: Array of flow objects [{id, name, description, theme_id}, ...]",
+        "Queries SELECT * FROM flows"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_blueprint_read",
+          "execution_context": "database_fallback",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Query all flows when blueprint missing - retrieves flow list from database for fallback"
+        }
+      ]
+    },
+    {
+      "name": "add_theme",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Theme name"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Theme description"
+        },
+        {
+          "name": "ai_generated",
+          "type": "boolean",
+          "required": true,
+          "default": true,
+          "description": "True if AI-generated, False if user-created"
+        },
+        {
+          "name": "confidence_score",
+          "type": "number",
+          "required": false,
+          "default": 0.0,
+          "description": "Confidence score 0-1"
+        }
+      ],
+      "purpose": "Add project theme",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Creates new theme - top-level organizational category for flows",
+        "DATABASE CONTEXT: AI_generated flag tracks whether AI or user created theme",
+        "DATABASE CONTEXT: Confidence_score (0-1) indicates AI's confidence in theme classification",
+        "NEXT STEP: After creating theme, use add_flow() to create flows under this theme",
+        "NEXT STEP: If ai_generated=true and new theme → triggers project_evolution directive",
+        "CHECK: Name should be unique - may need get_theme_by_name() check first",
+        "CHECK: Confidence_score 0-1 range (0.0 = low confidence, 1.0 = certain)",
+        "RELATED HELPERS: get_theme_by_name() to check if exists before creating",
+        "RELATED HELPERS: add_flow() to create flows under this theme",
+        "WORKFLOW: Infer theme from file → add_theme() → add_flow() → link file to flow",
+        "DIRECTIVE: Used by project_init (sequence_order: 5) - creates initial themes from blueprint",
+        "DIRECTIVE: Used by project_theme_flow_mapping (sequence_order: 3) - creates new theme when discovered",
+        "DIRECTIVE FLOW: project_theme_flow_mapping → new_theme_created → add_theme() → project_evolution",
+        "COMMON WORKFLOWS: AI detects new organizational category → add_theme(ai_generated=true, confidence=0.9)"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, id: int} - new theme ID",
+        "Inserts into themes table",
+        "If ai_generated=true → may trigger project_evolution"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_init",
+          "execution_context": "create_project_structure",
+          "sequence_order": 5,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Create initial project themes during initialization - populates themes from blueprint prompts"
+        },
+        {
+          "directive_name": "project_theme_flow_mapping",
+          "execution_context": "new_theme_created",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Create new theme when mapping file with unknown theme - adds theme and triggers project_evolution"
+        }
+      ]
+    },
+    {
+      "name": "update_theme",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "theme_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Theme ID to update"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        },
+        {
+          "name": "confidence_score",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "New confidence score (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update theme metadata",
+      "error_handling": "Error if no update fields provided",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Updates theme metadata - name, description, or confidence_score",
+        "NEXT STEP: All parameters optional - provide only fields needing update",
+        "NEXT STEP: Error if no update fields provided - must update at least one field",
+        "CHECK: Name updates should maintain uniqueness across themes",
+        "CHECK: Confidence_score should remain 0-1 range",
+        "RELATED HELPERS: get_theme_by_name() to find theme before updating",
+        "WORKFLOW: Refine theme classification → update_theme(theme_id, confidence_score=0.95)",
+        "COMMON WORKFLOWS: Rename theme → update_theme(theme_id, name='NewName')"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "NULL parameters = don't update that field",
+        "Error if all parameters are NULL"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_theme",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "theme_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Theme ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete theme with flow validation",
+      "error_handling": "- Calls `get_flows_for_theme(theme_id)`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Deletes theme with relationship validation - prevents orphaned flows",
+        "DATABASE CONTEXT: Requires note metadata for audit trail",
+        "NEXT STEP: Error if flows exist - must delete or reassign flows first before deleting theme",
+        "CHECK: Validates no flows linked to theme - prevents orphaned organizational structure",
+        "CHECK: Must provide note_reason, note_severity, note_source for audit trail",
+        "RELATED HELPERS: get_flows_for_theme() checks for linked flows before deletion",
+        "RELATED HELPERS: delete_flow() to remove flows before deleting theme",
+        "WORKFLOW: Before deleting theme → get_flows_for_theme() → delete flows → delete_theme()",
+        "COMMON WORKFLOWS: Remove unused theme → verify no flows → delete_theme()",
+        "WARNING: Destructive operation - validates relationships to prevent data loss"
+      ],
+      "implementation_notes": [
+        "Returns error if flows exist linked to theme",
+        "Returns success after deletion with audit note",
+        "Queries flows table to validate no relationships"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Flow name"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Flow description"
+        },
+        {
+          "name": "ai_generated",
+          "type": "boolean",
+          "required": true,
+          "default": true,
+          "description": "True if AI-generated"
+        },
+        {
+          "name": "confidence_score",
+          "type": "number",
+          "required": false,
+          "default": 0.0,
+          "description": "Confidence score 0-1"
+        }
+      ],
+      "purpose": "Add project flow",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Creates new flow - organizational category under theme for grouping files",
+        "DATABASE CONTEXT: Flows organize files by functional purpose within themes",
+        "DATABASE CONTEXT: AI_generated and confidence_score track classification quality",
+        "NEXT STEP: After creating flow, link files to this flow using file_flows table",
+        "NEXT STEP: If ai_generated=true and new flow → triggers project_evolution directive",
+        "CHECK: Flow name should be unique within theme",
+        "CHECK: Confidence_score 0-1 range",
+        "RELATED HELPERS: get_flow_by_name() to check if exists before creating",
+        "RELATED HELPERS: Link files after creation (file_flows table operations)",
+        "WORKFLOW: Infer flow from file → add_flow() → link file to flow via file_flows",
+        "DIRECTIVE: Used by project_init (sequence_order: 6) - creates initial flows from blueprint",
+        "DIRECTIVE: Used by project_theme_flow_mapping (sequence_order: 4) - creates new flow when discovered",
+        "DIRECTIVE FLOW: project_theme_flow_mapping → new_flow_created → add_flow() → project_evolution",
+        "COMMON WORKFLOWS: AI detects new functional category → add_flow(ai_generated=true, confidence=0.85)"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, id: int} - new flow ID",
+        "Inserts into flows table",
+        "If ai_generated=true → may trigger project_evolution"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_init",
+          "execution_context": "create_project_structure",
+          "sequence_order": 6,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Create initial project flows during initialization - populates flows from blueprint prompts"
+        },
+        {
+          "directive_name": "project_theme_flow_mapping",
+          "execution_context": "new_flow_created",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Create new flow when mapping file with unknown flow - adds flow and triggers project_evolution"
+        }
+      ]
+    },
+    {
+      "name": "get_file_ids_from_flows",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of flow IDs [1, 3, 5]"
+        }
+      ],
+      "purpose": "Get all file IDs associated with flows",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves file IDs for multiple flows at once",
+        "NEXT STEP: Use returned file IDs to query files table for full file objects",
+        "NEXT STEP: Useful for bulk operations on files within specific flows",
+        "CHECK: Returns array of unique file IDs (no duplicates)",
+        "CHECK: Empty array if no files linked to provided flows",
+        "RELATED HELPERS: get_files_by_flow() to get full file objects (not just IDs)",
+        "RELATED HELPERS: get_flows_for_file() for reverse lookup (file → flows)",
+        "WORKFLOW: Select flows → get_file_ids_from_flows() → query files for bulk operations",
+        "COMMON WORKFLOWS: Bulk refactoring → get_file_ids_from_flows([1,2,3]) → process all files in flows"
+      ],
+      "implementation_notes": [
+        "Returns: Array of file IDs [int, ...]",
+        "Queries file_flows table for flow_ids IN (...)",
+        "Deduplicates file IDs"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "flow_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Flow ID to update"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        },
+        {
+          "name": "confidence_score",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "New confidence score (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update flow metadata",
+      "error_handling": "Error if no update fields provided",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Updates flow metadata - name, description, or confidence_score",
+        "NEXT STEP: All parameters optional - provide only fields needing update",
+        "NEXT STEP: Error if no update fields provided",
+        "CHECK: Name updates should maintain uniqueness within theme",
+        "RELATED HELPERS: get_flow_by_name() to find flow before updating",
+        "WORKFLOW: Refine flow classification → update_flow(flow_id, confidence_score=0.9)",
+        "COMMON WORKFLOWS: Rename flow → update_flow(flow_id, name='NewFlowName')"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "NULL parameters = don't update",
+        "Error if all NULL"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "flow_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Flow ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete flow with file validation",
+      "error_handling": "- Calls `get_files_by_flow(flow_id)`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Deletes flow with validation - prevents orphaned file associations",
+        "NEXT STEP: Error if files linked - must unlink files first before deleting flow",
+        "CHECK: Validates no files linked via file_flows table",
+        "CHECK: Must provide note metadata for audit trail",
+        "RELATED HELPERS: get_files_by_flow() checks for linked files",
+        "WORKFLOW: Before delete → get_files_by_flow() → unlink files → delete_flow()",
+        "COMMON WORKFLOWS: Remove unused flow → verify no files → delete_flow()",
+        "WARNING: Validates relationships to prevent orphaned data"
+      ],
+      "implementation_notes": [
+        "Returns error if files linked to flow",
+        "Creates audit note for deletion"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-5.json",
+    "count": 11,
+    "range": "helpers 49-59 of 112",
+    "description": "Theme and flow management operations (add, get, update, delete, relationships)",
+    "first_helper": "get_theme_by_name",
+    "last_helper": "delete_flow",
+    "status": "return_statements enhanced - ready for review",
+    "last_updated": "2025-12-29"
+  }
+}

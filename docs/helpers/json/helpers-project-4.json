@@ -1,0 +1,762 @@
+{
+  "helpers": [
+	{
+      "name": "reserve_type",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Type name (will have _idxxx appended)"
+        },
+        {
+          "name": "definition_json",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "ADT definition (e.g., {'type': 'enum', 'variants': ['A', 'B']})"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Type description"
+        },
+        {
+          "name": "links",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Links to related functions"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "File ID where type is defined"
+        }
+      ],
+      "purpose": "Reserve type ID for naming before creation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Creates type entry with is_reserved=1 - type not yet defined in code",
+        "DATABASE CONTEXT: Returned ID MUST be embedded in type name using _idxxx suffix pattern (e.g., Maybe_id7, Result_id23)",
+        "DATABASE CONTEXT: Reserved types excluded from type-function relationship tracking until finalized",
+        "NEXT STEP: Define type in code with reserved ID in name: {TypeName}_id{id}",
+        "NEXT STEP: After type defined, call finalize_type(id, final_name, ...) to set is_reserved=0",
+        "NEXT STEP: After finalizing, call add_types_functions() to link functions that operate on this type",
+        "CHECK: Did you embed the ID in the type name correctly? Pattern is: TypeName_idxxx",
+        "CHECK: Is this an ADT? definition_json should specify type (enum/struct/union) and variants/fields",
+        "CHECK: Which functions operate on this type? Track with add_types_functions() (factory/transformer/validator/etc)",
+        "RELATED HELPERS: finalize_type() to complete reservation after type defined in code",
+        "RELATED HELPERS: add_types_functions() to link functions that operate on this type",
+        "RELATED HELPERS: Use get_from_project_where('types', ...) to query after finalization",
+        "WORKFLOW: reserve_type() → define type in code → finalize_type() → add_types_functions() for related functions",
+        "DIRECTIVE: Used by project_reserve_finalize (sequence_order: 1) before writing code",
+        "DIRECTIVE FLOW: project_reserve_finalize → reserve_type() → write type definition → finalize_type() → link functions",
+        "COMMON WORKFLOWS: Planning ADTs → reserve_type() → define in code → finalize → link factory/transformer functions",
+        "WARNING: Type MUST be defined with ID in name - this is how type tracking works for ADTs",
+        "WARNING: Do not finalize until type actually defined in file - finalize_type() will verify"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "reserve_type_name",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve type ID before writing code - AI embeds ID in type name for instant lookups (TypeName_id_7)"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, id: reserved_id, is_reserved: true}",
+        "SQL: INSERT INTO types (name, definition_json, description, links, file_id, is_reserved) VALUES (?, ?, ?, ?, ?, 1) RETURNING id",
+        "Type name pattern: {TypeName}_id{id} (e.g., Maybe_id7, Result_id23, User_id42)"
+      ]
+    },
+    {
+      "name": "reserve_types",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "types",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of type objects [{name, definition_json, description, links, file_id}, ...]"
+        }
+      ],
+      "purpose": "Reserve multiple type IDs",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Batch version of reserve_type() - atomically reserves multiple type IDs at once",
+        "DATABASE CONTEXT: All types created with is_reserved=1 - more efficient than multiple reserve_type() calls",
+        "NEXT STEP: Define all types with their reserved IDs embedded in names using _idxxx pattern",
+        "NEXT STEP: After all types defined, call finalize_types() with batch of type metadata objects",
+        "CHECK: IDs returned in same order as types array - map IDs back to type objects correctly",
+        "CHECK: Are all types related ADTs? Batch operations typically used for type systems (Maybe/Either/Result)",
+        "RELATED HELPERS: finalize_types() for batch finalization after defining all types",
+        "RELATED HELPERS: Use reserve_type() for single type operations instead of batch with one element",
+        "WORKFLOW: reserve_types([...]) → define all types with IDs → finalize_types([...]) → add_types_functions() batch",
+        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple related types",
+        "COMMON WORKFLOWS: Building type system (Option/Result/Either) → reserve_types() → define all → finalize batch",
+        "WARNING: Batch operations are all-or-nothing - if any type reservation fails, entire operation fails"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, ids: [id1, id2, ...]} in same order as input types array",
+        "SQL: Multiple INSERT INTO types ... RETURNING id (in transaction)",
+        "IDs correspond to types array indices: types[0] gets ids[0], types[1] gets ids[1], etc."
+      ]
+    },
+    {
+      "name": "finalize_type",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "type_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Reserved type ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Final name with _idxx suffix"
+        },
+        {
+          "name": "definition_json",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "ADT definition"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Type description"
+        },
+        {
+          "name": "links",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Links to related functions"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "File ID where type is defined"
+        }
+      ],
+      "purpose": "Finalize reserved type after creation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Completes type reservation - sets is_reserved=0 after type defined in code",
+        "DATABASE CONTEXT: Name must include _idxxx suffix (e.g., Maybe_id7, Result_id42)",
+        "DATABASE CONTEXT: Updates file timestamp to track modifications",
+        "NEXT STEP: After finalization, type tracked in themes/flows and available for queries",
+        "NEXT STEP: If type has related functions, use add_types_functions() to link them",
+        "CHECK: Name parameter must include _idxxx suffix matching the reserved ID",
+        "CHECK: Definition_json should contain ADT structure (constructors, fields)",
+        "CHECK: File_id should reference file where type is defined",
+        "RELATED HELPERS: reserve_type() reserves ID before defining type in code",
+        "RELATED HELPERS: update_file_timestamp() called automatically after finalization",
+        "RELATED HELPERS: add_types_functions() to link type with constructor/accessor functions",
+        "WORKFLOW: reserve_type() → define type in code with _idxxx suffix → finalize_type() → link functions",
+        "DIRECTIVE: Used by project_reserve_finalize (sequence_order: 2) - completes reservation after code written",
+        "DIRECTIVE FLOW: project_reserve_finalize → finalize reservations (files, functions, types) → project_update_db",
+        "COMMON WORKFLOWS: Define ADT → finalize_type(name='Maybe_id7', definition_json={constructors}) → track in DB",
+        "WARNING: Must finalize after type actually exists in code - finalization marks it as non-reserved"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, type_id: int, file_id: int}",
+        "Sets is_reserved=0 in types table",
+        "Calls update_file_timestamp(file_id) automatically",
+        "Definition_json stores ADT structure for FP analysis"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "finalize_reservation",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize type after code written - sets is_reserved=false and updates file timestamp"
+        }
+      ]
+    },
+    {
+      "name": "finalize_types",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "types",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of type objects [{type_id, name, definition_json, description, links, file_id}, ...]"
+        }
+      ],
+      "purpose": "Finalize multiple reserved types",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Batch finalization - efficient bulk completion of multiple type reservations",
+        "DATABASE CONTEXT: Sets is_reserved=0 for all types, updates file timestamps once per file",
+        "NEXT STEP: Use for bulk type definitions - more efficient than multiple finalize_type() calls",
+        "CHECK: Each type object must include: {type_id, name (with _idxxx), definition_json, file_id}",
+        "CHECK: Optimizes file timestamp updates - one update per file instead of per type",
+        "RELATED HELPERS: finalize_type() for single type finalization",
+        "RELATED HELPERS: reserve_types() for batch reservation before code generation",
+        "WORKFLOW: reserve_types() → define all types in code → finalize_types() → bulk completion",
+        "COMMON WORKFLOWS: Generate ADT module with 10 types → finalize_types() → efficient batch update"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, finalized_ids: [int, ...]}",
+        "Groups types by file_id for efficient timestamp updates",
+        "Sets is_reserved=0 for all types in batch"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_type",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "type_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Type ID to update"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New file_id (NULL = don't update)"
+        },
+        {
+          "name": "definition_json",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "New definition (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update type metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Updates type metadata - name, file location, definition, or description",
+        "DATABASE CONTEXT: Automatically updates file timestamp after modification",
+        "NEXT STEP: All parameters optional - only provide fields that need updating",
+        "NEXT STEP: After update, file timestamp refreshed to track modifications",
+        "CHECK: Name updates must maintain _idxxx suffix format",
+        "CHECK: File_id updates move type to different file (rare - use cautiously)",
+        "RELATED HELPERS: update_file_timestamp() called automatically after update",
+        "WORKFLOW: Refactor type definition → update_type(definition_json) → timestamp refreshed",
+        "COMMON WORKFLOWS: Rename type → update_type(name='NewName_id7')",
+        "COMMON WORKFLOWS: Update ADT definition → update_type(definition_json={new_structure})"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, type_id: int, file_id: int}",
+        "NULL parameters = don't update that field",
+        "Calls update_file_timestamp(file_id) automatically"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_type",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "type_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Type ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete type with relationship validation",
+      "error_handling": "- Calls `get_from_project_where(\"types_functions\", {\"type_id\": type_id})`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Deletes type with relationship validation - prevents orphaned references",
+        "DATABASE CONTEXT: Requires note metadata for audit trail (reason, severity, source)",
+        "NEXT STEP: If error returned, must delete types_functions relationships first before deleting type",
+        "NEXT STEP: On success, file timestamp updated automatically",
+        "CHECK: Error if types_functions exist - validates no orphaned function relationships",
+        "CHECK: Must provide note_reason, note_severity ('info', 'warning', 'error'), note_source ('ai', 'user')",
+        "CHECK: Note_type defaults to 'entry_deletion' for audit trail",
+        "RELATED HELPERS: delete_type_function() to remove type-function relationships before deletion",
+        "RELATED HELPERS: update_file_timestamp() called automatically on success",
+        "WORKFLOW: Before deleting type → check types_functions → delete relationships first → delete type",
+        "COMMON WORKFLOWS: Remove unused type → delete_type_function() first → then delete_type()",
+        "WARNING: Destructive operation - validates relationships to prevent orphaned data"
+      ],
+      "implementation_notes": [
+        "Returns error if types_functions relationships exist",
+        "Returns success after deleting type and updating file timestamp",
+        "Queries types_functions table to validate no relationships",
+        "Creates note record for audit trail"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_types_functions",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "relationships",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of tuples [(type_id, function_id, role), ...] - role: 'factory', 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator'"
+        }
+      ],
+      "purpose": "Add type-function relationship(s)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Links types to functions with semantic roles for FP analysis",
+        "DATABASE CONTEXT: Roles: 'factory' (constructors), 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator'",
+        "NEXT STEP: After linking, types and functions tracked together in FP analysis",
+        "NEXT STEP: Roles help understand function purpose in type's lifecycle",
+        "CHECK: Relationships format: [(type_id, function_id, role), ...] - can pass multiple in one call",
+        "CHECK: Factory role = constructors (e.g., Just, Nothing for Maybe)",
+        "CHECK: Accessor role = getters (e.g., fromJust)",
+        "CHECK: Transformer role = mappers (e.g., fmap for Maybe)",
+        "RELATED HELPERS: finalize_type() followed by add_types_functions() to link constructor/accessor functions",
+        "RELATED HELPERS: update_type_function_role() to change role classification",
+        "RELATED HELPERS: delete_type_function() to remove relationship",
+        "WORKFLOW: Define ADT + functions → finalize both → add_types_functions() to link semantics",
+        "COMMON WORKFLOWS: Maybe type with Just/Nothing constructors → add_types_functions([(7, 42, 'factory'), (7, 43, 'factory')])",
+        "COMMON WORKFLOWS: Link accessor function → add_types_functions([(type_id, func_id, 'accessor')])"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, ids: [int, ...]} - inserted relationship IDs",
+        "For single relationship: pass [(type_id, function_id, role)]",
+        "Roles help FP analysis understand type usage patterns",
+        "Inserts into types_functions table"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_type_function_role",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "type_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Type ID"
+        },
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID"
+        },
+        {
+          "name": "role",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'factory', 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator'"
+        }
+      ],
+      "purpose": "Update relationship role only",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Updates only the role field for existing type-function relationship",
+        "DATABASE CONTEXT: Not exposed as MCP tool (is_tool: false) - internal helper",
+        "NEXT STEP: Use when function role classification changes (e.g., 'factory' → 'transformer')",
+        "NEXT STEP: For other changes (type_id or function_id), delete old relationship and add new",
+        "CHECK: Only updates role - cannot change type_id or function_id with this helper",
+        "RELATED HELPERS: add_types_functions() to create relationships",
+        "RELATED HELPERS: delete_type_function() to remove relationships",
+        "WORKFLOW: Reclassify function role → update_type_function_role(new_role)",
+        "COMMON WORKFLOWS: Function refactored from accessor to transformer → update_type_function_role('transformer')"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Updates role field only in types_functions table",
+        "For type_id/function_id changes: delete + add new"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_type_function",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "types_functions junction table ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Remove type-function relationship",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Removes type-function relationship with audit trail",
+        "DATABASE CONTEXT: Not exposed as MCP tool (is_tool: false) - internal helper",
+        "NEXT STEP: Use before deleting type if types_functions relationships exist",
+        "NEXT STEP: Requires note metadata for audit trail (reason, severity, source)",
+        "CHECK: ID parameter is types_functions junction table ID (not type_id or function_id)",
+        "CHECK: Must provide note_reason, note_severity, note_source for audit trail",
+        "RELATED HELPERS: delete_type() validates no relationships exist before deletion",
+        "RELATED HELPERS: add_types_functions() to recreate relationships if needed",
+        "WORKFLOW: Before delete_type() → delete_type_function() first → then delete_type()",
+        "COMMON WORKFLOWS: Remove type-function link → delete_type_function(junction_id, reason, ...)"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Deletes from types_functions table",
+        "Creates note record for audit trail"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_interaction",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Source function name"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Target function name"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Interaction type"
+        }
+      ],
+      "purpose": "Add function dependency/interaction",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Tracks function dependencies/interactions for FP analysis and dependency mapping",
+        "DATABASE CONTEXT: Type parameter: 'call', 'chain', 'borrow', 'compose', 'pipe', etc.",
+        "NEXT STEP: After adding, interactions tracked for refactoring impact analysis",
+        "NEXT STEP: Helps understand function dependency chains and potential side effects",
+        "CHECK: Source and target are function names (not IDs in this helper signature)",
+        "CHECK: Type describes relationship nature (call=direct invocation, compose=function composition, etc.)",
+        "RELATED HELPERS: add_interactions() for batch insertion (more efficient for multiple)",
+        "RELATED HELPERS: update_interaction() to modify existing relationships",
+        "RELATED HELPERS: delete_interaction() to remove relationships",
+        "WORKFLOW: After code generation → analyze dependencies → add_interaction() for each relationship",
+        "DIRECTIVE: Used by project_update_db (add_function_interactions, sequence_order: 4) after code generation",
+        "DIRECTIVE FLOW: project_update_db → add_interaction() → track dependencies for FP analysis",
+        "COMMON WORKFLOWS: Function A calls Function B → add_interaction(source='A', target='B', type='call')",
+        "COMMON WORKFLOWS: Compose functions → add_interaction(source='compose_AB', target='A', type='compose')"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, id: int} - new interaction ID",
+        "Inserts into interactions table",
+        "Source/target are function names - resolved to IDs internally"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "add_function_interactions",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Track function dependencies after code generation - creates interaction records for function relationships"
+        }
+      ]
+    },
+    {
+      "name": "add_interactions",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "interactions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of tuples [(source_function_id, target_function_id, interaction_type, description), ...] - type: 'call', 'chain', 'borrow', 'compose', 'pipe'"
+        }
+      ],
+      "purpose": "Add multiple interactions at once",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Batch insertion of function dependencies - efficient for bulk operations",
+        "DATABASE CONTEXT: Types: 'call', 'chain', 'borrow', 'compose', 'pipe' - describes relationship nature",
+        "NEXT STEP: Use after code generation to track all dependencies in one call",
+        "CHECK: Interactions format: [(source_function_id, target_function_id, interaction_type, description), ...]",
+        "CHECK: Uses function IDs (not names) unlike add_interaction()",
+        "RELATED HELPERS: add_interaction() for single relationship (uses function names)",
+        "WORKFLOW: After generating module with dependencies → add_interactions() → bulk insert all relationships",
+        "COMMON WORKFLOWS: Batch dependency tracking → add_interactions([(1, 2, 'call', '...'), (2, 3, 'chain', '...')])"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, ids: [int, ...]} - inserted interaction IDs",
+        "Uses function IDs (not names)",
+        "More efficient than multiple add_interaction() calls"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_interaction",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Interaction ID"
+        },
+        {
+          "name": "source_function_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New source (NULL = don't update)"
+        },
+        {
+          "name": "target_function_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New target (NULL = don't update)"
+        },
+        {
+          "name": "interaction_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'call', 'chain', 'borrow', 'compose', 'pipe' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update interaction metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Updates interaction metadata - source, target, type, or description",
+        "NEXT STEP: All parameters optional - only provide fields needing update",
+        "CHECK: Can update source/target function IDs (change relationship endpoints)",
+        "CHECK: Can update interaction type ('call' → 'compose', etc.)",
+        "RELATED HELPERS: add_interaction() to create new relationships",
+        "RELATED HELPERS: delete_interaction() to remove relationships",
+        "WORKFLOW: Refactor dependency → update_interaction(id, interaction_type='compose')",
+        "COMMON WORKFLOWS: Change interaction type → update_interaction(id, interaction_type='chain')"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "NULL parameters = don't update that field",
+        "Updates interactions table"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_interaction",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Interaction ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete interaction",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Deletes function interaction/dependency with audit trail",
+        "DATABASE CONTEXT: Not exposed as MCP tool (is_tool: false) - internal helper",
+        "NEXT STEP: Requires note metadata for audit trail (reason, severity, source)",
+        "CHECK: ID is interaction ID from interactions table",
+        "CHECK: Must provide note_reason, note_severity, note_source for audit trail",
+        "RELATED HELPERS: add_interaction() to create relationships",
+        "RELATED HELPERS: update_interaction() to modify relationships",
+        "WORKFLOW: Remove dependency → delete_interaction(id, reason='dependency removed', ...)",
+        "COMMON WORKFLOWS: Refactor removes function call → delete_interaction(id, note_reason='call removed')"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Deletes from interactions table",
+        "Creates note record for audit trail"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-4.json",
+    "count": 13,
+    "range": "helpers 36-48 of 112",
+    "description": "Type reservation/finalization, type-function relationships, and interaction management",
+    "first_helper": "reserve_type",
+    "last_helper": "delete_interaction",
+    "status": "return_statements enhanced - ready for review",
+    "last_updated": "2025-12-29"
+  }
+}

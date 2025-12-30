@@ -1,0 +1,603 @@
+{
+  "helpers": [
+	{
+      "name": "get_flows_for_theme",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "theme_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Theme ID"
+        }
+      ],
+      "purpose": "Get all flows for a theme",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves all flows under a theme",
+        "NEXT STEP: Use to understand flows within a theme for organizational view",
+        "CHECK: Empty array if no flows under theme",
+        "RELATED HELPERS: get_themes_for_flow() for reverse lookup",
+        "RELATED HELPERS: delete_theme() uses this to validate no flows exist before deletion",
+        "WORKFLOW: View theme structure → get_flows_for_theme() → display flow list",
+        "DIRECTIVE: Used by project_theme_flow_mapping (sequence_order: 5, optional) - validates theme-flow relationships",
+        "COMMON WORKFLOWS: Understand theme organization → get_flows_for_theme() → see functional breakdown"
+      ],
+      "implementation_notes": [
+        "Returns: Array of flow objects [{id, name, description, theme_id}, ...]",
+        "Queries flows WHERE theme_id = ?"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_theme_flow_mapping",
+          "execution_context": "update_flow_themes",
+          "sequence_order": 5,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Validate theme-flow relationships before mapping - ensures consistent theme-flow associations"
+        }
+      ]
+    },
+    {
+      "name": "get_themes_for_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "flow_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Flow ID"
+        }
+      ],
+      "purpose": "Get all themes for a flow",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves themes associated with a flow via flow_themes junction",
+        "NEXT STEP: Use to understand theme associations for flow",
+        "CHECK: Flows typically have one primary theme but can have multiple via flow_themes table",
+        "RELATED HELPERS: get_flows_for_theme() for reverse lookup",
+        "WORKFLOW: Understand flow context → get_themes_for_flow() → see theme associations",
+        "COMMON WORKFLOWS: Flow analysis → get_themes_for_flow() → understand organizational context"
+      ],
+      "implementation_notes": [
+        "Returns: Array of theme objects [{id, name, description}, ...]",
+        "Queries flow_themes junction table + themes"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_files_by_flow",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "flow_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Flow ID"
+        }
+      ],
+      "purpose": "Get all files for a flow",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves all files linked to a flow",
+        "NEXT STEP: Use to see which files implement this flow",
+        "CHECK: Empty array if no files linked to flow",
+        "RELATED HELPERS: get_flows_for_file() for reverse lookup",
+        "RELATED HELPERS: delete_flow() uses this to validate no files linked before deletion",
+        "WORKFLOW: Understanding flow implementation → get_files_by_flow() → see all implementing files",
+        "DIRECTIVE: Used by project_dependency_map (sequence_order: 1) - builds flow-based dependency graphs",
+        "COMMON WORKFLOWS: Flow refactoring → get_files_by_flow() → identify all files needing changes"
+      ],
+      "implementation_notes": [
+        "Returns: Array of file objects [{id, name, path, language}, ...]",
+        "Queries file_flows junction + files table"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query files by flow for dependency graph generation - builds flow-based dependency relationships"
+        }
+      ]
+    },
+    {
+      "name": "get_flows_for_file",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID"
+        }
+      ],
+      "purpose": "Get all flows for a file",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves all flows associated with a file",
+        "NEXT STEP: Use to understand which flows this file contributes to",
+        "CHECK: Files can be linked to multiple flows via file_flows junction table",
+        "CHECK: Empty array if file not linked to any flows yet",
+        "RELATED HELPERS: get_files_by_flow() for reverse lookup",
+        "WORKFLOW: Understanding file purpose → get_flows_for_file() → see functional context",
+        "DIRECTIVE: Used by project_theme_flow_mapping - determines flows when mapping files",
+        "COMMON WORKFLOWS: File analysis → get_flows_for_file() → understand organizational context"
+      ],
+      "implementation_notes": [
+        "Returns: Array of flow objects [{id, name, description, theme_id}, ...]",
+        "Queries file_flows junction + flows table"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reverse lookup - get flows for file in dependency graph - enables bidirectional flow-file navigation"
+        }
+      ]
+    },
+    {
+      "name": "add_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Completion path name (e.g., 'setup', 'core dev', 'finish')"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "default": "pending",
+          "description": "'pending', 'in_progress', 'completed'"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Description"
+        },
+        {
+          "name": "order_index",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Order position (1, 2, 3...)"
+        }
+      ],
+      "purpose": "Add completion path stage",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Creates completion path - top-level project phase for organizing milestones",
+        "DATABASE CONTEXT: Completion paths are sequential stages (e.g., 'setup' → 'core dev' → 'finish')",
+        "DATABASE CONTEXT: Order_index determines sequence - lower numbers come first",
+        "NEXT STEP: After creating path, use add_milestone() to add milestones under this path",
+        "NEXT STEP: Order_index must be managed manually - use reorder helpers if needed",
+        "CHECK: Status: 'pending' (not started), 'in_progress' (active), 'completed' (done)",
+        "CHECK: Order_index should be unique and sequential (1, 2, 3...)",
+        "RELATED HELPERS: add_milestone() to create milestones under this completion path",
+        "RELATED HELPERS: reorder_completion_path() to change order",
+        "RELATED HELPERS: update_completion_path() to change status as work progresses",
+        "WORKFLOW: Project decomposition → add_completion_path() for each phase → add milestones under paths",
+        "DIRECTIVE: Used by project_task_decomposition (sequence_order: 1) - creates project roadmap structure",
+        "DIRECTIVE FLOW: project_task_decomposition → add_completion_path() → add_milestone() → add_task()",
+        "COMMON WORKFLOWS: User request → decompose into phases → add_completion_path('setup', order_index=1)"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, id: int} - new completion path ID",
+        "Inserts into completion_path table"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Create completion path stages during user request decomposition - establishes project roadmap structure"
+        }
+      ]
+    },
+    {
+      "name": "get_all_completion_paths",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all completion paths ordered by order_index",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves all completion paths ordered by sequence",
+        "NEXT STEP: Use for displaying project roadmap, understanding all phases",
+        "NEXT STEP: Results ordered by order_index - shows project sequence from start to finish",
+        "CHECK: Empty array if no completion paths created (fresh project)",
+        "RELATED HELPERS: get_next_completion_path() to find current active phase",
+        "RELATED HELPERS: get_incomplete_completion_paths() to filter only pending/in_progress paths",
+        "WORKFLOW: Display project progress → get_all_completion_paths() → show full roadmap",
+        "COMMON WORKFLOWS: Project overview → get_all_completion_paths() → understand all phases and status"
+      ],
+      "implementation_notes": [
+        "Returns: Array of completion path objects [{id, name, status, description, order_index}, ...]",
+        "Ordered by order_index ASC"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_next_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get lowest order_index with status != completed",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - finds next incomplete completion path (lowest order_index, not 'completed')",
+        "NEXT STEP: Use to determine which phase to work on next in project",
+        "NEXT STEP: Returns path with lowest order_index where status != 'completed'",
+        "CHECK: Returns null if all completion paths are completed (project finished)",
+        "RELATED HELPERS: get_all_completion_paths() to see full roadmap",
+        "RELATED HELPERS: update_completion_path() to change status when starting/completing phase",
+        "WORKFLOW: After milestone completes → get_next_completion_path() → identify next phase",
+        "DIRECTIVE: Used by project_milestone_complete (sequence_order: 3) - identifies next phase after milestone completion",
+        "DIRECTIVE FLOW: Milestone complete → check if path complete → get_next_completion_path() → move to next phase",
+        "COMMON WORKFLOWS: Current phase done → get_next_completion_path() → update to in_progress"
+      ],
+      "implementation_notes": [
+        "Returns: Completion path object {id, name, status, description, order_index} or null",
+        "Queries WHERE status != 'completed' ORDER BY order_index ASC LIMIT 1"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_milestone_complete",
+          "execution_context": "move_to_next_milestone",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Get next incomplete completion path after milestone completes - identifies next phase of project"
+        }
+      ]
+    },
+    {
+      "name": "get_completion_paths_by_status",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed'"
+        }
+      ],
+      "purpose": "Get completion paths filtered by status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - filters completion paths by specific status",
+        "NEXT STEP: Use to find all paths in a particular state (pending, in_progress, completed)",
+        "NEXT STEP: Results ordered by order_index for sequential view",
+        "CHECK: Status values: 'pending', 'in_progress', 'completed'",
+        "CHECK: Empty array if no paths match status",
+        "RELATED HELPERS: get_incomplete_completion_paths() shortcut for pending + in_progress",
+        "RELATED HELPERS: get_all_completion_paths() for unfiltered view",
+        "WORKFLOW: Show active work → get_completion_paths_by_status('in_progress')",
+        "COMMON WORKFLOWS: Display pending phases → get_completion_paths_by_status('pending')"
+      ],
+      "implementation_notes": [
+        "Returns: Array of completion path objects [{id, name, status, description, order_index}, ...]",
+        "Queries WHERE status = ? ORDER BY order_index ASC"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_completion_paths",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all non-completed paths",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool - retrieves all non-completed paths (pending or in_progress)",
+        "NEXT STEP: Useful for showing remaining work, active phases in project",
+        "NEXT STEP: Excludes completed paths - focuses on what's left to do",
+        "CHECK: Empty array if all paths completed (project finished)",
+        "RELATED HELPERS: get_completion_paths_by_status() for single status filtering",
+        "RELATED HELPERS: get_next_completion_path() to find lowest order incomplete path",
+        "WORKFLOW: Show remaining work → get_incomplete_completion_paths() → display active roadmap",
+        "COMMON WORKFLOWS: Project status check → get_incomplete_completion_paths() → see what's left"
+      ],
+      "implementation_notes": [
+        "Returns: Array of completion path objects [{id, name, status, description, order_index}, ...]",
+        "Queries WHERE status != 'completed' ORDER BY order_index ASC"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Completion path ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update completion path",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Updates completion path metadata - name, status, or description",
+        "NEXT STEP: All parameters optional - provide only fields needing update",
+        "NEXT STEP: Commonly used to change status as project progresses (pending → in_progress → completed)",
+        "CHECK: Status values: 'pending', 'in_progress', 'completed'",
+        "CHECK: Cannot update order_index here - use reorder helpers instead",
+        "RELATED HELPERS: reorder_completion_path() to change order_index",
+        "RELATED HELPERS: get_next_completion_path() to find which path to update next",
+        "WORKFLOW: Start phase → update_completion_path(id, status='in_progress')",
+        "WORKFLOW: Finish phase → update_completion_path(id, status='completed')",
+        "DIRECTIVE: Used by project_milestone_complete (sequence_order: 2) - marks path completed when all milestones finish",
+        "DIRECTIVE FLOW: All milestones complete → update_completion_path(status='completed') → get_next_completion_path()",
+        "COMMON WORKFLOWS: Phase complete → update_completion_path(id, status='completed')"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "NULL parameters = don't update that field",
+        "Order_index cannot be updated here - use reorder helpers"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_milestone_complete",
+          "execution_context": "mark_path_complete",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark completion path as completed when all milestones in path finish - updates path status"
+        }
+      ]
+    },
+    {
+      "name": "delete_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Completion path ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete completion path with milestone validation",
+      "error_handling": "- Calls `get_milestones_by_path(path_id)`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Deletes completion path with milestone validation - prevents orphaned milestones",
+        "DATABASE CONTEXT: Requires note metadata for audit trail",
+        "NEXT STEP: Error if milestones exist under this path - must delete milestones first",
+        "CHECK: Validates no milestones linked via get_milestones_by_path()",
+        "CHECK: Must provide note_reason, note_severity, note_source for audit trail",
+        "RELATED HELPERS: get_milestones_by_path() checks for linked milestones before deletion",
+        "WORKFLOW: Before delete → get_milestones_by_path() → delete milestones → delete_completion_path()",
+        "COMMON WORKFLOWS: Remove phase → verify no milestones → delete_completion_path()",
+        "WARNING: Destructive operation - validates relationships to prevent data loss"
+      ],
+      "implementation_notes": [
+        "Returns error if milestones exist under path",
+        "Returns {success: true} after deletion with audit note",
+        "Creates note record for audit trail"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "reorder_completion_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Completion path ID"
+        },
+        {
+          "name": "new_order_index",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "New order position"
+        }
+      ],
+      "purpose": "Change order_index for a completion path",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Changes order_index for single completion path",
+        "DATABASE CONTEXT: Not exposed as MCP tool (is_tool: false) - internal helper",
+        "NEXT STEP: Error if new_order_index already exists - must be unique",
+        "NEXT STEP: Consider using swap_completion_paths_order() or reorder_all_completion_paths() instead",
+        "CHECK: new_order_index must not conflict with existing path order_index",
+        "RELATED HELPERS: swap_completion_paths_order() to exchange order between two paths",
+        "RELATED HELPERS: reorder_all_completion_paths() to fix gaps/duplicates and renumber sequence",
+        "WORKFLOW: Manual reorder → reorder_completion_path() or use swap for simpler approach",
+        "COMMON WORKFLOWS: Prefer swap_completion_paths_order() for cleaner reordering"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true} or error if order_index conflict",
+        "Updates order_index field only",
+        "May create gaps in sequence - consider reorder_all after use"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "reorder_all_completion_paths",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Fix gaps and duplicates in order_index",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Maintenance helper - fixes order_index gaps and duplicates",
+        "DATABASE CONTEXT: Not exposed as MCP tool (is_tool: false) - internal helper",
+        "NEXT STEP: Renumbers all completion paths to consecutive sequence (1, 2, 3...)",
+        "NEXT STEP: Use after manual reordering creates gaps or after deletions",
+        "NEXT STEP: Reports any duplicates found before fixing",
+        "CHECK: Preserves existing order - just closes gaps in numbering",
+        "RELATED HELPERS: reorder_completion_path() for single path reordering",
+        "RELATED HELPERS: swap_completion_paths_order() for exchanging two paths",
+        "WORKFLOW: After deletions → reorder_all_completion_paths() → clean up sequence",
+        "COMMON WORKFLOWS: Database maintenance → reorder_all_completion_paths() → ensure consecutive numbering"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, renumbered_count: int, duplicates_found: [{id, old_order, new_order}, ...]}",
+        "Renumbers to 1, 2, 3, 4... sequence",
+        "Preserves relative order while closing gaps"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "swap_completion_paths_order",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id1",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "First completion path ID"
+        },
+        {
+          "name": "id2",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Second completion path ID"
+        }
+      ],
+      "purpose": "Swap order_index of two completion paths",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Swaps order_index between two completion paths",
+        "DATABASE CONTEXT: Not exposed as MCP tool (is_tool: false) - internal helper",
+        "NEXT STEP: Cleanest way to reorder two paths - exchanges their positions",
+        "NEXT STEP: Temporarily allows duplicate order_index during swap operation",
+        "CHECK: Both id1 and id2 must exist",
+        "RELATED HELPERS: reorder_completion_path() for setting specific order_index",
+        "RELATED HELPERS: reorder_all_completion_paths() for cleanup after multiple swaps",
+        "WORKFLOW: Move phase forward/backward → swap_completion_paths_order(id1, id2)",
+        "COMMON WORKFLOWS: Reorder phases → swap_completion_paths_order() → exchange positions"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Temporarily allows duplicates during swap - atomic operation",
+        "Exchanges order_index values between two paths"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-6.json",
+    "count": 14,
+    "range": "helpers 60-73 of 112",
+    "description": "Flow-theme relationships, file-flow relationships, and completion path management",
+    "first_helper": "get_flows_for_theme",
+    "last_helper": "swap_completion_paths_order",
+    "status": "return_statements enhanced - ready for review",
+    "last_updated": "2025-12-29"
+  }
+}

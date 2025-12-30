@@ -1,0 +1,661 @@
+{
+  "helpers": [
+	{
+      "name": "add_subtask",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Subtask name"
+        },
+        {
+          "name": "parent_task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Parent task ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "default": "pending",
+          "description": "'pending', 'in_progress', 'completed', 'blocked'"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Subtask description"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": true,
+          "default": "high",
+          "description": "'low', 'medium', 'high', 'critical'"
+        }
+      ],
+      "purpose": "Add subtask to task",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`",
+        "Subtasks inherit task's milestone and flows"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Create subtasks for tasks during decomposition if user request includes subtask-level granularity"
+        },
+        {
+          "directive_name": "project_subtask_create",
+          "execution_context": "create_subtask_record",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Atomic subtask creation - creates focused, high-priority subtask and pauses parent"
+        }
+      ]
+    },
+    {
+      "name": "get_incomplete_subtasks",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all non-completed subtasks",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of subtask objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_subtasks_by_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        }
+      ],
+      "purpose": "Get incomplete subtasks for specific task",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of subtask objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_subtask_create",
+          "execution_context": "check_active_subtasks",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check for existing active subtasks before creating new one - warns about context switching"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "check_parent_subtasks",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if all subtasks complete to determine if parent task should resume"
+        }
+      ]
+    },
+    {
+      "name": "get_subtasks_by_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+        }
+      ],
+      "purpose": "Get subtasks for task, optionally filtered by status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of subtask objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "notify_remaining_work",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Show remaining pending subtasks to user after one subtask completes"
+        }
+      ]
+    },
+    {
+      "name": "get_subtasks_comprehensive",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum results"
+        },
+        {
+          "name": "date_range_created",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "date_range_updated",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by task"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical'"
+        }
+      ],
+      "purpose": "Advanced subtask search",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of filtered subtask objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_subtask",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Subtask ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New task ID (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update subtask metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_update",
+          "execution_context": "update_subtask_status",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update subtask status and metadata through central update directive"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "mark_complete",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark subtask as completed - sets status=completed and logs timestamp"
+        }
+      ]
+    },
+    {
+      "name": "delete_subtask",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Subtask ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete subtask with item validation (same logic as delete_task)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error or success based on item status"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_sidequest",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "paused_subtask_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "If sidequest during subtask"
+        },
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "JSON array of flow IDs"
+        }
+      ],
+      "purpose": "Add sidequest (urgent interruption)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Create sidequests during decomposition if user request includes exploratory or fix work"
+        },
+        {
+          "directive_name": "project_sidequest_create",
+          "execution_context": "create_sidequest_record",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Atomic sidequest creation - creates exploratory interruption with optional task link"
+        }
+      ]
+    },
+    {
+      "name": "get_incomplete_sidequests",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all non-completed sidequests",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of sidequest objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_sidequests_comprehensive",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum results"
+        },
+        {
+          "name": "date_range_created",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "date_range_updated",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by paused task"
+        },
+        {
+          "name": "subtask_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by paused subtask"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical'"
+        }
+      ],
+      "purpose": "Advanced sidequest search",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of filtered sidequest objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_sidequest_flows",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "sidequest_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        }
+      ],
+      "purpose": "Get flow IDs for a sidequest",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of flow IDs"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_sidequest_files",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "sidequest_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        }
+      ],
+      "purpose": "Get all files related to sidequest via flows (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of file objects",
+        "Chains get_sidequest_flows \u2192 get_file_ids_from_flows \u2192 get_from_project()"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_sidequest",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "paused_task_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New paused task ID (NULL = don't update)"
+        },
+        {
+          "name": "paused_subtask_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New paused subtask ID (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        },
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Array of flow IDs (NULL = don't update)"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update sidequest metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_update",
+          "execution_context": "update_sidequest_status",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update sidequest status and metadata through central update directive"
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "mark_complete_and_log",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark sidequest as completed - sets status=completed, logs timestamp and outcome"
+        }
+      ]
+    },
+    {
+      "name": "delete_sidequest",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete sidequest with item validation (same logic as delete_task)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Error or success based on item status"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-8.json",
+    "count": 14,
+    "range": "helpers 89-102 of 112",
+    "description": "Subtask and sidequest management operations (add, get, update, delete, queries)",
+    "first_helper": "add_subtask",
+    "last_helper": "delete_sidequest",
+    "status": "Needs return_statements enhancement",
+    "last_updated": "2025-12-29"
+  }
+}

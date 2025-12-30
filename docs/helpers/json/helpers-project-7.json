@@ -1,0 +1,863 @@
+{
+  "helpers": [
+    {
+      "name": "add_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "completion_path_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Completion path ID this milestone belongs to"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Milestone name"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "default": "pending",
+          "description": "'pending', 'in_progress', 'completed', 'blocked'"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Milestone description"
+        }
+      ],
+      "purpose": "Add milestone to completion path",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Creates milestone within completion path - defines project phase/goal",
+        "DATABASE CONTEXT: Status values: 'pending', 'in_progress', 'completed', 'blocked'",
+        "NEXT STEP: After creating milestone, use add_task() to create tasks for this milestone",
+        "NEXT STEP: Milestones contain tasks - tasks contain subtasks/sidequests",
+        "CHECK: Completion_path_id must exist - validates parent exists",
+        "CHECK: Status defaults to 'pending' if not provided",
+        "RELATED HELPERS: add_task() to add tasks to this milestone",
+        "RELATED HELPERS: get_milestones_by_path() to query milestones for completion path",
+        "RELATED HELPERS: update_milestone() to change status as work progresses",
+        "WORKFLOW: Create completion path \u2192 add_milestone() \u2192 add_task() \u2192 implement tasks",
+        "DIRECTIVE: Used by project_task_decomposition (decompose_request, sequence_order: 2)",
+        "DIRECTIVE FLOW: project_task_decomposition \u2192 add_milestone() \u2192 defines project phases",
+        "COMMON WORKFLOWS: Decompose user request \u2192 create milestones for phases \u2192 add tasks to milestones",
+        "COMMON WORKFLOWS: Milestone lifecycle: pending \u2192 in_progress \u2192 completed"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Create milestones for completion paths during decomposition - defines project phases"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, id: new_id}",
+        "Inserts into milestones table"
+      ]
+    },
+    {
+      "name": "get_milestones_by_path",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "completion_path_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Completion path ID"
+        }
+      ],
+      "purpose": "Get all milestones for a completion path",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Queries all milestones within a specific completion path",
+        "NEXT STEP: Check status of returned milestones to determine completion path progress",
+        "NEXT STEP: Use to identify which milestones are blocking path completion",
+        "CHECK: Useful for progress tracking - count completed vs total milestones",
+        "CHECK: Returned array may be empty if no milestones created yet",
+        "RELATED HELPERS: get_milestones_by_status() to filter across all paths by status",
+        "RELATED HELPERS: get_incomplete_milestones() for all non-completed milestones",
+        "WORKFLOW: Query path milestones \u2192 check completion status \u2192 determine next milestone to work on",
+        "DIRECTIVE: Used by project_milestone_complete (check_path_completion, sequence_order: 2)",
+        "DIRECTIVE FLOW: project_milestone_complete \u2192 get_milestones_by_path() \u2192 check if all complete \u2192 mark path complete",
+        "COMMON WORKFLOWS: After milestone completes \u2192 check if all milestones in path complete \u2192 potentially complete path",
+        "COMMON WORKFLOWS: Progress reporting \u2192 get_milestones_by_path() \u2192 calculate completion percentage"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_milestone_complete",
+          "execution_context": "check_path_completion",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if all milestones in completion path are complete - determines if path should be marked complete"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: Array of milestone objects",
+        "SQL: SELECT * FROM milestones WHERE completion_path_id=?"
+      ]
+    },
+    {
+      "name": "get_milestones_by_status",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked'"
+        }
+      ],
+      "purpose": "Get milestones filtered by status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Queries milestones across all completion paths filtered by status",
+        "NEXT STEP: Use status='in_progress' to find currently active work",
+        "NEXT STEP: Use status='blocked' to identify blockers requiring attention",
+        "NEXT STEP: Use status='pending' to find work queued for later",
+        "CHECK: Status values: 'pending', 'in_progress', 'completed', 'blocked'",
+        "CHECK: Returns milestones from all completion paths matching status",
+        "RELATED HELPERS: get_incomplete_milestones() for all non-completed (combines pending, in_progress, blocked)",
+        "RELATED HELPERS: get_milestones_by_path() for milestones within specific path",
+        "COMMON WORKFLOWS: Find active work \u2192 get_milestones_by_status('in_progress')",
+        "COMMON WORKFLOWS: Identify blockers \u2192 get_milestones_by_status('blocked') \u2192 address issues"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns: Array of milestone objects",
+        "SQL: SELECT * FROM milestones WHERE status=?"
+      ]
+    },
+    {
+      "name": "get_incomplete_milestones",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all non-completed milestones",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Queries all milestones with status != 'completed' (includes pending, in_progress, blocked)",
+        "NEXT STEP: Use to get overview of remaining work across all completion paths",
+        "NEXT STEP: Check for blocked milestones in results - may need intervention",
+        "CHECK: Returns combined pending, in_progress, and blocked milestones",
+        "CHECK: Empty array means all milestones completed - project may be done",
+        "RELATED HELPERS: get_milestones_by_status('in_progress') for just active work",
+        "RELATED HELPERS: get_incomplete_tasks() for drill-down to task level",
+        "WORKFLOW: Status check \u2192 get_incomplete_milestones() \u2192 prioritize next milestone to work on",
+        "COMMON WORKFLOWS: Session start \u2192 get_incomplete_milestones() \u2192 understand remaining project scope",
+        "COMMON WORKFLOWS: Progress reporting \u2192 compare incomplete vs total milestones"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns: Array of milestone objects",
+        "SQL: SELECT * FROM milestones WHERE status != 'completed'"
+      ]
+    },
+    {
+      "name": "update_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Milestone ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "completion_path_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New completion path ID (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update milestone metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Partial update - only updates fields with non-NULL values",
+        "DATABASE CONTEXT: Commonly used to change milestone status as work progresses",
+        "NEXT STEP: After marking milestone complete (status='completed'), check if all milestones in path complete",
+        "NEXT STEP: If changing to 'blocked' status, document reason in description field",
+        "CHECK: NULL parameters don't update - partial updates supported",
+        "CHECK: Status transitions: pending \u2192 in_progress \u2192 completed (or \u2192 blocked \u2192 back to in_progress)",
+        "CHECK: Completion_path_id changes move milestone to different path (rare)",
+        "RELATED HELPERS: get_milestones_by_path() after update to see updated milestone list",
+        "RELATED HELPERS: get_incomplete_tasks_by_milestone() to check if all tasks complete before marking milestone complete",
+        "WORKFLOW: Complete all milestone tasks \u2192 update_milestone(status='completed') \u2192 check path completion",
+        "DIRECTIVE: Used by project_milestone_complete (mark_milestone_complete, sequence_order: 1)",
+        "DIRECTIVE FLOW: project_milestone_complete \u2192 update_milestone(status='completed') \u2192 logs completion time",
+        "COMMON WORKFLOWS: Start milestone work \u2192 update_milestone(status='in_progress')",
+        "COMMON WORKFLOWS: All tasks done \u2192 update_milestone(status='completed') \u2192 potentially trigger path completion",
+        "WARNING: Marking milestone complete without completing tasks can cause inconsistent state"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_milestone_complete",
+          "execution_context": "mark_milestone_complete",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.milestone_id",
+            "status": "completed",
+            "completed_at": "current_timestamp"
+          },
+          "description": "Mark milestone as completed after all tasks finish - updates status and logs completion time"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "NULL parameters = don't update that field",
+        "SQL: UPDATE milestones SET field1=?, field2=? WHERE id=?"
+      ]
+    },
+    {
+      "name": "delete_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Milestone ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete milestone with task validation",
+      "error_handling": "- Calls `get_incomplete_tasks_by_milestone(milestone_id, skip_pending=false)`",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Deletes milestone with relationship validation - prevents orphaned tasks",
+        "DATABASE CONTEXT: Requires note metadata for audit trail (reason, severity, source)",
+        "NEXT STEP: If error returned, must complete or delete tasks first before deleting milestone",
+        "CHECK: Error if incomplete tasks exist (pending, in_progress, or blocked tasks)",
+        "CHECK: Must provide note_reason, note_severity ('info', 'warning', 'error'), note_source ('ai', 'user')",
+        "CHECK: Note_type defaults to 'entry_deletion' for audit trail",
+        "RELATED HELPERS: get_incomplete_tasks_by_milestone() to check for blocking tasks",
+        "RELATED HELPERS: delete_task() to remove tasks before deleting milestone",
+        "WORKFLOW: Before deleting milestone \u2192 get_incomplete_tasks_by_milestone() \u2192 delete/complete tasks \u2192 delete milestone",
+        "COMMON WORKFLOWS: Remove obsolete milestone \u2192 complete all tasks first \u2192 delete_milestone()",
+        "WARNING: Destructive operation - validates incomplete tasks to prevent data loss"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns error if incomplete tasks exist",
+        "Returns success after deleting milestone",
+        "Validates no incomplete tasks before allowing deletion",
+        "Creates note record for audit trail"
+      ]
+    },
+    {
+      "name": "add_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "JSON array of flow IDs"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Default if not specified"
+        }
+      ],
+      "purpose": "Add task to milestone",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Creates task within milestone - task references flows that contain relevant files/functions",
+        "DATABASE CONTEXT: flow_ids field stores JSON array of flow IDs to connect task to relevant code",
+        "DATABASE CONTEXT: Priority values: 'low', 'medium', 'high', 'critical'",
+        "NEXT STEP: After creating task, use add_subtask() if task needs decomposition into smaller units",
+        "NEXT STEP: Tasks can spawn subtasks (blocking) or sidequests (parallel exploratory work)",
+        "CHECK: flow_ids parameter links task to flows - helps identify relevant files for implementation",
+        "CHECK: Milestone_id must exist - tasks belong to milestones",
+        "RELATED HELPERS: add_subtask() to break task into smaller pieces",
+        "RELATED HELPERS: get_task_flows() to retrieve flow IDs after creation",
+        "RELATED HELPERS: get_task_files() to get all files related to task via flows",
+        "RELATED HELPERS: update_task() to change status as work progresses",
+        "WORKFLOW: Create milestone \u2192 add_task() \u2192 work on task (or decompose to subtasks)",
+        "DIRECTIVE: Used by project_task_decomposition (decompose_request, sequence_order: 2)",
+        "DIRECTIVE: Used by project_task_create (create_task_record, sequence_order: 1)",
+        "DIRECTIVE FLOW: project_task_decomposition \u2192 add_task() \u2192 generates task hierarchy from goals",
+        "COMMON WORKFLOWS: Decompose user request \u2192 create tasks \u2192 link to flows containing relevant code",
+        "COMMON WORKFLOWS: Task lifecycle: pending \u2192 in_progress \u2192 (optionally spawn subtasks) \u2192 completed"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.created_milestone_id",
+            "name": "workflow.parsed_task_name",
+            "description": "workflow.task_description",
+            "flow_ids": "workflow.identified_flows",
+            "priority": "workflow.task_priority"
+          },
+          "description": "Create tasks for milestone during user request decomposition - generates task hierarchy from high-level goals"
+        },
+        {
+          "directive_name": "project_task_create",
+          "execution_context": "create_task_record",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.validated_milestone_id",
+            "name": "workflow.task_name",
+            "description": "workflow.task_description",
+            "flow_ids": "workflow.flow_ids",
+            "priority": "workflow.priority"
+          },
+          "description": "Atomic task creation - validates inputs and creates task record in database"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, id: new_id}",
+        "flow_ids stored as JSON array in database",
+        "Inserts into tasks table"
+      ]
+    },
+    {
+      "name": "get_incomplete_tasks_by_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "skip_pending",
+          "type": "boolean",
+          "required": true,
+          "default": null,
+          "description": "If true, excludes pending tasks"
+        }
+      ],
+      "purpose": "Get open tasks for a milestone with related subtasks/sidequests",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Queries incomplete tasks for specific milestone - includes in_progress and optionally pending",
+        "DATABASE CONTEXT: skip_pending parameter controls whether pending tasks are included or excluded",
+        "NEXT STEP: Use skip_pending=false to get all incomplete work (pending + in_progress + blocked)",
+        "NEXT STEP: Use skip_pending=true to get only active/blocked work (excludes pending queue)",
+        "CHECK: Returns tasks with related subtasks/sidequests for complete work picture",
+        "CHECK: Used to determine if milestone can be marked complete",
+        "RELATED HELPERS: get_incomplete_tasks() for all incomplete tasks across all milestones",
+        "RELATED HELPERS: update_milestone(status='completed') after confirming no incomplete tasks",
+        "WORKFLOW: Before marking milestone complete \u2192 get_incomplete_tasks_by_milestone(skip_pending=false) \u2192 verify empty",
+        "DIRECTIVE: Used by project_task_complete (check_milestone_status, sequence_order: 2)",
+        "DIRECTIVE FLOW: project_task_complete \u2192 get_incomplete_tasks_by_milestone() \u2192 check if all complete \u2192 call milestone_complete",
+        "COMMON WORKFLOWS: After task completion \u2192 check if milestone done \u2192 get_incomplete_tasks_by_milestone() \u2192 mark milestone complete if empty"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "check_milestone_status",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.milestone_id",
+            "skip_pending": false
+          },
+          "description": "Check if all tasks in milestone are complete after task completion - determines if milestone_complete should be called"
+        }
+      ],
+      "implementation_notes": [
+        "See return_statements for usage guidance"
+      ]
+    },
+    {
+      "name": "get_incomplete_tasks",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [],
+      "purpose": "Get all incomplete tasks with subtasks/sidequests",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Queries all incomplete tasks across all milestones with nested subtasks/sidequests",
+        "DATABASE CONTEXT: Comprehensive work overview - returns tasks, subtasks, and sidequests",
+        "NEXT STEP: Use to get high-level view of all remaining work in project",
+        "NEXT STEP: Returned object has separate arrays for tasks, subtasks, sidequests",
+        "CHECK: Includes pending, in_progress, and blocked items",
+        "CHECK: Useful for progress reporting and work prioritization",
+        "RELATED HELPERS: get_incomplete_milestones() for milestone-level overview",
+        "RELATED HELPERS: get_tasks_comprehensive() for advanced filtering options",
+        "WORKFLOW: Session start \u2192 get_incomplete_tasks() \u2192 understand all pending work",
+        "COMMON WORKFLOWS: Progress check \u2192 get_incomplete_tasks() \u2192 prioritize next work item",
+        "COMMON WORKFLOWS: Status report \u2192 get_incomplete_tasks() \u2192 calculate remaining workload"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "See return_statements for usage guidance"
+      ]
+    },
+    {
+      "name": "get_tasks_by_milestone",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "milestone_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Milestone ID"
+        }
+      ],
+      "purpose": "Get all tasks for a milestone (any status)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Queries all tasks for milestone regardless of status (pending, in_progress, completed, blocked)",
+        "NEXT STEP: Use to see complete task list for milestone planning",
+        "NEXT STEP: Check for duplicate task names before creating new tasks",
+        "CHECK: Returns all statuses - filter results if you only need incomplete tasks",
+        "RELATED HELPERS: get_incomplete_tasks_by_milestone() for just incomplete tasks",
+        "WORKFLOW: Before add_task() \u2192 get_tasks_by_milestone() \u2192 check for duplicate names",
+        "DIRECTIVE: Used by project_task_create (check_duplicate_tasks, sequence_order: 2)",
+        "DIRECTIVE FLOW: project_task_create \u2192 get_tasks_by_milestone() \u2192 prevent naming conflicts",
+        "COMMON WORKFLOWS: Review milestone scope \u2192 get_tasks_by_milestone() \u2192 see all tasks (complete and incomplete)"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_create",
+          "execution_context": "check_duplicate_tasks",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "milestone_id": "workflow.validated_milestone_id"
+          },
+          "description": "Check for duplicate task names before creating new task - prevents naming conflicts"
+        }
+      ],
+      "implementation_notes": [
+        "See return_statements for usage guidance"
+      ]
+    },
+    {
+      "name": "get_tasks_comprehensive",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = all)"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum results"
+        },
+        {
+          "name": "date_range_created",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "date_range_updated",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "[start_date, end_date]"
+        },
+        {
+          "name": "milestone_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by milestone"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical'"
+        }
+      ],
+      "purpose": "Advanced task search with multiple filters",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Advanced task search with multiple filter options (status, milestone, priority, date ranges, limit)",
+        "NEXT STEP: Use date_range_created or date_range_updated for temporal queries",
+        "NEXT STEP: Use limit parameter for pagination or recent tasks only",
+        "NEXT STEP: Combine filters for precise queries (e.g., status='in_progress' + priority='high')",
+        "CHECK: All parameters optional - omit for no filtering on that dimension",
+        "CHECK: Useful for reporting, analytics, and finding specific tasks",
+        "RELATED HELPERS: get_incomplete_tasks() for simple all-incomplete query",
+        "RELATED HELPERS: get_tasks_by_milestone() for milestone-specific without filters",
+        "COMMON WORKFLOWS: Find high priority work \u2192 get_tasks_comprehensive(status='pending', priority='high')",
+        "COMMON WORKFLOWS: Recent activity \u2192 get_tasks_comprehensive(date_range_updated=[start, end], limit=20)"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "See return_statements for usage guidance"
+      ]
+    },
+    {
+      "name": "get_task_flows",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        }
+      ],
+      "purpose": "Get flow IDs for a task",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Extracts flow_ids JSON array from task record",
+        "NEXT STEP: Use returned flow IDs with get_files_by_flow() to find relevant files for task",
+        "NEXT STEP: Flows connect tasks to themed code areas - helps locate implementation scope",
+        "CHECK: Returns JSON array of integers (flow IDs)",
+        "CHECK: Empty array means task not yet linked to flows",
+        "RELATED HELPERS: get_task_files() orchestrator helper that chains this with file lookups",
+        "RELATED HELPERS: add_task() where flow_ids are initially set",
+        "WORKFLOW: Need to work on task \u2192 get_task_flows() \u2192 get_files_by_flow() \u2192 see relevant files",
+        "COMMON WORKFLOWS: Understanding task scope \u2192 get_task_flows() \u2192 see which code areas involved"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "See return_statements for usage guidance"
+      ]
+    },
+    {
+      "name": "get_task_files",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        }
+      ],
+      "purpose": "Get all files related to task via flows (orchestrator)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Orchestrator helper - chains get_task_flows() \u2192 get_file_ids_from_flows() \u2192 get_from_project()",
+        "NEXT STEP: Returns complete file objects (not just IDs) - ready for implementation work",
+        "NEXT STEP: Use to understand which files need modification for task",
+        "CHECK: May return empty array if task has no flow assignments",
+        "RELATED HELPERS: get_task_flows() for just the flow IDs",
+        "RELATED HELPERS: get_files_by_flow() for files in specific flow",
+        "WORKFLOW: Start task work \u2192 get_task_files() \u2192 see all relevant files \u2192 begin implementation",
+        "COMMON WORKFLOWS: Task implementation \u2192 get_task_files() \u2192 modify relevant files \u2192 complete task"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "See return_statements for usage guidance"
+      ]
+    },
+    {
+      "name": "update_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "milestone_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New milestone ID (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed', 'blocked' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        },
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Array of flow IDs [1, 3, 5] (NULL = don't update)"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'low', 'medium', 'high', 'critical' (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update task metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Partial update - only updates fields with non-NULL values",
+        "DATABASE CONTEXT: Central task state manager - handles status transitions, priority changes, metadata updates",
+        "DATABASE CONTEXT: Used by multiple directives for task lifecycle management",
+        "NEXT STEP: Status transitions: pending \u2192 in_progress \u2192 completed (or \u2192 blocked)",
+        "NEXT STEP: When creating subtask, parent task paused automatically via this helper",
+        "NEXT STEP: When subtasks complete, parent task resumed automatically via this helper",
+        "CHECK: NULL parameters don't update - partial updates supported",
+        "CHECK: flow_ids updates change task scope - use cautiously",
+        "CHECK: Milestone_id changes move task to different milestone (rare)",
+        "RELATED HELPERS: add_subtask() triggers update_task() to pause parent",
+        "RELATED HELPERS: update_subtask() on subtask completion triggers update_task() to resume parent",
+        "WORKFLOW: Task lifecycle management via status updates (pending \u2192 in_progress \u2192 completed)",
+        "DIRECTIVE: Used by project_task_update (update_task_status_or_priority, sequence_order: 1)",
+        "DIRECTIVE: Used by project_task_complete (mark_complete_and_items, sequence_order: 1)",
+        "DIRECTIVE: Used by project_subtask_create (pause_parent_task, sequence_order: 2)",
+        "DIRECTIVE: Used by project_subtask_complete (resume_parent_task, sequence_order: 3)",
+        "DIRECTIVE: Used by project_sidequest_complete (resume_paused_task, sequence_order: 3)",
+        "DIRECTIVE FLOW: Multiple directives use update_task() for state transitions throughout task lifecycle",
+        "COMMON WORKFLOWS: Start task \u2192 update_task(status='in_progress')",
+        "COMMON WORKFLOWS: Finish task \u2192 update_task(status='completed') \u2192 check if milestone complete",
+        "COMMON WORKFLOWS: Create subtask \u2192 update_task(parent, status='blocked') \u2192 work on subtask",
+        "WARNING: Manually changing status can bypass workflow logic - use directive flows when possible"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_update",
+          "execution_context": "update_task_status_or_priority",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Central task state manager - updates status, priority, and metadata fields"
+        },
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "mark_complete_and_items",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark task as completed - sets status=completed and logs timestamp"
+        },
+        {
+          "directive_name": "project_subtask_create",
+          "execution_context": "pause_parent_task",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Pause parent task when subtask created - blocks parent progress until subtask complete"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "resume_parent_task",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Resume parent task when all subtasks complete - automatically continues parent work"
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "resume_paused_task",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Resume paused task after sidequest completion if user chooses to continue original work"
+        }
+      ],
+      "implementation_notes": [
+        "See return_statements for usage guidance"
+      ]
+    },
+    {
+      "name": "delete_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete task with item validation",
+      "error_handling": "- Calls `get_items_for_task(task_id)` (all statuses)",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DATABASE CONTEXT: Deletes task with item validation - prevents deletion if completed/in_progress items exist",
+        "DATABASE CONTEXT: Requires note metadata for audit trail (reason, severity, source)",
+        "NEXT STEP: If error returned, must complete or delete items first before deleting task",
+        "CHECK: Error if completed or in_progress items exist - only allows deletion with pending items or no items",
+        "CHECK: Must provide note_reason, note_severity ('info', 'warning', 'error'), note_source ('ai', 'user')",
+        "CHECK: Note_type defaults to 'entry_deletion' for audit trail",
+        "RELATED HELPERS: get_items_for_task() to check for blocking items",
+        "RELATED HELPERS: delete_item() to remove items before deleting task",
+        "WORKFLOW: Before deleting task \u2192 get_items_for_task() \u2192 complete/delete items \u2192 delete_task()",
+        "COMMON WORKFLOWS: Remove obsolete task \u2192 ensure no active items \u2192 delete_task()",
+        "WARNING: Destructive operation - validates items to prevent data loss"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "See return_statements for usage guidance"
+      ]
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-7.json",
+    "count": 15,
+    "range": "helpers 74-88 of 112",
+    "description": "Milestone and task management operations (add, get, update, delete, queries)",
+    "first_helper": "add_milestone",
+    "last_helper": "delete_task",
+    "status": "return_statements enhanced - ready for review",
+    "last_updated": "2025-12-29"
+  }
+}

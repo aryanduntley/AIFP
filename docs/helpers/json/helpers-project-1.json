@@ -9,10 +9,17 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of table names"
+        "DATABASE CONTEXT: Project database tables include files, functions, tasks, milestones, completion_path, themes, flows, notes, infrastructure",
+        "NEXT STEP: For table structure details, find helper for getting field metadata of specific table",
+        "NEXT STEP: For complete schema exploration, find helper that returns all tables with field details at once",
+        "CHECK: Do you need full schema or just specific table? Complete schema helpers more efficient for broad exploration"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of strings: ['project', 'files', 'functions', 'types', 'interactions', 'themes', 'flows', 'file_flows', 'flow_themes', 'completion_path', 'milestones', 'tasks', 'subtasks', 'sidequests', 'items', 'notes', 'infrastructure', 'types_functions', 'work_branches', 'merge_history']",
+        "SQL: SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+      ]
     },
     {
       "name": "get_project_fields",
@@ -31,10 +38,16 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of field objects with name, type, nullable, etc."
+        "DATABASE CONTEXT: Field metadata includes name, type (TEXT/INTEGER/JSON), nullable, default value, primary key status",
+        "CHECK: Before CRUD operations, verify field types to ensure correct data format (INTEGER vs TEXT, proper JSON formatting)",
+        "NEXT STEP: Use field metadata to construct valid queries or understand schema constraints for this table"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of objects: [{name: str, type: str, nullable: bool, default: any, pk: bool}, ...]",
+        "SQL: PRAGMA table_info(table_name)"
+      ]
     },
     {
       "name": "get_project_schema",
@@ -45,10 +58,16 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Object mapping table names to field arrays"
+        "PERFORMANCE: Cache this result in your context to avoid repeated calls throughout session",
+        "CHECK: Do you need entire schema or just specific tables? Single table queries more efficient for targeted needs",
+        "DATABASE CONTEXT: Complete schema shows all tables with field metadata (name, type, nullable, default, pk) for project database"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns object: {table_name: [{name, type, nullable, default, pk}, ...], ...}",
+        "Combines get_project_tables() + get_project_fields() for each table"
+      ]
     },
     {
       "name": "get_project_json_parameters",
@@ -67,11 +86,18 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "```json",
-        "Use with `add_project_entry()` or `update_project_entry()` for tables without specialized functions. Only include fields being set/updated in JSON - omit unchanged fields to prevent overwriting with empty values."
+        "DATABASE CONTEXT: Returns field list template for add/update operations (excludes id, created_at, updated_at which are auto-managed)",
+        "NEXT STEP: Use returned field names as template for data objects in add/update operations - only include fields being set",
+        "CHECK: Are specialized helpers available for this table? Prefer specialized helpers (files, functions, tasks, milestones) over generic CRUD",
+        "WARNING: Generic CRUD operations bypass business logic and validation - specialized helpers enforce consistency and relationships"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns object: {field_name: type_hint, ...}",
+        "Example: {name: 'TEXT', path: 'TEXT', language: 'TEXT', is_reserved: 'INTEGER'}",
+        "Filters out id, created_at, updated_at from PRAGMA table_info() results"
+      ]
     },
     {
       "name": "get_from_project",
@@ -97,11 +123,18 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of records",
-        "Project DB is mutable - tables can grow large - must specify IDs"
+        "DATABASE CONTEXT: Requires at least one ID - empty array NOT allowed (prevents accidental full table scans on large database)",
+        "CHECK: Do you have IDs? If not, find helper for filtered queries using conditions or find specialized getter by name/attribute",
+        "NEXT STEP: For all records without IDs, find helper that accepts WHERE conditions parameter with empty conditions object",
+        "WARNING: Empty id_array will raise error - intentional protection against performance issues on large tables"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of records or empty array if no matches",
+        "Raises error if id_array is empty",
+        "SQL: SELECT * FROM table WHERE id IN (?, ?, ...)"
+      ]
     },
     {
       "name": "get_from_project_where",
@@ -141,11 +174,20 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of matching records",
-        "Use this for \"get all\" queries with optional filtering"
+        "DATABASE CONTEXT: Empty conditions {} returns ALL records - use with caution, add limit parameter to prevent overwhelming results",
+        "DATABASE CONTEXT: Uses AND logic - all conditions must match (field1=value1 AND field2=value2)",
+        "CHECK: For complex queries (OR logic, LIKE, ranges), find helper that accepts raw WHERE clause strings",
+        "CHECK: Are specialized query helpers available for this operation? Check for helpers specific to the entity type",
+        "CHECK: Use limit parameter for large result sets to avoid overwhelming context",
+        "NEXT STEP: After getting results, extract IDs for focused re-queries if needed"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of records or empty array if no matches",
+        "Builds WHERE clause from conditions object using AND logic",
+        "SQL: SELECT * FROM table WHERE field1=? AND field2=? [ORDER BY ...] [LIMIT ...]"
+      ]
     },
     {
       "name": "query_project",
@@ -171,11 +213,21 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of matching rows",
-        "Use Tier 2 whenever possible"
+        "DATABASE CONTEXT: Advanced query for complex SQL WHERE conditions (OR, LIKE, IN, BETWEEN, comparison operators)",
+        "DATABASE CONTEXT: Examples: \"status IN ('pending', 'in_progress')\" or \"name LIKE '%api%' AND is_reserved = 0\"",
+        "CHECK: Try helpers with structured conditions first (AND-logic helpers) - safer and cleaner than raw SQL",
+        "CHECK: Verify field names exist in table schema before constructing query to avoid SQL syntax errors",
+        "CHECK: Is there a specialized helper for this query pattern? Prefer specialized over raw SQL",
+        "WARNING: SQL injection safe (parameterized), but syntax errors will fail - validate field names first",
+        "WARNING: Rarely needed - most queries handled by structured condition helpers or specialized helpers"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of records or empty array if no matches",
+        "SQL: SELECT * FROM table WHERE {query}",
+        "Query string is raw SQL WHERE clause without the WHERE keyword"
+      ]
     },
     {
       "name": "add_project_entry",
@@ -201,10 +253,20 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
+        "DATABASE CONTEXT: Generic insert for any table - returns new record ID",
+        "CHECK: Are specialized add helpers available for this table? Specialized helpers enforce business logic and relationships",
+        "CHECK: For files, functions, types: Use reserve/finalize workflow pattern instead of direct insert",
+        "CHECK: After adding, do relationships need to be established in junction tables (file_flows, types_functions)?",
+        "WARNING: Generic CRUD bypasses validation logic - prefer specialized helpers for core entities (files, functions, tasks, milestones)",
+        "WARNING: Restricted tables (files, functions, types) require reserve/finalize workflow for ID embedding in names"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, id: new_id}",
+        "SQL: INSERT INTO table (field1, field2, ...) VALUES (?, ?, ...) RETURNING id",
+        "Validate table exists and is not restricted before insert"
+      ]
     },
     {
       "name": "update_project_entry",
@@ -237,10 +299,21 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"id\": id}`"
+        "DATABASE CONTEXT: Partial update - only fields in data object are modified, omitted fields remain unchanged",
+        "DATABASE CONTEXT: Auto-updates updated_at timestamp via database trigger - do not include in data object",
+        "CHECK: Are specialized update helpers available for this table? They provide validation and relationship consistency",
+        "CHECK: If updating critical fields (status, foreign keys), verify no cascade effects on dependent records",
+        "CHECK: After updating, consider verifying changes succeeded by re-querying the record",
+        "WARNING: Generic updates bypass business logic - prefer specialized update helpers for core entities",
+        "WARNING: Updating foreign key relationships without validation can create orphaned or inconsistent data"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, id: id}",
+        "SQL: UPDATE table SET field1=?, field2=? WHERE id=?",
+        "Only updates fields present in data object - partial updates supported"
+      ]
     },
     {
       "name": "delete_project_entry",
@@ -294,10 +367,25 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Logs all successful deletions to notes table"
+        "DATABASE CONTEXT: Smart delete automatically routes to specialized delete helpers when they exist (with relationship validation)",
+        "DATABASE CONTEXT: All deletions logged to notes table with reason, severity, source for permanent audit trail",
+        "DATABASE CONTEXT: Requires note metadata: reason (TEXT), severity ('info'/'warning'/'error'), source ('ai'/'user'), type ('entry_deletion')",
+        "CHECK: Before deleting, verify no dependent records exist - check foreign key relationships in related tables",
+        "CHECK: Is soft delete (status='deleted') better than hard delete? Soft deletes are reversible",
+        "CHECK: Have you clearly documented deletion reason? Audit trail is permanent and required",
+        "CHECK: After deletion, verify no orphaned records in junction tables (file_flows, types_functions, flow_themes)",
+        "WARNING: Deletion is permanent with no undo - specialized delete helpers provide relationship validation",
+        "WARNING: Generic delete may not catch all relationship constraints - prefer specialized delete helpers for safety",
+        "WARNING: Deleting from junction tables breaks relationships - ensure intent is clear before proceeding"
       ],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true} or error if dependencies exist",
+        "Routes to specialized delete if available (delete_file, delete_type, delete_theme, delete_flow, etc.)",
+        "Logs deletion to notes table: {reason: note_reason, severity: note_severity, source: note_source, type: note_type}",
+        "SQL: DELETE FROM table WHERE id=? (after validation)"
+      ]
     },
     {
       "name": "create_project",
@@ -351,8 +439,17 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true, \"project_id\": 1}`",
-        "last_known_git_hash and last_git_sync auto-populated"
+        "DATABASE CONTEXT: Single row table - only one project record per database, represents entire project metadata",
+        "DATABASE CONTEXT: Auto-populates git tracking fields (last_known_git_hash, last_git_sync) from current HEAD if git available",
+        "DATABASE CONTEXT: Fields: version (blueprint evolution tracking), user_directives_status (NULL=UseCase1, 'active'=UseCase2)",
+        "DIRECTIVE: Used by project_init (create_project_structure context, sequence_order: 1) - first step in initialization",
+        "DIRECTIVE FLOW: project_init → create_project() → populate themes/flows from blueprint → check completion_path → aifp_status",
+        "NEXT STEP: After creating project record, populate themes and flows from parsed ProjectBlueprint.md",
+        "NEXT STEP: Create completion_path and initial milestones based on project goals",
+        "CHECK: ProjectBlueprint.md should exist before calling - parse it for name, purpose, goals parameters",
+        "CHECK: Git recommended for external change detection - last_known_git_hash enables blueprint sync checks",
+        "WARNING: Single-use helper - can only be called once per database, returns error if project already exists",
+        "WARNING: user_directives_status should be NULL unless explicitly building Use Case 2 (automation project)"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -364,6 +461,12 @@
           "parameters_mapping": {},
           "description": "Initialize project entry during .aifp-project/ creation - creates single project record with metadata"
         }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, project_id: 1}",
+        "Auto-populates last_known_git_hash from git rev-parse HEAD (if git available)",
+        "Auto-populates last_git_sync with current timestamp",
+        "SQL: INSERT INTO project (name, purpose, goals, status, version, user_directives_status, ...) VALUES (...)"
       ]
     },
     {
@@ -375,7 +478,14 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Project object"
+        "DATABASE CONTEXT: Single project record contains: name, purpose, goals, status, version, user_directives_status, git tracking",
+        "DIRECTIVE: Used by project_blueprint_read (database_fallback context, sequence_order: 1) - fallback when blueprint file missing",
+        "DIRECTIVE: Used by project_blueprint_update (read_current_blueprint context, sequence_order: 1) - gets version before increment",
+        "DIRECTIVE FLOW: project_blueprint_read → get_project() → reconstruct ProjectBlueprint.md from database if file missing",
+        "DIRECTIVE FLOW: project_blueprint_update → get_project() → check version → increment → sync changes to blueprint file",
+        "CHECK: user_directives_status field determines Use Case (NULL=regular dev, 'active'=automation project)",
+        "CHECK: Compare last_known_git_hash with current HEAD to detect external blueprint modifications",
+        "NEXT STEP: version field tracks blueprint evolution - increment on major architecture/goal changes"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -395,6 +505,11 @@
           "parameters_mapping": {},
           "description": "Get current project version before updating blueprint - checks version for increment"
         }
+      ],
+      "implementation_notes": [
+        "Returns project object: {id: 1, name, purpose, goals: [...], status, version, user_directives_status, last_known_git_hash, last_git_sync, created_at, updated_at}",
+        "SQL: SELECT * FROM project LIMIT 1",
+        "Always returns single row or null if project not initialized"
       ]
     },
     {
@@ -449,8 +564,14 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"success\": true}`",
-        "Only updates fields with non-NULL values"
+        "DATABASE CONTEXT: Partial update - only non-NULL parameter values are updated, omitted parameters unchanged",
+        "DATABASE CONTEXT: Common updates: version increment (blueprint changes), status transitions, user_directives_status changes",
+        "DIRECTIVE: Used by project_blueprint_update (update_version_and_date context, sequence_order: 2) - increments version after modifications",
+        "DIRECTIVE FLOW: project_blueprint_update → get_project() → parse changes → update_project(version++) → sync blueprint file",
+        "CHECK: Version increments should reflect significant changes (architecture, goals, major features) - document changes",
+        "CHECK: Status field values: 'active', 'paused', 'completed', 'abandoned' - status transitions may cascade to tasks/milestones",
+        "CHECK: After updating version, ensure ProjectBlueprint.md file is synced to maintain consistency",
+        "WARNING: user_directives_status change to 'active' requires Use Case 2 setup complete (directives implemented)"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -465,6 +586,12 @@
           },
           "description": "Increment project version after blueprint update - updates version and last_updated timestamp in database"
         }
+      ],
+      "implementation_notes": [
+        "Returns {success: true}",
+        "SQL: UPDATE project SET field1=?, field2=? WHERE id=1",
+        "Only updates provided fields - NULL values are ignored (not set to NULL, just skipped)",
+        "updated_at timestamp auto-updated by trigger"
       ]
     },
     {
@@ -476,7 +603,16 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "`{\"changed\": boolean, \"method\": \"git|filesystem\"}`"
+        "DATABASE CONTEXT: Detects external ProjectBlueprint.md modifications - git method (hash comparison) or filesystem method (timestamp)",
+        "DATABASE CONTEXT: Git method compares file hash vs last_known_git_hash, filesystem compares modified time vs updated_at",
+        "DIRECTIVE: Used by project_blueprint_read (parse_complete context, sequence_order: 2) - detect staleness after parsing",
+        "DIRECTIVE: Used by project_blueprint_update (validate_parameters context, sequence_order: 1) - pre-check for conflicts",
+        "DIRECTIVE FLOW: Session start → blueprint_has_changed() → if true → project_blueprint_read → sync database → proceed",
+        "DIRECTIVE FLOW: Before update → blueprint_has_changed() → if true → warn user about external changes → get confirmation",
+        "CHECK: Git method preferred (detects actual content changes), filesystem method less reliable (false positives on touch)",
+        "CHECK: If changed=true, in-memory state may be stale - trigger project_blueprint_read before making changes",
+        "NEXT STEP: After syncing external changes, update last_known_git_hash to mark blueprint as processed",
+        "WARNING: Filesystem method can show false positives - file timestamp changed but content unchanged"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -496,6 +632,12 @@
           "parameters_mapping": {},
           "description": "Pre-check if blueprint already modified - prevents conflicting updates"
         }
+      ],
+      "implementation_notes": [
+        "Returns {changed: boolean, method: 'git'|'filesystem'}",
+        "Git method: git diff --quiet .aifp/ProjectBlueprint.md || compute hash and compare with project.last_known_git_hash",
+        "Filesystem method: Compare os.path.getmtime() with project.updated_at",
+        "Prefers git method if available, falls back to filesystem"
       ]
     },
     {
@@ -515,7 +657,15 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of infrastructure objects"
+        "DATABASE CONTEXT: Infrastructure types tracked: 'language', 'package', 'testing', 'database', 'build_tool'",
+        "DATABASE CONTEXT: Records include name, version, purpose - used for environment configuration and validation",
+        "DIRECTIVE: Used by project_init (create_project_structure context, sequence_order: 2) - populate initial infrastructure",
+        "DIRECTIVE: Used by project_blueprint_read (database_fallback context, sequence_order: 2) - query when reconstructing blueprint",
+        "DIRECTIVE FLOW: project_init → create_project() → get_infrastructure_by_type() → add missing infrastructure entries",
+        "DIRECTIVE FLOW: project_blueprint_read → get_project() → get_infrastructure_by_type() → reconstruct blueprint from database",
+        "CHECK: Empty results may indicate fresh project initialization needed",
+        "CHECK: language type determines file extensions and syntax (Python/.py, TypeScript/.ts)",
+        "CHECK: testing type determines test framework for test generation (pytest, jest)"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -535,951 +685,22 @@
           "parameters_mapping": {},
           "description": "Query infrastructure when blueprint missing - retrieves language, runtime, build tool from database"
         }
+      ],
+      "implementation_notes": [
+        "Returns array of infrastructure objects: [{id, type, name, version, purpose, created_at, updated_at}, ...]",
+        "SQL: SELECT * FROM infrastructure WHERE type=? ORDER BY created_at",
+        "Returns empty array if no infrastructure of that type exists"
       ]
-    },
-    {
-      "name": "reserve_file",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Preliminary file name (will have -IDxxx appended)"
-        },
-        {
-          "name": "path",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "File path relative to project root"
-        },
-        {
-          "name": "language",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Programming language (e.g., 'python', 'javascript', 'typescript')"
-        }
-      ],
-      "purpose": "Reserve file ID for naming before creation",
-      "error_handling": "Return error if path already exists",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": reserved_id, \"is_reserved\": true}`",
-        "Sets is_reserved=true, created_at auto-set by trigger",
-        "Use returned ID in filename as suffix -IDxx",
-        "Once created, call finalize_file()"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_reserve_finalize",
-          "execution_context": "reserve_file_name",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Reserve file ID before writing code - AI embeds ID in filename for instant lookups (filename_id_42.py)"
-        },
-        {
-          "directive_name": "project_file_write",
-          "execution_context": "reserve_before_write",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Reserve file ID before generating file content - enables rename-proof references"
-        }
-      ]
-    },
-    {
-      "name": "reserve_files",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "files",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of file objects [{name, path, language}, ...]"
-        }
-      ],
-      "purpose": "Reserve multiple file IDs at once",
-      "error_handling": "Return error if any path already exists",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"ids\": [id1, id2, ...]}`",
-        "Use returned IDs in filenames as suffix -IDxx"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "finalize_file",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Reserved ID"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Final name with -ID_xx suffix"
-        },
-        {
-          "name": "path",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "File path"
-        },
-        {
-          "name": "language",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Language"
-        }
-      ],
-      "purpose": "Finalize reserved file after creation",
-      "error_handling": "Return error if file doesn't exist at path",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"file_id\": file_id}`",
-        "Checks file exists, sets is_reserved=false"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_reserve_finalize",
-          "execution_context": "finalize_reservation",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Finalize file after code written - sets is_reserved=false and confirms file exists on filesystem"
-        },
-        {
-          "directive_name": "project_file_write",
-          "execution_context": "finalize_after_write",
-          "sequence_order": 3,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Finalize file reservation after successful file generation"
-        },
-        {
-          "directive_name": "project_update_db",
-          "execution_context": "finalize_new_files",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Finalize file reservations when updating database with new file metadata"
-        }
-      ]
-    },
-    {
-      "name": "finalize_files",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "files",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of file objects [{file_id, name, path, language}, ...]"
-        }
-      ],
-      "purpose": "Finalize multiple reserved files",
-      "error_handling": "Return error if any file doesn't exist at path",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"finalized_ids\": [...]}`",
-        "Checks each file exists, sets is_reserved=false for all"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_file_by_name",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "File name to look up (e.g., 'calculator-ID42.py')"
-        }
-      ],
-      "purpose": "Get file by name (high-frequency lookup)",
-      "error_handling": "Return null if not found",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "File object or null",
-        "Zero cognitive load for common file lookups"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_file_by_path",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_path",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "File path to look up (e.g., 'src/calculator.py')"
-        }
-      ],
-      "purpose": "Get file by path (very high-frequency lookup)",
-      "error_handling": "Return null if not found",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "File object or null",
-        "Most common file lookup method"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_file_read",
-          "execution_context": "load_with_context",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Load file metadata from database by path - provides full context including functions, dependencies, theme/flow associations"
-        },
-        {
-          "directive_name": "project_file_delete",
-          "execution_context": "check_file_tracked",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Check if file exists in database before deletion - ensures proper cleanup of DB records"
-        }
-      ]
-    },
-    {
-      "name": "update_file",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "File ID to update"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New file name (NULL = don't update)"
-        },
-        {
-          "name": "path",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New file path (NULL = don't update)"
-        },
-        {
-          "name": "language",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Language (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update file metadata",
-      "error_handling": "Return error if file_id not found",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"file_id\": file_id}`",
-        "Timestamp and checksum automatically updated",
-        "If name or path changed, ensure code references are updated"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_update_db",
-          "execution_context": "update_files_table",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Update file metadata after code generation - synchronizes checksum and file information"
-        }
-      ]
-    },
-    {
-      "name": "file_has_changed",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "File ID to check"
-        }
-      ],
-      "purpose": "Check if file changed using Git (if available) or filesystem timestamp",
-      "error_handling": "Return error if file_id not found",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"changed\": boolean, \"method\": \"git|filesystem\"}`",
-        "Uses Git diff if available, falls back to filesystem timestamp comparison"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_file_read",
-          "execution_context": "check_checksum_mismatch",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Detect if file changed since last DB update - warns user about potential staleness"
-        }
-      ]
-    },
-    {
-      "name": "update_file_timestamp",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "File ID to update timestamp for"
-        }
-      ],
-      "purpose": "Update file timestamp (called automatically after function updates)",
-      "error_handling": "Return error if file_id not found",
-      "is_tool": false,
-      "is_sub_helper": true,
-      "return_statements": [
-        "`{\"success\": true}`",
-        "Called automatically after function updates, sub-helper only",
-        "Updates updated_at timestamp and recalculates checksum"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_file",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "File ID to delete"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete file with comprehensive cross-reference validation",
-      "error_handling": "Return error if functions/flows exist for file - requires manual cleanup first",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"deleted_file_id\": file_id}`",
-        "Cascades delete to functions and interactions",
-        "Logs deletion to notes table"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_file_delete",
-          "execution_context": "delete_file_and_db_records",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Delete file from filesystem and database with cascade cleanup of functions and interactions"
-        }
-      ]
-    },
-    {
-      "name": "reserve_function",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Function name (will have _idxxx appended)"
-        },
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "File ID where function will be defined"
-        },
-        {
-          "name": "purpose",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Function purpose"
-        },
-        {
-          "name": "params",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "Function parameters"
-        },
-        {
-          "name": "returns",
-          "type": "object",
-          "required": false,
-          "default": null,
-          "description": "Return value specification"
-        }
-      ],
-      "purpose": "Reserve function ID for naming before creation",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": reserved_id, \"is_reserved\": true}`",
-        "Sets is_reserved=true"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_reserve_finalize",
-          "execution_context": "reserve_function_name",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Reserve function ID before writing code - AI embeds ID in function name for instant lookups (function_name_id_99)"
-        },
-        {
-          "directive_name": "project_file_write",
-          "execution_context": "reserve_before_write",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Reserve function IDs before generating function code - enables rename-proof references"
-        }
-      ]
-    },
-    {
-      "name": "reserve_functions",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "functions",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of function objects [{name, file_id, purpose, params, returns}, ...]"
-        }
-      ],
-      "purpose": "Reserve multiple function IDs",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"ids\": [...]}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "finalize_function",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "function_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Reserved function ID"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Final name with _idxx suffix"
-        },
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "File ID"
-        },
-        {
-          "name": "purpose",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Function purpose"
-        },
-        {
-          "name": "params",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "Function parameters"
-        },
-        {
-          "name": "returns",
-          "type": "object",
-          "required": false,
-          "default": null,
-          "description": "Return value specification"
-        }
-      ],
-      "purpose": "Finalize reserved function after creation",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"function_id\": function_id, \"file_id\": file_id}`",
-        "Sets is_reserved=false, calls update_file_timestamp(file_id)"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_reserve_finalize",
-          "execution_context": "finalize_reservation",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Finalize function after code written - sets is_reserved=false and updates file timestamp"
-        },
-        {
-          "directive_name": "project_file_write",
-          "execution_context": "finalize_after_write",
-          "sequence_order": 3,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Finalize function reservations after successful code generation"
-        },
-        {
-          "directive_name": "project_update_db",
-          "execution_context": "finalize_new_functions",
-          "sequence_order": 3,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Finalize function reservations when updating database with new function metadata"
-        }
-      ]
-    },
-    {
-      "name": "finalize_functions",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "functions",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of function objects [{function_id, name, file_id, purpose, params, returns}, ...]"
-        }
-      ],
-      "purpose": "Finalize multiple reserved functions",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"finalized_ids\": [...]}`",
-        "Calls update_file_timestamp for each unique file_id"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_function_by_name",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "function_name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Function name to look up"
-        }
-      ],
-      "purpose": "Get function by name (very high-frequency lookup)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Function object with interaction data or null",
-        "Most common function lookup method"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_functions_by_file",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "File ID to get functions for"
-        }
-      ],
-      "purpose": "Get all functions in a file (high-frequency)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Array of function objects with interaction data"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_file_read",
-          "execution_context": "load_with_context",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Load all functions for file with context - provides complete file metadata including function dependencies"
-        }
-      ]
-    },
-    {
-      "name": "update_function",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "function_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Function ID to update"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New function name (NULL = don't update)"
-        },
-        {
-          "name": "purpose",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "New purpose (NULL = don't update)"
-        },
-        {
-          "name": "parameters",
-          "type": "array",
-          "required": false,
-          "default": null,
-          "description": "New parameters (NULL = don't update)"
-        },
-        {
-          "name": "returns",
-          "type": "object",
-          "required": false,
-          "default": null,
-          "description": "New return specification (NULL = don't update)"
-        }
-      ],
-      "purpose": "Update function metadata",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"function_id\": function_id, \"file_id\": file_id}`",
-        "Calls update_file_timestamp(file_id) "
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_update_db",
-          "execution_context": "update_functions_table",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Update function metadata after code generation - synchronizes dependencies and function information"
-        }
-      ]
-    },
-    {
-      "name": "update_functions_for_file",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "File ID"
-        },
-        {
-          "name": "functions",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of function update objects [{function_id, name, purpose, parameters, returns}, ...]"
-        }
-      ],
-      "purpose": "Update multiple functions in a single file",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"updated_count\": count}`",
-        "Single update_file_timestamp call at end"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_update_db",
-          "execution_context": "update_functions_table",
-          "sequence_order": 3,
-          "is_required": false,
-          "parameters_mapping": {},
-          "description": "Batch update multiple functions in same file - more efficient than individual updates"
-        }
-      ]
-    },
-    {
-      "name": "update_function_file_location",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "function_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Function ID to move"
-        },
-        {
-          "name": "old_file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Current file ID"
-        },
-        {
-          "name": "new_file_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "New file ID"
-        }
-      ],
-      "purpose": "Move function to different file (rarely used)",
-      "error_handling": "Return error if function_id/file_ids not found",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`",
-        "Calls update_file_timestamp for both files"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
-    },
-    {
-      "name": "delete_function",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "function_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Function ID to delete"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
-        }
-      ],
-      "purpose": "Delete function with cascade cleanup",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"file_id\": file_id}`",
-        "- Deletes all types with function_id"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_file_delete",
-          "execution_context": "delete_file_and_db_records",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Cascade delete all functions in file - automatically deletes types and interactions"
-        }
-      ]
-    },
-    {
-      "name": "reserve_type",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Type name (will have _idxxx appended)"
-        },
-        {
-          "name": "definition_json",
-          "type": "object",
-          "required": true,
-          "default": null,
-          "description": "ADT definition (e.g., {'type': 'enum', 'variants': ['A', 'B']})"
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Type description"
-        },
-        {
-          "name": "links",
-          "type": "object",
-          "required": false,
-          "default": null,
-          "description": "Links to related functions"
-        },
-        {
-          "name": "file_id",
-          "type": "integer",
-          "required": false,
-          "default": null,
-          "description": "File ID where type is defined"
-        }
-      ],
-      "purpose": "Reserve type ID for naming before creation",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": reserved_id, \"is_reserved\": true}`",
-        "Sets is_reserved=true"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_reserve_finalize",
-          "execution_context": "reserve_type_name",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Reserve type ID before writing code - AI embeds ID in type name for instant lookups (TypeName_id_7)"
-        }
-      ]
-    },
-    {
-      "name": "reserve_types",
-      "file_path": "TODO_helpers/project/module.py",
-      "parameters": [
-        {
-          "name": "types",
-          "type": "array",
-          "required": true,
-          "default": null,
-          "description": "Array of type objects [{name, definition_json, description, links, file_id}, ...]"
-        }
-      ],
-      "purpose": "Reserve multiple type IDs",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"ids\": [...]}`"
-      ],
-      "target_database": "project",
-      "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-project-1.json",
-    "count": 37,
-    "range": "helpers 1-37 of 112",
-    "status": "Phase 8 Priority 6, 7 & 8 COMPLETE - File/function, blueprint, infrastructure helpers mapped",
-    "mapped_helpers": 20,
-    "unmapped_helpers": 17,
-    "note": "17 helpers are schema/query/batch/CRUD tools for AI use only (get_project_tables, get_project_fields, get_project_schema, get_project_json_parameters, get_from_project, get_from_project_where, query_project, add_project_entry, update_project_entry, delete_project_entry, reserve_files, finalize_files, reserve_functions, finalize_functions, reserve_types, finalize_types, get_file_by_name) - intentionally not mapped to directives",
-    "total_mappings": 28,
-    "last_updated": "2025-12-20"
+    "count": 15,
+    "range": "helpers 1-15 of 112",
+    "description": "Database schema queries, generic CRUD operations, project metadata management",
+    "first_helper": "get_project_tables",
+    "last_helper": "get_infrastructure_by_type",
+    "status": "return_statements enhanced - ready for review",
+    "last_updated": "2025-12-29"
   }
 }

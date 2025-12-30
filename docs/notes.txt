@@ -8,6 +8,9 @@ directives md are in src/aifp/resource/directives/
 helpers json is in docs/helpers/json/
 Everything above src/aifp/ is dev. \
 
+docs/helpers/RETURN_STATEMENTS_ENHANCEMENT_CHECKLIST.md
+docs/helpers/RETURN_STATEMENTS_QUALITY_GUIDE.md
+
 Have to tone down the settings. There really shouldn't be so many
 docs/COMPREHENSIVE_SETTINGS_SPEC.md
 docs/settings-specification.json
@@ -20,13 +23,12 @@ helpers json file path updates needed. Let's do this as the helper functions are
 
 MUST make OOP wrapper examples
 
+Was this done???
 docs/directives-json/directive_flow.json
 verify number of project directives. 38 mentioned
 read note in docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
 
 return_statements need to be mapped to next diretives and helpful notes. They are NOT return VALUES.
-
-ALL HELPER function parameters need to be verified aginst the corresponding database. Some are missing parameters, so it's likely this might be a mess.
 
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
@@ -34,15 +36,20 @@ docs/directives-json/sync-directives.py needs full overhaul based on new schema,
 
 docs/temp.txt note_type has massive list. Let's analyze.
 
-helpers not consoldiated correctly. 
+docs/helpers/json/mapping_suggestions.json ???
+
+must disallow generic setters for things like reserver/finalize
+
+think out useful return values for certain helper functions, like generic getter/setters should return schema, possibly some helper or directive references useful or relative to current function call and database.
+
+=============================
+docs/HELPER_AUDIT_REPORT.md
+docs/helpers/json/PARAMETER_COMPLETION_PROGRESS.md
+
 docs/helpers/REMOVE-helpers-consolidated.md
 docs/helpers/CONSOLIDATION_COMPLETE.md
 docs/directives-json/Tasks/HELPER_FUNCTIONS_MAPPING_PROGRESS.md
 docs/helpers/JSON_HELPERS_CONSOLIDATION_ISSUE.md
-
-docs/helpers/json/mapping_suggestions.json ???
-
-=============================
 
 docs/directives-json/DIRECTIVE_ARCHITECTURE.md
 docs/HELPER_IMPORT_ANALYSIS_2025-12-16.md
@@ -68,6 +75,10 @@ docs/HELPER_AUDIT_REPORT.md
 
 docs/PHASE_1_COMPLETE.md
 
+docs/helpers/info-helpers-user-settings.txt
+docs/helpers/info-helpers-core.txt
+docs/helpers/info-helpers-project.txt
+docs/helpers/info-helpers-user-custom.txt
 
 src/aifp/database/schemas/user_preferences.sql
 src/aifp/database/schemas/aifp_core.sql

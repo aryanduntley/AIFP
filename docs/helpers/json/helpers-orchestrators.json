@@ -24,11 +24,34 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "If get_status=true: Returns comprehensive project state from aifp_status",
-        "If get_status=false: Returns common directive starting points only",
-        "Always includes: Guidance on querying directive_flow table with get_next_directives_from_status()",
-        "Always includes: Suggestion on when to call aifp_run(get_status=true) for fresh status",
-        "Directive suggestions based on user_request keywords"
+        "DATABASE CONTEXT: Main entry point orchestrator - implements aifp_run directive (self_invocation)",
+        "DATABASE CONTEXT: Routes user requests to appropriate directives based on keyword matching and project state",
+        "NEXT STEP: If get_status=true → call aifp_status() for comprehensive project state",
+        "NEXT STEP: If get_status=false → return common directive starting points only (lightweight routing)",
+        "NEXT STEP: Parse user_request for intent keywords → suggest matching directives from directive_flow table",
+        "NEXT STEP: Always include guidance on querying directive_flow with get_next_directives_from_status()",
+        "CHECK: Is this first interaction? Use get_status=true for fresh comprehensive context",
+        "CHECK: Is this after major state change (file write, merge)? Use get_status=true",
+        "CHECK: Is this continuation work? Use get_status=false (default) for faster routing",
+        "CHECK: If database not accessible → return error message",
+        "CHECK: If no directives match → return empty suggestions",
+        "RELATED HELPERS: aifp_status() provides comprehensive status when get_status=true",
+        "RELATED HELPERS: get_next_directives_from_status() queries directive_flow table for navigation",
+        "WORKFLOW: aifp_run entry → if get_status=true → aifp_status → route to appropriate directive",
+        "WORKFLOW: aifp_run entry → if get_status=false → lightweight keyword matching → suggest directives",
+        "DIRECTIVE: Implements aifp_run directive (self_invocation, sequence_order: 1)",
+        "DIRECTIVE FLOW: aifp_run → if get_status=true → aifp_status",
+        "DIRECTIVE FLOW: aifp_run → if directive_is_customizable → user_preferences_sync",
+        "DIRECTIVE FLOW: aifp_run → if user_requests_help → aifp_help",
+        "COMMON WORKFLOWS: Session start → aifp_run(get_status=true) → aifp_status → git_detect_external_changes",
+        "COMMON WORKFLOWS: Continuation work → aifp_run(get_status=false, user_request) → quick directive suggestions",
+        "COMMON WORKFLOWS: After completing directive → loop back through aifp_run for next step"
+      ],
+      "implementation_notes": [
+        "Returns: If get_status=true → comprehensive status from aifp_status()",
+        "Returns: If get_status=false → lightweight {suggested_directives[], keyword_matches[], next_step_guidance}",
+        "Parses user_request for intent keywords to match against directive definitions",
+        "Always includes guidance on when to call aifp_run(get_status=true) again"
       ],
       "target_database": "orchestrator",
       "used_by_directives": [
@@ -73,7 +96,29 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "```json"
+        "DATABASE CONTEXT: Flexible query tool - replaces 5-10 separate status helper calls with one unified interface",
+        "DATABASE CONTEXT: Query across all work tables (tasks, subtasks, sidequests, milestones, completion_path) with filters",
+        "NEXT STEP: Use scope parameter to target specific work type or get comprehensive overview",
+        "NEXT STEP: Use detail_level to control amount of data ('minimal', 'standard', 'detailed')",
+        "NEXT STEP: Use filters object for WHERE-like conditions (status='in_progress', milestone_id=5, etc.)",
+        "CHECK: Scope options: 'tasks', 'subtasks', 'sidequests', 'milestones', 'all_work'",
+        "CHECK: Detail_level options: 'minimal' (IDs/names), 'standard' (default), 'detailed' (full objects)",
+        "CHECK: Filters support operators: eq, ne, gt, lt, in, like",
+        "CHECK: Not mapped to any directive - AI convenience tool for flexible queries",
+        "RELATED HELPERS: aifp_status() provides comprehensive status, this provides targeted queries",
+        "RELATED HELPERS: query_project_state() for more complex SQL-like queries with joins",
+        "WORKFLOW: Need specific work status → get_current_progress(scope, filters) → targeted query",
+        "WORKFLOW: Check progress on milestone → get_current_progress(scope='tasks', filters={milestone_id: 5})",
+        "DIRECTIVE: Not used by any directive - standalone AI query tool",
+        "COMMON WORKFLOWS: Quick progress check → get_current_progress(scope='all_work', detail_level='minimal')",
+        "COMMON WORKFLOWS: Find blocked tasks → get_current_progress(scope='tasks', filters={status: 'blocked'})",
+        "COMMON WORKFLOWS: Review in-progress work → get_current_progress(filters={status: 'in_progress'})"
+      ],
+      "implementation_notes": [
+        "Returns: Flexible object based on scope and detail_level parameters",
+        "Replaces multiple separate queries with unified interface",
+        "Filters support: {field: value} or {field: {operator: value}}",
+        "Default detail_level='standard' returns reasonable data without overwhelming"
       ],
       "target_database": "orchestrator",
       "used_by_directives": []
@@ -123,7 +168,30 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "```json"
+        "DATABASE CONTEXT: State update tool - simplifies task lifecycle management with unified interface",
+        "DATABASE CONTEXT: Common actions: start_task, complete_task, pause_task, resume_task, block_task, unblock_task",
+        "DATABASE CONTEXT: Target_type options: 'task', 'subtask', 'sidequest', 'milestone'",
+        "NEXT STEP: After update, optionally create_note=true to auto-log action in notes table",
+        "NEXT STEP: After state change, may need to call aifp_status to refresh project state",
+        "CHECK: Action parameter determines operation (start, complete, pause, resume, block, unblock)",
+        "CHECK: Data object contains action-specific fields (blocker_reason, completion_notes, etc.)",
+        "CHECK: Create_note=true automatically logs action for audit trail",
+        "CHECK: Not mapped to any directive - AI convenience tool for state updates",
+        "RELATED HELPERS: batch_update_progress() for atomic bulk updates across multiple items",
+        "RELATED HELPERS: get_current_progress() to query state after updates",
+        "WORKFLOW: Task lifecycle: start_task → work → pause_task → resume_task → complete_task",
+        "WORKFLOW: Handling blockers: block_task(data={blocker_reason}) → resolve → unblock_task",
+        "DIRECTIVE: Not used by any directive - standalone AI update tool",
+        "COMMON WORKFLOWS: Begin work → update_project_state(action='start_task', create_note=true)",
+        "COMMON WORKFLOWS: Finish task → update_project_state(action='complete_task', data={completion_notes})",
+        "COMMON WORKFLOWS: Hit blocker → update_project_state(action='block_task', data={blocker_reason})"
+      ],
+      "implementation_notes": [
+        "Returns: {success, updated_entity{}, note_created?}",
+        "Actions: start_task, complete_task, pause_task, resume_task, block_task, unblock_task",
+        "Updates entity status field and related timestamps",
+        "If create_note=true → inserts note record automatically",
+        "Simplifies common state transitions with action-based interface"
       ],
       "target_database": "orchestrator",
       "used_by_directives": []
@@ -166,7 +234,30 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "```json"
+        "DATABASE CONTEXT: Bulk update tool - atomic updates across multiple items with transaction support",
+        "DATABASE CONTEXT: Used after code generation or bulk operations to ensure consistency",
+        "NEXT STEP: Transaction=true for all-or-nothing commit (critical updates)",
+        "NEXT STEP: Transaction=false for independent updates (continue on error)",
+        "NEXT STEP: Rollback_on_partial_failure=true to undo all changes if any update fails",
+        "CHECK: Updates array format: [{target_type, target_id, action, data}, ...]",
+        "CHECK: Transaction=true → all succeed or all rollback",
+        "CHECK: Continue_on_error=true → process all updates even if some fail",
+        "CHECK: Use transactions for related updates that must stay consistent",
+        "RELATED HELPERS: update_project_state() for single item updates",
+        "RELATED HELPERS: get_current_progress() to verify updates applied correctly",
+        "WORKFLOW: After bulk code generation → batch_update_progress(transaction=true) → ensure consistency",
+        "WORKFLOW: Multiple task completions → batch_update_progress() → efficient bulk update",
+        "DIRECTIVE: Not used by any directive - AI bulk update tool",
+        "COMMON WORKFLOWS: Complete multiple tasks → batch_update_progress([{action:'complete_task', ...}, ...])",
+        "COMMON WORKFLOWS: Generate 10 files → batch_update_progress(transaction=true) → atomic state update",
+        "WARNING: Transaction=true with large batches may lock database - use judiciously"
+      ],
+      "implementation_notes": [
+        "Returns: {success, updated_count, failed_count, results[{success, entity, error?}]}",
+        "Updates array: [{target_type, target_id, action, data}, ...]",
+        "Transaction=true uses database transactions for atomicity",
+        "Continue_on_error=true processes all updates even if some fail",
+        "Rollback_on_partial_failure=true undoes all if any fail (requires transaction=true)"
       ],
       "target_database": "orchestrator",
       "used_by_directives": []
@@ -223,7 +314,29 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Array of entity objects with requested joins included"
+        "DATABASE CONTEXT: SQL-like query interface - flexible filtering and joining without writing SQL",
+        "DATABASE CONTEXT: Entity parameter: primary table ('tasks', 'files', 'functions', 'flows', etc.)",
+        "NEXT STEP: Use filters object for WHERE-like conditions with operators (eq, ne, gt, lt, in, like)",
+        "NEXT STEP: Use joins array to include related data (LEFT JOIN relationships)",
+        "NEXT STEP: Use sort for ORDER BY, limit/offset for pagination",
+        "CHECK: Filters format: {field: value} or {field: {operator: value}}",
+        "CHECK: Joins format: ['related_table', 'another_table'] - includes related entities",
+        "CHECK: More powerful than get_current_progress() - supports joins and complex queries",
+        "RELATED HELPERS: get_current_progress() for simpler work-focused queries",
+        "RELATED HELPERS: Queries any table in project.db with joins across relationships",
+        "WORKFLOW: Complex query needed → query_project_state(entity, filters, joins) → SQL-like power",
+        "WORKFLOW: Get tasks with files → query_project_state('tasks', joins=['files'])",
+        "DIRECTIVE: Not used by any directive - AI advanced query tool",
+        "COMMON WORKFLOWS: Find functions in flow → query_project_state('functions', filters={flow_id: 5})",
+        "COMMON WORKFLOWS: Get tasks with subtasks → query_project_state('tasks', joins=['subtasks'])",
+        "COMMON WORKFLOWS: Paginated queries → query_project_state(entity, limit=20, offset=40)"
+      ],
+      "implementation_notes": [
+        "Returns: Array of entity objects with joins embedded",
+        "Filters support operators: eq, ne, gt, lt, gte, lte, in, like",
+        "Joins uses LEFT JOIN to include related entities",
+        "Sort: 'field ASC' or 'field DESC'",
+        "Powerful SQL-like interface without writing raw SQL"
       ],
       "target_database": "orchestrator",
       "used_by_directives": []
@@ -245,7 +358,26 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "```json"
+        "DATABASE CONTEXT: Validation tool - performs comprehensive structural validation of project initialization",
+        "DATABASE CONTEXT: Checks .aifp-project/ directory structure, database schema, required tables",
+        "NEXT STEP: Run after project_init to verify setup completed correctly",
+        "NEXT STEP: If validation fails, reports missing components for repair",
+        "CHECK: Validates directory structure (.aifp-project/, databases/, logs/, etc.)",
+        "CHECK: Validates database files exist (project.db, core.db, settings.db, user_custom.db)",
+        "CHECK: Validates required tables exist in each database",
+        "CHECK: Validates ProjectBlueprint.md exists and is readable",
+        "RELATED HELPERS: Called after project_init directive to ensure proper setup",
+        "WORKFLOW: project_init complete → validate_initialization() → verify structure → report issues",
+        "DIRECTIVE: Not used by any directive - validation tool for post-initialization check",
+        "COMMON WORKFLOWS: After project setup → validate_initialization() → ensure everything in place",
+        "COMMON WORKFLOWS: Debugging init issues → validate_initialization() → identify missing components",
+        "WARNING: Reports detailed validation errors - use to diagnose incomplete initialization"
+      ],
+      "implementation_notes": [
+        "Returns: {valid, errors[], warnings[], checked_components{}}",
+        "Checks: directory structure, database files, tables, blueprint file",
+        "Comprehensive validation - catches missing/corrupted setup",
+        "Detailed error reporting for troubleshooting"
       ],
       "target_database": "orchestrator",
       "used_by_directives": []
@@ -288,7 +420,31 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "```json"
+        "DATABASE CONTEXT: Query tool (is_tool: true) - optimized for session resumption with complete context",
+        "DATABASE CONTEXT: Single call retrieves: work item + associated flows + files + functions + optionally interactions/history",
+        "DATABASE CONTEXT: Joins across multiple tables: tasks/subtasks/sidequests → flow_themes → file_flows → files → functions",
+        "NEXT STEP: Use retrieved context to resume work on specific task/subtask/sidequest",
+        "NEXT STEP: If include_interactions=true → understand function dependencies for refactoring impact",
+        "NEXT STEP: If include_history=true → review notes history to understand previous work/decisions",
+        "CHECK: Work_item_type parameter: 'task', 'subtask', or 'sidequest'",
+        "CHECK: Include_interactions for FP analysis work (dependency tracking, purity analysis)",
+        "CHECK: Include_history for understanding context and previous attempts",
+        "CHECK: Not mapped to any directive - AI query tool for context retrieval",
+        "RELATED HELPERS: aifp_status() provides broad overview, this provides deep dive on specific work item",
+        "RELATED HELPERS: Queries across tasks, subtasks, sidequests, flows, files, functions, interactions, notes tables",
+        "WORKFLOW: Resuming work → get_work_context(type, id) → retrieve complete context → continue implementation",
+        "WORKFLOW: Understanding task scope → get_work_context with interactions → see function dependencies",
+        "DIRECTIVE: Not used by any directive - standalone context retrieval for AI",
+        "COMMON WORKFLOWS: Session resumption → get_work_context() → understand what was being worked on",
+        "COMMON WORKFLOWS: Before implementing task → get_work_context() → see associated flows, files, functions",
+        "COMMON WORKFLOWS: Refactoring → get_work_context(include_interactions=true) → understand dependency impact"
+      ],
+      "implementation_notes": [
+        "Returns: {work_item{}, flows[], files[], functions[], interactions[]?, notes[]?}",
+        "Single optimized query with joins across multiple tables",
+        "Include_interactions=true adds function dependency data",
+        "Include_history=true adds notes timeline",
+        "Optimized for session resumption - all context in one call"
       ],
       "target_database": "orchestrator",
       "used_by_directives": []
@@ -310,7 +466,36 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Complete status object with:"
+        "DATABASE CONTEXT: Status orchestrator - implements aifp_status directive (self_invocation)",
+        "DATABASE CONTEXT: Calls sub-helpers: get_project_status() → get_status_tree() → build comprehensive state",
+        "DATABASE CONTEXT: Optimized for directive navigation - provides completion flags and next-step suggestions",
+        "NEXT STEP: Feed status to get_next_directives_from_status() for navigation decision tree",
+        "NEXT STEP: Check completion_flags → determine which directives are unlocked/available",
+        "NEXT STEP: Review next-step suggestions → route to appropriate directive based on project state",
+        "CHECK: Type parameter: 'quick' (minimal), 'summary' (default), 'detailed' (comprehensive)",
+        "CHECK: Session start? Status includes git_detect_external_changes for sync",
+        "CHECK: Are there blocked/pending tasks? Status highlights blockers",
+        "RELATED HELPERS: get_project_status() analyzes work hierarchy (completion paths, milestones, tasks)",
+        "RELATED HELPERS: get_status_tree() builds hierarchical view of work items",
+        "RELATED HELPERS: get_next_directives_from_status() uses this output for directive routing",
+        "WORKFLOW: aifp_status → get_project_status() → get_status_tree() → build comprehensive state",
+        "WORKFLOW: Status built → check completion flags → suggest next directives",
+        "DIRECTIVE: Implements aifp_status directive (self_invocation, sequence_order: 1)",
+        "DIRECTIVE: Called by aifp_run (sequence_order: 2) when get_status=true",
+        "DIRECTIVE FLOW: aifp_status → if session_start → git_detect_external_changes",
+        "DIRECTIVE FLOW: aifp_status → if directive_guidance_needed → aifp_help",
+        "DIRECTIVE FLOW: aifp_help → completion_loop back to aifp_status",
+        "COMMON WORKFLOWS: Session start → aifp_run(get_status=true) → aifp_status → git sync → work begins",
+        "COMMON WORKFLOWS: After directive completes → loop back to aifp_status → determine next step",
+        "COMMON WORKFLOWS: User asks 'what's next?' → aifp_status → analyze project state → suggest directives"
+      ],
+      "implementation_notes": [
+        "Returns comprehensive status object with: work_hierarchy, completion_flags, blocked_items[], suggested_next_directives[], progress_metrics, git_state, infrastructure_status",
+        "Calls get_project_status() to analyze work hierarchy",
+        "Calls get_status_tree() to build hierarchical view",
+        "Type='quick': Basic state only",
+        "Type='summary': Standard detail (default)",
+        "Type='detailed': Full comprehensive analysis"
       ],
       "target_database": "orchestrator",
       "used_by_directives": [
@@ -349,8 +534,31 @@
       "is_tool": true,
       "is_sub_helper": true,
       "return_statements": [
-        "```json",
-        "This is NOT a simple field getter - it analyzes the entire work hierarchy and provides detailed status analysis for AI to understand project progress."
+        "DATABASE CONTEXT: Sub-helper (is_sub_helper: true) - called internally by aifp_status()",
+        "DATABASE CONTEXT: Analyzes entire work hierarchy: completion_path → milestones → tasks → subtasks → sidequests",
+        "DATABASE CONTEXT: NOT a simple getter - performs deep analysis of work status and progress metrics",
+        "NEXT STEP: After analysis, parent aifp_status() uses results to build completion flags",
+        "NEXT STEP: Calculates progress percentages, identifies blocked items, determines unlocked paths",
+        "CHECK: Type parameter determines depth: 'quick', 'summary', 'detailed'",
+        "CHECK: Analyzes completion dependencies - which milestones block which tasks?",
+        "CHECK: Identifies sidequests (parallel work) vs critical path items",
+        "RELATED HELPERS: Called by aifp_status() as sequence_order: 2 (analyze_work_hierarchy)",
+        "RELATED HELPERS: get_status_tree() uses this analysis to build hierarchical view",
+        "RELATED HELPERS: Queries completion_path, milestones, tasks, subtasks, sidequests tables",
+        "WORKFLOW: aifp_status → get_project_status() → analyze hierarchy → calculate metrics → return to aifp_status",
+        "WORKFLOW: Work hierarchy analyzed → completion flags determined → status tree built",
+        "DIRECTIVE: Used by aifp_status (analyze_work_hierarchy, sequence_order: 2) - required sub-helper",
+        "DIRECTIVE FLOW: aifp_status calls this to analyze work structure before building status tree",
+        "COMMON WORKFLOWS: Deep analysis of project progress - which work is complete, blocked, or available",
+        "COMMON WORKFLOWS: Determines what directive suggestions to make based on work state"
+      ],
+      "implementation_notes": [
+        "Returns: {completion_path_status, milestones[], tasks[], subtasks[], sidequests[], progress_metrics{}, blocked_items[], unlocked_paths[]}",
+        "Analyzes entire work hierarchy - NOT simple field getter",
+        "Calculates progress percentages, completion dependencies",
+        "Type='quick': Basic counts only",
+        "Type='summary': Standard analysis (default)",
+        "Type='detailed': Full dependency analysis"
       ],
       "target_database": "orchestrator",
       "used_by_directives": [
@@ -380,7 +588,30 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "DATABASE CONTEXT: Query tool (is_tool: true) - get structured project overview for different contexts",
+        "DATABASE CONTEXT: Type parameter determines what to retrieve: blueprint, metadata, status, infrastructure",
+        "NEXT STEP: Type='blueprint' → retrieve ProjectBlueprint.md content for high-level project overview",
+        "NEXT STEP: Type='metadata' → retrieve project table metadata (name, description, use case, settings)",
+        "NEXT STEP: Type='status' → lightweight status without full aifp_status analysis",
+        "NEXT STEP: Type='infrastructure' → retrieve infrastructure table data (helpers, directives, settings)",
+        "CHECK: Which context needed? Blueprint for overview, metadata for basic info, status for quick check",
+        "CHECK: Not mapped to any directive - AI query tool for contextual information retrieval",
+        "RELATED HELPERS: aifp_status() provides comprehensive status (more detailed than type='status')",
+        "RELATED HELPERS: Queries project, infrastructure tables based on type parameter",
+        "WORKFLOW: AI needs project context → get_project_context(type) → retrieve specific context slice",
+        "DIRECTIVE: Not used by any directive - standalone query tool for AI",
+        "COMMON WORKFLOWS: Session start → get_project_context('blueprint') → understand project scope",
+        "COMMON WORKFLOWS: Need basic info → get_project_context('metadata') → get name, description, use case",
+        "COMMON WORKFLOWS: Quick status check → get_project_context('status') → lightweight vs full aifp_status"
+      ],
+      "implementation_notes": [
+        "Returns different structures based on type parameter",
+        "Type='blueprint': {blueprint_content, file_path}",
+        "Type='metadata': {name, description, use_case, version, settings}",
+        "Type='status': {basic_status, work_counts, git_hash}",
+        "Type='infrastructure': {helpers[], directives[], settings[]}"
+      ],
       "target_database": "orchestrator",
       "used_by_directives": []
     },
@@ -393,8 +624,27 @@
       "is_tool": true,
       "is_sub_helper": true,
       "return_statements": [
-        "```json",
-        "Provides complete hierarchical view for visualization and progress tracking"
+        "DATABASE CONTEXT: Sub-helper (is_sub_helper: true) - called internally by aifp_status()",
+        "DATABASE CONTEXT: Builds nested hierarchical tree: completion_path → milestones → [tasks → [subtasks]], sidequests",
+        "DATABASE CONTEXT: Used for priority status display - shows work structure with nesting",
+        "NEXT STEP: After tree built, aifp_status() uses it for status display and directive suggestions",
+        "NEXT STEP: Tree structure helps AI visualize project organization and dependencies",
+        "CHECK: All work items nested under parents - maintains hierarchical relationships",
+        "CHECK: Sidequests shown as parallel work (not blocking critical path)",
+        "RELATED HELPERS: Called by aifp_status() as sequence_order: 3 (build_status_tree)",
+        "RELATED HELPERS: Uses results from get_project_status() to build hierarchical view",
+        "WORKFLOW: aifp_status → get_project_status() → get_status_tree() → format hierarchical display",
+        "WORKFLOW: Tree built → aifp_status uses for visualization and navigation guidance",
+        "DIRECTIVE: Used by aifp_status (build_status_tree, sequence_order: 3) - required sub-helper",
+        "DIRECTIVE FLOW: aifp_status calls this after work analysis to build nested view",
+        "COMMON WORKFLOWS: Visual representation of project structure for AI understanding",
+        "COMMON WORKFLOWS: Helps AI navigate complex projects with deep work hierarchies"
+      ],
+      "implementation_notes": [
+        "Returns: Nested tree structure with work items embedded under parents",
+        "Format: {completion_path{milestones[{tasks[{subtasks[]}]}]}, sidequests[]}",
+        "Maintains parent-child relationships for visualization",
+        "Used for status display, not for queries"
       ],
       "target_database": "orchestrator",
       "used_by_directives": [
@@ -425,8 +675,25 @@
       "is_tool": false,
       "is_sub_helper": false,
       "return_statements": [
-        "```json",
-        "Useful for understanding complete flow implementation with all associated functions"
+        "DATABASE CONTEXT: Flow context query - retrieves all files for a flow with functions embedded",
+        "DATABASE CONTEXT: Not exposed as MCP tool (is_tool: false) - likely internal helper",
+        "NEXT STEP: Use to understand complete flow implementation with all associated functions",
+        "NEXT STEP: Files include embedded functions - see full code organization for flow",
+        "CHECK: Flow_id must exist in flows table",
+        "CHECK: Returns files with functions nested - complete view of flow implementation",
+        "RELATED HELPERS: query_project_state('files', filters={flow_id}, joins=['functions']) similar but more flexible",
+        "RELATED HELPERS: Queries file_flows table to get files, then embeds functions from functions table",
+        "WORKFLOW: Understanding flow → get_files_by_flow_context(flow_id) → see all files+functions",
+        "WORKFLOW: Before implementing flow → get_files_by_flow_context() → understand existing structure",
+        "DIRECTIVE: Not used by any directive - query tool for flow context",
+        "COMMON WORKFLOWS: Reviewing flow implementation → get_files_by_flow_context() → see complete code organization",
+        "COMMON WORKFLOWS: Before refactoring flow → get context → understand scope of changes"
+      ],
+      "implementation_notes": [
+        "Returns: Array of file objects with functions[] embedded",
+        "Queries file_flows table for flow_id, retrieves associated files",
+        "For each file, embeds functions from functions table",
+        "Provides complete view of flow implementation"
       ],
       "target_database": "orchestrator",
       "used_by_directives": []

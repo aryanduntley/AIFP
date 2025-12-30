@@ -1,0 +1,524 @@
+{
+  "helpers": [
+	{
+      "name": "get_items_for_task",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Task ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
+        }
+      ],
+      "purpose": "Get items for task, optionally filtered by status",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of item objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_item_create",
+          "execution_context": "check_duplicate_items",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check for duplicate item names before creating new item - prevents naming conflicts"
+        }
+      ]
+    },
+    {
+      "name": "get_items_for_subtask",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "subtask_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Subtask ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
+        }
+      ],
+      "purpose": "Get items for subtask",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of item objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_items_for_sidequest",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "sidequest_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Sidequest ID"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed' (NULL = all)"
+        }
+      ],
+      "purpose": "Get items for sidequest",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of item objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_incomplete_items",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "for_table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "\"tasks\", \"subtasks\", \"sidequests\" (accepts singular)"
+        },
+        {
+          "name": "for_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Parent ID"
+        }
+      ],
+      "purpose": "Get incomplete items for any parent type",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of incomplete item objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_item",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Item ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete item with status validation",
+      "error_handling": "Cannot delete in-progress/completed items, only pending",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "- Error if status is \"completed\" or \"in_progress\"",
+        "Completed/in-progress items must stay, use notes for issues"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_note",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "content",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Note content/message"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'clarification', 'pivot', 'research', 'entry_deletion', 'warning', 'error', 'info', 'auto_summary'"
+        },
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Table name this note references (e.g., 'items', 'files', 'completion_path')"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "ID of the referenced table entry"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "default": "ai",
+          "description": "'ai', 'user', or 'directive' (default 'ai')"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": "info",
+          "description": "'info', 'warning', 'error' (default 'info')"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional directive context for note"
+        }
+      ],
+      "purpose": "Add note to project database",
+      "error_handling": "Returns error if project.db not initialized, otherwise continues silently",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true, \"id\": new_id}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_notes_log",
+          "execution_context": "insert_note",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "content": "clarification, reasoning, or context to log",
+            "source": "ai (default) or user",
+            "severity": "info (default), warning, or error",
+            "directive_name": "optional directive context"
+          },
+          "description": "Log clarifications, reasoning, and directive execution context to project.db notes table. Used by other directives for transparent reasoning trails."
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "capture_lessons_learned",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Log sidequest outcome and lessons learned to notes table - captures exploratory work results for future reference"
+        }
+      ]
+    },
+    {
+      "name": "get_notes_comprehensive",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by note_type"
+        },
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference table"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference ID"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by source ('ai', 'user', 'directive')"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by severity ('info', 'warning', 'error')"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by directive name"
+        }
+      ],
+      "purpose": "Advanced note search with filters",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of filtered note objects"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_auto_summary",
+          "execution_context": "summarize_project_state",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query notes for project summary generation - retrieves logged summaries, metrics, and project history"
+        },
+        {
+          "directive_name": "project_metrics",
+          "execution_context": "gather_metrics",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Read logged metrics from notes - retrieves historical metric data for analysis"
+        }
+      ]
+    },
+    {
+      "name": "search_notes",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "search_string",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Search string for note content"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by note_type"
+        },
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by reference table"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by reference ID"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by source"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by severity"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by directive name"
+        }
+      ],
+      "purpose": "Search note content with optional filters",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Array of matching notes"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_auto_summary",
+          "execution_context": "summarize_project_state",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Search specific keywords in notes for targeted summary - finds relevant context by search string"
+        },
+        {
+          "directive_name": "project_metrics",
+          "execution_context": "gather_metrics",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Search for specific metrics by keyword - targeted metric retrieval from notes"
+        }
+      ]
+    },
+    {
+      "name": "update_note",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Note ID to update"
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update note content"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update note_type"
+        },
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update reference table"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Update reference ID"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update source"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update severity"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update directive name"
+        }
+      ],
+      "purpose": "Update note metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "`{\"success\": true}`"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_note",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Note ID to delete"
+        }
+      ],
+      "purpose": "Delete note (discouraged)",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "```json"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-9.json",
+    "count": 10,
+    "range": "helpers 103-112 of 112",
+    "description": "Item and note management operations (add, get, update, delete, search)",
+    "first_helper": "get_items_for_task",
+    "last_helper": "delete_note",
+    "status": "Needs return_statements enhancement",
+    "last_updated": "2025-12-29"
+  }
+}
