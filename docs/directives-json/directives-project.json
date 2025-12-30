@@ -2250,47 +2250,48 @@
       "name": "file_operations",
       "description": "Safe file deletion with database cleanup"
     },
-    "description": "Safe file remover that ensures filesystem and database consistency. Handles dependency checking, soft vs hard delete, backup creation, and cascade cleanup of orphaned functions and interactions.",
+    "description": "Safe file remover that ensures filesystem and database consistency. Uses ERROR-first approach: delete_file() returns error if dependencies exist (functions, types, file_flows). AI must systematically delete functions (which checks types_functions), remove file_flows entries, then retry file deletion. No automatic cascading - forces intentional cleanup to prevent accidental data loss.",
     "md_file_path": "directives/project_file_delete.md",
     "workflow": {
       "trunk": "validate_delete_request",
       "branches": [
         {
           "if": "file_tracked_in_db",
-          "then": "check_dependencies"
+          "then": "call_delete_file_helper"
         },
         {
-          "if": "dependencies_exist",
-          "then": "warn_and_confirm"
+          "if": "delete_file_returns_error",
+          "then": "dependencies_exist_cleanup_loop",
+          "details": {
+            "error_structure": "{success: false, error: 'dependencies_exist', functions: [...], types: [...], file_flows: [...]}",
+            "cleanup_steps": [
+              "1. For each function: call delete_function() - may error if types_functions exist",
+              "2. If delete_function errors: unlink types_functions entries first, then retry",
+              "3. Remove file_flows entries manually",
+              "4. Retry delete_file() - should now succeed"
+            ]
+          }
         },
         {
-          "if": "user_confirms_delete",
-          "then": "create_backup_option"
+          "if": "delete_file_success",
+          "then": "remove_from_filesystem"
         },
         {
-          "if": "hard_delete_confirmed",
-          "then": "delete_file_and_db_records"
-        },
-        {
-          "if": "soft_delete_confirmed",
-          "then": "mark_deleted_in_db"
-        },
-        {
-          "fallback": "cancel_delete"
+          "fallback": "prompt_user_for_clarification"
         }
       ],
       "error_handling": {
-        "on_failure": "restore_from_backup"
+        "on_failure": "return_error_with_dependency_details"
       }
     },
     "roadblocks_json": [
       {
         "issue": "dependencies_exist",
-        "resolution": "Warn user and offer soft delete"
+        "resolution": "Systematically delete functions, unlink types_functions, remove file_flows, then retry"
       },
       {
-        "issue": "delete_failed",
-        "resolution": "Restore from backup if created"
+        "issue": "types_functions_exist_when_deleting_function",
+        "resolution": "Unlink types_functions entries before deleting function"
       }
     ],
     "intent_keywords_json": [

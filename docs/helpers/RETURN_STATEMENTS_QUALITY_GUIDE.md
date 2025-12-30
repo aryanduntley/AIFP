@@ -32,6 +32,34 @@
 
 Use this checklist for EVERY helper's return_statements:
 
+### ✅ Directive Review Process (MANDATORY for helpers with directives)
+
+**CRITICAL:** If helper has `used_by_directives` field populated, you MUST:
+
+1. **Read the directive file** (src/aifp/resource/directives/{directive_name}.md if available)
+2. **Read the directive flow file** (docs/directives-json/directive_flow_project.json or user-preferences/fp)
+3. **Understand the full workflow context:**
+   - What comes BEFORE this helper in the directive flow?
+   - What comes AFTER this helper completes?
+   - What is the sequence_order and execution_context?
+   - What other helpers are called in the same directive sequence?
+
+4. **Write DIRECTIVE CONTEXT statements** that include:
+   - `Called by {directive_name} (sequence_order: {n}, execution_context: {context})`
+   - Position in workflow (e.g., "First step in initialization", "Second step after file reservation")
+   - Relationship to other steps in sequence
+
+5. **Write DIRECTIVE FLOW statements** showing:
+   - Full workflow: `aifp_status → {directive} → this helper (seq n) → next step → completion`
+   - What directive flows to after completion
+
+**Example:**
+```
+"DIRECTIVE CONTEXT: Called by project_reserve_finalize (sequence_order: 2, execution_context: finalize_reservation)"
+"DIRECTIVE CONTEXT: Second step in reservation phase - completes file reservation after code written"
+"DIRECTIVE FLOW: aifp_status → project_file_write → project_reserve_finalize → reserve (seq 1) → write code → finalize_file (this, seq 2) → project_update_db"
+```
+
 ### ✅ Stability Check (Focus on What Doesn't Change)
 - [ ] References directive names (stable - e.g., `project_task_complete`, `project_file_write`)
 - [ ] References directive flows (stable navigation patterns from directive_flow tables)
@@ -41,11 +69,11 @@ Use this checklist for EVERY helper's return_statements:
 - [ ] Focuses on WHAT needs to happen, not specific function names
 
 ### ✅ Research Verification
-- [ ] If helper has `used_by_directives`, reviewed directive description and purpose
+- [ ] If helper has `used_by_directives`, reviewed directive description and purpose (see directive review process above)
 - [ ] If helper has `used_by_directives`, checked sequence_order and execution_context
+- [ ] If helper has `used_by_directives`, read directive flow file to understand complete workflow
 - [ ] Checked database schema for exact field names (status, milestone_id, etc.)
 - [ ] Verified parameter names match helper's parameters array
-- [ ] Reviewed directive flows to understand what comes before/after
 
 ### ✅ Actionability Check
 - [ ] Each NEXT STEP describes conceptual action (what to achieve, not just function to call)
@@ -279,6 +307,201 @@ Watch for these unstable patterns that will become stale:
 
 ### 🚩 "For more information..." (lazy)
 **Instead:** Provide actual database schema, directive names, or flow references
+
+---
+
+## Field Separation: return_statements vs implementation_notes
+
+**CRITICAL CONCEPT:** These two fields serve completely different purposes and audiences.
+
+### return_statements
+
+**Purpose:** Forward-thinking guidance for AI AFTER successful execution
+**Audience:** AI at runtime (imported to database)
+**Focus:** What to do next, checks to make, workflow context
+**Tone:** Future-oriented ("NEXT STEP:", "CHECK:", "After success...")
+
+**Include:**
+- NEXT STEP: Actions to take after this helper succeeds
+- CHECK: Conditions to evaluate based on results
+- DIRECTIVE CONTEXT: Which directives use this and when
+- DIRECTIVE FLOW: What comes next in the workflow
+- DATABASE CONTEXT: State implications, relationships
+- COMMON WORKFLOWS: Typical usage patterns
+- WARNING: Consequences of this operation
+
+**Example:**
+```
+"NEXT STEP: After successful deletion, remove file from filesystem"
+"CHECK: Were there other functions calling this one? Update their code to remove broken calls"
+"DATABASE CONTEXT: Function entry deleted, interactions auto-cascaded via SQL ON DELETE CASCADE"
+```
+
+### implementation_notes
+
+**Purpose:** Implementation guidance for developers during coding phase
+**Audience:** Developers (NOT imported to database, stays in JSON)
+**Focus:** How to implement the function - error logic, validation, SQL queries
+**Tone:** Implementation-oriented ("ERROR LOGIC:", "SUCCESS LOGIC:", "SQL:")
+
+**Include:**
+- ERROR LOGIC: What to check, when to return errors
+- ERROR RETURN: Error response structure
+- ERROR MESSAGE: What error message to return
+- SUCCESS LOGIC: Implementation steps for successful path
+- SUCCESS RETURN: Success response structure
+- NOTE: Implementation details, SQL cascade behavior
+
+**Example:**
+```
+"ERROR LOGIC: Query types_functions WHERE function_id=? - if not empty, return error"
+"ERROR RETURN: {success: false, error: 'types_functions_exist', type_relationships: [...]}"
+"SUCCESS LOGIC: Delete function: DELETE FROM functions WHERE id=function_id"
+"NOTE: Interactions cascade via SQL ON DELETE CASCADE"
+```
+
+### 🚨 CRITICAL RULE: Never Mix These
+
+**BAD (mixing concerns):**
+```
+return_statements: [
+  "ERROR LOGIC: Check if types_functions exist",  ← Implementation detail, belongs in implementation_notes
+  "NEXT STEP: After deletion, remove from filesystem"  ← Correct for return_statements
+]
+```
+
+**GOOD (properly separated):**
+```
+return_statements: [
+  "NEXT STEP: After successful deletion, remove function code from filesystem",
+  "CHECK: Were there other functions calling this one? Update their code"
+]
+
+implementation_notes: [
+  "ERROR LOGIC: Query types_functions WHERE function_id=?",
+  "SUCCESS LOGIC: Delete function: DELETE FROM functions WHERE id=function_id"
+]
+```
+
+---
+
+## Delete Operations: ERROR-First Approach
+
+**CRITICAL PATTERN:** Delete operations NEVER cascade automatically. Always return error with dependency details.
+
+### The ERROR-First Philosophy
+
+**Goal:** Force AI to be intentional about every deletion, prevent accidental data loss.
+
+**Pattern:**
+1. Helper checks for dependencies
+2. If dependencies exist → Return error with complete list
+3. AI must manually clean each dependency
+4. Retry deletion after cleanup → Success
+
+### Delete Function Behavior
+
+**delete_file()**
+- Checks: functions, types, file_flows
+- Returns error if ANY exist
+- AI must: Delete each function, delete each type, remove each file_flows entry, then retry
+
+**delete_function()**
+- Checks: types_functions entries
+- Returns error if ANY exist
+- AI must: Unlink each types_functions entry, then retry
+- Note: interactions auto-cascade via SQL (no manual work needed)
+
+**delete_type()**
+- Checks: types_functions entries
+- Returns error if ANY exist
+- AI must: Unlink each types_functions entry, then retry
+
+### Error Response Structure
+
+```json
+// delete_file error
+{
+  "success": false,
+  "error": "dependencies_exist",
+  "functions": [{"id": 1, "name": "calc_id1"}, ...],
+  "types": [{"id": 5, "name": "Result_id5"}, ...],
+  "file_flows": [{"file_id": 10, "flow_id": 3}, ...]
+}
+
+// delete_function error
+{
+  "success": false,
+  "error": "types_functions_exist",
+  "type_relationships": [
+    {"type_id": 5, "type_name": "Result_id5", "role": "transformer"}
+  ]
+}
+```
+
+### return_statements for Delete Functions
+
+**Focus:** What to do AFTER successful deletion (error handling covered in implementation_notes)
+
+```
+"NEXT STEP: After successful deletion, remove function code from filesystem file"
+"CHECK: Were there other functions calling this one? Update their code to remove broken calls"
+"DATABASE CONTEXT: Function entry deleted, interactions auto-cascaded via SQL"
+"WARNING: Deletion is permanent - function entry and all interactions removed with no undo"
+```
+
+**DON'T include error logic in return_statements - that's for implementation_notes**
+
+### implementation_notes for Delete Functions
+
+**Focus:** Error checking and implementation details
+
+```
+"ERROR LOGIC: Query types_functions WHERE function_id=? - if not empty, return error"
+"ERROR RETURN: {success: false, error: 'types_functions_exist', type_relationships: [...]}"
+"SUCCESS LOGIC: Get file_id before deletion: SELECT file_id FROM functions WHERE id=?"
+"SUCCESS LOGIC: Delete function: DELETE FROM functions WHERE id=function_id"
+"NOTE: Interactions cascade via SQL ON DELETE CASCADE"
+```
+
+---
+
+## Avoid Automatic Operation Notes (Token Waste)
+
+**RULE:** If something happens automatically in the implementation, AI doesn't need to know about it.
+
+### ❌ BAD (Wastes Tokens)
+
+```
+implementation_notes: [
+  "SUCCESS LOGIC: Delete function: DELETE FROM functions WHERE id=function_id",
+  "SUCCESS LOGIC: File timestamp automatically updated after deletion (handled by implementation)",  ← AI doesn't need this
+  "SUCCESS LOGIC: SQL CASCADE automatically deletes interactions"  ← This could be useful context
+]
+```
+
+### ✅ GOOD (Only Necessary Info)
+
+```
+implementation_notes: [
+  "SUCCESS LOGIC: Get file_id before deletion: SELECT file_id FROM functions WHERE id=?",
+  "SUCCESS LOGIC: Delete function: DELETE FROM functions WHERE id=function_id",
+  "NOTE: Interactions cascade via SQL ON DELETE CASCADE"  ← Concise, relevant
+]
+```
+
+### When to Document Automatic Operations
+
+**DON'T document if:**
+- It's a standard database operation (timestamps, auto-increment IDs)
+- It's handled by SQL constraints/triggers
+- It's an implementation detail with no decision impact
+
+**DO document if:**
+- It affects AI's next decision (e.g., "interactions auto-cascade" means AI doesn't need to delete them manually)
+- It's a NOTE that explains implementation behavior concisely
+
+**Test:** Would removing this change how the function is implemented? If no → remove it.
 
 ---
 

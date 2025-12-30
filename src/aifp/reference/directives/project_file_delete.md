@@ -9,18 +9,48 @@
 
 ## Purpose
 
-The `project_file_delete` directive handles safe deletion of files from the project, ensuring both filesystem and database consistency. This directive serves as the **file removal manager**, coordinating deletion across filesystem and `project.db` while preserving referential integrity.
+The `project_file_delete` directive handles safe deletion of files from the project using an **ERROR-first approach**. The delete_file() helper NEVER automatically cascades deletes - instead, it returns detailed error information about dependencies that must be cleaned up first, forcing intentional and systematic cleanup to prevent accidental data loss.
 
 Key responsibilities:
-- **Delete file from filesystem** - Remove physical file
-- **Update database** - Remove or mark deleted in `project.db`
-- **Handle dependencies** - Check and clean up dependent functions and interactions
-- **Preserve history** - Option to soft-delete (mark as deleted) vs. hard-delete (remove entirely)
-- **Update tasks** - Adjust items/tasks that reference the deleted file
-- **Create backup** - Optional backup before deletion
-- **Cascade cleanup** - Remove orphaned functions, interactions, flow associations
+- **Call delete_file() helper** - Attempts deletion, returns error if dependencies exist
+- **Handle error response** - Parse dependency lists (functions, types, file_flows)
+- **Systematic cleanup** - Delete functions, unlink types_functions, remove file_flows entries
+- **Retry deletion** - After cleanup, retry delete_file() until success
+- **Remove from filesystem** - After database deletion succeeds
 
-This is the **safe file remover** - ensures clean deletion with no orphaned database records.
+This is the **safe file remover** - no cascading deletes, no automatic cleanup, forces AI to be intentional.
+
+---
+
+## ERROR-First Deletion Flow
+
+### The delete_file() Helper Behavior
+
+**On Error** (dependencies exist):
+```json
+{
+  "success": false,
+  "error": "dependencies_exist",
+  "functions": [
+    {"id": 1, "name": "calculate_id1", "has_types_functions": true},
+    {"id": 2, "name": "process_id2", "has_types_functions": false}
+  ],
+  "types": [
+    {"id": 5, "name": "Result_id5", "has_types_functions": true}
+  ],
+  "file_flows": [
+    {"file_id": 10, "flow_id": 3, "flow_name": "authentication"}
+  ]
+}
+```
+
+**On Success** (no dependencies):
+```json
+{
+  "success": true,
+  "deleted_file_id": 10
+}
+```
 
 ---
 
@@ -31,10 +61,6 @@ This directive applies when:
 - **Refactoring** - Consolidating files, removing duplicates
 - **Cleanup** - Removing test files, prototypes, or experiments
 - **Project evolution** - Removing deprecated implementations
-- **Called by other directives**:
-  - `project_refactor_path` - Removes old files during refactoring
-  - `project_evolution` - Deletes files during architectural changes
-  - User directly - Manual file deletion
 
 ---
 
@@ -42,409 +68,267 @@ This directive applies when:
 
 ### Trunk: validate_delete_request
 
-Ensures file can be safely deleted and confirms user intent.
+Validates file and attempts deletion via helper.
 
 **Steps**:
-1. **Validate file path** - Check file exists and is within project
-2. **Check database** - Verify file is tracked in `project.db`
-3. **Analyze dependencies** - Find functions and interactions that depend on this file
-4. **Confirm with user** - Verify intent, especially if dependencies exist
-5. **Choose delete mode** - Soft delete (mark as deleted) or hard delete (remove entirely)
+1. **Validate file path** - Check file is within project and tracked in database
+2. **Call delete_file(file_id, note_reason, note_severity, note_source, note_type)** - Attempt deletion
+3. **Check result**:
+   - If `success: true` → Remove file from filesystem, done
+   - If `success: false` → Dependencies exist, enter cleanup loop
 
-### Branches
+### Branch 1: If file_tracked_in_db
 
-**Branch 1: If file_tracked_in_db**
-- **Then**: `check_dependencies`
-- **Details**: File is tracked, check for dependencies
-  - Query `functions` table for functions defined in file
-  - Query `interactions` table for dependencies
-  - Check if other files call functions from this file
-  - Identify orphaned records if deleted
-- **Query**:
-  ```sql
-  -- Get functions in file
-  SELECT id, name FROM functions WHERE file_id = ?;
+**Then**: `call_delete_file_helper`
 
-  -- Get incoming dependencies (other files calling this file's functions)
-  SELECT DISTINCT sf.name as source_function, sfi.path as source_file
-  FROM interactions i
-  JOIN functions tf ON i.target_function_id = tf.id
-  JOIN functions sf ON i.source_function_id = sf.id
-  JOIN files sfi ON sf.file_id = sfi.id
-  WHERE tf.file_id = ? AND sf.file_id != ?;
+Call the delete_file() helper function:
+```
+delete_file(
+  file_id=file_id,
+  note_reason="User requested file deletion",
+  note_severity="info",
+  note_source="ai",
+  note_type="entry_deletion"
+)
+```
 
-  -- Get task/item references
-  SELECT t.name, i.name
-  FROM items i
-  JOIN tasks t ON i.task_id = t.id
-  WHERE i.reference_table = 'files' AND i.reference_id = ?;
-  ```
-- **Result**: Dependency analysis complete
+### Branch 2: If delete_file_returns_error
 
-**Branch 2: If dependencies_exist**
-- **Then**: `warn_and_confirm`
-- **Details**: Other files depend on this file
-  - List dependent files and functions
-  - Warn about potential breakage
-  - Prompt: "Delete anyway? This will break dependencies."
-  - Offer alternatives:
-    - Soft delete (mark deleted but keep in DB for reference)
-    - Cancel deletion
-    - Continue with hard delete
-- **Result**: User confirms or cancels
+**Then**: `dependencies_exist_cleanup_loop`
 
-**Branch 3: If user_confirms_delete**
-- **Then**: `create_backup_option`
-- **Details**: Offer to backup before deletion
-  - Prompt: "Create backup before deleting?"
-  - If yes: Copy to `.aifp-project/backups/deleted/[filename]_[timestamp]`
-  - If no: Proceed directly to deletion
-- **Result**: Backup created or skipped
+**Error Structure**:
+```json
+{
+  "success": false,
+  "error": "dependencies_exist",
+  "functions": [...],     // Functions that must be deleted
+  "types": [...],         // Types that must be deleted
+  "file_flows": [...]     // file_flows entries that must be removed
+}
+```
 
-**Branch 4: If soft_delete_chosen**
-- **Then**: `mark_as_deleted`
-- **Details**: Mark file as deleted in database, don't remove
-  - Update `files` table: Add `deleted_at` timestamp
-  - Keep functions and interactions for reference
-  - Add note to `notes` table about deletion
-  - File remains in database for historical reference
-- **SQL**:
-  ```sql
-  UPDATE files
-  SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
+**Cleanup Steps** (in order):
 
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-  VALUES ('File soft-deleted: [path]. Dependencies preserved for reference.', 'deletion', 'files', ?, 'directive', 'project_file_delete');
-  ```
-- **Result**: File marked deleted, database intact
+**Step 1: Delete Functions**
 
-**Branch 5: If hard_delete_chosen**
-- **Then**: `cascade_delete_database`
-- **Details**: Remove file and all related records
-  - Delete file from filesystem
-  - Delete from `files` table
-  - Delete all functions from `functions` table (CASCADE)
-  - Delete all interactions from `interactions` table (CASCADE)
-  - Delete flow associations from `file_flows` table (CASCADE)
-  - Update tasks/items that reference file (mark as orphaned or remove)
-  - Log deletion to `notes` table
-- **SQL**:
-  ```sql
-  -- Delete interactions (must be first due to foreign keys)
-  DELETE FROM interactions
-  WHERE source_function_id IN (SELECT id FROM functions WHERE file_id = ?)
-     OR target_function_id IN (SELECT id FROM functions WHERE file_id = ?);
+For each function in the error's `functions` array:
 
-  -- Delete functions
-  DELETE FROM functions WHERE file_id = ?;
+a) Call `delete_function(function_id, note_reason, note_severity, note_source, note_type)`
 
-  -- Delete file-flow associations
-  DELETE FROM file_flows WHERE file_id = ?;
+b) If delete_function returns error:
+```json
+{
+  "success": false,
+  "error": "types_functions_exist",
+  "type_relationships": [
+    {"type_id": 5, "type_name": "Result_id5", "role": "transformer"}
+  ]
+}
+```
 
-  -- Update items referencing this file
-  UPDATE items
-  SET status = 'orphaned', description = description || ' (File deleted)'
-  WHERE reference_table = 'files' AND reference_id = ?;
+c) For each type_relationship: Delete the types_functions entry:
+```sql
+DELETE FROM types_functions
+WHERE type_id = ? AND function_id = ?;
+```
 
-  -- Delete file record
-  DELETE FROM files WHERE id = ?;
+d) Retry delete_function() - should now succeed
 
-  -- Log deletion
-  INSERT INTO notes (content, note_type, source, directive_name)
-  VALUES ('File hard-deleted: [path]. Removed [N] functions, [M] interactions.', 'deletion', 'directive', 'project_file_delete');
-  ```
-- **Result**: File and all related records removed
+**Step 2: Delete Types**
 
-**Branch 6: If file_not_in_db**
-- **Then**: `delete_filesystem_only`
-- **Details**: File exists but not tracked in database
-  - Delete file from filesystem
-  - Warn: "File not tracked in database"
-  - Log to `notes` as untracked file deletion
-- **Result**: File deleted, database unaffected
+For each type in the error's `types` array:
 
-**Branch 7: If file_not_exists**
-- **Then**: `clean_database_only`
-- **Details**: File missing from filesystem but in database
-  - Prompt: "File already deleted from filesystem. Clean database?"
-  - If yes: Perform database cleanup (same as hard delete)
-  - Log as orphaned entry cleanup
-- **Result**: Database cleaned of stale entry
+a) Call `delete_type(type_id, note_reason, note_severity, note_source, note_type)`
 
-**Branch 8: If backup_created**
-- **Then**: `proceed_with_deletion`
-- **Details**: Backup successful, safe to delete
-  - Backup path logged
-  - Continue with chosen delete mode
-- **Result**: Ready for deletion
+b) If delete_type returns error:
+```json
+{
+  "success": false,
+  "error": "types_functions_exist",
+  "function_relationships": [
+    {"function_id": 8, "function_name": "create_result_id8", "role": "factory"}
+  ]
+}
+```
 
-**Fallback**: `prompt_user`
-- Present issue and ask for clarification
-- Log to `notes` for future reference
+c) For each function_relationship: Delete the types_functions entry:
+```sql
+DELETE FROM types_functions
+WHERE type_id = ? AND function_id = ?;
+```
 
-### Error Handling
+d) Retry delete_type() - should now succeed
 
-**on_failure**: `rollback_and_prompt`
-- If filesystem deletion fails: Rollback database changes
-- If database deletion fails: Keep file on filesystem, prompt user
-- Transactional: All-or-nothing for database operations
+**Step 3: Remove file_flows Entries**
+
+For each file_flow in the error's `file_flows` array:
+
+Delete the entry manually:
+```sql
+DELETE FROM file_flows
+WHERE file_id = ? AND flow_id = ?;
+```
+
+**Step 4: Retry delete_file()**
+
+After all dependencies cleaned:
+```
+delete_file(file_id, note_reason, note_severity, note_source, note_type)
+```
+
+Should now return:
+```json
+{"success": true, "deleted_file_id": 10}
+```
+
+### Branch 3: If delete_file_success
+
+**Then**: `remove_from_filesystem`
+
+After database deletion succeeds:
+1. Remove file from filesystem
+2. Confirm deletion
+3. Report success to user
+
+**Fallback**: `prompt_user_for_clarification`
+
+If validation fails or user cancels.
 
 ---
 
 ## Examples
 
-### Example 1: Safe Hard Delete (No Dependencies)
+### Example 1: Simple Delete (No Dependencies)
 
 **User**: "Delete src/old_helper.py"
 
 **AI Execution**:
 1. Validates path: `src/old_helper.py` ✓ Valid
-2. Checks file exists: ✓ Present
-3. Queries database: Found (ID: 42)
-4. Checks dependencies:
-   - Functions: 1 (`format_output`)
-   - Incoming calls: None
-   - Task references: None
-5. No dependencies found → Safe to delete
-6. Prompts: "Delete src/old_helper.py? (No dependencies found)"
-7. User confirms: "Yes"
-8. Prompts: "Create backup before deleting?"
-9. User confirms: "Yes"
-10. Creates backup: `.aifp-project/backups/deleted/old_helper.py_20251027_143000`
-11. Prompts: "Hard delete (remove from database) or soft delete (mark as deleted)?"
-12. User chooses: "Hard delete"
-13. Deletes file from filesystem
-14. Removes from database:
-    ```sql
-    DELETE FROM functions WHERE file_id = 42;
-    DELETE FROM files WHERE id = 42;
-    ```
-15. Logs deletion:
-    ```sql
-    INSERT INTO notes (content, note_type, source, directive_name)
-    VALUES ('File hard-deleted: src/old_helper.py. Removed 1 function. Backup: backups/deleted/old_helper.py_20251027_143000', 'deletion', 'directive', 'project_file_delete');
-    ```
-16. Reports: "✓ File deleted. Backup: .aifp-project/backups/deleted/old_helper.py_20251027_143000"
+2. Gets file_id from database: 42
+3. Calls `delete_file(42, "User requested deletion", "info", "ai", "entry_deletion")`
+4. Response:
+   ```json
+   {"success": true, "deleted_file_id": 42}
+   ```
+5. Removes `src/old_helper.py` from filesystem
+6. Reports: "✓ File deleted successfully"
 
-### Example 2: Delete with Dependencies (Warning)
+### Example 2: Delete with Dependencies (Cleanup Required)
 
-**User**: "Delete src/core.py"
+**User**: "Delete src/calculator.py"
 
 **AI Execution**:
-1. Validates path: `src/core.py` ✓ Valid
-2. Checks file exists: ✓ Present
-3. Queries database: Found (ID: 5)
-4. Checks dependencies:
-   - Functions: 5 (`init_system`, `process_data`, `validate`, `transform`, `output`)
-   - Incoming calls: 12 calls from 4 different files
-   - Dependent files:
-     - `src/main.py` calls `init_system`, `process_data`
-     - `src/batch.py` calls `process_data`, `transform`
-     - `src/utils.py` calls `validate`
-     - `src/export.py` calls `output`
-5. Dependencies found → Warn user
-6. Prompts:
+1. Validates path: `src/calculator.py` ✓ Valid
+2. Gets file_id: 10
+3. Calls `delete_file(10, ...)`
+4. Response:
+   ```json
+   {
+     "success": false,
+     "error": "dependencies_exist",
+     "functions": [
+       {"id": 5, "name": "add_id5", "has_types_functions": false},
+       {"id": 6, "name": "multiply_id6", "has_types_functions": true}
+     ],
+     "types": [],
+     "file_flows": [
+       {"file_id": 10, "flow_id": 2, "flow_name": "math_operations"}
+     ]
+   }
    ```
-   ⚠️  Warning: src/core.py has dependencies
+5. **Cleanup Loop**:
 
-   Functions (5): init_system, process_data, validate, transform, output
+   a) Delete function 5 (no types_functions):
+      ```
+      delete_function(5, "Deleting function before file deletion", "info", "ai", "entry_deletion")
+      → {"success": true, "deleted_function_id": 5, "file_id": 10}
+      ```
 
-   Dependent files (4):
-   - src/main.py → calls init_system, process_data
-   - src/batch.py → calls process_data, transform
-   - src/utils.py → calls validate
-   - src/export.py → calls output
+   b) Delete function 6 (has types_functions):
+      ```
+      delete_function(6, ...)
+      → {
+          "success": false,
+          "error": "types_functions_exist",
+          "type_relationships": [
+            {"type_id": 8, "type_name": "Number_id8", "role": "operator"}
+          ]
+        }
+      ```
 
-   Deleting this file will break 12 function calls in 4 files.
+      Unlink types_functions:
+      ```sql
+      DELETE FROM types_functions WHERE type_id=8 AND function_id=6;
+      ```
 
-   Options:
-   1. Cancel deletion (recommended)
-   2. Soft delete (mark deleted, preserve DB records)
-   3. Hard delete (remove file and break dependencies)
+      Retry:
+      ```
+      delete_function(6, ...)
+      → {"success": true, "deleted_function_id": 6, "file_id": 10}
+      ```
 
-   Choose option:
+   c) Remove file_flows:
+      ```sql
+      DELETE FROM file_flows WHERE file_id=10 AND flow_id=2;
+      ```
+
+6. **Retry delete_file**:
    ```
-7. User chooses: "2" (Soft delete)
-8. Marks as deleted:
-   ```sql
-   UPDATE files SET deleted_at = CURRENT_TIMESTAMP WHERE id = 5;
+   delete_file(10, ...)
+   → {"success": true, "deleted_file_id": 10}
    ```
-9. Logs:
-   ```sql
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-   VALUES ('File soft-deleted: src/core.py. Functions preserved in DB for reference. 12 dependent calls from 4 files.', 'deletion', 'files', 5, 'directive', 'project_file_delete', 'warning');
-   ```
-10. Reports: "✓ File marked as deleted. Functions preserved in database for reference."
 
-### Example 3: Delete File Not in Database
+7. Remove `src/calculator.py` from filesystem
+8. Reports: "✓ File deleted after cleaning 2 functions and 1 flow association"
 
-**User**: "Delete temp_test.py"
+### Example 3: Complex Nested Dependencies
+
+**User**: "Delete src/types.py"
 
 **AI Execution**:
-1. Validates path: `temp_test.py` ✓ Valid
-2. Checks file exists: ✓ Present
-3. Queries database: ✗ Not found
-4. Prompts: "File not tracked in database. Delete from filesystem?"
-5. User confirms: "Yes"
-6. Deletes file from filesystem
-7. Logs:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('Untracked file deleted: temp_test.py', 'deletion', 'directive', 'project_file_delete');
-   ```
-8. Reports: "✓ File deleted (was not tracked in database)"
-
-### Example 4: Clean Orphaned Database Entry
-
-**User**: "Delete src/removed.py"
-
-**AI Execution**:
-1. Validates path: `src/removed.py` ✓ Valid
-2. Checks file exists: ✗ Not found
-3. Queries database: Found (ID: 18)
-4. Prompts:
-   ```
-   File src/removed.py not found on filesystem but exists in database.
-
-   Database entry:
-   - Functions: 2 (helper, validator)
-   - Created: 2025-10-20
-   - Last updated: 2025-10-22
-
-   Clean up database entry?
-   ```
-5. User confirms: "Yes"
-6. Removes from database:
-   ```sql
-   DELETE FROM functions WHERE file_id = 18;
-   DELETE FROM files WHERE id = 18;
-   ```
-7. Logs:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('Orphaned database entry cleaned: src/removed.py (file already deleted from filesystem). Removed 2 functions.', 'cleanup', 'directive', 'project_file_delete');
-   ```
-8. Reports: "✓ Database cleaned. File was already deleted from filesystem."
-
-### Example 5: Cancelled Deletion
-
-**User**: "Delete src/critical.py"
-
-**AI Execution**:
-1. Validates path: `src/critical.py` ✓ Valid
-2. Checks file exists: ✓ Present
-3. Queries database: Found (ID: 2)
-4. Checks dependencies:
-   - Functions: 8
-   - Incoming calls: 45 calls from 15 files
-   - Critical: Part of core system
-5. Warns user about extensive dependencies
-6. Prompts deletion confirmation
-7. User responds: "Cancel"
-8. Aborts deletion
-9. Reports: "Deletion cancelled. File preserved."
-
----
-
-## Integration with Other Directives
-
-### Called By:
-- `project_refactor_path` - Removes files during refactoring
-- `project_evolution` - Deletes files during architectural changes
-- User directly - Manual file deletion
-
-### Calls:
-- `project_file_read` - Reads file before deletion (for backup)
-- `project_update_db` - Syncs database after deletion
-- `project_dependency_sync` - Cleans up orphaned records
-
----
-
-## Database Updates
-
-### Tables Modified:
-
-**Hard Delete**:
-```sql
--- Delete interactions first (foreign keys)
-DELETE FROM interactions
-WHERE source_function_id IN (SELECT id FROM functions WHERE file_id = ?)
-   OR target_function_id IN (SELECT id FROM functions WHERE file_id = ?);
-
--- Delete functions
-DELETE FROM functions WHERE file_id = ?;
-
--- Delete flow associations
-DELETE FROM file_flows WHERE file_id = ?;
-
--- Update items (mark orphaned)
-UPDATE items SET status = 'orphaned', description = description || ' (File deleted)'
-WHERE reference_table = 'files' AND reference_id = ?;
-
--- Delete file
-DELETE FROM files WHERE id = ?;
-
--- Log deletion
-INSERT INTO notes (content, note_type, source, directive_name)
-VALUES (?, 'deletion', 'directive', 'project_file_delete');
-```
-
-**Soft Delete**:
-```sql
--- Mark file as deleted
-UPDATE files SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Log soft deletion
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES (?, 'deletion', 'files', ?, 'directive', 'project_file_delete');
-```
-
-**Filesystem**:
-```bash
-# Create backup
-cp [file_path] .aifp-project/backups/deleted/[filename]_[timestamp]
-
-# Delete file
-rm [file_path]
-```
+1. Gets file_id: 15
+2. Calls `delete_file(15, ...)`
+3. Response shows: 0 functions, 3 types, 1 file_flow
+4. **Delete type 1**: Error - has types_functions links
+   - Unlink all types_functions entries for type 1
+   - Retry - success
+5. **Delete type 2**: Success (no links)
+6. **Delete type 3**: Error - has types_functions links
+   - Unlink all types_functions entries for type 3
+   - Retry - success
+7. Remove file_flows entry
+8. Retry delete_file(15) - success
+9. Remove from filesystem
+10. Reports: "✓ File deleted after cleaning 3 types and unlinking type-function relationships"
 
 ---
 
 ## Roadblocks and Resolutions
 
 ### Roadblock 1: dependencies_exist
-**Issue**: Other files depend on this file's functions
-**Resolution**: Warn user, offer soft delete, list all dependencies
 
-### Roadblock 2: file_not_found
-**Issue**: File doesn't exist on filesystem
-**Resolution**: Offer to clean up database entry only
+**Issue**: Functions, types, or file_flows exist for this file
+**Resolution**: Systematically delete functions, types, remove file_flows, then retry
 
-### Roadblock 3: delete_failed
-**Issue**: Filesystem deletion fails (permissions, file locked)
-**Resolution**: Rollback database changes, report error, suggest fixing permissions
+### Roadblock 2: types_functions_exist_when_deleting_function
 
-### Roadblock 4: backup_failed
-**Issue**: Cannot create backup before deletion
-**Resolution**: Offer to proceed without backup or cancel deletion
+**Issue**: Cannot delete function because it has type relationships
+**Resolution**: Unlink types_functions entries before deleting function
 
-### Roadblock 5: critical_file
-**Issue**: File has extensive dependencies (> 10 files)
-**Resolution**: Strong warning, recommend cancellation, require explicit confirmation
+### Roadblock 3: types_functions_exist_when_deleting_type
+
+**Issue**: Cannot delete type because it has function relationships
+**Resolution**: Unlink types_functions entries before deleting type
 
 ---
 
-## Intent Keywords
+## Safety Principles
 
-- "delete file"
-- "remove file"
-- "rm"
-- "delete"
-- "remove"
-- "clean up"
-
-**Confidence Threshold**: 0.8 (high threshold for safety)
+- **ERROR-first**: Never auto-cascade - always return error with details
+- **Intentional cleanup**: Force AI to systematically handle each dependency
+- **No data loss**: Prevent accidental deletion of linked data
+- **Clear feedback**: Error responses contain full dependency lists
+- **Predictable**: Same pattern for file, function, type deletions
 
 ---
 
@@ -453,49 +337,13 @@ rm [file_path]
 - `project_file_write` - Creates files
 - `project_file_read` - Reads files
 - `project_update_db` - Syncs database
-- `project_dependency_sync` - Cleans orphaned records
-- `project_refactor_path` - Uses deletion during refactoring
-
----
-
-## Delete Modes
-
-### Soft Delete
-- **Filesystem**: File deleted
-- **Database**: Marked as deleted (`deleted_at` timestamp)
-- **Functions**: Preserved in database
-- **Interactions**: Preserved in database
-- **Use case**: File removed but may need to reference functions/dependencies
-
-### Hard Delete
-- **Filesystem**: File deleted
-- **Database**: All records removed
-- **Functions**: Deleted (CASCADE)
-- **Interactions**: Deleted (CASCADE)
-- **Use case**: Complete removal, file and history not needed
-
----
-
-## Safety Checklist
-
-Before deletion, verify:
-- [ ] File exists and path is valid
-- [ ] Database entry checked for dependencies
-- [ ] User confirmed deletion intent
-- [ ] Backup created (if requested)
-- [ ] Delete mode chosen (soft vs. hard)
-- [ ] Dependencies analyzed and user warned
-- [ ] Cascade deletion plan clear
-- [ ] Rollback possible if failure occurs
 
 ---
 
 ## Notes
 
-- **Always check dependencies** - Prevent breaking other files
-- **Offer backups** - Protect against accidental deletion
-- **Transactional deletes** - All-or-nothing for database
-- **Soft delete preferred** - Preserve history when uncertain
-- **Log all deletions** - Audit trail in `notes` table
-- **High confirmation threshold** - Multiple prompts for safety
-- **Rollback on failure** - Never leave inconsistent state
+- **No automatic cascading** - AI must handle each dependency explicitly
+- **Error responses guide cleanup** - Detailed lists show what to delete
+- **No soft delete** - Either file exists or it doesn't
+- **No backups** - User responsible for version control
+- **Transactional** - Database operations are atomic
