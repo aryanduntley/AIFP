@@ -534,11 +534,8 @@
   "metadata": {
     "file": "helpers-orchestrators.json",
     "count": 12,
-    "status": "COMPLETED - used_by_directives review complete",
-    "mapped_helpers": 8,
-    "unmapped_helpers": 4,
-    "note": "4 helpers are generic AI query/convenience tools (get_current_progress, update_project_state, batch_update_progress, query_project_state) - intentionally empty. 8 helpers mapped to orchestrator directives (aifp_run, aifp_status) and directives that need orchestration (project_auto_resume, project_dependency_map, aifp_help).",
-    "total_mappings": 9,
-    "last_updated": "2026-01-01"
+    "status": "return_statements complete - 0 helpers enhanced",
+    "last_updated": "2026-01-02",
+    "notes": "All helpers are data-gathering/analysis operations or convenience tools - no return_statements needed"
   }
 }

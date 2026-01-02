@@ -44,7 +44,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Use returned ID for function naming: {name}_id_{id}"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -86,7 +88,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Use returned IDs for function naming: {name}_id_{id}"
+      ],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -146,7 +150,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Do any database interactions need to be added for this function?"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -197,7 +203,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Do any database interactions need to be added for these functions?"
+      ],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -359,7 +367,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure name, parameter, or return changes are updated in all function calls",
+        "If name changed, verify _id_xxx suffix is retained"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -417,7 +428,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If any names changed, verify _id_xxx suffix is retained for each",
+        "Ensure any parameter or return changes are updated in all function calls"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -482,7 +496,9 @@
       "error_handling": "Return error if function_id/file_ids not found",
       "is_tool": false,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure all calls or references to this function have updated import paths"
+      ],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -536,7 +552,9 @@
       "error_handling": "Return error if types_functions exist - requires manual unlinking first",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure the function code is also removed from the file, not just the database"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -545,7 +563,7 @@
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Cascade delete all functions in file - automatically deletes types and interactions"
+          "description": "Cascade delete all functions in file - automatically deletes interactions"
         }
       ],
       "implementation_notes": [
@@ -568,7 +586,7 @@
     "description": "Function reservation, finalization, and management operations",
     "first_helper": "reserve_function",
     "last_helper": "delete_function",
-    "status": "return_statements enhanced - ready for review",
-    "last_updated": "2025-12-29"
+    "status": "return_statements complete - 8 helpers enhanced",
+    "last_updated": "2026-01-02"
   }
 }

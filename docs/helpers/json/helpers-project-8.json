@@ -44,7 +44,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Consider creating items for this subtask"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -429,7 +431,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Consider creating items for this sidequest"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -805,8 +809,8 @@
     "description": "Subtask and sidequest management operations (add, get, update, delete, queries)",
     "first_helper": "add_subtask",
     "last_helper": "delete_sidequest",
-    "status": "COMPLETED - all return_statements enhanced and verified",
-    "last_updated": "2026-01-01",
-    "notes": "All hardcoded function names removed, DIRECTIVE CONTEXT properly formatted, all helpers with directives have DIRECTIVE FLOW statements"
+    "status": "return_statements complete - 2 helpers enhanced",
+    "last_updated": "2026-01-02",
+    "notes": "add_subtask and add_sidequest remind AI to create items for complete work tracking"
   }
 }

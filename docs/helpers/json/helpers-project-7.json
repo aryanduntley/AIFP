@@ -312,7 +312,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Consider creating items for this task"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -382,7 +384,9 @@
         }
       ],
       "implementation_notes": [
-        "See return_statements for usage guidance"
+        "Returns: Array of task objects with related subtasks and sidequests",
+        "SQL: SELECT * FROM tasks WHERE milestone_id=? AND status IN ('in_progress', 'blocked')",
+        "If skip_pending=false: includes 'pending' tasks as well"
       ]
     },
     {
@@ -430,7 +434,9 @@
         }
       ],
       "implementation_notes": [
-        "See return_statements for usage guidance"
+        "Returns: Array of task objects with subtasks and sidequests",
+        "SQL: SELECT * FROM tasks WHERE status != 'completed'",
+        "Includes pending, in_progress, and blocked tasks"
       ]
     },
     {
@@ -464,7 +470,9 @@
         }
       ],
       "implementation_notes": [
-        "See return_statements for usage guidance"
+        "Returns: Array of task objects (all statuses)",
+        "SQL: SELECT * FROM tasks WHERE milestone_id=?",
+        "Used for duplicate checking and milestone overview"
       ]
     },
     {
@@ -539,7 +547,9 @@
         }
       ],
       "implementation_notes": [
-        "See return_statements for usage guidance"
+        "Returns: Array of task objects filtered by multiple criteria",
+        "Builds dynamic SQL query based on provided parameters",
+        "All parameters are optional - NULL parameters are excluded from query"
       ]
     },
     {
@@ -571,7 +581,9 @@
         }
       ],
       "implementation_notes": [
-        "See return_statements for usage guidance"
+        "Returns: Array of flow IDs [int, ...]",
+        "Extracts flow_ids JSON array from task record",
+        "SQL: SELECT flow_ids FROM tasks WHERE id=?"
       ]
     },
     {
@@ -603,7 +615,9 @@
         }
       ],
       "implementation_notes": [
-        "See return_statements for usage guidance"
+        "Returns: Array of file objects [{id, name, path, language}, ...]",
+        "Orchestrator: queries task.flow_ids → file_flows table → files table",
+        "Multi-step lookup to get all files associated with task's flows"
       ]
     },
     {
@@ -709,7 +723,9 @@
         }
       ],
       "implementation_notes": [
-        "See return_statements for usage guidance"
+        "Returns: {success: true}",
+        "NULL parameters = don't update that field",
+        "SQL: UPDATE tasks SET field1=?, field2=? WHERE id=?"
       ]
     },
     {
@@ -760,7 +776,9 @@
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
-        "See return_statements for usage guidance"
+        "Returns error if incomplete items exist for task",
+        "Returns {success: true} after deletion with audit note",
+        "Creates note record for audit trail"
       ]
     }
   ],
@@ -771,8 +789,8 @@
     "description": "Milestone and task management operations (add, get, update, delete, queries)",
     "first_helper": "add_milestone",
     "last_helper": "delete_task",
-    "status": "COMPLETED - all return_statements enhanced and verified",
-    "last_updated": "2026-01-01",
-    "notes": "All hardcoded function names removed, DIRECTIVE CONTEXT properly formatted, all helpers with directives have DIRECTIVE FLOW statements"
+    "status": "return_statements complete - 1 helper enhanced",
+    "last_updated": "2026-01-02",
+    "notes": "Implementation notes expanded with proper SQL queries and return types - removed fragmented 'See return_statements' references"
   }
 }

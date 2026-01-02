@@ -449,11 +449,8 @@
   "metadata": {
     "file": "helpers-git.json",
     "count": 11,
-    "status": "COMPLETED - used_by_directives review complete",
-    "mapped_helpers": 11,
-    "unmapped_helpers": 0,
-    "note": "All 11 git helpers mapped to 6 git directives (git_init, git_detect_external_changes, git_create_branch, git_detect_conflicts, git_merge_branch, git_sync_state) plus aifp_status for branch listing",
-    "total_mappings": 19,
-    "last_updated": "2026-01-01"
+    "status": "return_statements complete - 0 helpers enhanced",
+    "last_updated": "2026-01-02",
+    "notes": "All helpers are Git-specific operations - Git takes care of itself naturally through directives"
   }
 }

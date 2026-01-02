@@ -44,7 +44,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Use returned ID for type naming: {TypeName}_id_{id}"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -86,7 +88,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Use returned IDs for type naming: {TypeName}_id_{id}"
+      ],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -146,7 +150,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Do any type-function relationships need to be added in types_functions table?"
+      ],
       "implementation_notes": [
         "Returns: {success: true, type_id: int, file_id: int}",
         "Sets is_reserved=0 in types table",
@@ -197,7 +203,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Do any type-function relationships need to be added in types_functions table?"
+      ],
       "implementation_notes": [
         "Returns: {success: true, finalized_ids: [int, ...]}",
         "Groups types by file_id for efficient timestamp updates",
@@ -250,7 +258,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure name or definition changes are updated throughout codebase",
+        "If name changed, verify _id_xxx suffix is retained"
+      ],
       "implementation_notes": [
         "Returns: {success: true, type_id: int, file_id: int}",
         "NULL parameters = don't update that field",
@@ -320,7 +331,9 @@
       "error_handling": "Return error if types_functions exist - requires manual unlinking first",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure the type code is also removed from the file, not just the database"
+      ],
       "implementation_notes": [
         "ERROR LOGIC: Query types_functions WHERE type_id=? - if not empty, return error with function relationships list",
         "ERROR RETURN: {success: false, error: 'types_functions_exist', function_relationships: [{function_id, function_name, role}, ...]}",
@@ -597,7 +610,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure the code reflects this interaction change"
+      ],
       "implementation_notes": [
         "Returns: {success: true}",
         "NULL parameters = don't update that field",
@@ -659,7 +674,9 @@
       "error_handling": "",
       "is_tool": false,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure the function dependency/call has been removed from the code, not just the database"
+      ],
       "implementation_notes": [
         "Returns: {success: true}",
         "Deletes from interactions table",
@@ -676,7 +693,7 @@
     "description": "Type reservation/finalization, type-function relationships, and interaction management",
     "first_helper": "reserve_type",
     "last_helper": "delete_interaction",
-    "status": "return_statements systematically reviewed and corrected",
-    "last_updated": "2025-12-30"
+    "status": "return_statements complete - 8 helpers enhanced",
+    "last_updated": "2026-01-02"
   }
 }

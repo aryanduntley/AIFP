@@ -30,7 +30,9 @@
       "error_handling": "Return error if path already exists",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Use returned ID for file naming: {name}_id_{id}.{ext}"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -72,7 +74,9 @@
       "error_handling": "Return error if any path already exists",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Use returned IDs for file naming: {name}_id_{id}.{ext}"
+      ],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -118,7 +122,9 @@
       "error_handling": "Return error if file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Verify flows are added in file_flows table"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -170,7 +176,9 @@
       "error_handling": "Return error if any file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Verify flows are added in file_flows table for all files"
+      ],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -325,7 +333,10 @@
       "error_handling": "Return error if file_id not found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure name or path changes are updated throughout codebase",
+        "If name changed, verify _id_xxx suffix is retained"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -481,7 +492,9 @@
       "error_handling": "Return error if functions/flows exist for file - requires manual cleanup first",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Ensure the file is also deleted from the filesystem, not just the database"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -514,7 +527,7 @@
     "description": "File reservation, finalization, and management operations",
     "first_helper": "reserve_file",
     "last_helper": "delete_file",
-    "status": "return_statements enhanced - ready for review",
-    "last_updated": "2025-12-29"
+    "status": "return_statements complete - 6 helpers enhanced",
+    "last_updated": "2026-01-02"
   }
 }
