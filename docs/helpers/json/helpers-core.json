@@ -8,9 +8,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of table names"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -30,9 +28,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "```json"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -44,9 +40,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Object mapping table names to field arrays"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -73,10 +67,7 @@
       "error_handling": "Return empty array if no matches",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of records",
-        "Empty array allowed for core (read-only, safe to return all)"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -117,9 +108,7 @@
       "error_handling": "Return empty array if no matches, error if invalid field names",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of matching records"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -146,10 +135,7 @@
       "error_handling": "Return error if SQL syntax invalid",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of matching rows",
-        "Use Tier 2 (JSON filtering) whenever possible, reserve this for truly complex queries"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -169,12 +155,30 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Directive object or null",
-        "Zero cognitive load - use this instead of constructing queries"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "directive_name": "user_specified_directive_name"
+          },
+          "description": "Look up specific directive by name when user asks about it - retrieves directive details for help display"
+        },
+        {
+          "directive_name": "fp_reference_consultation",
+          "execution_context": "inline_during_code_writing",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {
+            "directive_name": "identified_fp_directive_name"
+          },
+          "description": "Direct lookup of specific FP directive when AI knows exact directive name - faster than search when directive is known"
+        }
+      ]
     },
     {
       "name": "get_all_directives",
@@ -184,12 +188,18 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of all directives with self-assessment questions",
-        "Called once per session for context caching"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "load_directive_library",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Load all directives into memory when AI needs comprehensive directive library - provides guidance on available directives"
+        }
+      ]
     },
     {
       "name": "get_directive_content",
@@ -207,12 +217,19 @@
       "error_handling": "Returns error if directive not found or MD file missing",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Markdown content string",
-        "Retrieves comprehensive directive guidance from MD files"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {
+            "directive_name": "user_specified_directive_name"
+          },
+          "description": "Load full MD documentation for directive when user requests detailed help - provides comprehensive directive documentation"
+        },
         {
           "directive_name": "fp_reference_consultation",
           "execution_context": "inline_during_code_writing",
@@ -255,10 +272,7 @@
       "error_handling": "Returns empty array if no matches found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of matching directives",
-        "Higher-level search functionality beyond simple queries"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -308,10 +322,7 @@
       "error_handling": "Returns empty array if no matches above threshold",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of matching directives with confidence scores",
-        "High-level NLP search that uses AI reasoning to determine intent keywords, then calls `find_directives_by_intent_keyword()` internally"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -350,10 +361,7 @@
       "error_handling": "",
       "is_tool": false,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of directive IDs",
-        "Low-level keyword search. For NLP-based intent mapping, use `find_directive_by_intent()`. This is a directive-callable helper (not MCP tool)"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -387,12 +395,32 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of directive objects with `matched_keywords` field",
-        "Orchestrator that combines keyword search with full directive data retrieval"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_update",
+          "execution_context": "parse_preference_request",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {
+            "keywords": "extracted_keywords_from_user_request",
+            "match_mode": "any (default) or all based on request specificity"
+          },
+          "description": "Search for directives by keywords when find_directive_by_intent returns multiple candidates - provides full directive objects for preference mapping"
+        },
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {
+            "keywords": "user_search_keywords",
+            "match_mode": "any or all based on query"
+          },
+          "description": "Search directives by keywords for help queries - returns full directive details for display to user"
+        }
+      ]
     },
     {
       "name": "add_directive_intent_keyword",
@@ -417,10 +445,7 @@
       "error_handling": "",
       "is_tool": false,
       "is_sub_helper": false,
-      "return_statements": [
-        "Success boolean",
-        "Duplicate keywords for the same directive are prevented by UNIQUE constraint"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -447,10 +472,7 @@
       "error_handling": "",
       "is_tool": false,
       "is_sub_helper": false,
-      "return_statements": [
-        "Success boolean",
-        "Does not delete keyword from intent_keywords table (preserves keyword for reuse)"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -470,11 +492,20 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of keyword strings"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {
+            "directive_id": "directive_id_from_previous_lookup"
+          },
+          "description": "Show keywords associated with specific directive when providing help - displays searchable terms for directive"
+        }
+      ]
     },
     {
       "name": "get_all_directive_keywords",
@@ -484,12 +515,18 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of keyword strings, sorted alphabetically",
-        "Use this when AI needs to browse available keywords and decide which to search for. For keyword usage statistics, use `get_all_intent_keywords_with_counts()`"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 5,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Show all available search keywords to user when browsing help - provides keyword reference for directive search"
+        }
+      ]
     },
     {
       "name": "get_all_intent_keywords_with_counts",
@@ -499,13 +536,18 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of objects with `keyword` and `usage_count` fields, sorted by usage (most used first)",
-        "Useful for analytics, identifying popular keywords, and suggesting common searches",
-        "`aifp_status()` orchestrator is documented in [helpers-consolidated-orchestrators.md](helpers-consolidated-orchestrators.md#aifp_status) - it's the central status orchestrator that feeds the navigation system below."
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 6,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Show popular/frequently used keywords when browsing help - helps user discover common search terms"
+        }
+      ]
     },
     {
       "name": "get_next_directives_from_status",
@@ -530,12 +572,32 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of objects:",
-        "Returns both matching and non-matching for transparency"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "determine_next_steps",
+          "sequence_order": 10,
+          "is_required": true,
+          "parameters_mapping": {
+            "from_directive": "aifp_status",
+            "status_object": "current_project_status"
+          },
+          "description": "Query directive_flow table to determine what directives AI should suggest next based on project state - enables status-driven workflow navigation"
+        },
+        {
+          "directive_name": "project_auto_resume",
+          "execution_context": "determine_resume_point",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "from_directive": "last_completed_directive",
+            "status_object": "current_project_status"
+          },
+          "description": "Determine where to resume work after interruption - finds next directive in workflow based on last completed state"
+        }
+      ]
     },
     {
       "name": "get_matching_next_directives",
@@ -560,12 +622,21 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Filtered array with only `matches: true`",
-        "Convenience wrapper for most common use case"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "determine_next_steps",
+          "sequence_order": 11,
+          "is_required": false,
+          "parameters_mapping": {
+            "from_directive": "aifp_status",
+            "status_object": "current_project_status"
+          },
+          "description": "Filter next directives to only those whose conditions match current state - provides refined recommendations to user"
+        }
+      ]
     },
     {
       "name": "get_completion_loop_target",
@@ -583,12 +654,50 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Single directive name (usually 'aifp_status')",
-        "Work directives use this to determine where to return after completion"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "determine_next_directive",
+          "sequence_order": 10,
+          "is_required": true,
+          "parameters_mapping": {
+            "from_directive": "project_task_complete"
+          },
+          "description": "Query directive_flow table to determine where to loop back after task completion - typically returns aifp_status"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "determine_next_directive",
+          "sequence_order": 10,
+          "is_required": true,
+          "parameters_mapping": {
+            "from_directive": "project_subtask_complete"
+          },
+          "description": "Query directive_flow table to determine where to loop back after subtask completion - typically returns aifp_status"
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "determine_next_directive",
+          "sequence_order": 10,
+          "is_required": true,
+          "parameters_mapping": {
+            "from_directive": "project_sidequest_complete"
+          },
+          "description": "Query directive_flow table to determine where to loop back after sidequest completion - typically returns aifp_status"
+        },
+        {
+          "directive_name": "project_milestone_complete",
+          "execution_context": "determine_next_directive",
+          "sequence_order": 10,
+          "is_required": true,
+          "parameters_mapping": {
+            "from_directive": "project_milestone_complete"
+          },
+          "description": "Query directive_flow table to determine where to loop back after milestone completion - typically returns aifp_status"
+        }
+      ]
     },
     {
       "name": "get_conditional_work_paths",
@@ -599,26 +708,57 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "e.g., 'task_item_work'"
+          "description": "Directive name (e.g., 'aifp_status', 'project_file_write')"
         },
         {
           "name": "work_context",
           "type": "object",
           "required": true,
           "default": null,
-          "description": "Current item/task context"
+          "description": "Current work context for condition evaluation"
         }
       ],
-      "purpose": "Get conditional next steps during work execution",
+      "purpose": "Query directive_flow table for flow_type='conditional' to determine context-based next directive - evaluates conditions against work_context and returns matching next directives",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of conditional work directives with descriptions and priorities",
-        "Used when work items have different requirements (file creation, function creation, etc.)"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "determine_next_steps",
+          "sequence_order": 12,
+          "is_required": true,
+          "parameters_mapping": {
+            "from_directive": "aifp_status",
+            "work_context": "current_project_status"
+          },
+          "description": "Query conditional flows from aifp_status to route to correct next directive based on project state - handles routing to project_init, task_decomposition, file_write, etc."
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "post_write_routing",
+          "sequence_order": 10,
+          "is_required": false,
+          "parameters_mapping": {
+            "from_directive": "project_file_write",
+            "work_context": "file_write_result_and_preferences"
+          },
+          "description": "Route to compliance_check if auto-check enabled in user preferences - conditional flow based on preference settings"
+        },
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "check_milestone_completion",
+          "sequence_order": 5,
+          "is_required": false,
+          "parameters_mapping": {
+            "from_directive": "project_task_complete",
+            "work_context": "milestone_completion_status"
+          },
+          "description": "Route to project_milestone_complete if all milestone tasks complete - conditional flow based on task completion state"
+        }
+      ]
     },
     {
       "name": "get_helper_by_name",
@@ -636,10 +776,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Helper object with all metadata",
-        "Zero cognitive load for common helper lookups"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -659,9 +796,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of helper objects"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -673,9 +808,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of tool helpers"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -687,9 +820,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of directive helpers"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -701,9 +832,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of sub-helper objects"
-      ],
+      "return_statements": [],
       "target_database": "core",
       "used_by_directives": []
     },
@@ -723,11 +852,20 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "- If false: Array of directive_helpers records"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 7,
+          "is_required": false,
+          "parameters_mapping": {
+            "include_helpers_data": "true (show full helper details)"
+          },
+          "description": "Show which helpers a directive uses when providing help - displays helper details for directive implementation understanding"
+        }
+      ]
     },
     {
       "name": "get_directives_for_helper",
@@ -745,11 +883,20 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "- If false: Array of directive_helpers records"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 8,
+          "is_required": false,
+          "parameters_mapping": {
+            "helper_name": "user_specified_helper_name"
+          },
+          "description": "Reverse lookup showing which directives use a specific helper - helps user understand helper usage across directives"
+        }
+      ]
     },
     {
       "name": "get_category_by_name",
@@ -767,11 +914,20 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Category object or null"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 9,
+          "is_required": false,
+          "parameters_mapping": {
+            "category_name": "user_specified_category_name"
+          },
+          "description": "Look up specific category when user asks about it - retrieves category details for help display"
+        }
+      ]
     },
     {
       "name": "get_categories",
@@ -781,11 +937,18 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of category objects"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 10,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Browse all available categories when user explores help system - provides category list for navigation"
+        }
+      ]
     },
     {
       "name": "get_directives_by_category",
@@ -803,11 +966,20 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of directives"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 11,
+          "is_required": false,
+          "parameters_mapping": {
+            "category_name": "user_specified_category"
+          },
+          "description": "Filter directives by category when user browses help - shows all directives in a specific category like 'purity' or 'task_management'"
+        }
+      ]
     },
     {
       "name": "get_directives_by_type",
@@ -832,22 +1004,31 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of directive objects filtered by type",
-        "Key for separating orchestration queries from FP reference queries. See DIRECTIVE_ARCHITECTURE.md for usage patterns."
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "user_requests_help",
+          "sequence_order": 12,
+          "is_required": false,
+          "parameters_mapping": {
+            "type": "user_specified_type (fp, project, git, user_system, user_preference)",
+            "include_md_content": "false (default) or true if user wants full documentation"
+          },
+          "description": "Filter directives by type when user browses help - shows all FP directives, all project directives, etc."
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-core.json",
     "count": 33,
-    "status": "Phase 8 Priority 5 COMPLETE - Core helpers mapped (3 already done in Priority 0)",
-    "mapped_helpers": 3,
-    "unmapped_helpers": 30,
-    "note": "30 helpers are AI query/navigation tools (get_directive_by_name, get_all_directives, get_next_directives_from_status, get_helper_by_name, get_categories, etc.) - intentionally not mapped to directives. These are tools FOR the AI to query/navigate the directive system, not called BY directives.",
-    "total_mappings": 4,
-    "last_updated": "2025-12-20"
+    "status": "COMPLETED - used_by_directives review complete",
+    "mapped_helpers": 16,
+    "unmapped_helpers": 17,
+    "note": "17 helpers are generic AI query/navigation tools (schema queries, generic helper lookups) - intentionally empty. 16 helpers mapped to directives (primarily aifp_help for browsing/querying, aifp_status and completion directives for flow navigation, fp_reference_consultation for FP lookups, conditional routing helpers).",
+    "total_mappings": 27,
+    "last_updated": "2026-01-01"
   }
 }

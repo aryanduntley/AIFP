@@ -44,30 +44,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Creates function entry with is_reserved=1 - function not yet written in code",
-        "DATABASE CONTEXT: Returned ID MUST be embedded in function name using _idxxx suffix pattern (e.g., calculate_sum_id42)",
-        "DATABASE CONTEXT: Reserved functions excluded from interaction tracking until finalized",
-        "NEXT STEP: Write function in code with reserved ID in name: {function_name}_id{id}",
-        "NEXT STEP: After function written, finalize reservation to complete function registration (find helper for function finalization)",
-        "NEXT STEP: After finalizing, track function call patterns (find helper for interaction tracking)",
-        "CHECK: Did you embed the ID in the function name correctly? Pattern is: basename_idxxx",
-        "CHECK: Does this function call other functions? Track interactions after finalization",
-        "CHECK: Is this function pure? FP analysis can determine purity_score for functional programming tracking",
-        "DATABASE: Find function finalization helper - search core.db where purpose LIKE '%finalize%' AND purpose LIKE '%function%'",
-        "DATABASE: Find interaction tracking helper - search core.db where purpose LIKE '%interaction%' OR purpose LIKE '%call%'",
-        "DATABASE: Find function query helpers - search core.db where purpose LIKE '%function%' AND (purpose LIKE '%name%' OR purpose LIKE '%file%')",
-        "WORKFLOW PATTERN: Reserve function → write with ID in name → finalize → track interactions",
-        "DIRECTIVE CONTEXT: Called by project_reserve_finalize (sequence_order: 1, execution_context: reserve_function_name)",
-        "DIRECTIVE CONTEXT: Called by project_file_write (sequence_order: 2, execution_context: reserve_before_write)",
-        "DIRECTIVE CONTEXT: First step in function reservation - reserves function IDs before code generation",
-        "DIRECTIVE CONTEXT: Part of ID embedding strategy - enables rename-proof references via embedded IDs",
-        "DIRECTIVE FLOW: aifp_status → project_file_write → reserve_file (seq 1) → reserve_function (this, seq 2) → write code → finalize → aifp_status",
-        "DIRECTIVE FLOW: After project_reserve_finalize, flow proceeds to project_update_db for database sync",
-        "COMMON WORKFLOWS: Planning multiple functions → batch reserve → write all → batch finalize",
-        "WARNING: Function MUST be written with ID in name - this is how function tracking works without fragile name dependencies",
-        "WARNING: Do not finalize until function actually written in file - finalization verifies function exists"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -90,7 +67,7 @@
       "implementation_notes": [
         "Returns {success: true, id: reserved_id, is_reserved: true}",
         "SQL: INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved) VALUES (?, ?, ?, ?, ?, 1) RETURNING id",
-        "Function name pattern: {name}_id{id} (e.g., calculate_sum_id42, parse_input_id15)"
+        "Function name pattern: {name}_id_{id} (e.g., calculate_sum_id_42, parse_input_id_15)"
       ]
     },
     {
@@ -109,20 +86,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Batch version of reserve_function() - atomically reserves multiple function IDs at once",
-        "DATABASE CONTEXT: All functions created with is_reserved=1 - more efficient than multiple single reservations",
-        "NEXT STEP: Write all functions with their reserved IDs embedded in names using _idxxx pattern",
-        "NEXT STEP: After all functions written, batch finalize with array of function metadata objects",
-        "CHECK: IDs returned in same order as functions array - map IDs back to function objects correctly",
-        "CHECK: Are all functions in the same file? Batch operations typically used for single-file function sets",
-        "DATABASE: Find batch function finalization - search core.db where purpose LIKE '%finalize%' AND purpose LIKE '%function%' AND purpose LIKE '%multiple%'",
-        "DATABASE: For single function operations, use single-function reservation instead of batch with one element",
-        "WORKFLOW PATTERN: Batch reserve functions → write all with IDs → batch finalize → batch track interactions",
-        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple functions at once",
-        "COMMON WORKFLOWS: Large file with many functions → batch reserve → write all → batch finalize",
-        "WARNING: Batch operations are all-or-nothing - if any function reservation fails, entire operation fails"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -182,28 +146,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Sets is_reserved=0 after verifying function written in code",
-        "DATABASE CONTEXT: Automatically refreshes parent file checksum and timestamp",
-        "DATABASE CONTEXT: Function now tracked in interactions and can be queried for dependencies",
-        "NEXT STEP: Track function call patterns - which functions this function calls (find helper for interaction tracking)",
-        "NEXT STEP: If function operates on types, link type-function relationships (find helper for type-function links)",
-        "CHECK: Did you include the _idxxx suffix in the name parameter? Must match function_id",
-        "CHECK: Is function actually written in the file? Verify it exists before finalizing",
-        "CHECK: Does this function call other functions? Track interactions for dependency graph",
-        "DATABASE: Find interaction tracking - search core.db where purpose LIKE '%interaction%' OR purpose LIKE '%call%'",
-        "DATABASE: Find type-function links - search core.db where purpose LIKE '%type%' AND purpose LIKE '%function%'",
-        "WORKFLOW PATTERN: Reserve function → write → finalize → track interactions → link types if applicable",
-        "DIRECTIVE CONTEXT: Called by project_reserve_finalize (sequence_order: 2, execution_context: finalize_reservation)",
-        "DIRECTIVE CONTEXT: Called by project_file_write (sequence_order: 3, execution_context: finalize_after_write)",
-        "DIRECTIVE CONTEXT: Called by project_update_db (sequence_order: 3, execution_context: finalize_new_functions)",
-        "DIRECTIVE CONTEXT: Second step in reservation phase - completes function reservation after code written",
-        "DIRECTIVE CONTEXT: Part of ID finalization workflow - sets is_reserved=false after confirming function exists",
-        "DIRECTIVE FLOW: aifp_status → project_file_write → project_reserve_finalize → reserve → write code → finalize_function (this, seq 2) → project_update_db → aifp_status",
-        "DIRECTIVE FLOW: After finalization, project_reserve_finalize proceeds to project_update_db for complete database sync",
-        "COMMON WORKFLOWS: After finalization, function appears in dependency queries and can be referenced by other code",
-        "WARNING: Name parameter must include _idxxx suffix matching function_id - this is verified"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -235,7 +178,7 @@
         "Returns {success: true, function_id: function_id, file_id: file_id}",
         "Sets is_reserved=0, automatically calls update_file_timestamp(file_id)",
         "SQL: UPDATE functions SET is_reserved=0, name=?, purpose=?, params=?, returns=? WHERE id=?",
-        "Name validation: must contain '_id{function_id}' pattern"
+        "Name validation: must contain '_id_{function_id}' pattern"
       ]
     },
     {
@@ -254,20 +197,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Batch version of finalize_function() - atomically finalizes multiple functions at once",
-        "DATABASE CONTEXT: Sets is_reserved=0 for all, refreshes file timestamps efficiently (once per unique file_id)",
-        "NEXT STEP: After batch finalization, batch track interactions for all function calls",
-        "NEXT STEP: If functions operate on types, batch link type-function relationships",
-        "CHECK: All functions in array must have matching _idxxx suffixes in their names",
-        "CHECK: Are functions across multiple files? Timestamps updated efficiently per unique file_id",
-        "DATABASE: Find batch interaction tracking - search core.db where purpose LIKE '%interaction%' AND purpose LIKE '%multiple%'",
-        "DATABASE: For single function, use single-function finalization instead of batch with one element",
-        "WORKFLOW PATTERN: Batch reserve → write all → batch finalize → batch track interactions → batch link types",
-        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple functions",
-        "COMMON WORKFLOWS: Large file with many functions → batch finalize → timestamp updated once per file → efficient",
-        "WARNING: Batch operation is atomic - if any validation fails, entire batch fails"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -293,23 +223,34 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Most common function lookup - queries by name field (includes _idxxx suffix)",
-        "DATABASE CONTEXT: Returns complete function object with metadata: id, name, file_id, purpose, params, returns, purity_score, is_reserved",
-        "NEXT STEP: Use returned function_id to query interactions table (caller_id or callee_id)",
-        "NEXT STEP: Check is_reserved field - if true, function still in reservation state",
-        "NEXT STEP: Use file_id to get parent file context (find helper for file queries)",
-        "DATABASE: Find file query helpers - search core.db where purpose LIKE '%file%' AND (purpose LIKE '%path%' OR purpose LIKE '%name%')",
-        "DATABASE: Find functions by file - search core.db where purpose LIKE '%functions%' AND purpose LIKE '%file%'",
-        "DATABASE: Query interactions table directly WHERE caller_id=? OR callee_id=? to see function call patterns",
-        "DATABASE: Query types_functions table directly WHERE function_id=? to see which types function operates on",
-        "DIRECTIVE CONTEXT: Not directly used by directives - utility for ad-hoc function queries by name",
-        "COMMON WORKFLOWS: Have function name from code → lookup by name → extract function_id → query dependencies",
-        "COMMON WORKFLOWS: Verifying function registration: lookup by name → check if null (not registered) vs object (registered)",
-        "WARNING: Name must match exactly including _idxxx suffix - partial matching not supported"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": [],
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Look up functions by name during DB-filesystem sync - verifies function entries exist before syncing dependencies"
+        },
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query functions by name for dependency graph generation - maps function call relationships and dependencies"
+        },
+        {
+          "directive_name": "project_compliance_check",
+          "execution_context": "run_checks_with_preferences",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Look up functions for FP compliance validation - checks purity, immutability, and OOP violations"
+        }
+      ],
       "implementation_notes": [
         "Returns function object or null if not found",
         "SQL: SELECT * FROM functions WHERE name=? LIMIT 1",
@@ -332,22 +273,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Returns all functions defined in specified file, ordered by creation",
-        "DATABASE CONTEXT: Each function includes complete metadata: id, name, purpose, params, returns, purity_score, is_reserved",
-        "NEXT STEP: Use function_ids to query interactions table for dependency graph within file",
-        "NEXT STEP: Check is_reserved field for each - reserved functions not yet finalized",
-        "DATABASE: Query interactions table directly for call patterns - WHERE caller_id IN (function_ids) OR callee_id IN (function_ids)",
-        "DATABASE: Query types_functions table directly for type operations - WHERE function_id IN (function_ids)",
-        "DATABASE: Find file query helper if you only have path - search core.db where purpose LIKE '%file%' AND purpose LIKE '%path%'",
-        "DIRECTIVE CONTEXT: Called by project_file_read (sequence_order: 2, execution_context: load_with_context)",
-        "DIRECTIVE CONTEXT: Second step in file reading - loads all functions after file metadata retrieved",
-        "DIRECTIVE CONTEXT: Part of context gathering workflow - provides complete file understanding with function details",
-        "DIRECTIVE FLOW: aifp_status → project_file_read → get_file_by_path (seq 1) → get_functions_by_file (this, seq 2) → load interactions → aifp_status",
-        "DIRECTIVE FLOW: After loading functions, project_file_read completes context gathering and returns to aifp_status",
-        "COMMON WORKFLOWS: Working with file → get file by path → get functions by file → analyze function dependencies",
-        "COMMON WORKFLOWS: Before modifying file → get functions by file → check what functions exist → plan changes"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -357,6 +283,30 @@
           "is_required": true,
           "parameters_mapping": {},
           "description": "Load all functions for file with context - provides complete file metadata including function dependencies"
+        },
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query all functions in each file for complete dependency graph - maps file-level and function-level relationships"
+        },
+        {
+          "directive_name": "project_compliance_check",
+          "execution_context": "run_checks_with_preferences",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Load all functions in files for FP compliance validation - batch checks for purity, immutability, OOP violations"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query all functions in file during sync - compares database records against actual code functions"
         }
       ],
       "implementation_notes": [
@@ -409,23 +359,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Partial update for function metadata - only updates provided fields",
-        "DATABASE CONTEXT: Automatically refreshes parent file checksum and timestamp",
-        "NEXT STEP: If name changed, verify _idxxx suffix still matches function_id",
-        "NEXT STEP: If params/returns changed significantly, review interactions if call signatures changed",
-        "CHECK: Did function signature change? May need to update callers if params changed",
-        "CHECK: Did name change? Code references might break unless using ID-based lookups",
-        "DATABASE: Find batch function update for same file - search core.db where purpose LIKE '%update%' AND purpose LIKE '%functions%' AND purpose LIKE '%file%' (more efficient)",
-        "DIRECTIVE CONTEXT: Called by project_update_db (sequence_order: 2, execution_context: update_functions_table)",
-        "DIRECTIVE CONTEXT: Second step in database sync - updates function metadata after file metadata updated",
-        "DIRECTIVE CONTEXT: Part of post-generation sync - ensures function details match generated code",
-        "DIRECTIVE FLOW: aifp_status → project_file_write → project_reserve_finalize → project_update_db → update_file (seq 1) → update_function (this, seq 2) → aifp_status",
-        "DIRECTIVE FLOW: After function updates, project_update_db returns to aifp_status via completion_loop",
-        "COMMON WORKFLOWS: Function refactored → update metadata → checksum refreshed → verify no conflicts",
-        "WARNING: Changing name breaks references unless using ID-based function calls",
-        "WARNING: Single function update triggers file timestamp - use batch update for same-file efficiency"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -435,6 +369,22 @@
           "is_required": true,
           "parameters_mapping": {},
           "description": "Update function metadata after code generation - synchronizes dependencies and function information"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "update_dependency_entry",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update stale function metadata during DB-filesystem sync - fixes outdated dependencies and parameters"
+        },
+        {
+          "directive_name": "project_compliance_check",
+          "execution_context": "run_checks_with_preferences",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update function purity scores after compliance validation - records FP compliance metrics"
         }
       ],
       "implementation_notes": [
@@ -467,20 +417,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Batch update for multiple functions in same file - more efficient than individual updates",
-        "DATABASE CONTEXT: Refreshes file timestamp only ONCE at end, not once per function",
-        "NEXT STEP: After batch update, verify parent file checksum updated correctly",
-        "CHECK: Are all functions actually in the same file? file_id parameter must match all functions",
-        "DATABASE: For single function or cross-file updates, use single-function update instead of batch",
-        "DIRECTIVE CONTEXT: Called by project_update_db (sequence_order: 3, execution_context: update_functions_table)",
-        "DIRECTIVE CONTEXT: Batch optimization for function updates - more efficient than individual updates when multiple functions in same file",
-        "DIRECTIVE CONTEXT: Third step in database sync - handles batch function metadata updates after individual updates",
-        "DIRECTIVE FLOW: aifp_status → project_file_write → project_reserve_finalize → project_update_db → update_functions_for_file (this, seq 3) → aifp_status",
-        "DIRECTIVE FLOW: After batch function updates complete, project_update_db returns to aifp_status via completion_loop",
-        "COMMON WORKFLOWS: Refactored multiple functions in file → batch update → one timestamp refresh",
-        "WARNING: All functions must belong to specified file_id - validation will fail otherwise"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -490,6 +427,22 @@
           "is_required": false,
           "parameters_mapping": {},
           "description": "Batch update multiple functions in same file - more efficient than individual updates"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "update_dependency_entry",
+          "sequence_order": 5,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch update multiple stale functions in same file during sync - more efficient than individual updates"
+        },
+        {
+          "directive_name": "project_compliance_check",
+          "execution_context": "run_checks_with_preferences",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch update purity scores for multiple functions in same file - more efficient after compliance checks"
         }
       ],
       "implementation_notes": [
@@ -529,19 +482,7 @@
       "error_handling": "Return error if function_id/file_ids not found",
       "is_tool": false,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Moves function from one file to another - updates file_id and refreshes both file timestamps",
-        "DATABASE CONTEXT: Rarely used - typically functions stay in their original files",
-        "NEXT STEP: After moving function in database, move actual function code in filesystem between files",
-        "NEXT STEP: Update any imports referencing old file location to point to new file",
-        "CHECK: Did you move the actual code in filesystem? Database change doesn't move code",
-        "CHECK: Are there interactions referencing this function? They remain valid (ID-based)",
-        "DATABASE: Interactions remain valid since they're ID-based, not name-based",
-        "DIRECTIVE CONTEXT: Not used by directives - manual operation for code refactoring",
-        "COMMON WORKFLOWS: Extract function to separate file → move in filesystem → update function file location",
-        "WARNING: Database update doesn't move code - you must manually move function code between files",
-        "WARNING: Imports will break - update all import statements referencing old file location"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -595,21 +536,7 @@
       "error_handling": "Return error if types_functions exist - requires manual unlinking first",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "NEXT STEP: After successful deletion, remove function code from filesystem file",
-        "NEXT STEP: Search codebase for calls to this function - update or remove broken references",
-        "CHECK: Were there other functions calling this one? Update their code to remove broken calls",
-        "CHECK: Was this function exported/imported? Remove from import/export statements",
-        "DATABASE CONTEXT: Function entry deleted, interactions auto-cascaded via SQL ON DELETE CASCADE",
-        "DATABASE CONTEXT: Deletion only succeeds after all types_functions entries manually unlinked",
-        "DATABASE CONTEXT: Audit logged to notes table with reason, severity, source",
-        "DIRECTIVE CONTEXT: Called by project_file_delete (sequence_order: 2, execution_context: delete_file_and_db_records)",
-        "DIRECTIVE CONTEXT: Part of file deletion workflow - called for each function in file being deleted",
-        "DIRECTIVE CONTEXT: Also used standalone when deleting individual functions from existing files",
-        "DIRECTIVE FLOW: aifp_status → delete function loop → unlink types_functions → delete_function (this) success → aifp_status",
-        "COMMON WORKFLOWS: After deletion, search for broken calls, remove function from filesystem",
-        "WARNING: Deletion is permanent - function entry and all interactions removed with no undo"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {

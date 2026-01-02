@@ -8,17 +8,13 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Project database tables include files, functions, tasks, milestones, completion_path, themes, flows, notes, infrastructure",
-        "NEXT STEP: For table structure details, find helper for getting field metadata of specific table",
-        "NEXT STEP: For complete schema exploration, find helper that returns all tables with field details at once",
-        "CHECK: Do you need full schema or just specific table? Complete schema helpers more efficient for broad exploration"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
         "Returns array of strings: ['project', 'files', 'functions', 'types', 'interactions', 'themes', 'flows', 'file_flows', 'flow_themes', 'completion_path', 'milestones', 'tasks', 'subtasks', 'sidequests', 'items', 'notes', 'infrastructure', 'types_functions', 'work_branches', 'merge_history']",
-        "SQL: SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        "SQL: SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+        "NOTE: Generic AI tool - not typically called by directives"
       ]
     },
     {
@@ -37,11 +33,7 @@
       "error_handling": "Return error if table doesn't exist",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Field metadata includes name, type (TEXT/INTEGER/JSON), nullable, default value, primary key status",
-        "CHECK: Before CRUD operations, verify field types to ensure correct data format (INTEGER vs TEXT, proper JSON formatting)",
-        "NEXT STEP: Use field metadata to construct valid queries or understand schema constraints for this table"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -57,11 +49,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "PERFORMANCE: Cache this result in your context to avoid repeated calls throughout session",
-        "CHECK: Do you need entire schema or just specific tables? Single table queries more efficient for targeted needs",
-        "DATABASE CONTEXT: Complete schema shows all tables with field metadata (name, type, nullable, default, pk) for project database"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -85,12 +73,7 @@
       "error_handling": "Return error if table doesn't exist",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Returns field list template for add/update operations (excludes id, created_at, updated_at which are auto-managed)",
-        "NEXT STEP: Use returned field names as template for data objects in add/update operations - only include fields being set",
-        "CHECK: Are specialized helpers available for this table? Prefer specialized helpers (files, functions, tasks, milestones) over generic CRUD",
-        "WARNING: Generic CRUD operations bypass business logic and validation - specialized helpers enforce consistency and relationships"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -122,12 +105,7 @@
       "error_handling": "- Return empty array if no matches",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Requires at least one ID - empty array NOT allowed (prevents accidental full table scans on large database)",
-        "CHECK: Do you have IDs? If not, find helper for filtered queries using conditions or find specialized getter by name/attribute",
-        "NEXT STEP: For all records without IDs, find helper that accepts WHERE conditions parameter with empty conditions object",
-        "WARNING: Empty id_array will raise error - intentional protection against performance issues on large tables"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -173,14 +151,7 @@
       "error_handling": "Return empty array if no matches, error if invalid fields",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Empty conditions {} returns ALL records - use with caution, add limit parameter to prevent overwhelming results",
-        "DATABASE CONTEXT: Uses AND logic - all conditions must match (field1=value1 AND field2=value2)",
-        "CHECK: For complex queries (OR logic, LIKE, ranges), find helper that accepts raw WHERE clause strings",
-        "CHECK: Are specialized query helpers available for this operation? Check for helpers specific to the entity type",
-        "CHECK: Use limit parameter for large result sets to avoid overwhelming context",
-        "NEXT STEP: After getting results, extract IDs for focused re-queries if needed"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -212,15 +183,7 @@
       "error_handling": "Return error if SQL syntax invalid",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Advanced query for complex SQL WHERE conditions (OR, LIKE, IN, BETWEEN, comparison operators)",
-        "DATABASE CONTEXT: Examples: \"status IN ('pending', 'in_progress')\" or \"name LIKE '%api%' AND is_reserved = 0\"",
-        "CHECK: Try helpers with structured conditions first (AND-logic helpers) - safer and cleaner than raw SQL",
-        "CHECK: Verify field names exist in table schema before constructing query to avoid SQL syntax errors",
-        "CHECK: Is there a specialized helper for this query pattern? Prefer specialized over raw SQL",
-        "WARNING: SQL injection safe (parameterized), but syntax errors will fail - validate field names first",
-        "WARNING: Rarely needed - most queries handled by structured condition helpers or specialized helpers"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -252,14 +215,7 @@
       "error_handling": "Return error if used on restricted tables",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Generic insert for any table - returns new record ID",
-        "CHECK: Are specialized add helpers available for this table? Specialized helpers enforce business logic and relationships",
-        "CHECK: For files, functions, types: Use reserve/finalize workflow pattern instead of direct insert",
-        "CHECK: After adding, do relationships need to be established in junction tables (file_flows, types_functions)?",
-        "WARNING: Generic CRUD bypasses validation logic - prefer specialized helpers for core entities (files, functions, tasks, milestones)",
-        "WARNING: Restricted tables (files, functions, types) require reserve/finalize workflow for ID embedding in names"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -298,15 +254,7 @@
       "error_handling": "Return error if ID not found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Partial update - only fields in data object are modified, omitted fields remain unchanged",
-        "DATABASE CONTEXT: Auto-updates updated_at timestamp via database trigger - do not include in data object",
-        "CHECK: Are specialized update helpers available for this table? They provide validation and relationship consistency",
-        "CHECK: If updating critical fields (status, foreign keys), verify no cascade effects on dependent records",
-        "CHECK: After updating, consider verifying changes succeeded by re-querying the record",
-        "WARNING: Generic updates bypass business logic - prefer specialized update helpers for core entities",
-        "WARNING: Updating foreign key relationships without validation can create orphaned or inconsistent data"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -366,18 +314,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Smart delete automatically routes to specialized delete helpers when they exist (with relationship validation)",
-        "DATABASE CONTEXT: All deletions logged to notes table with reason, severity, source for permanent audit trail",
-        "DATABASE CONTEXT: Requires note metadata: reason (TEXT), severity ('info'/'warning'/'error'), source ('ai'/'user'), type ('entry_deletion')",
-        "CHECK: Before deleting, verify no dependent records exist - check foreign key relationships in related tables",
-        "CHECK: Is soft delete (status='deleted') better than hard delete? Soft deletes are reversible",
-        "CHECK: Have you clearly documented deletion reason? Audit trail is permanent and required",
-        "CHECK: After deletion, verify no orphaned records in junction tables (file_flows, types_functions, flow_themes)",
-        "WARNING: Deletion is permanent with no undo - specialized delete helpers provide relationship validation",
-        "WARNING: Generic delete may not catch all relationship constraints - prefer specialized delete helpers for safety",
-        "WARNING: Deleting from junction tables breaks relationships - ensure intent is clear before proceeding"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -438,21 +375,7 @@
       "error_handling": "Return error if project already exists",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Single row table - only one project record per database, represents entire project metadata",
-        "DATABASE CONTEXT: Auto-populates git tracking fields (last_known_git_hash, last_git_sync) from current HEAD if git available",
-        "DATABASE CONTEXT: Fields: version (blueprint evolution tracking), user_directives_status (NULL=UseCase1, 'active'=UseCase2)",
-        "DIRECTIVE CONTEXT: Called by project_init (sequence_order: 1, execution_context: create_project_structure)",
-        "DIRECTIVE CONTEXT: First step in initialization - creates project database record before theme/flow population",
-        "DIRECTIVE FLOW: aifp_status → project_init (when project not initialized) → create_project (this, seq 1) → populate themes/flows → aifp_status",
-        "DIRECTIVE FLOW: After project_init completes, flow proceeds to aifp_status via completion_loop to show initialized state",
-        "NEXT STEP: After creating project record, populate themes and flows from parsed ProjectBlueprint.md",
-        "NEXT STEP: Create completion_path and initial milestones based on project goals",
-        "CHECK: ProjectBlueprint.md should exist before calling - parse it for name, purpose, goals parameters",
-        "CHECK: Git recommended for external change detection - last_known_git_hash enables blueprint sync checks",
-        "WARNING: Single-use helper - can only be called once per database, returns error if project already exists",
-        "WARNING: user_directives_status should be NULL unless explicitly building Use Case 2 (automation project)"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -479,19 +402,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Single project record contains: name, purpose, goals, status, version, user_directives_status, git tracking",
-        "DIRECTIVE CONTEXT: Called by project_blueprint_read (sequence_order: 1, execution_context: database_fallback)",
-        "DIRECTIVE CONTEXT: Called by project_blueprint_update (sequence_order: 1, execution_context: read_current_blueprint)",
-        "DIRECTIVE CONTEXT: For blueprint_read: fallback when ProjectBlueprint.md file missing - reconstructs from database",
-        "DIRECTIVE CONTEXT: For blueprint_update: retrieves current version before incrementing and syncing changes",
-        "DIRECTIVE FLOW: aifp_status → project_blueprint_read → get_project (this, seq 1) → reconstruct blueprint file → aifp_status",
-        "DIRECTIVE FLOW: aifp_status → project_blueprint_update → get_project (this, seq 1) → increment version → sync file → aifp_status",
-        "CHECK: user_directives_status field determines Use Case (NULL=regular dev, 'active'=automation project)",
-        "CHECK: Compare last_known_git_hash with current HEAD to detect external blueprint modifications",
-        "NEXT STEP: For blueprint_read, use returned data to reconstruct ProjectBlueprint.md content if file missing",
-        "NEXT STEP: For blueprint_update, increment version field and prepare updated data for sync"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -509,6 +420,30 @@
           "is_required": true,
           "parameters_mapping": {},
           "description": "Get current project version before updating blueprint - checks version for increment"
+        },
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "get_existing_project_status",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Read project metadata for comprehensive status report - retrieves name, purpose, goals, version, status, user_directives_status"
+        },
+        {
+          "directive_name": "project_evolution",
+          "execution_context": "detect_project_wide_change",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Read current project version before incrementing - checks version for evolution tracking"
+        },
+        {
+          "directive_name": "project_archive",
+          "execution_context": "prepare_archive",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Read project status to verify completion before archival - checks if project completed"
         }
       ],
       "implementation_notes": [
@@ -568,17 +503,7 @@
       "error_handling": "Return error if no project exists",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Partial update - only non-NULL parameter values are updated, omitted parameters unchanged",
-        "DATABASE CONTEXT: Common updates: version increment (blueprint changes), status transitions, user_directives_status changes",
-        "DIRECTIVE CONTEXT: Called by project_blueprint_update (sequence_order: 2, execution_context: update_version_and_date)",
-        "DIRECTIVE CONTEXT: Second step in blueprint update - increments version after blueprint modifications synced",
-        "DIRECTIVE FLOW: aifp_status → project_blueprint_update → get_project (seq 1) → update_project (this, seq 2) → sync file → aifp_status",
-        "CHECK: Version increments should reflect significant changes (architecture, goals, major features) - document changes",
-        "CHECK: Status field values: 'active', 'paused', 'completed', 'abandoned' - status transitions may cascade to tasks/milestones",
-        "CHECK: After updating version, ensure ProjectBlueprint.md file is synced to maintain consistency",
-        "WARNING: user_directives_status change to 'active' requires Use Case 2 setup complete (directives implemented)"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -591,6 +516,46 @@
             "last_updated": "current_timestamp"
           },
           "description": "Increment project version after blueprint update - updates version and last_updated timestamp in database"
+        },
+        {
+          "directive_name": "project_evolution",
+          "execution_context": "increment_version",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "version": "incremented_version"
+          },
+          "description": "Update project version after evolution changes - increments version when architecture, goals, themes, flows, or completion path changes"
+        },
+        {
+          "directive_name": "project_archive",
+          "execution_context": "compress_and_store",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "status": "archived"
+          },
+          "description": "Update project status to archived - marks project as archived after packaging"
+        },
+        {
+          "directive_name": "user_directive_parse",
+          "execution_context": "update_project_status",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "user_directives_status": "in_progress"
+          },
+          "description": "Set user_directives_status to in_progress during first-time initialization - transitions from NULL to in_progress"
+        },
+        {
+          "directive_name": "user_directive_activate",
+          "execution_context": "update_project_status_to_active",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "user_directives_status": "active"
+          },
+          "description": "Set user_directives_status to active after user approval - transitions from in_progress or disabled to active"
         }
       ],
       "implementation_notes": [
@@ -608,20 +573,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Detects external ProjectBlueprint.md modifications - git method (hash comparison) or filesystem method (timestamp)",
-        "DATABASE CONTEXT: Git method compares file hash vs last_known_git_hash, filesystem compares modified time vs updated_at",
-        "DIRECTIVE CONTEXT: Called by project_blueprint_read (sequence_order: 2, execution_context: parse_complete)",
-        "DIRECTIVE CONTEXT: Called by project_blueprint_update (sequence_order: 1, execution_context: validate_parameters)",
-        "DIRECTIVE CONTEXT: For blueprint_read: detects staleness after parsing - determines if resync needed",
-        "DIRECTIVE CONTEXT: For blueprint_update: pre-check for conflicts before applying updates - prevents overwriting external changes",
-        "DIRECTIVE FLOW: Session start → git_detect_external_changes → blueprint_has_changed → if true → project_blueprint_read → sync → proceed",
-        "DIRECTIVE FLOW: Before update → project_blueprint_update → blueprint_has_changed (this, seq 1) → if true → warn user → get confirmation",
-        "CHECK: Git method preferred (detects actual content changes), filesystem method less reliable (false positives on touch)",
-        "CHECK: If changed=true, in-memory state may be stale - trigger project_blueprint_read before making changes",
-        "NEXT STEP: After syncing external changes, update last_known_git_hash to mark blueprint as processed",
-        "WARNING: Filesystem method can show false positives - file timestamp changed but content unchanged"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -664,19 +616,7 @@
       "error_handling": "Return empty array if none found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Infrastructure types tracked: 'language', 'package', 'testing', 'database', 'build_tool'",
-        "DATABASE CONTEXT: Records include name, version, purpose - used for environment configuration and validation",
-        "DIRECTIVE CONTEXT: Called by project_init (sequence_order: 2, execution_context: create_project_structure)",
-        "DIRECTIVE CONTEXT: Called by project_blueprint_read (sequence_order: 2, execution_context: database_fallback)",
-        "DIRECTIVE CONTEXT: For project_init: populate initial infrastructure after creating project record - verifies language, build tool",
-        "DIRECTIVE CONTEXT: For blueprint_read: query infrastructure when blueprint file missing - reconstructs infrastructure section from DB",
-        "DIRECTIVE FLOW: aifp_status → project_init → create_project (seq 1) → get_infrastructure_by_type (this, seq 2) → add missing → aifp_status",
-        "DIRECTIVE FLOW: aifp_status → project_blueprint_read → get_project (seq 1) → get_infrastructure_by_type (this, seq 2) → reconstruct → aifp_status",
-        "CHECK: Empty results may indicate fresh project initialization needed",
-        "CHECK: language type determines file extensions and syntax (Python/.py, TypeScript/.ts)",
-        "CHECK: testing type determines test framework for test generation (pytest, jest)"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {

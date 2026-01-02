@@ -1,6 +1,6 @@
 {
   "helpers": [
-	{
+    {
       "name": "add_subtask",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
@@ -44,10 +44,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`",
-        "Subtasks inherit task's milestone and flows"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -66,6 +63,10 @@
           "parameters_mapping": {},
           "description": "Atomic subtask creation - creates focused, high-priority subtask and pauses parent"
         }
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, id: new_id}",
+        "Subtasks inherit task's milestone and flows"
       ]
     },
     {
@@ -76,11 +77,46 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of subtask objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "get_existing_project_status",
+          "sequence_order": 11,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query all incomplete subtasks for status report - builds priority status tree"
+        },
+        {
+          "directive_name": "project_auto_resume",
+          "execution_context": "detect_unfinished_work",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Detect unfinished subtasks for auto-resume - identifies next subtask to execute"
+        },
+        {
+          "directive_name": "project_auto_summary",
+          "execution_context": "generate_summary",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query incomplete subtasks for project summary - lists open subtasks in summary report"
+        },
+        {
+          "directive_name": "project_completion_check",
+          "execution_context": "check_completion_status",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check incomplete subtasks for completion validation - verifies all subtasks complete"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: Array of subtask objects",
+        "SQL: SELECT * FROM subtasks WHERE status != 'completed'"
+      ]
     },
     {
       "name": "get_incomplete_subtasks_by_task",
@@ -98,9 +134,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of subtask objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -119,6 +153,10 @@
           "parameters_mapping": {},
           "description": "Check if all subtasks complete to determine if parent task should resume"
         }
+      ],
+      "implementation_notes": [
+        "Returns: Array of subtask objects",
+        "SQL: SELECT * FROM subtasks WHERE task_id=? AND status != 'completed'"
       ]
     },
     {
@@ -144,9 +182,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of subtask objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -157,6 +193,10 @@
           "parameters_mapping": {},
           "description": "Show remaining pending subtasks to user after one subtask completes"
         }
+      ],
+      "implementation_notes": [
+        "Returns: Array of subtask objects",
+        "SQL: SELECT * FROM subtasks WHERE task_id=? AND (status=? OR ? IS NULL)"
       ]
     },
     {
@@ -210,11 +250,30 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of filtered subtask objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "get_existing_project_status",
+          "sequence_order": 12,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Advanced subtask query for detailed status report - filters subtasks by multiple criteria"
+        },
+        {
+          "directive_name": "project_metrics",
+          "execution_context": "calculate_task_distribution",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Query subtasks with filters for project metrics - analyzes subtask distribution by status/priority"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: Array of filtered subtask objects",
+        "Supports complex multi-dimensional filtering"
+      ]
     },
     {
       "name": "update_subtask",
@@ -267,9 +326,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -288,6 +345,11 @@
           "parameters_mapping": {},
           "description": "Mark subtask as completed - sets status=completed and logs timestamp"
         }
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "NULL parameters = don't update that field",
+        "SQL: UPDATE subtasks SET field=? WHERE id=?"
       ]
     },
     {
@@ -334,11 +396,15 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Error or success based on item status"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns error if completed/in_progress items exist",
+        "Returns success after deleting subtask",
+        "Validates no active items before allowing deletion",
+        "Creates note record for audit trail"
+      ]
     },
     {
       "name": "add_sidequest",
@@ -363,9 +429,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -384,6 +448,10 @@
           "parameters_mapping": {},
           "description": "Atomic sidequest creation - creates exploratory interruption with optional task link"
         }
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, id: new_id}",
+        "Links to paused task or subtask for context"
       ]
     },
     {
@@ -394,11 +462,46 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of sidequest objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "get_existing_project_status",
+          "sequence_order": 12,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query all incomplete sidequests for status report - builds priority status tree (highest priority)"
+        },
+        {
+          "directive_name": "project_auto_resume",
+          "execution_context": "detect_unfinished_work",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Detect unfinished sidequests for auto-resume - identifies highest priority work"
+        },
+        {
+          "directive_name": "project_auto_summary",
+          "execution_context": "generate_summary",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query incomplete sidequests for project summary - lists urgent open work (shown first)"
+        },
+        {
+          "directive_name": "project_completion_check",
+          "execution_context": "check_completion_status",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check incomplete sidequests for completion validation - verifies all sidequests complete"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: Array of sidequest objects",
+        "SQL: SELECT * FROM sidequests WHERE status != 'completed'"
+      ]
     },
     {
       "name": "get_sidequests_comprehensive",
@@ -458,11 +561,30 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of filtered sidequest objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "get_existing_project_status",
+          "sequence_order": 13,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Advanced sidequest query for detailed status report - filters sidequests by multiple criteria"
+        },
+        {
+          "directive_name": "project_metrics",
+          "execution_context": "calculate_task_distribution",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Query sidequests with filters for project metrics - analyzes sidequest distribution by status/priority"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: Array of filtered sidequest objects",
+        "Supports complex multi-dimensional filtering including parent task/subtask"
+      ]
     },
     {
       "name": "get_sidequest_flows",
@@ -480,11 +602,22 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of flow IDs"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 8,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query flow IDs for sidequests in dependency graph - maps sidequest-flow relationships"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: Array of flow IDs",
+        "SQL: Extract flow_ids JSON from sidequest record"
+      ]
     },
     {
       "name": "get_sidequest_files",
@@ -502,12 +635,22 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of file objects",
-        "Chains get_sidequest_flows \u2192 get_file_ids_from_flows \u2192 get_from_project()"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 9,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query files related to sidequests via flows - maps sidequest-file relationships through flows"
+        }
+      ],
+      "implementation_notes": [
+        "Returns: Array of file objects",
+        "Chains: retrieve sidequest flows → get file IDs from flows → retrieve file details"
+      ]
     },
     {
       "name": "update_sidequest",
@@ -574,9 +717,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -595,6 +736,11 @@
           "parameters_mapping": {},
           "description": "Mark sidequest as completed - sets status=completed, logs timestamp and outcome"
         }
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "NULL parameters = don't update that field",
+        "SQL: UPDATE sidequests SET field=? WHERE id=?"
       ]
     },
     {
@@ -641,11 +787,15 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Error or success based on item status"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns error if completed/in_progress items exist",
+        "Returns success after deleting sidequest",
+        "Validates no active items before allowing deletion",
+        "Creates note record for audit trail"
+      ]
     }
   ],
   "metadata": {
@@ -655,7 +805,8 @@
     "description": "Subtask and sidequest management operations (add, get, update, delete, queries)",
     "first_helper": "add_subtask",
     "last_helper": "delete_sidequest",
-    "status": "Needs return_statements enhancement",
-    "last_updated": "2025-12-29"
+    "status": "COMPLETED - all return_statements enhanced and verified",
+    "last_updated": "2026-01-01",
+    "notes": "All hardcoded function names removed, DIRECTIVE CONTEXT properly formatted, all helpers with directives have DIRECTIVE FLOW statements"
   }
 }

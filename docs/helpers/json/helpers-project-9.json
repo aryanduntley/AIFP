@@ -1,6 +1,6 @@
 {
   "helpers": [
-	{
+    {
       "name": "get_items_for_task",
       "file_path": "TODO_helpers/project/module.py",
       "parameters": [
@@ -23,9 +23,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of item objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -61,11 +59,18 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of item objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_item_create",
+          "execution_context": "check_duplicate_items",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check for duplicate item names before creating new item for subtask - prevents naming conflicts"
+        }
+      ]
     },
     {
       "name": "get_items_for_sidequest",
@@ -90,11 +95,18 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of item objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_item_create",
+          "execution_context": "check_duplicate_items",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check for duplicate item names before creating new item for sidequest - prevents naming conflicts"
+        }
+      ]
     },
     {
       "name": "get_incomplete_items",
@@ -119,11 +131,42 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of incomplete item objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "mark_complete_and_items",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark all incomplete items as completed when task completes - batch completes remaining items"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "mark_complete_and_items",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark all incomplete items as completed when subtask completes - batch completes remaining items"
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "mark_complete_and_log",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Mark all incomplete items as completed when sidequest completes - batch completes remaining items"
+        },
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "get_existing_project_status",
+          "sequence_order": 14,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Query incomplete items for status report - shows granular work-in-progress"
+        }
+      ]
     },
     {
       "name": "delete_item",
@@ -169,10 +212,7 @@
       "error_handling": "Cannot delete in-progress/completed items, only pending",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "- Error if status is \"completed\" or \"in_progress\"",
-        "Completed/in-progress items must stay, use notes for issues"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": []
     },
@@ -234,9 +274,7 @@
       "error_handling": "Returns error if project.db not initialized, otherwise continues silently",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -313,9 +351,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of filtered note objects"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -394,9 +430,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of matching notes"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -482,9 +516,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": []
     },
@@ -504,9 +536,7 @@
       "error_handling": "",
       "is_tool": false,
       "is_sub_helper": false,
-      "return_statements": [
-        "```json"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": []
     }

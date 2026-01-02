@@ -8,9 +8,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of table names"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": []
     },
@@ -30,9 +28,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of field objects"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": []
     },
@@ -44,9 +40,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Object mapping table names to field arrays"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": []
     },
@@ -66,10 +60,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Object with fields array, examples (similar to `get_project_json_parameters()`)",
-        "Use with `add_user_custom_entry()` or `update_user_custom_entry()` for tables without specialized functions. Only include fields being set/updated in JSON."
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": []
     },
@@ -89,9 +80,7 @@
       "error_handling": "Return error if id_array is empty",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of records"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": []
     },
@@ -111,9 +100,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of matching records"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": []
     },
@@ -140,9 +127,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of matching rows"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": []
     },
@@ -169,9 +154,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true, \"id\": new_id}`"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -225,9 +208,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -349,9 +330,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "`{\"success\": true}`"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -382,10 +361,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "```json",
-        "Tracks file reference in source_files table"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -424,10 +400,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "```json",
-        "Updates validated config in user_directives table"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -464,10 +437,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "```json",
-        "Creates src/ files, updates project.db, generates tests"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -504,10 +474,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "```json",
-        "Starts scheduler/event handler"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -536,9 +503,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Directive status object(s) with execution stats"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -548,6 +513,14 @@
           "is_required": true,
           "parameters_mapping": {},
           "description": "Tool that implements user_directive_status directive - checks user_directives.db existence, queries directive statistics grouped by status, queries directive_executions for execution stats, builds comprehensive status report with log paths"
+        },
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "check_user_directive_status",
+          "sequence_order": 16,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Include user directive status in overall project status report - shows active/paused/pending user directives if user_directives.db exists"
         }
       ]
     },
@@ -567,10 +540,7 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "```json",
-        "Detailed logs in .aifp-project/logs/, not database"
-      ],
+      "return_statements": [],
       "target_database": "user_custom",
       "used_by_directives": [
         {
@@ -587,11 +557,11 @@
   "metadata": {
     "file": "helpers-user-custom.json",
     "count": 16,
-    "status": "Phase 8 Priority 2 COMPLETE - All 16 user-custom helpers mapped to 9 user directive system directives",
+    "status": "COMPLETED - used_by_directives review complete",
     "mapped_helpers": 9,
     "unmapped_helpers": 7,
-    "note": "7 helpers are query tools for AI (get_user_custom_tables, get_user_custom_fields, get_user_custom_schema, get_user_custom_json_parameters, get_from_user_custom, get_from_user_custom_where, query_user_custom) - intentionally not mapped to directives",
-    "total_mappings": 15,
-    "last_updated": "2025-12-20"
+    "note": "7 helpers are generic AI query tools (schema/CRUD operations) - intentionally empty. 9 helpers mapped to user directive system directives (user_directive_parse, validate, implement, approve, activate, deactivate, update, status, monitor) plus aifp_status.",
+    "total_mappings": 16,
+    "last_updated": "2026-01-01"
   }
 }

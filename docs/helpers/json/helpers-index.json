@@ -8,18 +8,36 @@
       "error_handling": "Return empty array if none found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "Array of database objects with file_path, name, short_name, description",
-        "Includes all 4 databases: core, project, settings, user_custom"
-      ],
+      "return_statements": [],
       "target_database": "core",
-      "used_by_directives": []
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_help",
+          "execution_context": "show_database_info",
+          "sequence_order": 14,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Show available databases with metadata when user asks about infrastructure - lists aifp_core.db, project.db, user_preferences.db, user_directives.db with status"
+        },
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "check_infrastructure_status",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Check database availability and health as part of infrastructure status - verifies all databases are accessible and not corrupted"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-index.json",
     "count": 1,
-    "status": "converted from markdown - used_by_directives empty",
-    "note": "Global cross-database helper from index file"
+    "status": "COMPLETED - used_by_directives review complete",
+    "mapped_helpers": 1,
+    "unmapped_helpers": 0,
+    "note": "Global cross-database helper. Mapped to aifp_help and aifp_status for infrastructure information.",
+    "total_mappings": 2,
+    "last_updated": "2026-01-01"
   }
 }

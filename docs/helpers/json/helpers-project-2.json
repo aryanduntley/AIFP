@@ -9,7 +9,7 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Preliminary file name (will have -IDxxx appended)"
+          "description": "Preliminary file name (will have _id_xxx appended)"
         },
         {
           "name": "path",
@@ -30,28 +30,7 @@
       "error_handling": "Return error if path already exists",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Creates file entry with is_reserved=1 - file not yet created on filesystem",
-        "DATABASE CONTEXT: Returned ID MUST be embedded in filename using -IDxxx suffix pattern (e.g., calculator-ID42.py)",
-        "DATABASE CONTEXT: Reserved files excluded from queries until finalized - not tracked in themes/flows yet",
-        "NEXT STEP: Create the actual file with reserved ID in filename: {name}-ID{id}.{ext}",
-        "NEXT STEP: After file created, finalize reservation to complete file registration (find helper for file finalization)",
-        "NEXT STEP: After finalizing file, reserve function IDs for functions defined in file (find helper for function reservation)",
-        "CHECK: Did you embed the ID in the filename correctly? Pattern is: basename-IDxxx.extension",
-        "CHECK: Does the file need to be assigned to flows? Use file_flows table after finalization",
-        "DATABASE: Find file finalization helper - search core.db where purpose LIKE '%finalize%' AND purpose LIKE '%file%'",
-        "DATABASE: Find function reservation helper - search core.db where purpose LIKE '%reserve%' AND purpose LIKE '%function%'",
-        "DATABASE: Find file query helpers - search core.db where purpose LIKE '%file%' AND (purpose LIKE '%name%' OR purpose LIKE '%path%')",
-        "DIRECTIVE CONTEXT: Called by project_reserve_finalize (sequence_order: 1, execution_context: reserve_file_name)",
-        "DIRECTIVE CONTEXT: Called by project_file_write (sequence_order: 1, execution_context: reserve_before_write)",
-        "DIRECTIVE CONTEXT: First step in reservation phase - reserves file ID before code generation",
-        "DIRECTIVE FLOW: aifp_status → project_file_write → project_reserve_finalize → reserve_file (this, seq 1) → write code → finalize",
-        "DIRECTIVE FLOW: After project_reserve_finalize, flow proceeds to project_update_db for database sync",
-        "WORKFLOW PATTERN: Reserve file → create with ID in name → finalize → reserve functions → finalize functions",
-        "COMMON WORKFLOWS: Planning multiple files → use batch reservation → create all → batch finalize",
-        "WARNING: File MUST be created with ID in filename - this is how file tracking works without fragile path dependencies",
-        "WARNING: Do not finalize until file actually exists on filesystem - finalization verifies file exists"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -74,7 +53,7 @@
       "implementation_notes": [
         "Returns {success: true, id: reserved_id, is_reserved: true}",
         "SQL: INSERT INTO files (name, path, language, is_reserved) VALUES (?, ?, ?, 1) RETURNING id",
-        "Filename pattern: {name}-ID{id}.{extension} (e.g., calculator-ID42.py, utils-ID15.js)"
+        "Filename pattern: {name}_id_{id}.{extension} (e.g., calculator_id_42.py, utils_id_15.js)"
       ]
     },
     {
@@ -93,19 +72,7 @@
       "error_handling": "Return error if any path already exists",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Batch version of reserve_file() - atomically reserves multiple file IDs at once",
-        "DATABASE CONTEXT: All files created with is_reserved=1 - more efficient than multiple single reservations",
-        "NEXT STEP: Create all files with their reserved IDs embedded in filenames using -IDxxx pattern",
-        "NEXT STEP: After all files created, batch finalize with array of file metadata objects",
-        "CHECK: IDs returned in same order as files array - map IDs back to file objects correctly",
-        "DATABASE: Find batch file finalization - search core.db where purpose LIKE '%finalize%' AND purpose LIKE '%file%' AND purpose LIKE '%multiple%'",
-        "DATABASE: For single file operations, use single-file reservation instead of batch with one element",
-        "WORKFLOW PATTERN: Batch reserve files → create all with IDs → batch finalize → batch reserve functions",
-        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple files at once",
-        "COMMON WORKFLOWS: Large refactorings creating many new files → batch reserve → parallel creation → batch finalize",
-        "WARNING: Batch operations are all-or-nothing - if any file path exists, entire operation fails"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -130,7 +97,7 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Final name with -ID_xx suffix"
+          "description": "Final name with _id_xx suffix"
         },
         {
           "name": "path",
@@ -151,30 +118,7 @@
       "error_handling": "Return error if file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Sets is_reserved=0 after verifying file exists on filesystem",
-        "DATABASE CONTEXT: Computes checksum of file content for change detection",
-        "DATABASE CONTEXT: File now tracked in queries and can be assigned to themes/flows via file_flows table",
-        "NEXT STEP: Assign file to flows using file_flows table if it belongs to specific feature areas",
-        "NEXT STEP: Reserve function IDs for each function defined in file (find helper for function reservation)",
-        "NEXT STEP: After functions finalized, track function call patterns (find helper for interaction tracking)",
-        "CHECK: Verify file actually exists at path before calling - finalization checks filesystem",
-        "CHECK: Did you include the -IDxxx suffix in the name parameter? Must match reserved ID",
-        "CHECK: Are there functions in this file that need to be reserved and finalized?",
-        "DATABASE: Find function reservation helper - search core.db where purpose LIKE '%reserve%' AND purpose LIKE '%function%'",
-        "DATABASE: Find interaction tracking helper - search core.db where purpose LIKE '%interaction%' OR purpose LIKE '%call%pattern%'",
-        "DATABASE: To check flow assignments later, query file_flows table WHERE file_id = ?",
-        "DIRECTIVE CONTEXT: Called by project_reserve_finalize (sequence_order: 2, execution_context: finalize_reservation)",
-        "DIRECTIVE CONTEXT: Called by project_file_write (sequence_order: 3, execution_context: finalize_after_write)",
-        "DIRECTIVE CONTEXT: Called by project_update_db (sequence_order: 2, execution_context: finalize_new_files)",
-        "DIRECTIVE CONTEXT: Second step in reservation phase - completes file reservation after code written",
-        "DIRECTIVE FLOW: project_file_write → project_reserve_finalize → reserve (seq 1) → write code → finalize_file (this, seq 2) → project_update_db",
-        "DIRECTIVE FLOW: After finalization, flow proceeds to project_update_db for database sync",
-        "WORKFLOW PATTERN: Reserve file → create → finalize → reserve functions → finalize functions → track interactions",
-        "COMMON WORKFLOWS: After finalization, file appears in status queries and can be tracked in completion paths",
-        "WARNING: Finalization will fail if file doesn't exist at path - ensure file written before calling",
-        "WARNING: Name parameter must include -IDxxx suffix matching file_id - this is verified"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -207,7 +151,7 @@
         "Verifies file exists at path using os.path.exists()",
         "Computes file checksum (SHA-256) and stores in checksum field",
         "SQL: UPDATE files SET is_reserved=0, name=?, path=?, language=?, checksum=? WHERE id=?",
-        "Name validation: must contain '-ID{file_id}' pattern"
+        "Name validation: must contain '_id_{file_id}' pattern"
       ]
     },
     {
@@ -226,21 +170,7 @@
       "error_handling": "Return error if any file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Batch version of finalize_file() - atomically finalizes multiple files at once",
-        "DATABASE CONTEXT: Verifies all files exist, computes checksums, sets is_reserved=0 for all",
-        "NEXT STEP: After batch finalization, batch reserve and finalize functions for all files",
-        "NEXT STEP: Assign files to flows using file_flows table based on their feature areas",
-        "CHECK: All files in array must have matching -IDxxx suffixes in their names",
-        "CHECK: Verify all files actually exist before calling - operation is all-or-nothing",
-        "DATABASE: Find batch function operations - search core.db where purpose LIKE '%multiple%' AND purpose LIKE '%function%'",
-        "DATABASE: For single file, use single-file finalization instead of batch with one element",
-        "WORKFLOW PATTERN: Batch reserve files → create all → batch finalize → batch reserve functions → batch finalize functions",
-        "DIRECTIVE CONTEXT: Not directly used by directives - utility for batch operations when creating multiple files at once",
-        "COMMON WORKFLOWS: Large feature implementation → batch reserve → batch create → batch finalize → batch function tracking",
-        "WARNING: Batch operation is atomic - if any file missing or validation fails, entire batch fails",
-        "WARNING: Order of files array must match file_ids - ensure correspondence when building batch"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -259,28 +189,33 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "File name to look up (e.g., 'calculator-ID42.py')"
+          "description": "File name to look up (e.g., 'calculator_id_42.py')"
         }
       ],
       "purpose": "Get file by name (high-frequency lookup)",
       "error_handling": "Return null if not found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Lookup file by name field (includes -IDxxx suffix)",
-        "DATABASE CONTEXT: Returns complete file object with all metadata: id, name, path, language, checksum, is_reserved",
-        "NEXT STEP: Use returned file_id to query functions in file (find helper for file function queries)",
-        "NEXT STEP: Check is_reserved field - if true, file not yet finalized",
-        "DATABASE: Find file query by path - search core.db where purpose LIKE '%file%' AND purpose LIKE '%path%' (more common than name lookup)",
-        "DATABASE: Find file functions helper - search core.db where purpose LIKE '%functions%' AND purpose LIKE '%file%'",
-        "DATABASE: Find file flows helper - search core.db where purpose LIKE '%flows%' AND purpose LIKE '%file%'",
-        "DIRECTIVE CONTEXT: Not directly used by directives - utility for ad-hoc file queries by name",
-        "COMMON WORKFLOWS: Have filename from context → lookup by name → extract file_id → query functions/flows",
-        "COMMON WORKFLOWS: Verifying file registration: lookup by name → check if null (not registered) vs object (registered)",
-        "WARNING: Name must match exactly including -IDxxx suffix - partial matching not supported"
-      ],
+      "return_statements": [],
       "target_database": "project",
-      "used_by_directives": [],
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Look up files by name during DB-filesystem sync - verifies file entries exist before syncing dependencies"
+        },
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query files by name for dependency graph generation - maps relationships between files, functions, and flows"
+        }
+      ],
       "implementation_notes": [
         "Returns file object or null if not found",
         "SQL: SELECT * FROM files WHERE name=? LIMIT 1",
@@ -303,27 +238,7 @@
       "error_handling": "Return null if not found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Most common file lookup - queries by path field (e.g., 'src/calculator.py')",
-        "DATABASE CONTEXT: Returns complete file object including ID, name with suffix, language, checksum, reservation status",
-        "NEXT STEP: Use returned file_id to query related data: functions in file, flows file belongs to",
-        "NEXT STEP: Check is_reserved field - if true, file still in reservation state, not yet finalized",
-        "NEXT STEP: Compare checksum field with current file hash to detect external modifications",
-        "DATABASE: Find file functions helper - search core.db where purpose LIKE '%functions%' AND purpose LIKE '%file%'",
-        "DATABASE: Find file flows helper - search core.db where purpose LIKE '%flows%' AND purpose LIKE '%file%'",
-        "DATABASE: Find change detection helper - search core.db where purpose LIKE '%changed%' OR purpose LIKE '%checksum%'",
-        "DIRECTIVE CONTEXT: Called by project_file_read (sequence_order: 1, execution_context: load_with_context)",
-        "DIRECTIVE CONTEXT: Called by project_file_delete (sequence_order: 1, execution_context: check_file_tracked)",
-        "DIRECTIVE CONTEXT: For file_read: First step to load file metadata before querying functions and interactions",
-        "DIRECTIVE CONTEXT: For file_delete: Pre-check to verify file exists in database before attempting deletion",
-        "DIRECTIVE FLOW: aifp_status → project_file_read → get_file_by_path (this, seq 1) → query functions → complete context → aifp_status",
-        "DIRECTIVE FLOW: aifp_status → project_file_delete → get_file_by_path (this, seq 1) → if found, cascade delete → aifp_status",
-        "DIRECTIVE FLOW: After file_read completes, returns to aifp_status with full file context for decision making",
-        "COMMON WORKFLOWS: Working with file → get by path → extract file_id → query functions/interactions/flows",
-        "COMMON WORKFLOWS: Before writing file → get by path → if null, needs reservation → reserve file",
-        "WARNING: Path must be relative to project root - absolute paths not supported",
-        "WARNING: Returns null if file not in database - doesn't mean file doesn't exist on filesystem, just not tracked"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -341,6 +256,30 @@
           "is_required": true,
           "parameters_mapping": {},
           "description": "Check if file exists in database before deletion - ensures proper cleanup of DB records"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Look up files by path during DB-filesystem sync - verifies file entries exist before syncing dependencies"
+        },
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query files by path for dependency graph generation - maps relationships between files, functions, and flows"
+        },
+        {
+          "directive_name": "project_integrity_check",
+          "execution_context": "run_integrity_queries",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Validate file paths exist in database during integrity checks - detects missing or orphaned file records"
         }
       ],
       "implementation_notes": [
@@ -386,24 +325,7 @@
       "error_handling": "Return error if file_id not found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Partial update for file metadata - only updates provided fields",
-        "DATABASE CONTEXT: updated_at timestamp auto-updated by trigger, checksum recalculated if content changed",
-        "NEXT STEP: If name changed, verify -IDxxx suffix still matches file_id",
-        "NEXT STEP: If path changed, update any hardcoded path references in code that might exist",
-        "CHECK: Did name change? Ensure code references still work (ID-based references unaffected, but imports might break)",
-        "CHECK: Did path change? Filesystem file must be moved to match new path before calling this",
-        "DATABASE: Find change detection - search core.db where purpose LIKE '%changed%' OR purpose LIKE '%checksum%' to detect external modifications",
-        "DATABASE: Find timestamp update helper - search core.db where purpose LIKE '%timestamp%' for batch function updates",
-        "DIRECTIVE CONTEXT: Called by project_update_db (sequence_order: 1, execution_context: update_files_table)",
-        "DIRECTIVE CONTEXT: First step in database sync - updates file metadata after code generation or modification",
-        "DIRECTIVE CONTEXT: Part of reserve/finalize workflow completion - syncs database state with filesystem after code written",
-        "DIRECTIVE FLOW: aifp_status → project_file_write → project_reserve_finalize → project_update_db → update_file (this, seq 1) → update functions → aifp_status",
-        "DIRECTIVE FLOW: After file updates, project_update_db continues to function updates then returns to aifp_status via completion_loop",
-        "COMMON WORKFLOWS: File refactored → update metadata → recalculate checksum → verify no external conflicts",
-        "WARNING: Changing name breaks imports unless using ID-based function references",
-        "WARNING: Changing path without moving filesystem file causes inconsistency - move file first"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -413,6 +335,22 @@
           "is_required": true,
           "parameters_mapping": {},
           "description": "Update file metadata after code generation - synchronizes checksum and file information"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "update_dependency_entry",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update stale file metadata during DB-filesystem sync - recalculates checksum and updates file information"
+        },
+        {
+          "directive_name": "project_integrity_check",
+          "execution_context": "recalculate_file_checksum",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Fix file checksum mismatches during integrity validation - recalculates and updates checksums"
         }
       ],
       "implementation_notes": [
@@ -438,26 +376,7 @@
       "error_handling": "Return error if file_id not found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "DATABASE CONTEXT: Detects external file modifications by comparing stored checksum with current file hash",
-        "DATABASE CONTEXT: Method 'git' uses git diff for precise change detection, 'filesystem' uses checksum comparison",
-        "NEXT STEP: If changed=true, refresh metadata and recalculate checksum (find file update helper)",
-        "NEXT STEP: If changed externally, your function metadata may be stale - re-parse functions if significant changes",
-        "CHECK: Git method more reliable for content changes vs filesystem touches without modifications",
-        "CHECK: If file changed, were functions added/removed/modified? May need to update functions table",
-        "DATABASE: Find file update helper - search core.db where purpose LIKE '%update%' AND purpose LIKE '%file%'",
-        "DATABASE: Find batch function update - search core.db where purpose LIKE '%update%' AND purpose LIKE '%functions%' AND purpose LIKE '%file%'",
-        "DATABASE: Similar concept to blueprint change detection - same pattern for individual files",
-        "DIRECTIVE CONTEXT: Called by project_file_read (sequence_order: 2, execution_context: check_checksum_mismatch)",
-        "DIRECTIVE CONTEXT: Second step in file reading workflow - verifies file state after loading metadata",
-        "DIRECTIVE CONTEXT: Part of staleness detection system - warns if database state may be outdated",
-        "DIRECTIVE FLOW: aifp_status → project_file_read → get_file_by_path (seq 1) → file_has_changed (this, seq 2) → warn if stale → aifp_status",
-        "DIRECTIVE FLOW: If changed=true, file_read warns user about staleness before proceeding with context",
-        "COMMON WORKFLOWS: Before reading file context → check for changes → warn user → offer to refresh",
-        "COMMON WORKFLOWS: Session start → check files changed → batch update checksums → continue work",
-        "WARNING: Filesystem method can give false positives if file touched but content unchanged",
-        "WARNING: If file changed externally, database state (functions, interactions) may be out of sync with reality"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -467,6 +386,22 @@
           "is_required": true,
           "parameters_mapping": {},
           "description": "Detect if file changed since last DB update - warns user about potential staleness"
+        },
+        {
+          "directive_name": "project_integrity_check",
+          "execution_context": "recalculate_file_checksum",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if files changed during integrity validation - detects checksum mismatches that need correction"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Detect which files changed during DB-filesystem sync - identifies stale entries that need re-syncing"
         }
       ],
       "implementation_notes": [
@@ -492,15 +427,7 @@
       "error_handling": "Return error if file_id not found",
       "is_tool": false,
       "is_sub_helper": true,
-      "return_statements": [
-        "DATABASE CONTEXT: Sub-helper automatically called after batch function/type updates to file",
-        "DATABASE CONTEXT: Recalculates file checksum from current content and updates updated_at timestamp",
-        "DATABASE CONTEXT: Not called directly - triggered by function/type finalization in same file",
-        "WORKFLOW CONTEXT: Called internally when type finalized - updates parent file timestamp automatically",
-        "WORKFLOW CONTEXT: Ensures file checksum stays accurate when functions/types within file are modified",
-        "COMMON WORKFLOWS: Function finalization batch → update_file_timestamp() called once → file checksum refreshed",
-        "COMMON WORKFLOWS: Never call directly - use file update helper if manual timestamp update needed"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -554,21 +481,7 @@
       "error_handling": "Return error if functions/flows exist for file - requires manual cleanup first",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "NEXT STEP: After successful deletion, remove file from filesystem if it still exists",
-        "NEXT STEP: Verify file removed from filesystem - use os.path.exists() to confirm",
-        "CHECK: Was this file imported by other files? Update import statements to remove references",
-        "CHECK: Are there any hardcoded path references to this file in other code? Clean them up",
-        "DATABASE CONTEXT: File entry deleted from database, audit logged to notes table with reason, severity, source",
-        "DATABASE CONTEXT: Deletion only succeeds after all dependencies cleared (functions, types, file_flows entries)",
-        "DIRECTIVE CONTEXT: Called by project_file_delete (sequence_order: 1, execution_context: delete_file_and_db_records)",
-        "DIRECTIVE CONTEXT: Final step in file deletion - only called after AI manually cleaned all dependencies",
-        "DIRECTIVE CONTEXT: Part of safe deletion workflow - returns error if dependencies exist",
-        "DIRECTIVE FLOW: aifp_status → project_file_delete → clean dependencies loop → delete_file (this) success → aifp_status",
-        "DIRECTIVE FLOW: After successful deletion, project_file_delete returns to aifp_status via completion_loop",
-        "COMMON WORKFLOWS: After deletion, verify file gone from filesystem, check for orphaned imports",
-        "WARNING: Deletion is permanent - file entry removed from database with no undo"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {

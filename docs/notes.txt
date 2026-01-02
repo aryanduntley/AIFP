@@ -13,28 +13,15 @@ directive flows are in docs/directives-json/directive_flow_(project,user-prefere
 docs/helpers/RETURN_STATEMENTS_ENHANCEMENT_CHECKLIST.md
 docs/helpers/RETURN_STATEMENTS_QUALITY_GUIDE.md
 
-implementation_notes are being added as assistance and notes for when we actually start coding the functions. If a helper function has used_by_directive, the directive needs to be reviewed and any directive_flows related to it should also be reviewed so we can provide useful return statements. Return statements are NOT return VALUES. They are helpful, forward thinking hints, steps, suggestions, etc. to assist AI in preparing it's "what to do next" after a given helper function is executed. It has directives and directive_flow(s) to help with this, but to have it also as return statements in helper functions is just a useful re-enforcement. Only added if useful, we don't want to add things just to add things.
-I just want to make sure you are checking the directives and directive flows for these to ensure we are providing useful information. We don't want bloat, we want very useful data to help reduce the thinking AI has to do with each step of the process. You removed the static helper function names, but we must also ensure that we are reviewing the directives to know where the next steps lead. And evaluating the helper function and database it references to know it's context. I want this to by systematic and detailed, not just a quick run through fix.
-review the context of the helper (what it's used for, database it's in), review the directive(s) it belongs to (used_by_directive), review the directive_flow for any given directive(s). THEN write the return_statement.
-Always check for bloat (
-	**BAD (waste of tokens)**:"SUCCESS LOGIC: File timestamp automatically updated (handled by implementation)"**Why**: If it's automatic, AI doesn't need to know. Wastes tokens every time AI reads this.**Rule**: Only document what AI needs to DO, not what happens automatically.
-	Wasteful lines removed (5 total):
-  1. finalize_function: "DATABASE: File timestamp automatically updated via sub-helper - no manual call needed"
-  2. update_function: "DATABASE: File timestamp automatically refreshed after update - no manual call needed"
-  3. update_functions_for_file: "DATABASE: File timestamp automatically updated once at end - no manual call needed"
-  4. update_function_file_location: "DATABASE: Both old and new file timestamps automatically updated after move"
-  5. delete_function: "NEXT STEP: File timestamp automatically refreshed after function deletion"
+implementation_notes are being added as assistance and notes for when we actually start coding the functions. 
+used_by_directives is about logical relationships, not strict execution sequences.
+check helper. Is getter or setter. Is related to which database and which field. Find any/all directives that relate to this database table/field. Does directive need to get or set? Is this directive going to at any point use this helper to get/set data into the database. If so, add as used_by. It's really that simple
 
-  Remaining "automatic" mentions are VALID because they:
-  - Tell AI which fields NOT to touch (auto-managed, auto-updated by trigger)
-  - Describe helper behavior (smart delete routes to specialized helpers)
-  - Tell AI what it DOESN'T need to do manually (interactions auto-cascaded via SQL)
-  - Provide context for sub-helpers (update_file_timestamp is automatically called)
-) and remove if exists, do not add if return_statements being written first time.
-
-next starting from project 4.
+The used_by_directives is about logical relationships - "which directives would need this helper to get/set this data" - not strict execution sequences.
 
 return_statements not to be passed if error returned. return statements are forward thinking, next steps only.
+
+when coding helpers, if case 2, ensure we make a return value that indicates to AI case 2 active. Probably during status call(s)
 
 Have to tone down the settings. There really shouldn't be so many
 docs/COMPREHENSIVE_SETTINGS_SPEC.md
