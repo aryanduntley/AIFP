@@ -45,7 +45,8 @@
         "project_compliance_check: auto_fix_violations, strict_mode",
         "user_directive_validate: validation strictness",
         "user_directive_implement: code generation preferences"
-      ]
+      ],
+      "flow_category": "user_preferences"
     },
     {
       "id": 2,
@@ -56,7 +57,8 @@
       "condition_value": null,
       "condition_description": null,
       "priority": 100,
-      "description": "Preferences loaded, return to workflow"
+      "description": "Preferences loaded, return to workflow",
+      "flow_category": "user_preferences"
     },
     {
       "id": 3,
@@ -76,7 +78,8 @@
         "prefer",
         "remember to",
         "from now on"
-      ]
+      ],
+      "flow_category": "user_preferences"
     },
     {
       "id": 4,
@@ -87,7 +90,8 @@
       "condition_value": null,
       "condition_description": null,
       "priority": 100,
-      "description": "Preference updated, return to status"
+      "description": "Preference updated, return to status",
+      "flow_category": "user_preferences"
     },
     {
       "id": 5,
@@ -105,7 +109,8 @@
         "User consistently adds docstrings AI omitted",
         "User consistently changes naming style",
         "User consistently modifies code structure"
-      ]
+      ],
+      "flow_category": "user_preferences"
     },
     {
       "id": 6,
@@ -116,7 +121,8 @@
       "condition_value": "true",
       "condition_description": "User confirms AI should remember the inferred preference",
       "priority": 90,
-      "description": "After inferring preference from correction, update directive_preferences if user confirms"
+      "description": "After inferring preference from correction, update directive_preferences if user confirms",
+      "flow_category": "user_preferences"
     },
     {
       "id": 7,
@@ -127,7 +133,8 @@
       "condition_value": "true",
       "condition_description": "User declines to save preference, just continue",
       "priority": 100,
-      "description": "User declined learning preference, return to workflow"
+      "description": "User declined learning preference, return to workflow",
+      "flow_category": "user_preferences"
     },
     {
       "id": 8,
@@ -143,7 +150,8 @@
         "export preferences",
         "backup settings",
         "save preferences"
-      ]
+      ],
+      "flow_category": "user_preferences"
     },
     {
       "id": 9,
@@ -154,7 +162,8 @@
       "condition_value": null,
       "condition_description": null,
       "priority": 100,
-      "description": "Export complete, return to status"
+      "description": "Export complete, return to status",
+      "flow_category": "user_preferences"
     },
     {
       "id": 10,
@@ -170,7 +179,8 @@
         "import preferences",
         "restore settings",
         "load preferences"
-      ]
+      ],
+      "flow_category": "user_preferences"
     },
     {
       "id": 11,
@@ -181,7 +191,8 @@
       "condition_value": null,
       "condition_description": null,
       "priority": 100,
-      "description": "Import complete, return to status"
+      "description": "Import complete, return to status",
+      "flow_category": "user_preferences"
     },
     {
       "id": 12,
@@ -205,7 +216,8 @@
         "ai_interaction_log - Log user corrections and feedback",
         "helper_function_logging - Log directive execution performance",
         "issue_reports - Log errors and roadblocks"
-      ]
+      ],
+      "flow_category": "user_preferences"
     },
     {
       "id": 13,
@@ -216,7 +228,8 @@
       "condition_value": null,
       "condition_description": null,
       "priority": 100,
-      "description": "Tracking setting updated, return to status"
+      "description": "Tracking setting updated, return to status",
+      "flow_category": "user_preferences"
     },
     {
       "id": 14,
@@ -228,7 +241,8 @@
       "condition_description": "Any directive can call project_notes_log to record clarifications or reasoning",
       "priority": 50,
       "description": "Log clarifications, reasoning, or directive context to project.db notes table",
-      "note": "project_notes_log is a utility directive called by other directives, not part of main workflow. No loop-back to aifp_status."
+      "note": "project_notes_log is a utility directive called by other directives, not part of main workflow. No loop-back to aifp_status.",
+      "flow_category": "user_preferences"
     }
   ],
   "flow_summary": {

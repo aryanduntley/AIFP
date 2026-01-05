@@ -1019,11 +1019,130 @@
           "description": "Filter directives by type when user browses help - shows all FP directives, all project directives, etc."
         }
       ]
+    },
+    {
+      "name": "get_fp_directive_index",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [],
+      "purpose": "Get lightweight FP directive index grouped by category (names only, not full definitions)",
+      "error_handling": "Returns empty object if no FP directives found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: {category_name: [directive_name, ...]}",
+        "Example: {'error_handling': ['fp_optionals', 'fp_result_types'], 'purity': ['fp_purity', 'fp_immutability']}",
+        "Query: SELECT d.name, c.name as category FROM directives d JOIN directive_categories dc ON d.id=dc.directive_id JOIN categories c ON dc.category_id=c.id WHERE d.type='fp' ORDER BY c.name, d.name",
+        "Groups by category name",
+        "Lightweight: ~1-2k tokens vs ~10-15k for full FP flows",
+        "Does NOT return full directive definitions or flows - just names grouped by category",
+        "Use search_directives(type='fp') or get_directive_content(name) for full details"
+      ],
+      "target_database": "core",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "new_session_startup",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Called by aifp_run when is_new_session=true - provides FP directive quick reference grouped by category"
+        }
+      ]
+    },
+    {
+      "name": "get_all_directive_names",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "types",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Optional array of directive types to filter: ['fp', 'project', 'git', 'user_preferences', 'user_system']. If not provided, returns ALL directive names."
+        }
+      ],
+      "purpose": "Get list of all directive names (or filtered by types). Returns names only, NOT full directive data. AI queries by name when needs details.",
+      "error_handling": "Returns empty array if no directives found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of directive names as strings ['aifp_run', 'aifp_status', 'project_init', 'fp_purity', ...]",
+        "If types provided: Filters to only those types (e.g., types=['fp', 'project'] returns only FP and project directives)",
+        "If types=null: Returns ALL directive names across all types",
+        "Query: SELECT name FROM directives WHERE type IN (types) ORDER BY type, name",
+        "Lightweight: ~1k tokens for all names vs ~100k+ for all full directive data",
+        "AI caches these names at startup, queries get_directive(name) when needs details",
+        "Complements get_fp_directive_index() which groups FP directives by category"
+      ],
+      "target_database": "core",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "new_session_startup",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Called by aifp_run when is_new_session=true - provides complete list of ALL directive names for AI to cache"
+        }
+      ]
+    },
+    {
+      "name": "get_directive_flows",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "flow_category",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by category: 'project', 'fp', 'user_preferences', 'git'"
+        },
+        {
+          "name": "flow_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by type: 'status_branch', 'completion_loop', 'conditional', 'error'"
+        },
+        {
+          "name": "from_directive",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by source directive name"
+        },
+        {
+          "name": "to_directive",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by target directive name"
+        }
+      ],
+      "purpose": "General-purpose query for directive flows by category, type, or directive names. Complements navigation helpers (get_next_directives_from_status, etc.) which are specialized for workflow routing.",
+      "error_handling": "Returns empty array if no flows match filters",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of flow objects with all fields (id, from_directive, to_directive, flow_category, flow_type, condition_key, condition_value, condition_description, priority, description)",
+        "All parameters are optional - can combine filters for targeted queries",
+        "Example: get_directive_flows(flow_category='fp') returns all FP consultation flows",
+        "Example: get_directive_flows(flow_category='git', flow_type='conditional') returns git conditional flows",
+        "Query: SELECT * FROM directive_flow WHERE 1=1 [AND flow_category=?] [AND flow_type=?] [AND from_directive=?] [AND to_directive=?]",
+        "Complements existing navigation helpers which are workflow-focused (what's next during execution)",
+        "Use for: Browsing flows by category, analyzing flow structure, debugging, querying specific flow paths",
+        "Differs from get_next_directives_from_status: That evaluates conditions for workflow navigation, this is pure query"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-core.json",
-    "count": 33,
+    "count": 35,
     "status": "COMPLETED - used_by_directives review complete",
     "mapped_helpers": 16,
     "unmapped_helpers": 17,

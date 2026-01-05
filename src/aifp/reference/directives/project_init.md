@@ -608,7 +608,7 @@ Query `get_helpers_for_directive()` to discover this directive's available helpe
 See system prompt for usage.
 ### Helper Functions Defined by Project Structure
 
-**`create_project_blueprint(project_name, project_purpose, goals_json, language, build_tool, fp_strictness_level, existing_structure, use_case)`**
+**`create_project_blueprint(project_name, project_purpose, goals_json, language, build_tool, existing_structure, use_case)`**
 - Generates ProjectBlueprint.md from template
 - Documents existing code structure for Use Case 1
 - Sets up automation architecture documentation for Use Case 2

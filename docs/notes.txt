@@ -10,6 +10,14 @@ Everything above src/aifp/ is dev.
 helpers are in docs/json/helpers/
 directive flows are in docs/directives-json/directive_flow_(project,user-preferences,fp).json
 
+docs/settings-specification.json
+docs/settings-analysis-report.md
+docs/settings-directive-reference.md
+docs/settings-design-integration.md
+docs/settings-cleanup-summary.md
+
+docs/settings-integration-implementation.md VALUABLE INFO FOR CODING AIFP_RUN
+
 return_statements not to be passed if error returned. return statements are forward thinking, next steps only.
 
 when coding helpers, if case 2, ensure we make a return value that indicates to AI case 2 active. Probably during status call(s)
@@ -24,22 +32,31 @@ docs/settings-specification.json
 
 settings project_continue_on_start (AI should get context and continue where left off. Goal is project completion and/or auto execute user custom directives)
 
+docs/directives-json/directives-user-pref.json
+docs/directives-json/directive_flow_user_preferences.json
+src/aifp/reference/directives/user_preferences_sync.md
+src/aifp/reference/directives/user_preferences_import.md
+src/aifp/reference/directives/user_preferences_update.md
+
+check all directives for settings
+
 check directives for settings to see what is currently mentioned about them (any setting values already defined in directives?)
 
 helpers json file path updates needed. Let's do this as the helper functions are being coded.
 
 MUST make OOP wrapper examples
 
-Was this done???
-docs/directives-json/directive_flow.json
-verify number of project directives. 38 mentioned
-read note in docs/DIRECTIVE_HELPER_MAPPING_IMPLEMENTATION_PLAN.md
-
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
 docs/directives-json/sync-directives.py needs full overhaul based on new schema, structure and decisions
 
-docs/temp.txt note_type has massive list. Let's analyze.
+docs/temp.txt note_type has massive list. Let's analyze. notes table note_type all over the place. Need to consolidate to just a handful of the most useful.
+
+return_statements for new get_fp_directive_index reminding AI about FP usage, directives are available as needed/if needed, no need to follow strict paths with these.
+
+get_directive_flows by category (fp). 
+
+settings directives need update.
 
 =============================
 docs/HELPER_AUDIT_REPORT.md

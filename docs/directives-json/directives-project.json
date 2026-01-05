@@ -11,29 +11,35 @@
     "description": "Gateway entry point for AIFP system. Returns guidance to AI assistant on when and how to use AIFP directives. Does NOT execute directives itself - AI receives guidance and decides next action based on task type (coding, project management, or simple discussion). Always assume AIFP applies unless user explicitly rejects. First action should be calling aifp_status to understand current project state.",
     "md_file_path": "directives/aifp_run.md",
     "workflow": {
-      "trunk": "evaluate_get_status_parameter",
+      "trunk": "evaluate_is_new_session_parameter",
       "branches": [
         {
-          "if": "get_status_true",
-          "then": "fetch_comprehensive_status",
+          "if": "is_new_session_true",
+          "then": "bundle_session_startup_data",
           "details": {
-            "call_helper": "aifp_status",
+            "call_helpers": [
+              "aifp_status() - comprehensive project state",
+              "get_user_settings() - all user settings",
+              "get_fp_directive_index() - FP directives grouped by category"
+            ],
             "cache_in_context": true,
             "return_with_suggestions": true,
-            "message": "Fetching comprehensive project state",
+            "message": "Bundling session startup data (status + settings + FP index)",
             "guidance": {
-              "cache_status": "Cache this status in your context to avoid re-fetching on subsequent aifp_run calls",
-              "when_to_refresh": "Call aifp_run(get_status=true) again after major state changes (init complete, milestone complete, multiple tasks done, long break)",
-              "use_for_navigation": "Use returned state with get_next_directives_from_status() to find appropriate next directives"
+              "cache_bundle": "Cache entire bundle (status, settings, fp_index) in your context to avoid re-fetching",
+              "when_to_refresh": "Call aifp_run(is_new_session=true) again after: (1) major state changes (init/milestone complete), (2) long breaks, (3) new conversation",
+              "use_for_navigation": "Use returned state with get_next_directives_from_status() to find appropriate next directives",
+              "fp_reference": "Use fp_index for quick FP directive lookup by category. Call search_directives(type='fp') or get_directive_content(name) for full details",
+              "settings_usage": "Apply user_settings preferences during directive execution (code style, task granularity, etc.)"
             }
           }
         },
         {
-          "if": "get_status_false_or_default",
-          "then": "return_common_starting_points",
+          "if": "is_new_session_false_or_default",
+          "then": "return_lightweight_guidance",
           "details": {
-            "assume_ai_has_cached_status": true,
-            "message": "AIFP MCP available",
+            "assume_ai_has_cached_data": true,
+            "message": "AIFP MCP available (continuation mode)",
             "common_starting_points": [
               "aifp_status - Get comprehensive project state (if not cached)",
               "project_init - Initialize new AIFP project",
@@ -49,14 +55,19 @@
               "directive_flow_queries": [
                 "get_next_directives_from_status(current_directive, state_object)",
                 "get_conditional_work_paths(state_object)",
-                "get_completion_loop_target(completion_directive_name)"
+                "get_completion_loop_target(completion_directive_name)",
+                "get_directive_flows(flow_category='fp') - query FP flows",
+                "get_directive_flows(flow_category='git') - query git flows"
               ],
-              "when_to_get_fresh_status": "Call aifp_run(get_status=true) if: (1) first interaction, (2) after major state change, (3) unsure of current state, (4) user asks for status",
+              "when_to_get_fresh_bundle": "Call aifp_run(is_new_session=true) if: (1) new session, (2) after major state change, (3) unsure of current state, (4) user asks for status",
               "available_helpers": [
                 "get_all_directives",
                 "get_directive",
                 "search_directives",
                 "get_next_directives_from_status",
+                "get_user_settings",
+                "get_fp_directive_index",
+                "get_directive_flows",
                 "query_mcp_db",
                 "get_project_context",
                 "get_project_status",
@@ -67,7 +78,7 @@
               ]
             },
             "ai_decision_flow": [
-              "1. If first interaction or unclear context: Consider calling aifp_run(get_status=true) for fresh status",
+              "1. If new session or unclear context: Consider calling aifp_run(is_new_session=true) for fresh bundle",
               "2. Check project type: Query project.user_directives_status (NULL=Use Case 1, 'in_progress'/'active'/'disabled'=Use Case 2)",
               "3. Evaluate: Is this coding, project management, or user directive automation?",
               "4. Check: Do I have directives in memory?",

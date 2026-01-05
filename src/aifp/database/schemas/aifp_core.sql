@@ -1,5 +1,5 @@
 -- aifp_core.db Schema
--- Version: 1.9
+-- Version: 2.0
 -- Purpose: Defines MCP-level directives (read-only) and helper functions
 -- This database is immutable once deployed; AI reads it but never modifies it.
 
@@ -84,6 +84,14 @@ CREATE TABLE IF NOT EXISTS directive_flow (
     from_directive TEXT NOT NULL,
     to_directive TEXT NOT NULL,
 
+    -- Flow category (NEW in v2.0)
+    flow_category TEXT CHECK (flow_category IN (
+        'project',           -- Project management workflows
+        'fp',                -- FP reference consultation patterns
+        'user_preferences',  -- User settings and preferences
+        'git'                -- Git collaboration workflows
+    )) NOT NULL DEFAULT 'project',
+
     -- Flow classification
     flow_type TEXT CHECK (flow_type IN (
         'status_branch',    -- Branch from status based on project state
@@ -106,6 +114,7 @@ CREATE TABLE IF NOT EXISTS directive_flow (
 
 CREATE INDEX IF NOT EXISTS idx_directive_flow_from ON directive_flow(from_directive);
 CREATE INDEX IF NOT EXISTS idx_directive_flow_type ON directive_flow(flow_type);
+CREATE INDEX IF NOT EXISTS idx_directive_flow_category ON directive_flow(flow_category);
 
 -- ===============================================================
 -- Helper Functions (used by directives)
@@ -162,4 +171,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.9');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '2.0');

@@ -9,7 +9,7 @@
 
 ## Purpose
 
-`aifp_run` is the **gateway directive** and primary entry point for all AIFP operations. It acts as a router and reminder system, ensuring AI applies AIFP directives appropriately based on user intent. Every AIFP interaction begins with this directive.
+`aifp_run` is the **gateway directive** and primary entry point for all AIFP operations. It acts as a reminder system that returns guidance to AI on every interaction, ensuring AI stays aligned with AIFP directives. AI receives the guidance and makes its own decisions about which directives to apply. Every AIFP interaction begins with this directive.
 
 ---
 
@@ -42,12 +42,12 @@ aifp run "Check project status"
   "success": true,
   "message": "AIFP MCP available",
   "guidance": {
-    "directive_access": "Call get_all_directives() if needed. Call get_directive(name) for specific details.",
+    "directive_access": "Directive names cached from is_new_session bundle. Call get_directive(name) for specific details.",
     "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
     "assumption": "Always assume AIFP applies unless user explicitly rejects it.",
     "available_helpers": [
-      "get_all_directives",
       "get_directive",
+      "search_directives",
       "get_project_context",
       "get_project_status"
     ]
@@ -70,20 +70,21 @@ After receiving guidance, AI evaluates:
    - **'in_progress', 'active', 'disabled'** → Use Case 2 (automation project)
 
 3. **What type of task is this?**
-   - **Coding** → Apply FP directives
-   - **Project Management** → Apply Project directives
-   - **User Directives** (Use Case 2) → Apply User System directives
-   - **Git Operations** → Apply Git directives
+   - **Coding** → Write FP-compliant code (consult FP directives only if uncertain)
+   - **Project Management** → Execute Project directives
+   - **User Directives** (Use Case 2) → Execute User System directives
+   - **Git Operations** → Execute Git directives
    - **Discussion** → No directives unless decision made
 
-4. **Do I have directives in memory?**
-   - **NO** → Call `get_all_directives()` to load 120 directives
-   - **YES** → Use cached directives
+4. **Do I have directive names?**
+   - **NO** → Already provided in is_new_session bundle (directive names only)
+   - **YES** → Use cached directive names
+   - **Need details?** → Query specific directive by name
 
-5. **Which directives apply?**
-   - Match user intent to directive keywords
-   - Check confidence threshold (>0.7)
-   - Execute matching directives
+5. **Which directives to execute?**
+   - AI evaluates user request and project context
+   - AI decides which project/user/git directives to execute
+   - For coding: Write FP code naturally, query FP directives only if uncertain about implementation
 
 ---
 
@@ -118,11 +119,14 @@ aifp_run → aifp_status
 ```
 User: "Write multiply function"
   ↓
-aifp_run recognizes: coding + project management
+aifp_run returns: guidance
   ↓
-AI applies:
-  ├─ FP directives (fp_purity, fp_immutability, fp_no_oop)
-  └─ project_file_write (tracks in project.db)
+AI evaluates: coding + project management
+  ↓
+AI writes FP-compliant code naturally (pure, immutable, no OOP)
+  ↓
+AI executes: project_file_write
+  └─ Writes file + calls helpers to update project.db
 ```
 
 **Pattern 3: Project Initialization**
@@ -159,14 +163,14 @@ aifp_run checks: project.user_directives_status
 **User**: "Help me build a calculator"
 
 **AI Processing**:
-1. Calls `aifp_run("Help me build a calculator")`
-2. Receives guidance
-3. Evaluates: "Project management action"
-4. Checks memory: "No directives loaded"
-5. Calls `get_all_directives()` → caches 108 directives
-6. Matches intent: `project_init` (confidence: 0.92)
-7. Checks `get_project_status()` → Not initialized
-8. Executes `project_init` workflow
+1. Calls `aifp_run(is_new_session=True)` → Receives bundled startup data
+   - Status: No project initialized
+   - Settings: Default preferences
+   - FP directive index: Names grouped by category
+   - Guidance: Common starting point is `project_init`
+2. Evaluates user request: "Project initialization needed"
+3. Decides to execute `project_init` workflow
+4. Executes `project_init` directive
 
 **Result**: Project initialized with `.aifp-project/` structure
 
@@ -177,9 +181,9 @@ aifp_run checks: project.user_directives_status
 **User**: "Continue"
 
 **AI Processing**:
-1. Calls `aifp_run("Continue")`
-2. Receives guidance
-3. Matches keyword: "continue" → Call `aifp_status` first
+1. Calls `aifp_run()` → Receives lightweight guidance
+2. Evaluates user request: "continue" = continuation request
+3. Follows guidance: Call `aifp_status` first for context
 4. `aifp_status` returns:
    - Current focus: "Implementing matrix operations"
    - Open tasks: "Multiply matrix function incomplete"
@@ -195,17 +199,15 @@ aifp_run checks: project.user_directives_status
 **User**: "Write a function to calculate factorial"
 
 **AI Processing**:
-1. Calls `aifp_run("Write a function to calculate factorial")`
-2. Receives guidance
-3. Evaluates: "Coding task + project management"
-4. Has directives in memory ✓
-5. Applies FP directives:
-   - `fp_purity` → Ensures no side effects
-   - `fp_immutability` → No mutations
-   - `fp_no_oop` → Function-only, no classes
-6. Applies `project_file_write`:
-   - Writes file
-   - Updates project.db (files, functions, interactions)
+1. Calls `aifp_run()` → Receives lightweight guidance
+2. Evaluates user request: "Coding task + project management"
+3. Writes FP-compliant factorial function:
+   - Pure function (no side effects)
+   - Immutable data (no mutations)
+   - No OOP (function only, no classes)
+4. Executes `project_file_write` directive:
+   - Writes file to disk
+   - Calls helpers to update project.db (files, functions, interactions)
 
 **Result**: FP-compliant function written and tracked
 
@@ -233,26 +235,25 @@ aifp_run checks: project.user_directives_status
 
 ---
 
-### Case 3: Ambiguous Intent
+### Case 3: Ambiguous Request
 
 **Input**: "Do something with the code"
 
 **AI Processing**:
-1. Calls `aifp_run("Do something with the code")`
-2. Intent matching: Low confidence (<0.7)
+1. Calls `aifp_run()` → Receives guidance
+2. Evaluates user request: Ambiguous, unclear action
 3. AI prompts user: "What would you like me to do with the code? (write, refactor, review, test)"
 
 ---
 
 ### Case 4: Context Lost After Compression
 
-**Situation**: Directives evicted from context
+**Situation**: Directive names evicted from context
 
 **Behavior**:
-1. AI calls `aifp_run`
-2. Checks memory: "No directives"
-3. Calls `get_all_directives()` to refresh
-4. Continues work with reloaded directives
+1. AI calls `aifp_run(is_new_session=True)`
+2. Receives fresh bundle with directive names
+3. Continues work with refreshed context
 
 ---
 
@@ -275,8 +276,8 @@ See system prompt for usage.
 ## Database Operations
 
 **Read Operations**:
-- Queries `aifp_core.db` (via MCP server) for directive definitions
-- Checks `project.db` (in user project) via `get_project_status()`
+- Queries `aifp_core.db` (via MCP server) for directive names and definitions
+- Checks `project.db` (in user project) via helpers
 - Reads `config.json` for project-specific configuration
 
 **Database Architecture**:
@@ -284,12 +285,13 @@ See system prompt for usage.
   - Contains all 122 core AIFP directive definitions
   - Read-only, immutable
   - Never copied to user projects
+  - Queried via helpers for directive names/details
 - **`project.db`**: Lives in user's `.aifp-project/` directory
   - Contains project-specific state (tasks, files, functions)
-  - Mutable, updated by directives
+  - Mutable, updated via helper functions during directive execution
 - **`user_preferences.db`**: Lives in user's `.aifp-project/` directory
   - Contains user customizations and preferences
-  - Mutable
+  - Mutable, updated via helper functions
 - **`user_directives.db`**: (Optional, Use Case 2 only) Lives in user's `.aifp-project/` directory
   - Contains user-defined automation directives
   - Created on first directive parse
@@ -302,37 +304,36 @@ See system prompt for usage.
 
 ## FP Compliance
 
+**Note**: This section describes the aifp_run helper function implementation, NOT how AI should code. AI writes FP-compliant code naturally without consulting directives for every line.
+
 **Purity**: ✅ Pure function
-- No side effects
-- Returns guidance only
-- All routing logic deterministic
+- Returns guidance structure only
+- No side effects in function logic
+- Deterministic output given same inputs
 
 **Immutability**: ✅ Immutable
-- No state mutations
+- No state mutations within function
+- Returns frozen data structures
 - Context passed explicitly
-- Guidance structure frozen
 
 **Side Effects**: ✅ Isolated
-- Reads from databases (effect)
-- Isolated in helper function calls
+- Database reads isolated in helper calls
+- File system reads isolated in helper calls
+- All effects occur in dedicated helper functions
 
 ---
 
 ## Error Handling
 
-### Low Confidence Intent
+### Ambiguous User Request
 
-**Trigger**: Intent matching < 0.7
+**Trigger**: User request is unclear or ambiguous
 
-**Response**:
-```json
-{
-  "success": true,
-  "confidence": 0.6,
-  "matched_directives": ["project_file_write", "project_evolution"],
-  "user_prompt": "Unclear intent. Did you mean: (1) Write new file, (2) Update project architecture?"
-}
-```
+**AI Behavior**:
+- AI receives standard guidance from aifp_run
+- AI cannot determine appropriate action
+- AI asks user for clarification
+- No special error response from aifp_run itself
 
 ### MCP Server Unavailable
 
@@ -352,11 +353,13 @@ See system prompt for usage.
 ## Best Practices
 
 1. **Always call first** - Every AIFP interaction starts with `aifp_run`
-2. **Status-first for continuation** - Use `aifp_status` for "continue", "resume", "status"
-3. **Load directives once** - Cache in memory, refresh only if lost
-4. **Trust guidance** - Follow the returned guidance structure
-5. **Check confidence** - Only execute directives with confidence >0.7
-6. **Fail gracefully** - Prompt user on ambiguity, don't guess
+2. **Use is_new_session wisely** - `true` for first interaction, `false` for continuation
+3. **Status-first for continuation** - Call `aifp_status` for "continue", "resume", "status"
+4. **Directive names cached** - Provided in is_new_session bundle, query details when needed
+5. **Trust guidance** - Follow the returned guidance structure
+6. **AI decides** - Guidance informs, AI makes final decision on which directives to execute
+7. **FP is baseline** - Write FP code naturally, consult FP directives only when uncertain
+8. **Ask on ambiguity** - Prompt user for clarification when request is unclear
 
 ---
 

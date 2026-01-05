@@ -42,7 +42,8 @@
         "Database query might return no results",
         "API call might fail",
         "Optional parameters needed"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 2,
@@ -60,7 +61,8 @@
         "Validation that can succeed or fail",
         "API calls with error responses",
         "Parsing that might fail"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 3,
@@ -78,7 +80,8 @@
         "External API calls",
         "File system operations",
         "Network operations"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 4,
@@ -95,7 +98,8 @@
         "Multi-step validation pipeline",
         "Data transformation with multiple failure points",
         "Sequential API calls"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 5,
@@ -113,7 +117,8 @@
         "Function has side effects",
         "Function depends on global variables",
         "Function modifies input parameters"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 6,
@@ -130,7 +135,8 @@
         "Reviewing existing code for side effects",
         "Isolating I/O operations",
         "Detecting mutations"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 7,
@@ -147,7 +153,8 @@
         "Refactoring stateful code to FP",
         "Eliminating global variables",
         "Converting class-based state to parameters"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 8,
@@ -164,7 +171,8 @@
         "Preventing list/dict mutations",
         "Creating copies instead of modifying",
         "Using frozen data structures"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 9,
@@ -181,7 +189,8 @@
         "Refactoring loops to recursion/comprehensions",
         "Eliminating accumulator variables",
         "Using const bindings"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 10,
@@ -198,7 +207,8 @@
         "Designing without classes",
         "Using functions instead of methods",
         "Avoiding inheritance hierarchies"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 11,
@@ -216,7 +226,8 @@
         "Wrapping React components",
         "Wrapping SQLAlchemy sessions",
         "Wrapping any class-based API"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 12,
@@ -233,7 +244,8 @@
         "Creating reusable parameterized functions",
         "Partial function application",
         "Function composition"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 13,
@@ -250,7 +262,8 @@
         "Data transformation pipelines",
         "Fluent interfaces",
         "Query builders"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 14,
@@ -267,7 +280,8 @@
         "Complex conditional logic",
         "Type-based branching",
         "Destructuring data structures"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 15,
@@ -284,7 +298,8 @@
         "Recursive list processing",
         "Recursive tree traversal",
         "Preventing stack overflow"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 16,
@@ -301,7 +316,8 @@
         "Replacing for/while loops",
         "Iterative algorithms to recursive",
         "Accumulator patterns"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 17,
@@ -318,7 +334,8 @@
         "Expensive recursive computations",
         "Repeated calculations with same inputs",
         "Performance optimization"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 18,
@@ -335,7 +352,8 @@
         "Large dataset processing",
         "Infinite sequences",
         "Conditional computation"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 19,
@@ -352,7 +370,8 @@
         "Expensive computations",
         "Short-circuit evaluation",
         "Resource-intensive operations"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 20,
@@ -369,7 +388,8 @@
         "Composing Option with Result",
         "Chaining Try monads",
         "Complex error handling pipelines"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 21,
@@ -386,7 +406,8 @@
         "Adding type hints to functions",
         "Ensuring type correctness",
         "Generic type parameters"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 22,
@@ -403,7 +424,8 @@
         "Complex generic types",
         "Type variable constraints",
         "Inference from usage"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 23,
@@ -420,7 +442,8 @@
         "Bounded generics",
         "Type class constraints",
         "Protocol types"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 24,
@@ -437,7 +460,8 @@
         "Data transformation",
         "Collection filtering",
         "List aggregation"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 25,
@@ -454,7 +478,8 @@
         "Large dataset processing",
         "Parallel computation",
         "Distributed processing"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 26,
@@ -471,7 +496,8 @@
         "Collection filtering",
         "Predicate-based selection",
         "Query-like filtering"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 27,
@@ -489,7 +515,8 @@
         "Network calls",
         "Database queries",
         "Logging operations"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 28,
@@ -506,7 +533,8 @@
         "Debug logging in pure functions",
         "Trace logging",
         "Audit logging"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 29,
@@ -523,7 +551,8 @@
         "Parallel processing",
         "Concurrent execution",
         "Race condition prevention"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 30,
@@ -540,7 +569,8 @@
         "Parallel map operations",
         "Concurrent pure computations",
         "Thread pool processing"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 31,
@@ -557,7 +587,8 @@
         "CPU-intensive pure functions",
         "Independent computations",
         "Batch processing"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 32,
@@ -574,7 +605,8 @@
         "Unit testing pure functions",
         "Property-based testing",
         "Purity verification tests"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 33,
@@ -591,7 +623,8 @@
         "Function naming",
         "Parameter naming",
         "Module naming"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 34,
@@ -608,7 +641,8 @@
         "Documenting pure functions",
         "Type signature documentation",
         "Side effect documentation (if any)"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 35,
@@ -625,7 +659,8 @@
         "Module public interface design",
         "Library API design",
         "Function composition interfaces"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 36,
@@ -642,7 +677,8 @@
         "Replacing if x is None checks",
         "Converting nullable returns to Option",
         "Eliminating null pointer risks"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 37,
@@ -659,7 +695,8 @@
         "Complex nested if-else",
         "Switch-like logic",
         "Guard clauses"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 38,
@@ -676,7 +713,8 @@
         "Input validation",
         "Precondition checks",
         "Early exit conditions"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 39,
@@ -693,7 +731,8 @@
         "Converting class hierarchies",
         "Removing inheritance",
         "Flattening to functions"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 40,
@@ -710,7 +749,8 @@
         "Converting let to const",
         "Eliminating variable reassignment",
         "Immutable bindings"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 41,
@@ -727,7 +767,8 @@
         "Resource management",
         "Memory safety",
         "Borrow checking"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 42,
@@ -744,7 +785,8 @@
         "Reference safety",
         "Mutable borrow conflicts",
         "Lifetime tracking"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 43,
@@ -761,7 +803,8 @@
         "Function dependency graphs",
         "Build order determination",
         "Circular dependency detection"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 44,
@@ -778,7 +821,8 @@
         "Function registry patterns",
         "Dynamic function lookup",
         "Plugin systems"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 45,
@@ -795,7 +839,8 @@
         "Decorators for metadata",
         "Function annotations",
         "Capability tracking"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 46,
@@ -812,7 +857,8 @@
         "Determining if function can be memoized",
         "Cache safety analysis",
         "Performance optimization decisions"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 47,
@@ -829,7 +875,8 @@
         "Algorithm complexity analysis",
         "Performance optimization decisions",
         "Resource usage estimation"
-      ]
+      ],
+      "flow_category": "fp"
     },
     {
       "id": 48,
@@ -846,7 +893,8 @@
         "Lazy vs eager evaluation",
         "Short-circuit evaluation",
         "Performance optimization"
-      ]
+      ],
+      "flow_category": "fp"
     }
   ],
   "flow_summary": {
@@ -870,10 +918,31 @@
       "refactoring": 4
     },
     "consultation_frequency": {
-      "very_common": ["fp_optionals", "fp_result_types", "fp_purity", "fp_null_elimination", "fp_wrapper_generation"],
-      "common": ["fp_currying", "fp_pattern_matching", "fp_tail_recursion", "fp_io_isolation", "fp_list_operations"],
-      "moderate": ["fp_monadic_composition", "fp_memoization", "fp_lazy_evaluation", "fp_concurrency_safety"],
-      "rare": ["fp_cost_analysis", "fp_ownership_safety", "fp_borrow_check"]
+      "very_common": [
+        "fp_optionals",
+        "fp_result_types",
+        "fp_purity",
+        "fp_null_elimination",
+        "fp_wrapper_generation"
+      ],
+      "common": [
+        "fp_currying",
+        "fp_pattern_matching",
+        "fp_tail_recursion",
+        "fp_io_isolation",
+        "fp_list_operations"
+      ],
+      "moderate": [
+        "fp_monadic_composition",
+        "fp_memoization",
+        "fp_lazy_evaluation",
+        "fp_concurrency_safety"
+      ],
+      "rare": [
+        "fp_cost_analysis",
+        "fp_ownership_safety",
+        "fp_borrow_check"
+      ]
     }
   },
   "notes": {

@@ -39,8 +39,8 @@ This directive applies when:
   - `user_directive_validate` - Creates tasks for directive implementation
 
 **User Preferences Integration**:
-- Before decomposing, loads preferences like `task_granularity`, `naming_convention`, `auto_create_items`
-- Respects user's preferred decomposition style (fine-grained vs. coarse)
+- Before decomposing, loads preferences like `naming_convention`, `auto_create_items`, `default_priority`
+- Respects user's preferred task naming convention and default priority level
 
 ---
 
@@ -60,10 +60,9 @@ Loads user-defined preferences for task decomposition.
 **Branch 1: If directive_preferences_exist**
 - **Then**: `load_task_preferences`
 - **Details**: Query and apply user preferences
-  - `task_granularity` - "fine", "medium", "coarse" (default: medium)
   - `naming_convention` - "descriptive", "short", "numbered" (default: descriptive)
   - `auto_create_items` - true/false (default: true)
-  - `default_priority` - 1-5 (default: 3)
+  - `default_priority` - "low", "medium", "high", "critical" (default: medium)
 - **Query**: `SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name='project_task_decomposition' AND active=1`
 - **Result**: Preferences loaded and ready to apply
 
@@ -193,18 +192,19 @@ Loads user-defined preferences for task decomposition.
 **User Preference**:
 ```sql
 INSERT INTO directive_preferences (directive_name, preference_key, preference_value)
-VALUES ('project_task_decomposition', 'task_granularity', 'fine');
+VALUES ('project_task_decomposition', 'default_priority', 'high');
 VALUES ('project_task_decomposition', 'auto_create_items', 'true');
 ```
 
 **User Request**: "Implement matrix multiplication"
 
 **AI Execution**:
-1. Loads preferences: `task_granularity = fine`, `auto_create_items = true`
+1. Loads preferences: `default_priority = high`, `auto_create_items = true`
 2. Calls `aifp_status`: Current milestone = "Core Operations"
 3. Reviews open tasks: None related to matrix multiplication
-4. Creates new task with fine granularity:
+4. Creates new task with high priority:
    - Task: "Implement matrix multiplication"
+   - Priority: "high" (from preference)
    - Auto-creates items:
      - Item 1: "Write multiply_matrices function"
      - Item 2: "Write validate_dimensions helper"

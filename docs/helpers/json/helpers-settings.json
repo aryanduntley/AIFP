@@ -571,11 +571,39 @@
           "description": "Tool that implements tracking_toggle directive - shows token overhead warning when enabling, toggles tracking feature flag in tracking_settings table, confirms new status with user"
         }
       ]
+    },
+    {
+      "name": "get_user_settings",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [],
+      "purpose": "Get all user settings from user_settings table (complements get_user_setting which gets one setting by key)",
+      "error_handling": "Returns empty array if no settings exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of {setting_key, setting_value, description, scope}",
+        "Query: SELECT setting_key, setting_value, description, scope FROM user_settings",
+        "Complements singular get_user_setting(key) - this returns all settings",
+        "Used for bundling all settings at session startup",
+        "Lightweight - typically only 3-5 project-wide settings"
+      ],
+      "target_database": "user_preferences",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "new_session_startup",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Called by aifp_run when is_new_session=true - returns all user settings for session cache"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-settings.json",
-    "count": 17,
+    "count": 18,
     "status": "COMPLETED - used_by_directives review complete",
     "mapped_helpers": 9,
     "unmapped_helpers": 8,

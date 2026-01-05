@@ -4,11 +4,12 @@
       "from_directive": "aifp_run",
       "to_directive": "aifp_status",
       "flow_type": "status_branch",
-      "condition_key": "get_status",
+      "condition_key": "is_new_session",
       "condition_value": "true",
-      "condition_description": "get_status parameter is true (first interaction, major state change, or explicit request)",
+      "condition_description": "is_new_session parameter is true (new session start, first interaction, or after long break)",
       "priority": 100,
-      "description": "Entry point always routes to status when comprehensive state needed"
+      "description": "Entry point routes to status for new sessions to bundle comprehensive startup data",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_run",
@@ -18,7 +19,8 @@
       "condition_value": "true",
       "condition_description": "Load user preferences before any customizable directive execution",
       "priority": 100,
-      "description": "Preferences loaded before executing directives that can be customized"
+      "description": "Preferences loaded before executing directives that can be customized",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_run",
@@ -28,7 +30,8 @@
       "condition_value": "true",
       "condition_description": "User asks for help or directive documentation",
       "priority": 90,
-      "description": "User needs directive help/documentation"
+      "description": "User needs directive help/documentation",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -38,7 +41,8 @@
       "condition_value": "true",
       "condition_description": "AI needs directive clarification during work",
       "priority": 70,
-      "description": "AI uncertain about directive usage - fetch documentation"
+      "description": "AI uncertain about directive usage - fetch documentation",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_help",
@@ -48,7 +52,8 @@
       "condition_value": null,
       "condition_description": "Help/documentation provided",
       "priority": 100,
-      "description": "Directive guidance loaded, return to status"
+      "description": "Directive guidance loaded, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -58,7 +63,8 @@
       "condition_value": "true",
       "condition_description": "Always sync git state on session start",
       "priority": 100,
-      "description": "Git sync is standard workflow - detect changes made outside AIFP"
+      "description": "Git sync is standard workflow - detect changes made outside AIFP",
+      "flow_category": "git"
     },
     {
       "from_directive": "aifp_status",
@@ -68,7 +74,8 @@
       "condition_value": "false",
       "condition_description": "No .aifp-project/ folder found and no git backup",
       "priority": 100,
-      "description": "Project not initialized - initialize first"
+      "description": "Project not initialized - initialize first",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -78,7 +85,8 @@
       "condition_value": "null_and_directive_files_exist",
       "condition_description": "Use Case 2: User provided directive files but not yet parsed",
       "priority": 100,
-      "description": "Detect Use Case 2 - parse user directive files"
+      "description": "Detect Use Case 2 - parse user directive files",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_init",
@@ -88,7 +96,8 @@
       "condition_value": "true",
       "condition_description": "Initialization complete successfully",
       "priority": 100,
-      "description": "After successful init, loop back to status to determine next action"
+      "description": "After successful init, loop back to status to determine next action",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_init",
@@ -98,7 +107,8 @@
       "condition_value": "true",
       "condition_description": "OOP patterns detected in existing codebase - initialization aborted",
       "priority": 100,
-      "description": "OOP detected - abort init and return to status with error message"
+      "description": "OOP detected - abort init and return to status with error message",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -108,7 +118,8 @@
       "condition_value": "false",
       "condition_description": "Project initialized but no tasks exist",
       "priority": 90,
-      "description": "No tasks found - create initial task hierarchy from blueprint"
+      "description": "No tasks found - create initial task hierarchy from blueprint",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_task_decomposition",
@@ -118,7 +129,8 @@
       "condition_value": null,
       "condition_description": "Task decomposition complete",
       "priority": 100,
-      "description": "After creating tasks, loop back to status to show new tasks"
+      "description": "After creating tasks, loop back to status to show new tasks",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -128,7 +140,8 @@
       "condition_value": "true",
       "condition_description": "User wants to update task progress/status without completing",
       "priority": 75,
-      "description": "Track incremental task progress updates"
+      "description": "Track incremental task progress updates",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_task_update",
@@ -138,7 +151,8 @@
       "condition_value": null,
       "condition_description": "Task updated",
       "priority": 100,
-      "description": "Task progress updated, loop back to status"
+      "description": "Task progress updated, loop back to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -148,7 +162,8 @@
       "condition_value": "true",
       "condition_description": "Active work exists and user requests code work",
       "priority": 80,
-      "description": "Active work detected - proceed with file operations"
+      "description": "Active work detected - proceed with file operations",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_file_write",
@@ -158,7 +173,8 @@
       "condition_value": null,
       "condition_description": "Always sync git after file write",
       "priority": 100,
-      "description": "Update last_known_git_hash after file operations"
+      "description": "Update last_known_git_hash after file operations",
+      "flow_category": "git"
     },
     {
       "from_directive": "project_file_write",
@@ -168,7 +184,8 @@
       "condition_value": null,
       "condition_description": "Reserve file/function IDs before database writes",
       "priority": 100,
-      "description": "Pre-allocate IDs to avoid database conflicts"
+      "description": "Pre-allocate IDs to avoid database conflicts",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_reserve_finalize",
@@ -178,7 +195,8 @@
       "condition_value": null,
       "condition_description": "After reserving IDs, proceed with database update",
       "priority": 100,
-      "description": "Sync files, functions, interactions tables with reserved IDs"
+      "description": "Sync files, functions, interactions tables with reserved IDs",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -188,7 +206,8 @@
       "condition_value": "true",
       "condition_description": "Need to read file content to gather context for work",
       "priority": 70,
-      "description": "Read file with project context before making changes"
+      "description": "Read file with project context before making changes",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_file_read",
@@ -198,7 +217,8 @@
       "condition_value": null,
       "condition_description": "File read complete",
       "priority": 100,
-      "description": "File content loaded, return context to status"
+      "description": "File content loaded, return context to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -208,7 +228,8 @@
       "condition_value": "true",
       "condition_description": "User wants to remove file from project",
       "priority": 75,
-      "description": "Delete file and cleanup database references"
+      "description": "Delete file and cleanup database references",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_file_delete",
@@ -218,7 +239,8 @@
       "condition_value": null,
       "condition_description": "File deleted, database cleaned up",
       "priority": 100,
-      "description": "File removed from disk and database, loop back"
+      "description": "File removed from disk and database, loop back",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -228,7 +250,8 @@
       "condition_value": "true",
       "condition_description": "User wants to track existing file in AIFP",
       "priority": 70,
-      "description": "Add existing file to AIFP project tracking"
+      "description": "Add existing file to AIFP project tracking",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_add_path",
@@ -238,7 +261,8 @@
       "condition_value": null,
       "condition_description": "File added to tracking",
       "priority": 100,
-      "description": "Existing file now tracked by AIFP, loop back"
+      "description": "Existing file now tracked by AIFP, loop back",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_task_complete",
@@ -248,7 +272,8 @@
       "condition_value": "true",
       "condition_description": "All tasks in milestone marked complete",
       "priority": 100,
-      "description": "Auto-detect milestone completion and delegate to milestone complete directive"
+      "description": "Auto-detect milestone completion and delegate to milestone complete directive",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_task_complete",
@@ -258,7 +283,8 @@
       "condition_value": "false",
       "condition_description": "Task complete but milestone still has incomplete tasks",
       "priority": 100,
-      "description": "Task done, loop back to status to show next task in milestone"
+      "description": "Task done, loop back to status to show next task in milestone",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_subtask_complete",
@@ -268,7 +294,8 @@
       "condition_value": null,
       "condition_description": "Subtask complete, resume parent task",
       "priority": 100,
-      "description": "Subtask done, loop back to status to show parent task context"
+      "description": "Subtask done, loop back to status to show parent task context",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_sidequest_complete",
@@ -278,7 +305,8 @@
       "condition_value": null,
       "condition_description": "Sidequest complete, resume original work",
       "priority": 100,
-      "description": "Sidequest done, loop back to status to resume original task"
+      "description": "Sidequest done, loop back to status to resume original task",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_milestone_complete",
@@ -288,7 +316,8 @@
       "condition_value": null,
       "condition_description": "Milestone complete",
       "priority": 100,
-      "description": "Milestone done, loop back to status to show next milestone or completion_path progress"
+      "description": "Milestone done, loop back to status to show next milestone or completion_path progress",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -298,7 +327,8 @@
       "condition_value": "true",
       "condition_description": "All milestones complete, no incomplete items",
       "priority": 90,
-      "description": "All work complete - validate completion criteria"
+      "description": "All work complete - validate completion criteria",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_completion_check",
@@ -308,7 +338,8 @@
       "condition_value": "true",
       "condition_description": "Project meets all completion criteria",
       "priority": 80,
-      "description": "Completion validated - proceed to archive"
+      "description": "Completion validated - proceed to archive",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_completion_check",
@@ -318,7 +349,8 @@
       "condition_value": "false",
       "condition_description": "Gaps found, not ready for completion",
       "priority": 100,
-      "description": "Completion validation failed - loop back to create missing work"
+      "description": "Completion validation failed - loop back to create missing work",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -328,7 +360,8 @@
       "condition_value": "true",
       "condition_description": "User explicitly requests new task creation",
       "priority": 70,
-      "description": "User wants to create specific task"
+      "description": "User wants to create specific task",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_task_create",
@@ -338,7 +371,8 @@
       "condition_value": null,
       "condition_description": "Auto-create task items when task is created",
       "priority": 100,
-      "description": "Task created - immediately auto-create items for work tracking"
+      "description": "Task created - immediately auto-create items for work tracking",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_item_create",
@@ -348,7 +382,8 @@
       "condition_value": null,
       "condition_description": "Items created",
       "priority": 100,
-      "description": "Task items created, loop back to status"
+      "description": "Task items created, loop back to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -358,7 +393,8 @@
       "condition_value": "true",
       "condition_description": "User manually adds item to existing task",
       "priority": 70,
-      "description": "Manual item creation for existing task"
+      "description": "Manual item creation for existing task",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -368,7 +404,8 @@
       "condition_value": "true",
       "condition_description": "Task too large, needs breakdown into subtasks",
       "priority": 75,
-      "description": "Task decomposition needed"
+      "description": "Task decomposition needed",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_subtask_create",
@@ -378,7 +415,8 @@
       "condition_value": null,
       "condition_description": "Subtask created",
       "priority": 100,
-      "description": "Subtask created, loop back to status"
+      "description": "Subtask created, loop back to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -388,7 +426,8 @@
       "condition_value": "true",
       "condition_description": "Unexpected work discovered during task execution",
       "priority": 75,
-      "description": "Unexpected work needs tracking as sidequest"
+      "description": "Unexpected work needs tracking as sidequest",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_sidequest_create",
@@ -398,7 +437,8 @@
       "condition_value": null,
       "condition_description": "Sidequest created",
       "priority": 100,
-      "description": "Sidequest created, loop back to status"
+      "description": "Sidequest created, loop back to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_parse",
@@ -408,7 +448,8 @@
       "condition_value": null,
       "condition_description": "Use Case 2: After parsing, validate directives",
       "priority": 100,
-      "description": "Parsed directives must be validated via Q&A"
+      "description": "Parsed directives must be validated via Q&A",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_validate",
@@ -418,7 +459,8 @@
       "condition_value": null,
       "condition_description": "Use Case 2: Validation complete, project.user_directives_status set to in_progress",
       "priority": 100,
-      "description": "Validation done, loop to status (now in Use Case 2 mode)"
+      "description": "Validation done, loop to status (now in Use Case 2 mode)",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -428,7 +470,8 @@
       "condition_value": "in_progress",
       "condition_description": "Use Case 2: Directives validated, infrastructure generation needed",
       "priority": 100,
-      "description": "Generate entire codebase for directive execution infrastructure"
+      "description": "Generate entire codebase for directive execution infrastructure",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_implement",
@@ -438,7 +481,8 @@
       "condition_value": null,
       "condition_description": "Use Case 2: AI generates infrastructure files",
       "priority": 100,
-      "description": "AI self-manages project, generates all infrastructure code"
+      "description": "AI self-manages project, generates all infrastructure code",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_implement",
@@ -448,7 +492,8 @@
       "condition_value": "true",
       "condition_description": "Use Case 2: All infrastructure code generated",
       "priority": 100,
-      "description": "Infrastructure complete, present for user approval"
+      "description": "Infrastructure complete, present for user approval",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_approve",
@@ -458,7 +503,8 @@
       "condition_value": "true",
       "condition_description": "Use Case 2: User tested and approved generated infrastructure",
       "priority": 100,
-      "description": "User approved, activate directive execution"
+      "description": "User approved, activate directive execution",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_approve",
@@ -468,7 +514,8 @@
       "condition_value": "false",
       "condition_description": "Use Case 2: User requests modifications",
       "priority": 90,
-      "description": "User feedback - AI modifies code and re-presents"
+      "description": "User feedback - AI modifies code and re-presents",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_activate",
@@ -478,7 +525,8 @@
       "condition_value": null,
       "condition_description": "Use Case 2: Directives activated, project.user_directives_status = active",
       "priority": 100,
-      "description": "Activation complete, project now in monitoring mode"
+      "description": "Activation complete, project now in monitoring mode",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -488,7 +536,8 @@
       "condition_value": "active",
       "condition_description": "Use Case 2: Directives active, ongoing monitoring",
       "priority": 80,
-      "description": "Monitor directive execution, track errors and successes"
+      "description": "Monitor directive execution, track errors and successes",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_monitor",
@@ -498,7 +547,8 @@
       "condition_value": "true",
       "condition_description": "Use Case 2: User modified directive files",
       "priority": 90,
-      "description": "Directive files changed - re-parse and update infrastructure"
+      "description": "Directive files changed - re-parse and update infrastructure",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_update",
@@ -508,7 +558,8 @@
       "condition_value": null,
       "condition_description": "Use Case 2: Apply infrastructure changes",
       "priority": 100,
-      "description": "Update infrastructure code based on directive changes"
+      "description": "Update infrastructure code based on directive changes",
+      "flow_category": "project"
     },
     {
       "from_directive": "user_directive_update",
@@ -518,7 +569,8 @@
       "condition_value": null,
       "condition_description": "Use Case 2: Updates applied",
       "priority": 100,
-      "description": "Directive updates complete, back to monitoring"
+      "description": "Directive updates complete, back to monitoring",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -528,7 +580,8 @@
       "condition_value": "true",
       "condition_description": "Need to read ProjectBlueprint.md for context",
       "priority": 70,
-      "description": "Load blueprint for project context"
+      "description": "Load blueprint for project context",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_blueprint_read",
@@ -538,7 +591,8 @@
       "condition_value": null,
       "condition_description": "Blueprint read complete",
       "priority": 100,
-      "description": "Blueprint loaded, return to status with context"
+      "description": "Blueprint loaded, return to status with context",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -548,7 +602,8 @@
       "condition_value": "true",
       "condition_description": "Project goals/scope changed, blueprint needs update",
       "priority": 75,
-      "description": "Update blueprint to reflect project evolution"
+      "description": "Update blueprint to reflect project evolution",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_blueprint_update",
@@ -558,7 +613,8 @@
       "condition_value": null,
       "condition_description": "Blueprint updated",
       "priority": 100,
-      "description": "Blueprint updated, loop back to status"
+      "description": "Blueprint updated, loop back to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_file_write",
@@ -568,7 +624,8 @@
       "condition_value": "true",
       "condition_description": "Auto-check enabled in user preferences (opt-in)",
       "priority": 80,
-      "description": "Optional FP compliance validation (user preference: auto-check after write)"
+      "description": "Optional FP compliance validation (user preference: auto-check after write)",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_compliance_check",
@@ -578,7 +635,8 @@
       "condition_value": "true",
       "condition_description": "FP violations detected, auto-fix enabled",
       "priority": 90,
-      "description": "Auto-fix FP violations and rewrite file"
+      "description": "Auto-fix FP violations and rewrite file",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_compliance_check",
@@ -588,7 +646,8 @@
       "condition_value": "false",
       "condition_description": "No violations or violations reported only",
       "priority": 100,
-      "description": "Compliance check complete"
+      "description": "Compliance check complete",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -598,7 +657,8 @@
       "condition_value": "true",
       "condition_description": "User explicitly requests compliance check",
       "priority": 70,
-      "description": "On-demand compliance check when user requests validation"
+      "description": "On-demand compliance check when user requests validation",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_milestone_complete",
@@ -608,7 +668,8 @@
       "condition_value": "true",
       "condition_description": "Quality gate before milestone completion (opt-in)",
       "priority": 90,
-      "description": "Optional quality gate: check compliance before marking milestone complete"
+      "description": "Optional quality gate: check compliance before marking milestone complete",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -618,7 +679,8 @@
       "condition_value": "true",
       "condition_description": "Errors or roadblocks detected during work",
       "priority": 70,
-      "description": "Handle errors and provide resolution guidance"
+      "description": "Handle errors and provide resolution guidance",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_error_handling",
@@ -628,7 +690,8 @@
       "condition_value": null,
       "condition_description": "Error handling complete",
       "priority": 100,
-      "description": "Error resolved or escalated, return to status"
+      "description": "Error resolved or escalated, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -638,7 +701,8 @@
       "condition_value": "true",
       "condition_description": "User wants project metrics analysis",
       "priority": 60,
-      "description": "Generate project metrics report"
+      "description": "Generate project metrics report",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_metrics",
@@ -648,7 +712,8 @@
       "condition_value": null,
       "condition_description": "Metrics generated",
       "priority": 100,
-      "description": "Metrics reported, return to status"
+      "description": "Metrics reported, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -658,7 +723,8 @@
       "condition_value": "true",
       "condition_description": "Track project evolution after significant architectural changes",
       "priority": 60,
-      "description": "Log project evolution patterns and decisions"
+      "description": "Log project evolution patterns and decisions",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_evolution",
@@ -668,7 +734,8 @@
       "condition_value": null,
       "condition_description": "Evolution tracked",
       "priority": 100,
-      "description": "Project evolution logged, return to status"
+      "description": "Project evolution logged, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -678,7 +745,8 @@
       "condition_value": "true",
       "condition_description": "Package dependencies changed or out of sync",
       "priority": 70,
-      "description": "Sync project dependencies with package manager"
+      "description": "Sync project dependencies with package manager",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_dependency_sync",
@@ -688,7 +756,8 @@
       "condition_value": null,
       "condition_description": "Dependencies synced",
       "priority": 100,
-      "description": "Dependencies updated, return to status"
+      "description": "Dependencies updated, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -698,7 +767,8 @@
       "condition_value": "true",
       "condition_description": "User wants to validate database integrity",
       "priority": 60,
-      "description": "Validate project database integrity"
+      "description": "Validate project database integrity",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_integrity_check",
@@ -708,7 +778,8 @@
       "condition_value": null,
       "condition_description": "Integrity check complete",
       "priority": 100,
-      "description": "Database integrity validated, return to status"
+      "description": "Database integrity validated, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -718,7 +789,8 @@
       "condition_value": "true",
       "condition_description": "New session with incomplete work items from previous session",
       "priority": 80,
-      "description": "Auto-resume work from where it was left off"
+      "description": "Auto-resume work from where it was left off",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_auto_resume",
@@ -728,7 +800,8 @@
       "condition_value": null,
       "condition_description": "Work context restored",
       "priority": 100,
-      "description": "Previous work context loaded, return to status"
+      "description": "Previous work context loaded, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -738,7 +811,8 @@
       "condition_value": "true",
       "condition_description": "User wants auto-generated progress summary",
       "priority": 60,
-      "description": "Generate automated progress summary"
+      "description": "Generate automated progress summary",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_auto_summary",
@@ -748,7 +822,8 @@
       "condition_value": null,
       "condition_description": "Summary generated",
       "priority": 100,
-      "description": "Progress summary generated, return to status"
+      "description": "Progress summary generated, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -758,7 +833,8 @@
       "condition_value": "true",
       "condition_description": "User wants dependency visualization",
       "priority": 60,
-      "description": "Generate dependency map visualization"
+      "description": "Generate dependency map visualization",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_dependency_map",
@@ -768,7 +844,8 @@
       "condition_value": null,
       "condition_description": "Dependency map generated",
       "priority": 100,
-      "description": "Dependency visualization created, return to status"
+      "description": "Dependency visualization created, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -778,7 +855,8 @@
       "condition_value": "true",
       "condition_description": "User wants theme/flow mapping analysis",
       "priority": 60,
-      "description": "Analyze and map project themes and flows"
+      "description": "Analyze and map project themes and flows",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_theme_flow_mapping",
@@ -788,7 +866,8 @@
       "condition_value": null,
       "condition_description": "Theme/flow mapping complete",
       "priority": 100,
-      "description": "Theme and flow analysis complete, return to status"
+      "description": "Theme and flow analysis complete, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -798,7 +877,8 @@
       "condition_value": "true",
       "condition_description": "User wants to backup or restore project state",
       "priority": 70,
-      "description": "Backup project to .git/.aifp/ or restore from backup"
+      "description": "Backup project to .git/.aifp/ or restore from backup",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_backup_restore",
@@ -808,7 +888,8 @@
       "condition_value": null,
       "condition_description": "Backup/restore operation complete",
       "priority": 100,
-      "description": "Backup created or restore complete, return to status"
+      "description": "Backup created or restore complete, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -818,7 +899,8 @@
       "condition_value": "true",
       "condition_description": "User wants to refactor file paths across project",
       "priority": 70,
-      "description": "Refactor file paths and update database references"
+      "description": "Refactor file paths and update database references",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_refactor_path",
@@ -828,7 +910,8 @@
       "condition_value": null,
       "condition_description": "Path refactoring complete",
       "priority": 100,
-      "description": "Paths refactored and database updated, return to status"
+      "description": "Paths refactored and database updated, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "aifp_status",
@@ -838,7 +921,8 @@
       "condition_value": "true",
       "condition_description": "Performance tracking opt-in via tracking_toggle (user preference)",
       "priority": 60,
-      "description": "Generate performance summary (TRACKING OPT-IN ONLY)"
+      "description": "Generate performance summary (TRACKING OPT-IN ONLY)",
+      "flow_category": "project"
     },
     {
       "from_directive": "project_performance_summary",
@@ -848,7 +932,8 @@
       "condition_value": null,
       "condition_description": "Performance summary generated",
       "priority": 100,
-      "description": "Directive performance metrics logged, return to status"
+      "description": "Directive performance metrics logged, return to status",
+      "flow_category": "project"
     },
     {
       "from_directive": "git_create_branch",
@@ -858,7 +943,8 @@
       "condition_value": null,
       "condition_description": "Branch created for collaborative work",
       "priority": 100,
-      "description": "Work branch created, proceed with work on branch"
+      "description": "Work branch created, proceed with work on branch",
+      "flow_category": "git"
     },
     {
       "from_directive": "git_detect_conflicts",
@@ -868,7 +954,8 @@
       "condition_value": "true",
       "condition_description": "Conflicts detected with high confidence resolution (FP-powered)",
       "priority": 90,
-      "description": "Auto-resolve conflicts using FP purity analysis"
+      "description": "Auto-resolve conflicts using FP purity analysis",
+      "flow_category": "git"
     },
     {
       "from_directive": "git_detect_conflicts",
@@ -878,7 +965,8 @@
       "condition_value": "true",
       "condition_description": "Conflicts detected with low confidence, need user input",
       "priority": 90,
-      "description": "Escalate to user for manual conflict resolution"
+      "description": "Escalate to user for manual conflict resolution",
+      "flow_category": "git"
     },
     {
       "from_directive": "git_merge_branch",
@@ -888,7 +976,8 @@
       "condition_value": null,
       "condition_description": "Branch merge complete",
       "priority": 100,
-      "description": "Merge complete, git_sync_state updated"
+      "description": "Merge complete, git_sync_state updated",
+      "flow_category": "git"
     },
     {
       "from_directive": "project_user_referral",
@@ -898,7 +987,8 @@
       "condition_value": null,
       "condition_description": "User decision received",
       "priority": 100,
-      "description": "User provided decision, continue work"
+      "description": "User provided decision, continue work",
+      "flow_category": "project"
     }
   ],
   "metadata": {
