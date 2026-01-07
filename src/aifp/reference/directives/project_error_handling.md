@@ -2,7 +2,7 @@
 
 **Type**: Project
 **Level**: 4 (State Management)
-**Parent Directive**: project_compliance_check
+**Parent Directive**: None (standalone utility directive)
 **Priority**: HIGH - Universal error recovery for all directives
 
 ---
@@ -318,37 +318,7 @@ Identifies error type and determines appropriate resolution.
    VALUES ('Unknown error handled: CustomValidationError. Resolution: Validate matrix dimensions before operation. Added to catalog.', 'error_learning', 'directive', 'project_error_handling', 'warning');
    ```
 
-### Example 4: Escalation to .md File
-
-**Error**: FP compliance failure
-**Directive**: `project_compliance_check`
-
-**AI Execution**:
-1. Compliance check fails
-2. Attempts automatic fix: Failed
-3. Escalates to detailed documentation:
-   ```
-   ❌ FP compliance check failed
-
-   File: src/auth.py
-   Function: process_user
-   Issue: Mutation detected
-
-   Automatic fix failed.
-
-   See detailed guidance:
-   → src/aifp/reference/directives/fp_immutability.md
-
-   Manual review required.
-   ```
-4. User reviews .md file
-5. User applies fix manually
-6. Logs escalation:
-   ```
-   FP compliance escalated: Mutation in process_user. User reviewing fp_immutability.md
-   ```
-
-### Example 5: Retry with Exponential Backoff
+### Example 4: Retry with Exponential Backoff
 
 **Error**: Network timeout (external API call)
 **Directive**: `user_directive_activate` (home automation API)
@@ -491,7 +461,6 @@ INSERT INTO notes (
 ## Related Directives
 
 - `project_user_referral` - Escalates uncertain issues to user
-- `project_compliance_check` - Uses error handling for validation failures
 - All project directives - Rely on error handling
 
 ---

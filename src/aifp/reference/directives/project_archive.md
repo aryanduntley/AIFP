@@ -425,7 +425,6 @@ def archive_with_space_check() -> Result[str, str]:
 - **Depends On**:
   - `project_completion_check` - Verify completion before archival
   - `project_integrity_check` - Verify integrity before archival
-  - `project_compliance_check` - Final compliance check
 - **Triggers**:
   - `project_backup_restore` - Final backup before archival
 - **Called By**:

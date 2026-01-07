@@ -156,6 +156,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Directive object with workflow, description, category, etc.",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for this directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -218,6 +222,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Full MD documentation including workflows, examples, edge cases, related directives",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for this directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -1028,7 +1036,11 @@
       "error_handling": "Returns empty object if no FP directives found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "FP directives are REFERENCE material for when AI is uncertain about implementation details - consult as needed, not mandatory execution paths",
+        "AI writes FP code naturally as baseline behavior - only consult these directives when genuinely uncertain",
+        "No strict workflows with FP directives - they're available on-demand for guidance on complex FP patterns (monads, currying, lazy evaluation, etc.)"
+      ],
       "implementation_notes": [
         "Returns: {category_name: [directive_name, ...]}",
         "Example: {'error_handling': ['fp_optionals', 'fp_result_types'], 'purity': ['fp_purity', 'fp_immutability']}",
@@ -1125,7 +1137,10 @@
       "error_handling": "Returns empty array if no flows match filters",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "When flow_category='fp': These are CONSULTATION flows - FP directives are reference material for when AI needs guidance, not mandatory execution workflows",
+        "FP flows show available reference directives, not required execution paths - AI consults them on-demand when uncertain about complex FP patterns"
+      ],
       "implementation_notes": [
         "Returns: Array of flow objects with all fields (id, from_directive, to_directive, flow_category, flow_type, condition_key, condition_value, condition_description, priority, description)",
         "All parameters are optional - can combine filters for targeted queries",

@@ -2,7 +2,7 @@
 
 **Type**: Project
 **Level**: 4 (State Management)
-**Parent Directive**: project_compliance_check
+**Parent Directive**: project_milestone_complete
 **Priority**: MEDIUM - Roadmap progress evaluation
 
 ---
@@ -473,7 +473,7 @@ VALUES (?, 'drift', 'directive', 'project_completion_check', 'warning');
 
 ## Related Directives
 
-- `project_compliance_check` - Parent directive, validates FP compliance before completion
+- `project_milestone_complete` - Parent directive, handles milestone completion workflow
 - `project_task_update` - Updates task status, triggers completion check
 - `project_metrics` - Calculates completion percentages and progress metrics
 - `project_archive` - Archives completed projects

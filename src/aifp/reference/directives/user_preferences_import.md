@@ -124,9 +124,9 @@ Reads and parses the import JSON file.
        Imported: false
        → Use which? (existing/imported/skip)
 
-    2. project_compliance_check.strict_mode
-       Existing: false
-       Imported: true
+    2. project_file_write.max_function_length
+       Existing: 50
+       Imported: 100
        → Use which? (existing/imported/skip)
 
     Resolve all conflicts:
@@ -329,11 +329,7 @@ Reads and parses the import JSON file.
 #       Existing: true (your preference)
 #       Imported: false (team standard)
 #
-#    2. project_compliance_check.strict_mode
-#       Existing: false
-#       Imported: true
-#
-#    3. project_file_write.max_function_length
+#    2. project_file_write.max_function_length
 #       Existing: 50
 #       Imported: 100
 #

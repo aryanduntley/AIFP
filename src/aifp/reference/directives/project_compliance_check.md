@@ -1,347 +1,319 @@
 # Directive: project_compliance_check
 
-**Type**: Project
-**Level**: 4
-**Parent Directive**: project_update_db
-**Priority**: CRITICAL - Required for FP enforcement
+**Type**: Tracking (Optional)
+**Activation**: Requires `tracking_settings.compliance_checking = enabled`
+**Token Overhead**: ~5-10% per check
+**Priority**: LOW - Optional analytics feature
 
 ---
 
 ## Purpose
 
-The `project_compliance_check` directive is the **validation gatekeeper** that ensures all code in an AIFP project adheres to strict functional programming principles before database updates or completion marking. This directive runs a comprehensive suite of FP compliance directives to verify code purity, immutability, OOP elimination, and structural correctness.
+The `project_compliance_check` directive is an **optional analytics and tracking feature** that provides insights into FP compliance patterns over time. This directive is **DISABLED by default** and only activates when explicitly enabled via tracking settings.
 
-This directive is **critical for AIFP integrity** - it prevents non-compliant code from entering the project and ensures that:
-- **All functions are pure** (deterministic, no side effects)
-- **All data is immutable** (no mutations)
-- **No OOP constructs** (no classes, inheritance, or stateful methods)
-- **Type safety** (explicit types, no `any`)
-- **Proper error handling** (Result types, no exceptions)
-- **Project alignment** (code matches completion path goals)
+**IMPORTANT**: FP compliance is **baseline behavior** enforced by the system prompt. AI writes FP-compliant code naturally without post-write validation. This directive is NOT a validation gatekeeper - it's an analytics tool for:
+- **Tracking FP patterns** used across the project
+- **Identifying common violations** (if any occur)
+- **Generating compliance reports** for project audits
+- **Learning data** for improving FP directive guidance
 
-The compliance check is **customizable per user** through user preferences:
-- **fp_strictness_level**: Controls how strict checks are (strict, moderate, relaxed)
-- **auto_fix_violations**: Whether to automatically refactor violations
-- **skip_warnings**: Skip non-critical warnings
-- **user_exceptions**: Approved violations for specific use cases
+**When to Enable**:
+- Development/debugging of AIFP itself
+- Project audits requiring compliance documentation
+- Research on FP patterns and adoption
+- Educational purposes (tracking learning progress)
 
-When violations are detected, this directive either:
-1. **Auto-fixes** if user preferences allow and confidence is high
-2. **Escalates** to specific FP directives for refactoring
-3. **Prompts user** for manual resolution
+**When NOT to Enable**:
+- Normal project development (FP is baseline, no checking needed)
+- Production work (adds token overhead without benefit)
+- Cost-sensitive projects (5-10% token overhead per check)
+
+**Activation**:
+```sql
+-- Enable compliance tracking
+UPDATE tracking_settings SET enabled = 1 WHERE feature_name = 'compliance_checking';
+```
+
+**Analytics Provided** (when enabled):
+- FP directive consultation frequency
+- Common compliance patterns
+- Violation types (if any)
+- Refactoring statistics
 
 ---
 
 ## When to Apply
 
+**Prerequisites**:
+- `tracking_settings.compliance_checking` must be enabled
+- User must acknowledge token overhead warning
+
 This directive applies when:
-- **Called by `project_file_write`** - Before finalizing file writes
-- **Called by `project_update_db`** - Before database synchronization
-- **User requests validation** - Manual compliance check
-- **Pre-merge validation** - Git integration validates before branch merge
-- **Completion path milestone** - Validates before marking milestone complete
-- **Project audit** - Comprehensive project-wide compliance scan
+- **User requests compliance audit** - Manual project-wide scan
+- **Research/analytics** - Gathering data on FP patterns
+- **Development/debugging** - AIFP development and testing
+- **Educational tracking** - Tracking learning progress
+
+**NOT applied automatically**:
+- ❌ NOT called by `project_file_write` (FP is baseline, no validation needed)
+- ❌ NOT called by `project_update_db` (database updates don't need validation)
+- ❌ NOT called by git directives (FP is baseline, no pre-merge validation needed)
+- ❌ NOT called by milestone completion (no gatekeeper needed)
 
 ---
 
 ## Workflow
 
-### Trunk: check_user_preferences
+**Note**: This is a TRACKING workflow, not a validation workflow. It runs ONLY when tracking is enabled.
 
-Loads user preferences for compliance checking behavior.
+### Trunk: check_tracking_enabled
+
+Verify compliance tracking is enabled before proceeding.
 
 **Steps**:
-1. **Query user_preferences.db** - Load directive-specific preferences
-2. **Load fp_strictness_level** - Get global FP strictness setting
-3. **Load user exceptions** - Get approved violations (if any)
-4. **Configure compliance context** - Apply preferences to compliance checks
-5. **Route to checking** - Proceed with configured compliance check
+1. **Query tracking_settings** - Check if compliance_checking enabled
+2. **If disabled** - Skip entirely, return early
+3. **If enabled** - Proceed with analytics collection
 
 ### Branches
 
-**Branch 1: If directive_preferences_exist**
-- **Then**: `load_compliance_preferences`
-- **Details**: Load user preferences for compliance checking
-  - Query: `SELECT preference_key, preference_value FROM directive_preferences
-           WHERE directive_name='project_compliance_check' AND active=1`
-  - Also check `user_settings.fp_strictness_level`
-  - Common preferences:
-    - `auto_fix_violations` (bool) - Auto-refactor violations
-    - `skip_warnings` (bool) - Ignore non-critical issues
-    - `strict_mode` (bool) - Extra strict checking
-  - Apply to compliance context
-- **Result**: Preferences loaded and applied
+**Branch 1: If tracking_disabled**
+- **Then**: `skip`
+- **Details**: Tracking not enabled, no action needed
+  - Return immediately without checking
+  - No token overhead
+- **Result**: Early exit (no tracking)
 
-**Branch 2: If preferences_loaded**
-- **Then**: `run_checks_with_preferences`
-- **Details**: Execute FP compliance checks with user preferences
-  - Apply strictness level to checks
-  - Respect user exceptions for specific violations
-  - Use appropriate thresholds based on strictness
-  - Prioritize critical violations over warnings
-- **Result**: Compliance results with user context
+**Branch 2: If tracking_enabled**
+- **Then**: `collect_analytics`
+- **Details**: Gather compliance analytics
+  - Query project.db for functions and their purity levels
+  - Analyze FP patterns used
+  - Identify any deviations (should be rare since FP is baseline)
+  - Log analytics to fp_flow_tracking table (if enabled)
+- **Result**: Analytics collected
 
-**Branch 3: If compliance_passed**
-- **Then**: `proceed`
-- **Details**: All checks passed
-  - Update database with compliant code
-  - Mark functions as FP-compliant in functions table
-  - Log success to notes (if tracking enabled)
-  - Return success result
-- **Result**: Code validated and approved
+**Branch 3: If user_requested_report**
+- **Then**: `generate_report`
+- **Details**: Generate compliance report for user
+  - Summary of FP patterns used
+  - Function purity distribution
+  - Consultation frequency of FP directives
+  - Any deviations detected (rare)
+- **Result**: Report generated and returned to user
 
-**Branch 4: If compliance_failed**
-- **Then**: `alert_user` and escalate
-- **Details**: Violations detected, escalate for fixing
-  - Categorize violations by severity (critical, warning, info)
-  - Escalate to specific FP directives:
-    - **fp_purity** - For impure functions
-    - **fp_no_oop** - For OOP constructs
-    - **fp_immutability** - For mutations
-    - **fp_type_safety** - For type issues
-  - If `auto_fix_violations=true` and confidence high:
-    - Attempt automatic refactoring
-    - Re-run compliance check
-  - If auto-fix fails or disabled:
-    - Present violations to user
-    - Suggest manual fixes
-    - Block database update until resolved
-- **Result**: Violations reported and escalated
+**Branch 4: If analytics_collected**
+- **Then**: `log_to_tracking`
+- **Details**: Store analytics in tracking tables
+  - Update fp_flow_tracking table
+  - Store timestamp and project state
+  - No blocking behavior (fire and forget)
+- **Result**: Analytics logged for future analysis
 
-**Fallback**: `prompt_user`
-- **Details**: Unable to determine compliance status
-  - Ask: "Resolve compliance issue manually?"
-  - Present violation details
-  - Offer options: auto-fix, manual fix, skip (with justification)
-  - Log decision to notes
-- **Result**: User guidance requested
+**Fallback**: `skip`
+- **Details**: If any error occurs during tracking
+  - Log error (non-blocking)
+  - Continue normal operation
+  - Tracking is optional - errors don't affect development
+- **Result**: Graceful failure
 
 ---
 
 ## Examples
 
-### ✅ Compliant Code (Passes Check)
+### Example 1: Enabling Compliance Tracking
 
-**Pure, Immutable, No OOP:**
-```python
-from dataclasses import dataclass
-from returns.result import Result, Success, Failure
+```sql
+-- Check current status
+SELECT feature_name, enabled FROM tracking_settings WHERE feature_name = 'compliance_checking';
 
-@dataclass(frozen=True)
-class Order:
-    """Immutable order data (no methods)."""
-    id: int
-    total: float
-    items: tuple[str, ...]
+-- Enable tracking (user must acknowledge token overhead)
+UPDATE tracking_settings SET enabled = 1 WHERE feature_name = 'compliance_checking';
 
-def calculate_order_total(items: tuple[float, ...], tax_rate: float) -> float:
-    """Pure function - calculates order total."""
-    subtotal = sum(items)
-    return subtotal * (1 + tax_rate)
-
-def validate_order(order: Order) -> Result[Order, str]:
-    """Pure validation using Result type."""
-    if order.total < 0:
-        return Failure("Total cannot be negative")
-    if not order.items:
-        return Failure("Order must have items")
-    return Success(order)
-
-# Compliance check:
-# ✅ fp_purity: All functions pure
-# ✅ fp_immutability: frozen dataclass, no mutations
-# ✅ fp_no_oop: dataclass has no methods
-# ✅ fp_type_safety: All parameters typed
-# ✅ fp_result_types: Uses Result for error handling
-# RESULT: PASSED
+-- Verify enabled
+SELECT feature_name, enabled, estimated_token_overhead FROM tracking_settings
+WHERE feature_name = 'compliance_checking';
+-- Result: compliance_checking | 1 | ~5-10% per check
 ```
 
 ---
 
-### ❌ Non-Compliant Code (Fails Check)
+### Example 2: Generating Compliance Report
 
-**Impure, Mutable, OOP:**
+**User Request**: "Generate compliance report for my project"
+
+**AI Action** (if tracking enabled):
 ```python
-# ❌ MULTIPLE VIOLATIONS
+# Step 1: Check if tracking enabled
+tracking_enabled = query_tracking_settings('compliance_checking')
+if not tracking_enabled:
+    return "Compliance tracking is disabled. Enable via tracking_toggle directive."
 
-class Order:  # ← VIOLATION: OOP class with methods
-    def __init__(self, id, total):  # ← VIOLATION: No type hints
-        self.id = id  # ← VIOLATION: Mutable state
-        self.total = total
-        self.items = []  # ← VIOLATION: Mutable default
+# Step 2: Collect analytics from project.db
+functions = query_all_functions()
+analytics = {
+    "total_functions": len(functions),
+    "purity_levels": categorize_by_purity(functions),
+    "fp_patterns_used": extract_fp_patterns(functions),
+    "deviations": identify_deviations(functions)  # Should be empty if FP is baseline
+}
 
-    def add_item(self, item):  # ← VIOLATION: Impure method (mutates self)
-        self.items.append(item)  # ← VIOLATION: Mutation
-        self.total += item['price']  # ← VIOLATION: Reassignment
-
-    def calculate_tax(self):  # ← VIOLATION: Impure (reads mutable state)
-        return self.total * 0.1  # ← VIOLATION: Magic number
-
-# Compliance check:
-# ❌ fp_purity: Methods are impure (mutate state)
-# ❌ fp_immutability: Mutable attributes, list.append()
-# ❌ fp_no_oop: Class with methods
-# ❌ fp_type_safety: No type annotations
-# ❌ fp_no_reassignment: Variable reassignment (self.total +=)
-# RESULT: FAILED (5 critical violations)
-
-# Auto-fix attempt (if enabled):
-# → Escalate to fp_no_oop: Convert class to frozen dataclass + functions
-# → Escalate to fp_purity: Convert methods to pure functions
-# → Escalate to fp_immutability: Replace mutations with immutable updates
-# → Add type annotations
-# → Extract magic number to constant
+# Step 3: Generate report
+report = generate_compliance_report(analytics)
+return report
 ```
 
-**Refactored (Compliant):**
-```python
-from dataclasses import dataclass
-from typing import Dict
-
-@dataclass(frozen=True)
-class Order:
-    """Immutable order data."""
-    id: int
-    total: float
-    items: tuple[Dict[str, float], ...]
-
-TAX_RATE = 0.1  # Extracted constant
-
-def add_item(order: Order, item: Dict[str, float]) -> Order:
-    """Add item immutably. Returns new order."""
-    new_items = order.items + (item,)
-    new_total = order.total + item['price']
-    return Order(id=order.id, total=new_total, items=new_items)
-
-def calculate_tax(order: Order) -> float:
-    """Pure tax calculation."""
-    return order.total * TAX_RATE
-
-# ✅ ALL VIOLATIONS RESOLVED
+**Sample Report**:
 ```
+Project Compliance Report
+Generated: 2026-01-06
+
+Total Functions: 42
+Purity Distribution:
+  - Pure (100%): 42 functions
+  - Impure: 0 functions
+
+FP Patterns Used:
+  - Result types: 38 functions (90%)
+  - Frozen dataclasses: 12 types (100%)
+  - Function composition: 15 functions (36%)
+
+Deviations: None detected
+Analysis: Project maintains baseline FP compliance
+```
+
+---
+
+### Example 3: Analytics Tracking (Background)
+
+**When tracking is enabled**, analytics are collected passively:
+
+```python
+# Background tracking (non-blocking)
+def on_file_write_complete(file_path: str):
+    """Called after successful file write (if tracking enabled)"""
+    if not is_tracking_enabled('compliance_checking'):
+        return  # Skip if disabled
+
+    # Collect analytics (non-blocking, fire-and-forget)
+    functions = parse_functions_from_file(file_path)
+    analytics = {
+        "timestamp": now(),
+        "file": file_path,
+        "function_count": len(functions),
+        "fp_patterns": identify_fp_patterns(functions),
+        "purity_level": analyze_purity(functions)
+    }
+
+    # Log to tracking table (async)
+    log_to_fp_flow_tracking(analytics)
+```
+
+**Notes**:
+- Tracking is passive and non-blocking
+- Does not affect development workflow
+- No validation or gatekeeper behavior
+- Purely for analytics and research
 
 ---
 
 ## Edge Cases
 
-### Edge Case 1: Strictness Level Variations
+### Edge Case 1: Tracking Disabled During Development
 
-**Issue**: Different strictness levels allow different violations
+**Issue**: User wants to temporarily disable tracking without losing configuration
 
 **Handling**:
 ```python
-# Strictness levels (from user_settings)
-strictness = user_preferences.fp_strictness_level
+# Disable tracking temporarily
+UPDATE tracking_settings SET enabled = 0 WHERE feature_name = 'compliance_checking';
 
-match strictness:
-    case "strict":
-        # Zero tolerance - all FP rules enforced
-        run_all_fp_directives()
-        fail_on_any_violation()
+# Later, re-enable
+UPDATE tracking_settings SET enabled = 1 WHERE feature_name = 'compliance_checking';
 
-    case "moderate":
-        # Allow minor violations with warnings
-        run_core_fp_directives()  # purity, immutability, no_oop
-        warn_on_minor_violations()  # type hints optional
-
-    case "relaxed":
-        # Allow some non-FP patterns
-        run_critical_fp_directives()  # no_oop only
-        skip_auxiliary_checks()  # allow mutations in effect functions
+# Historical data preserved in fp_flow_tracking table
 ```
 
 ---
 
-### Edge Case 2: User-Approved Exceptions
+### Edge Case 2: Large Project - Performance Impact
 
-**Issue**: User has legitimate reason for FP violation
+**Issue**: Tracking adds overhead to large projects (1000+ functions)
 
 **Handling**:
+- Tracking is **sampling-based** for large projects
+- Only tracks 10% of file writes randomly
+- Full analytics available on-demand via report generation
+- Background tracking uses async operations
+
 ```python
-# Check user exceptions
-exceptions = query_user_preferences_db(
-    "SELECT violation_type, justification FROM approved_exceptions"
-)
-
-# Example: User approved OOP for external library wrapper
-if violation.type == "oop" and violation.in_file("lib/external_wrapper.py"):
-    if "external_wrapper" in approved_exceptions:
-        # Skip this violation
-        log_note("Violation approved by user: OOP in external wrapper")
-        continue
-
-# Still flag if not in approved list
+# Adaptive tracking rate
+if project_function_count > 1000:
+    tracking_rate = 0.1  # 10% sampling
+elif project_function_count > 100:
+    tracking_rate = 0.5  # 50% sampling
+else:
+    tracking_rate = 1.0  # 100% tracking
 ```
 
 ---
 
-### Edge Case 3: Partially Compliant File
+### Edge Case 3: Tracking Data Privacy
 
-**Issue**: Some functions compliant, others not
+**Issue**: User wants to analyze project but doesn't want tracking data stored
 
 **Handling**:
+- User can generate report without enabling persistent tracking
+- Report generated from project.db (always available)
+- No data written to fp_flow_tracking
+- Tracking tables remain empty
+
 ```python
-# Check each function individually
-compliance_results = []
-for function in file.functions:
-    result = check_function_compliance(function)
-    compliance_results.append(result)
-
-# Separate compliant from non-compliant
-compliant_funcs = [r for r in compliance_results if r.passed]
-violations = [r for r in compliance_results if not r.passed]
-
-if violations:
-    # Report per-function violations
-    return {
-        "file_compliant": False,
-        "compliant_count": len(compliant_funcs),
-        "violation_count": len(violations),
-        "violations": violations,
-        "action": "Fix violations then re-check"
-    }
+# One-time report (no tracking enabled)
+report = generate_compliance_report(include_tracking=False)
+# Uses only project.db, no tracking tables accessed
 ```
 
 ---
 
-### Edge Case 4: Performance vs Purity Trade-off
+### Edge Case 4: Tracking Table Growth
 
-**Issue**: Pure function is performance bottleneck
+**Issue**: Tracking tables grow over time
 
 **Handling**:
-```python
-# User requests performance exception
-if user_approved_performance_exception(function_name):
-    # Allow controlled impurity
-    log_note(f"Performance exception: {function_name} allowed memoization cache")
-    # Still require:
-    # - Explicit documentation of impurity
-    # - Isolation to effect module
-    # - Tests verifying behavior
-    return {
-        "compliant": True,
-        "exception": "performance",
-        "requires": ["documentation", "isolation", "tests"]
-    }
+- Automatic cleanup of tracking data older than 90 days
+- User can configure retention period
+- Export functionality for long-term storage
+
+```sql
+-- Configure retention (via user_preferences)
+INSERT INTO user_settings (setting_key, setting_value)
+VALUES ('tracking_retention_days', '90');
+
+-- Manual cleanup
+DELETE FROM fp_flow_tracking WHERE timestamp < date('now', '-90 days');
 ```
 
 ---
 
 ## Related Directives
 
-- **Called By**:
-  - `project_file_write` - Validates before file write
-  - `project_update_db` - Validates before DB update
-  - `git_merge_branch` - Validates before merge
-- **Escalates To**:
-  - `fp_purity` - For purity violations
-  - `fp_immutability` - For mutation violations
-  - `fp_no_oop` - For OOP violations
-  - `fp_type_safety` - For type violations
-  - `fp_result_types` - For exception usage
-- **Works With**:
-  - `user_preferences_sync` - Loads user preferences
-  - `project_completion_check` - Verifies roadmap alignment
+- **Tracking Management**:
+  - `tracking_toggle` - Enable/disable compliance tracking with token warnings
+  - `user_preferences_sync` - Load tracking preferences
+
+- **Analytics & Reports**:
+  - `aifp_status` - Can include compliance summary if tracking enabled
+  - `project_completion_check` - Can reference compliance analytics
+
+- **FP Reference** (Compliance tracking analyzes usage of these):
+  - `fp_purity` - Tracks purity pattern usage
+  - `fp_immutability` - Tracks immutability pattern usage
+  - `fp_no_oop` - Tracks OOP elimination patterns
+  - `fp_type_safety` - Tracks type safety patterns
+  - `fp_result_types` - Tracks error handling patterns
+
+**Note**: This directive does NOT automatically call or escalate to FP directives. It only tracks which patterns are used in the codebase.
 
 ---
 
@@ -353,11 +325,17 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
+This directive interacts with the following tables:
 
-- **`functions`**: Sets FP compliance flags (`purity_level`, `side_effects_json`, `oop_compliant`)
-- **`notes`**: Logs compliance violations with `note_type = 'compliance'` and `severity` levels
-- **`directive_preferences`** (user_preferences.db): Reads user compliance preferences
+**Reads From**:
+- **`tracking_settings`** (user_preferences.db): Checks if compliance_checking enabled
+- **`functions`** (project.db): Reads function metadata for analytics
+- **`files`** (project.db): Reads file structure for report generation
+
+**Writes To**:
+- **`fp_flow_tracking`** (user_preferences.db): Logs compliance analytics (if tracking enabled)
+
+**Note**: This directive does NOT modify `functions` table or set compliance flags. FP compliance is baseline behavior, not something tracked per-function.
 
 ---
 
@@ -365,62 +343,73 @@ This directive updates the following tables:
 
 How to verify this directive is working:
 
-1. **Check compliant code** → Passes all checks
+1. **Test tracking enable/disable**
    ```python
-   result = project_compliance_check("src/pure_calc.py")
-   assert result["compliant"] == True
-   assert len(result["violations"]) == 0
+   # Disable tracking
+   UPDATE tracking_settings SET enabled = 0 WHERE feature_name = 'compliance_checking';
+   result = project_compliance_check()
+   assert result == "Tracking disabled, no action taken"
+
+   # Enable tracking
+   UPDATE tracking_settings SET enabled = 1 WHERE feature_name = 'compliance_checking';
+   result = project_compliance_check()
+   assert result["tracking_active"] == True
    ```
 
-2. **Check non-compliant code** → Detects violations
+2. **Test report generation**
    ```python
-   result = project_compliance_check("src/oop_calc.py")
-   assert result["compliant"] == False
-   assert "oop" in result["violation_types"]
+   # Generate report (tracking must be enabled)
+   report = generate_compliance_report()
+   assert "total_functions" in report
+   assert "fp_patterns_used" in report
+   assert "purity_distribution" in report
    ```
 
-3. **Test strictness levels** → Respects user preferences
+3. **Test analytics collection**
    ```python
-   set_preference("fp_strictness_level", "relaxed")
-   result = project_compliance_check("src/partial.py")
-   # Minor violations allowed in relaxed mode
+   # Write file, check tracking logged
+   write_file("src/test.py", content)
+   tracking_entries = query("SELECT * FROM fp_flow_tracking WHERE file = 'src/test.py'")
+   assert len(tracking_entries) >= 1
    ```
 
-4. **Test auto-fix** → Refactors when enabled
+4. **Test token overhead warning**
    ```python
-   set_preference("auto_fix_violations", True)
-   result = project_compliance_check("src/fixable.py")
-   assert result["auto_fixed"] == True
-   assert result["compliant"] == True
+   # Enabling should show warning
+   enable_tracking("compliance_checking")
+   # Should display: "Warning: ~5-10% token overhead. Continue? (y/n)"
    ```
 
 ---
 
 ## Common Mistakes
 
-- ❌ **Not loading user preferences** - Always check preferences first
-- ❌ **Failing on warnings** - Distinguish critical violations from warnings
-- ❌ **Blocking on approved exceptions** - Check user exceptions table
-- ❌ **Not escalating to FP directives** - Use specialized directives for fixes
-- ❌ **Inconsistent strictness** - Apply strictness level consistently
+- ❌ **Assuming tracking is enabled** - Always check `tracking_settings` first
+- ❌ **Using for validation** - This is analytics only, not a gatekeeper
+- ❌ **Forgetting token overhead warning** - Warn users before enabling
+- ❌ **Enabling for all projects** - Most projects don't need tracking
+- ❌ **Treating as mandatory** - Tracking is 100% optional
 
 ---
 
 ## Roadblocks and Resolutions
 
-### Roadblock 1: compliance_failure
-**Issue**: Code fails compliance checks
-**Resolution**: Refer to specific FP directives (fp_purity, fp_no_oop) and retry after fixes
+### Roadblock 1: tracking_disabled
+**Issue**: Tracking features not available
+**Resolution**: Enable via `tracking_toggle` directive with user consent
 
-### Roadblock 2: fp_violation
-**Issue**: Specific FP rule violated
-**Resolution**: Run linked fp_* directives automatically to resolve (or prompt user if auto-fix disabled)
+### Roadblock 2: performance_impact
+**Issue**: Tracking adds overhead to large project
+**Resolution**: Use sampling mode (10% tracking) or disable tracking entirely
 
 ---
 
 ## References
 
-None
+- `docs/settings-specification.json` - compliance_checking tracking feature definition
+- `docs/settings-cleanup-summary.md` - Settings architecture and decision rationale
+- `user_preferences.sql` - tracking_settings table schema
+
 ---
 
-*Part of AIFP v1.0 - Critical Project directive for FP compliance enforcement*
+*Part of AIFP v1.0 - Optional tracking directive for FP compliance analytics*

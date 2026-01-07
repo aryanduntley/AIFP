@@ -34,7 +34,6 @@ This directive applies when:
 - **Subtasks complete** - Resuming paused parent tasks
 - **Called by other directives**:
   - `project_file_write` - Marks linked tasks complete after file generation
-  - `project_compliance_check` - Updates tasks based on validation results
   - `project_completion_check` - Marks milestones complete
   - `aifp_status` - Updates task states based on current context
 
@@ -372,7 +371,6 @@ Determines what aspect of the task needs updating.
 
 ### Called By:
 - `project_file_write` - Marks tasks complete after file generation
-- `project_compliance_check` - Updates based on validation
 - `project_task_decomposition` - Creates and initializes tasks
 - `aifp_status` - Reports current task states
 

@@ -617,59 +617,26 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "project_file_write",
-      "to_directive": "project_compliance_check",
-      "flow_type": "conditional",
-      "condition_key": "auto_check_compliance_enabled",
-      "condition_value": "true",
-      "condition_description": "Auto-check enabled in user preferences (opt-in)",
-      "priority": 80,
-      "description": "Optional FP compliance validation (user preference: auto-check after write)",
-      "flow_category": "project"
-    },
-    {
-      "from_directive": "project_compliance_check",
-      "to_directive": "project_file_write",
-      "flow_type": "conditional",
-      "condition_key": "violations_found",
-      "condition_value": "true",
-      "condition_description": "FP violations detected, auto-fix enabled",
-      "priority": 90,
-      "description": "Auto-fix FP violations and rewrite file",
-      "flow_category": "project"
-    },
-    {
       "from_directive": "project_compliance_check",
       "to_directive": "aifp_status",
       "flow_type": "completion_loop",
-      "condition_key": "violations_found",
-      "condition_value": "false",
-      "condition_description": "No violations or violations reported only",
+      "condition_key": "report_generated",
+      "condition_value": "true",
+      "condition_description": "Compliance analytics report generated",
       "priority": 100,
-      "description": "Compliance check complete",
-      "flow_category": "project"
+      "description": "Compliance analytics complete, return to status",
+      "flow_category": "tracking"
     },
     {
       "from_directive": "aifp_status",
       "to_directive": "project_compliance_check",
       "flow_type": "conditional",
-      "condition_key": "user_requests_compliance_check",
+      "condition_key": "user_requests_compliance_report",
       "condition_value": "true",
-      "condition_description": "User explicitly requests compliance check",
+      "condition_description": "User explicitly requests compliance analytics report (tracking must be enabled)",
       "priority": 70,
-      "description": "On-demand compliance check when user requests validation",
-      "flow_category": "project"
-    },
-    {
-      "from_directive": "project_milestone_complete",
-      "to_directive": "project_compliance_check",
-      "flow_type": "conditional",
-      "condition_key": "milestone_quality_gate_enabled",
-      "condition_value": "true",
-      "condition_description": "Quality gate before milestone completion (opt-in)",
-      "priority": 90,
-      "description": "Optional quality gate: check compliance before marking milestone complete",
-      "flow_category": "project"
+      "description": "On-demand compliance analytics when user requests report",
+      "flow_category": "tracking"
     },
     {
       "from_directive": "aifp_status",

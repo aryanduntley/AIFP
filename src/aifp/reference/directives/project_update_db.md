@@ -373,14 +373,12 @@ conn.execute("UPDATE files SET checksum=?, updated_at=CURRENT_TIMESTAMP WHERE id
 - **Called By**:
   - `project_file_write` - Primary caller after file write
   - `git_detect_external_changes` - Syncs DB after external edits
-  - `project_compliance_check` - Updates metadata after compliance fixes
 - **Calls**:
   - `parse_file_ast()` - Extract functions from code
   - `calculate_checksum()` - Compute file hash
   - `query_project_db()` - Check existing records
 - **Related**:
   - `project_reserve_finalize` - Finalize reservations after file write to update names with IDs and set is_reserved=FALSE
-  - `project_compliance_check` - Validates before DB update
   - `project_blueprint_update` - Updates blueprint after major changes
 
 ---

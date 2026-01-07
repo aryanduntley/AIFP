@@ -95,66 +95,71 @@ Your vision for settings is now the documented standard:
 - [x] Rewrite settings-specification.json with clean baseline
 - [x] Document design philosophy and integration strategy
 
-### Phase 2: Settings Evaluation ⏳ NEXT
+### Phase 2: ✅ COMPLETE - Settings Evaluation
 **Objective**: Review settings for relevance given FP directive changes
 
-#### Critical Question: FP Directive Adherence Change
-You mentioned: "We moved the basic FP guidelines to system prompt and the directives are now only for AI to reference if more context on how/when/etc. is needed."
+**Completed in settings-specification.json v3.1 (2026-01-04)**
 
-**This affects**:
-1. **fp_strictness_level** - Is this still relevant?
-2. **prefer_explicit_returns** - Still needed or now in system prompt?
-3. **project_compliance_check preferences** - Do these still make sense?
+#### Decisions Made
 
-**Questions to Answer**:
-- If FP guidelines are in system prompt, do we still need `project_compliance_check` directive?
-- If compliance checking happens automatically (system prompt), what do the compliance preferences control?
-- Is `auto_fix_violations` still relevant if AI always follows FP rules?
-- Is `fp_strictness_level` needed if FP is now baseline behavior?
+**Removed Settings (FP now baseline in system prompt)**:
+1. ✅ **fp_strictness_level** - Removed (FP enforcement is now mandatory baseline behavior)
+2. ✅ **prefer_explicit_returns** - Removed (redundant with system prompt FP rules)
+3. ✅ **project_compliance_check.auto_fix_violations** - Removed (directive repurposed as tracking-only)
+4. ✅ **project_compliance_check.skip_warnings** - Removed (directive repurposed as tracking-only)
+5. ✅ **project_compliance_check.strict_mode** - Removed (directive repurposed as tracking-only)
 
-#### Settings to Evaluate (Priority Order)
+**Added Settings**:
+1. ✅ **project_continue_on_start** - Added (autostart feature from system prompt requirements)
 
-**High Priority - May Need Removal**:
-1. **fp_strictness_level** - ❓ May be obsolete if FP is now mandatory baseline
-2. **prefer_explicit_returns** - ❓ May be redundant with system prompt
-3. **project_compliance_check.auto_fix_violations** - ❓ Relevant if no compliance directive?
-4. **project_compliance_check.skip_warnings** - ❓ What warnings exist if FP is baseline?
-5. **project_compliance_check.strict_mode** - ❓ Is this different from system prompt enforcement?
+**Kept Settings (Still Valid)**:
+1. ✅ **project_file_write preferences (5)** - Code style preferences orthogonal to FP compliance
+2. ✅ **project_task_decomposition preferences (3)** - Task management preferences still relevant
+3. ✅ **suppress_warnings** - Generic warning suppression still useful
+4. ✅ **tracking features (4)** - Opt-in tracking still valid (includes project_compliance_check as tracking feature)
 
-**Medium Priority - Likely Still Valid**:
-1. **project_file_write preferences** - ✅ Code style preferences still relevant
-2. **project_task_decomposition preferences** - ✅ Task management preferences still relevant
-3. **suppress_warnings** - ✅ Generic warning suppression still useful
-4. **tracking features** - ✅ Opt-in tracking still valid
+**Result**: Reduced from 18 settings → 12 settings
 
-**Questions for Each Setting**:
-- Does this setting still modify actual behavior?
-- Or is it trying to control something now handled by system prompt?
-- If FP is baseline, what does "FP compliance checking" mean?
+#### Key Architectural Decision: project_compliance_check
+- **Decision**: Repurpose as **opt-in tracking/analytics feature** (not mandatory validation)
+- **Rationale**: FP is baseline behavior (system prompt), not something checked after the fact
+- **New Purpose**: Optional analytics for tracking FP compliance patterns over time
+- **Activation**: Only when `tracking_settings.compliance_checking = enabled`
+- **Cost Warning**: Users warned about token overhead before enabling
 
-### Phase 3: Directive Workflow Audit ⏳ PENDING
+### Phase 3: Directive Workflow Audit ✅ COMPLETE
 **Objective**: Ensure directives actually check for their settings
 
 **Tasks**:
-1. Audit each directive workflow for preference-checking logic
-2. Add preference checks where missing
-3. Remove settings if directives don't/shouldn't check for them
-4. Document which directives are "customizable" vs "fixed"
+1. ✅ Audit each directive workflow for preference-checking logic
+2. ✅ Verify preference checks exist where documented
+3. ✅ Confirm settings match directive implementations
+4. ✅ Document which directives are "customizable" vs "fixed"
 
-**Directives to Audit**:
-- [ ] project_file_write - Does it check all 5 preferences?
-- [ ] project_task_decomposition - Does it check all 4 preferences?
-- [ ] project_compliance_check - Does it exist? Check preferences?
-- [ ] Other directives that could be customizable?
+**Directives Audited**:
+- [x] project_file_write - ✅ Checks all 5 preferences (lines 603-649 in directives-project.json)
+- [x] project_task_decomposition - ✅ Checks all preferences (lines 403-499 in directives-project.json)
+- [x] project_compliance_check - ✅ No preferences (tracking-only, lines 877-949)
 
-### Phase 4: System Prompt Update ⏳ PENDING
+**Findings**:
+- All documented preferences ARE checked in directive workflows
+- project_file_write: trunk="check_user_preferences", loads 5 preferences
+- project_task_decomposition: trunk="check_user_preferences", loads 4 preferences
+- project_compliance_check: Correctly updated to tracking-only (no preferences)
+
+### Phase 4: System Prompt Update ✅ COMPLETE
 **Objective**: Guide AI on dynamic setting creation
 
 **Tasks**:
-1. Add settings guidance to system prompt
-2. Explain when to create new settings
-3. Document user_preferences_update workflow
-4. Add examples of dynamic creation
+1. ✅ Add settings guidance to system prompt (lines 488-507)
+2. ✅ Explain when to create new settings (dynamic creation workflow)
+3. ✅ Document user_preferences_update workflow (5-step process)
+4. ✅ Add examples of dynamic creation ("Always add docstrings", etc.)
+
+**Updates Made**:
+- sys-prompt/aifp_system_prompt.txt: Expanded USER PREFERENCES section with dynamic creation workflow
+- helpers-core.json: Added implementation notes to get_directive_by_name and get_directive_content about loading preferences
+- settings-specification.json: Fixed outdated note about project_compliance_check (line 305)
 
 ### Phase 5: Documentation Update ⏳ PENDING
 **Objective**: Update all references to settings
@@ -194,86 +199,88 @@ You mentioned: "We moved the basic FP guidelines to system prompt and the direct
 
 ---
 
-## Immediate Questions for Discussion
+## Phase 2 Resolution Summary
 
-### 1. FP Compliance Settings
-**Current State**: 4 settings related to FP compliance
+### 1. FP Compliance Settings - ✅ RESOLVED
+**Previous State**: 4 settings related to FP compliance
 - `fp_strictness_level` (global)
 - `auto_fix_violations` (project_compliance_check)
 - `skip_warnings` (project_compliance_check)
 - `strict_mode` (project_compliance_check)
 
-**Question**: Given that FP guidelines are now in system prompt (mandatory baseline), what do these settings control?
+**Decision**: **Remove all 4 settings** - FP is baseline behavior (system prompt)
 
-**Options**:
-- **A**: Remove all - FP is now mandatory, no settings needed
-- **B**: Keep for legacy/transition - Some projects may have exceptions
-- **C**: Repurpose - Use for different compliance levels (strict vs lenient on specific rules)
-- **D**: Evaluate directive first - Does `project_compliance_check` still exist? What does it do?
+**Implementation**: Completed in v3.1 (2026-01-04)
 
-**Recommendation**: Need to review `project_compliance_check` directive and understand what it checks now that FP is in system prompt.
+**Impact**: project_compliance_check directive repurposed as opt-in tracking feature
 
 ---
 
-### 2. Code Style Settings
+### 2. Code Style Settings - ✅ KEPT
 **Current State**: 5 settings for code generation style (project_file_write)
 
-**Question**: Are these still relevant?
-
-**Assessment**: ✅ Likely still valid
+**Assessment**: ✅ Still valid
 - Code style preferences are separate from FP compliance
 - Users may want different indentation, naming, docstring styles
 - These don't conflict with FP rules (FP is about purity, not formatting)
 
-**Recommendation**: Keep these settings, they're orthogonal to FP compliance.
+**Decision**: Keep all 5 settings
 
 ---
 
-### 3. Task Management Settings
-**Current State**: 4 settings for task decomposition
+### 3. Task Management Settings - ✅ KEPT (3 settings)
+**Current State**: 3 settings for task decomposition (was 4, removed task_granularity)
 
-**Question**: Are these still relevant?
-
-**Assessment**: ✅ Likely still valid
+**Assessment**: ✅ Still valid
 - Task management is separate from FP compliance
 - Users may want different task breakdown styles
 - These control project management, not code quality
 
-**Recommendation**: Keep these settings.
+**Decision**: Keep 3 settings (removed task_granularity - tried to override schema)
 
 ---
 
-### 4. Tracking Settings
+### 4. Tracking Settings - ✅ KEPT + ENHANCED
 **Current State**: 4 opt-in tracking features
-
-**Question**: Are these still relevant?
 
 **Assessment**: ✅ Still valid
 - Tracking is independent of FP compliance changes
 - Still useful for debugging and analytics
 - Cost-conscious design (opt-in only)
 
-**Recommendation**: Keep these settings.
+**Enhancement**: Add compliance_checking as 5th tracking feature
+- Enables project_compliance_check directive when activated
+- Provides analytics on FP compliance patterns
+- Token overhead warning shown to users before enabling
+
+**Decision**: Keep 4 existing + add compliance_checking tracking
 
 ---
 
 ## Action Items
 
-### Immediate (This Week)
-1. **Clarify FP compliance architecture**
-   - Does `project_compliance_check` directive still exist?
-   - What does it check now that FP is in system prompt?
-   - Are compliance violations still possible?
+### ✅ Completed (2026-01-04)
+1. ✅ **FP compliance architecture clarified**
+   - Decision: project_compliance_check repurposed as opt-in tracking
+   - FP is baseline behavior (system prompt), not post-write validation
+   - Compliance violations prevented by baseline, not detected after
 
-2. **Review FP-related settings** (4 settings)
-   - Decide: Keep, Remove, or Repurpose
-   - Based on: Current FP enforcement architecture
-   - Document: Decision rationale
+2. ✅ **FP-related settings reviewed** (4 settings removed)
+   - Removed: fp_strictness_level, prefer_explicit_returns
+   - Removed: All 3 project_compliance_check preferences
+   - Added: project_continue_on_start
+   - Result: 18 settings → 12 settings
 
-3. **Validate code style settings** (5 settings)
-   - Confirm: Still relevant and orthogonal to FP
-   - Test: Do directives actually check these?
-   - Document: Usage examples
+3. ✅ **Code style settings validated** (5 settings kept)
+   - Confirmed: Still relevant and orthogonal to FP
+   - Decision: Keep all 5 (always_add_docstrings, max_function_length, etc.)
+
+### ⏳ In Progress (Current)
+1. **Update settings-cleanup-summary.md** - Show Phase 2 complete
+2. **Modify project_compliance_check directive** - Mark as tracking-only
+3. **Add compliance_checking to tracking_settings** - 5th tracking feature
+4. **Remove project_compliance_check from project/git directives**
+5. **Update directive flows** - Make conditional on tracking enabled
 
 ### Short-term (Next 2 Weeks)
 1. **Audit directive workflows**
@@ -306,16 +313,26 @@ You mentioned: "We moved the basic FP guidelines to system prompt and the direct
 
 ## Summary
 
-**What We Have Now**: Clean baseline of 18 validated settings
+**What We Have Now**: Clean baseline of 12 validated settings (reduced from 18)
 
-**What We Need Next**: Evaluate these 18 settings given FP architecture changes
+**Phase 1 Complete**: Settings cleanup and documentation
+**Phase 2 Complete**: Settings evaluation and FP baseline alignment
+**Phase 3 Complete**: Directive workflow audit and verification
+**Phase 4 Complete**: System prompt and helper implementation notes
 
-**Key Decision Point**: FP compliance settings - Keep, remove, or repurpose?
+**Key Decisions Made**:
+1. ✅ FP compliance settings removed (FP is baseline, not optional)
+2. ✅ project_compliance_check repurposed as opt-in tracking feature
+3. ✅ Code style and task management settings kept (orthogonal to FP)
+4. ✅ project_continue_on_start added for autostart functionality
+5. ✅ All directive workflows verified to check their documented preferences
+6. ✅ System prompt updated with dynamic settings creation workflow
+7. ✅ Helper implementation notes added for preference loading
 
-**Next Conversation**: Review `project_compliance_check` directive and decide on FP-related settings
+**Next Phase**: Documentation cleanup (Phase 5)
 
 ---
 
-**Status**: ✅ Phase 1 Complete, Ready for Phase 2
-**Created**: 2026-01-04
+**Status**: ✅ Phases 1-4 Complete, ⏳ Phase 5 Pending
+**Last Updated**: 2026-01-06
 **Owner**: User + AI collaboration

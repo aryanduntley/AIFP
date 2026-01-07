@@ -32,7 +32,6 @@ This directive applies when:
 - **Debugging** - Tracing function call paths
 - **Called by other directives**:
   - `project_dependency_sync` - Generates map after sync
-  - `project_compliance_check` - Analyzes dependencies for violations
   - `project_refactor_path` - Maps task dependencies
   - `aifp_status` - Shows current dependencies
   - Works with `fp_call_graph_generation` - Function-level call graphs
@@ -544,7 +543,6 @@ def handle_large_graph(
   - None
 - **Called By**:
   - `project_dependency_sync` - After sync
-  - `project_compliance_check` - For dependency analysis
   - `project_refactor_path` - For task dependencies
   - `aifp_status` - For current state
 - **Escalates To**:

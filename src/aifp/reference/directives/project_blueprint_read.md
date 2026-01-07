@@ -248,7 +248,7 @@ result = {
     "checksum_mismatch": True,
     "warning": "Blueprint modified outside AIFP - potential DB desync",
     "action": "Updating project.blueprint_checksum",
-    "suggest": "Run project_compliance_check to verify consistency"
+    "suggest": "Run project_update_db to sync changes"
 }
 ```
 

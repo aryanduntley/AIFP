@@ -485,17 +485,26 @@ If discussion results in project decision:
 
 === USER PREFERENCES & PRIVACY ===
 
-**User Preferences**: Atomic key-value overrides for directive behavior
-- Examples: always_add_docstrings, max_function_length, prefer_guard_clauses
+**User Preferences**: Atomic key-value overrides for directive behavior (dynamic, user-driven)
+- Small baseline exists, but settings are created when users express preferences
+- Examples: "Always add docstrings", "Use 2-space indentation", "Break tasks into fine detail"
 - Auto-loaded before customizable directives (user_preferences_sync)
 - Directives: user_preferences_update, user_preferences_learn, export, import
 
-**Tracking Features**: ALL OFF BY DEFAULT
-- Tracking features exist for development/debugging purposes only
-- **Regular users**: Assume tracking is always disabled
-- **Developer users**: Can explicitly enable tracking with tracking_toggle directive
+**Creating New Settings**:
+When user expresses preference like "Always do X" or "I prefer Y style":
+1. Call user_preferences_update
+2. Identify target directive (project_file_write, project_task_decomposition, etc.)
+3. Create preference: directive_name.preference_key = value
+4. Confirm to user (persists across sessions)
+5. Setting loaded automatically on future executions
+
+**Tracking Features**: ALL OFF BY DEFAULT (including compliance_checking)
+- Tracking exists for development/debugging purposes only
+- **Regular users**: Assume tracking always disabled
+- **Developer users**: Enable via tracking_toggle directive
+- compliance_checking: Optional FP pattern analytics (NOT validation)
 - Do not mention tracking features to regular users
-- All tracking data is for AIFP project development, not end-user consumption
 
 === FP + GIT COLLABORATION ===
 

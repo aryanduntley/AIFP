@@ -31,9 +31,7 @@ This directive applies when:
 - **Debugging** - Understanding function dependencies and interactions
 - **Refactoring** - Analyzing current state before modifications
 - **Documentation** - Reviewing file structure and purpose
-- **Compliance checking** - Reading files to validate FP principles
 - **Called by other directives**:
-  - `project_compliance_check` - Reads files to validate FP adherence
   - `project_dependency_sync` - Reads files to compare with database
   - `fp_purity` - Analyzes file content for purity violations
   - `aifp_status` - Reads files to provide project context
@@ -389,7 +387,6 @@ Ensures file exists and is accessible.
 ## Integration with Other Directives
 
 ### Called By:
-- `project_compliance_check` - Reads files for validation
 - `project_dependency_sync` - Compares files with database
 - `fp_purity` - Analyzes function purity
 - `aifp_status` - Provides file context
@@ -482,7 +479,6 @@ WHERE i.reference_table = 'files' AND i.reference_id = ?;
 - `project_file_write` - Writes files and tracks in database
 - `project_update_db` - Syncs file metadata
 - `project_dependency_sync` - Compares files with database
-- `project_compliance_check` - Validates FP adherence
 - `fp_purity` - Analyzes function purity
 
 ---

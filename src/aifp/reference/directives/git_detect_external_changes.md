@@ -138,8 +138,6 @@ Retrieves the last known Git commit hash from `project.db`.
   - Actions:
     - **update_themes**: If themes structure changed
     - **update_flows**: If flow dependencies changed
-    - **mark_functions_for_review**: Flag functions for FP compliance recheck
-  - Suggest: "Run `project_compliance_check` to verify FP adherence"
   - Suggest: "Run `project_update_db` to refresh function metadata"
 - **Result**: Recommendations provided for sync
 
@@ -194,7 +192,6 @@ Retrieves the last known Git commit hash from `project.db`.
 #   ghi789 - Added error handling
 #
 # Recommendations:
-#   • Run project_compliance_check to verify FP compliance
 #   • Review function metadata for accuracy
 #
 # 8. UPDATE project SET last_known_git_hash='def456', last_git_sync=now
@@ -371,7 +368,6 @@ except DatabaseError:
   - Database query helpers for impact analysis
 - **Triggers**:
   - `project_update_db` - If metadata needs refresh
-  - `project_compliance_check` - If FP compliance recheck needed
 - **Related**:
   - `git_init` - Initializes hash tracking
   - `git_merge_branch` - Creates commits that trigger detection

@@ -20,8 +20,8 @@ This directive is **essential for informed consent** because:
 
 The available tracking features:
 1. **fp_flow_tracking** (~5% token increase per file write)
-   - Tracks FP directive compliance over time
-   - Logs function purity, violations, user overrides
+   - Tracks FP directive consultation patterns
+   - Logs which FP directives AI references during code writing
 
 2. **issue_reports** (~2% token increase on errors)
    - Enables detailed bug report compilation
@@ -34,6 +34,12 @@ The available tracking features:
 4. **helper_function_logging** (~1% token increase on errors)
    - Logs helper function errors and execution details
    - Aids debugging
+
+5. **compliance_checking** (~5-10% token increase per check)
+   - Tracks FP compliance patterns and generates analytics
+   - Enables project_compliance_check directive for reports
+   - Use cases: AIFP development, project audits, research
+   - NOTE: FP compliance is baseline behavior; this only tracks patterns
 
 **Design Philosophy**: Project work should be cost-efficient. Debugging and analytics are opt-in luxuries.
 
@@ -507,8 +513,8 @@ if not database_exists("user_preferences.db"):
   - `user_preferences_sync` - Checks tracking_settings to know what to log
 - **Affects**:
   - `user_preferences_learn` - Requires ai_interaction_log enabled
-  - `project_compliance_check` - Can log to fp_flow_tracking if enabled
-  - `project_file_write` - Can log to fp_flow_tracking if enabled
+  - `project_compliance_check` - Activated by compliance_checking tracking feature
+  - FP directives - Can log consultation patterns to fp_flow_tracking if enabled
 - **Modifies**:
   - `tracking_settings` table - Updates enabled flag
 

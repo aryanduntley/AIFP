@@ -16,7 +16,10 @@
       "error_handling": "Returns error message if database not accessible. Returns empty suggestions if no directives match.",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If user setting project_continue_on_start=true and is_new_session=true: Automatically continue project work with bundled context instead of waiting for user command",
+        "When autostart enabled: Load pending tasks from status, present with priority order, proactively suggest next steps for project completion"
+      ],
       "implementation_notes": [
         "Returns: If is_new_session=true → bundles {status, user_settings, fp_directive_index, all_directive_names[], guidance}",
         "Returns: If is_new_session=false → lightweight {guidance, common_starting_points[]}",

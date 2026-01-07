@@ -875,60 +875,53 @@
   },
   {
     "name": "project_compliance_check",
-    "type": "project",
-    "level": 4,
-    "parent_directive": "project_update_db",
+    "type": "tracking",
+    "level": null,
+    "parent_directive": null,
+    "activation_required": "tracking_settings.compliance_checking = enabled",
+    "token_overhead": "~5-10% per check",
     "category": {
-      "name": "compliance",
-      "description": "Verifies AIFP rule adherence and functional progress."
+      "name": "analytics",
+      "description": "Optional FP compliance pattern analytics (tracking only, NOT validation)"
     },
-    "description": "Runs FP compliance directives to ensure code purity, no OOP, and structural correctness. Also verifies project completion alignment via project.db. Respects user preferences for compliance strictness (e.g., fp_strictness_level, auto_fix_violations) and applies user-approved exceptions. Validates project state and functional integrity before database updates or completion marking.",
+    "description": "OPTIONAL analytics directive that tracks FP compliance patterns over time. DISABLED by default (requires tracking_settings.compliance_checking = enabled). NOT a validation gatekeeper - FP compliance is baseline behavior enforced by system prompt. Provides compliance reports and analytics for audits, research, or educational purposes only. Never automatically called by project directives.",
     "md_file_path": "directives/project_compliance_check.md",
     "workflow": {
-      "trunk": "check_user_preferences",
+      "trunk": "check_tracking_enabled",
       "branches": [
         {
-          "if": "directive_preferences_exist",
-          "then": "load_compliance_preferences",
+          "if": "tracking_disabled",
+          "then": "skip",
           "details": {
-            "query": "SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name='project_compliance_check' AND active=1",
-            "also_check_user_settings": "fp_strictness_level",
-            "common_preferences": [
-              "auto_fix_violations",
-              "skip_warnings",
-              "strict_mode"
-            ]
+            "query": "SELECT enabled FROM tracking_settings WHERE feature_name='compliance_checking'",
+            "action": "Return early without checking",
+            "result": "No token overhead, no analytics collected",
+            "note": "Most common path - tracking disabled by default"
           }
         },
         {
-          "if": "preferences_loaded",
-          "then": "run_checks_with_preferences",
+          "if": "tracking_enabled",
+          "then": "collect_analytics",
           "details": {
-            "apply_strictness_level": true,
-            "respect_user_exceptions": true
+            "query_project_db": "SELECT * FROM functions",
+            "analyze": "FP patterns, purity levels, compliance distribution",
+            "log_to": "fp_flow_tracking table (if enabled)",
+            "note": "Non-blocking, fire-and-forget analytics collection"
           }
         },
         {
-          "if": "compliance_passed",
-          "then": "proceed",
+          "if": "user_requested_report",
+          "then": "generate_report",
           "details": {
-            "update_db": true
+            "generate": "Compliance summary from project.db",
+            "include": "Function purity distribution, FP patterns used",
+            "return": "Report to user"
           }
         },
         {
-          "if": "compliance_failed",
-          "then": "alert_user",
+          "fallback": "skip",
           "details": {
-            "escalate_to_fp_directives": [
-              "fp_purity",
-              "fp_no_oop"
-            ]
-          }
-        },
-        {
-          "fallback": "prompt_user",
-          "details": {
-            "clarify": "Resolve compliance issue manually?"
+            "note": "Graceful failure - tracking errors don't affect development"
           }
         }
       ],
@@ -938,18 +931,19 @@
     },
     "roadblocks_json": [
       {
-        "issue": "compliance_failure",
-        "resolution": "Refer to FP directives and retry"
+        "issue": "tracking_disabled",
+        "resolution": "Enable via tracking_toggle directive with user consent"
       },
       {
-        "issue": "fp_violation",
-        "resolution": "Run linked fp_* directives automatically"
+        "issue": "performance_impact",
+        "resolution": "Use sampling mode (10% tracking) or disable tracking"
       }
     ],
     "intent_keywords_json": [
-      "verify",
-      "check compliance",
-      "validate code"
+      "compliance report",
+      "compliance analytics",
+      "track compliance",
+      "compliance patterns"
     ],
     "confidence_threshold": 0.7
   },
@@ -957,7 +951,7 @@
     "name": "project_completion_check",
     "type": "project",
     "level": 4,
-    "parent_directive": "project_compliance_check",
+    "parent_directive": "project_milestone_complete",
     "category": {
       "name": "compliance",
       "description": "Evaluates roadmap progress and completion readiness."
@@ -1013,7 +1007,7 @@
     "name": "project_error_handling",
     "type": "project",
     "level": 4,
-    "parent_directive": "project_compliance_check",
+    "parent_directive": null,
     "category": {
       "name": "error_handling",
       "description": "Handles directive failures, logging, and escalation to user."

@@ -59,29 +59,38 @@ aifp run "Check project status"
 
 After receiving guidance, AI evaluates:
 
-1. **Is this a continuation request?**
+1. **Check autostart setting (session start only)**
+   - Query: `SELECT setting_value FROM user_settings WHERE setting_key='project_continue_on_start'`
+   - **If is_new_session=true AND project_continue_on_start=true**:
+     - Automatically continue project work with context from session bundle
+     - Load pending tasks and present them with priority order
+     - Skip waiting for user command - proactively suggest next steps
+     - Goal: Project completion and/or auto-execute user custom directives
+   - **If false or not new session** → Continue to step 2
+
+2. **Is this a continuation request?**
    - Keywords: "continue", "status", "resume", "where were we", "what's next"
    - **YES** → Call `aifp_status` first for context
-   - **NO** → Proceed to step 2
+   - **NO** → Proceed to step 3
 
-2. **Check project type (Use Case 1 vs Use Case 2)**
+3. **Check project type (Use Case 1 vs Use Case 2)**
    - Query: `SELECT user_directives_status FROM project WHERE id = 1`
    - **NULL** → Use Case 1 (regular software development)
    - **'in_progress', 'active', 'disabled'** → Use Case 2 (automation project)
 
-3. **What type of task is this?**
+4. **What type of task is this?**
    - **Coding** → Write FP-compliant code (consult FP directives only if uncertain)
    - **Project Management** → Execute Project directives
    - **User Directives** (Use Case 2) → Execute User System directives
    - **Git Operations** → Execute Git directives
    - **Discussion** → No directives unless decision made
 
-4. **Do I have directive names?**
+5. **Do I have directive names?**
    - **NO** → Already provided in is_new_session bundle (directive names only)
    - **YES** → Use cached directive names
    - **Need details?** → Query specific directive by name
 
-5. **Which directives to execute?**
+6. **Which directives to execute?**
    - AI evaluates user request and project context
    - AI decides which project/user/git directives to execute
    - For coding: Write FP code naturally, query FP directives only if uncertain about implementation

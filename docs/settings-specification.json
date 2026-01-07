@@ -131,7 +131,7 @@
 
   "tracking_settings": {
     "description": "Feature flags for opt-in tracking/logging (tracking_settings table) - all disabled by default",
-    "count": 4,
+    "count": 5,
     "privacy_note": "Users should be warned about token overhead before enabling any tracking feature",
     "cost_philosophy": "All tracking disabled by default to minimize API costs",
 
@@ -186,6 +186,26 @@
         "references": [
           "docs/directives-json/directives-user-pref.json",
           "src/aifp/reference/directives/tracking_toggle.md"
+        ]
+      },
+      {
+        "name": "compliance_checking",
+        "enabled": false,
+        "description": "Track FP compliance patterns and generate compliance analytics",
+        "token_overhead": "~5-10% per check",
+        "purpose": "Optional analytics for FP compliance patterns (NOT validation)",
+        "used_by": ["project_compliance_check directive"],
+        "use_cases": [
+          "AIFP development/debugging",
+          "Project audits requiring compliance documentation",
+          "Research on FP pattern adoption",
+          "Educational tracking"
+        ],
+        "note": "FP compliance is BASELINE behavior. This tracks patterns, not validates code.",
+        "references": [
+          "src/aifp/reference/directives/project_compliance_check.md",
+          "docs/settings-cleanup-summary.md",
+          "docs/project_compliance_check_cleanup_plan.md"
         ]
       }
     ]
@@ -282,6 +302,6 @@
     "All new settings should be integrated into directive workflows before being documented",
     "Tracking features are opt-in only to minimize API token costs",
     "FP compliance is now baseline behavior in system prompt (not checked via directives)",
-    "project_compliance_check directive should be removed from project directives, may be repurposed as FP directive"
+    "project_compliance_check has been repurposed as optional tracking directive (NOT validation, NOT FP directive)"
   ]
 }

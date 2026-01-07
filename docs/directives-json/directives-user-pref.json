@@ -504,7 +504,7 @@
       "name": "tracking_management",
       "description": "Enables or disables tracking features in user_preferences.db."
     },
-    "description": "Toggles tracking features on or off by updating tracking_settings table. Shows user estimated token overhead before enabling. Allows granular control over fp_flow_tracking, issue_reports, ai_interaction_log, and helper_function_logging.",
+    "description": "Toggles tracking features on or off by updating tracking_settings table. Shows user estimated token overhead before enabling. Allows granular control over fp_flow_tracking, issue_reports, ai_interaction_log, helper_function_logging, and compliance_checking.",
     "md_file_path": "directives/tracking_toggle.md",
     "workflow": {
       "trunk": "parse_tracking_request",
