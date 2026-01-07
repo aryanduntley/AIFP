@@ -33,9 +33,14 @@ The export workflow:
   "project_name": "My AIFP Project",
   "user_settings": [
     {
-      "key": "fp_strictness_level",
-      "value": "{\"level\": \"strict\", \"exceptions\": []}",
-      "description": "How strict to enforce FP directives"
+      "key": "project_continue_on_start",
+      "value": "true",
+      "description": "Automatically continue project work on session start"
+    },
+    {
+      "key": "suppress_warnings",
+      "value": "[]",
+      "description": "Directives to suppress warnings"
     }
   ],
   "directive_preferences": [
@@ -261,8 +266,7 @@ Queries all preferences from user_preferences.db.
 #      "version": "1.0",
 #      "exported_at": "2024-10-27T14:30:00Z",
 #      "user_settings": [
-#        {"key": "fp_strictness_level", "value": "...", "description": "..."},
-#        {"key": "prefer_explicit_returns", "value": "true", "description": "..."},
+#        {"key": "project_continue_on_start", "value": "false", "description": "..."},
 #        {"key": "suppress_warnings", "value": "[]", "description": "..."}
 #      ],
 #      "directive_preferences": [

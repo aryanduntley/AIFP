@@ -211,8 +211,7 @@
               "purpose",
               "goals",
               "language",
-              "build_tool",
-              "fp_strictness_level"
+              "build_tool"
             ]
           }
         },
@@ -419,7 +418,6 @@
           "details": {
             "query": "SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name='project_task_decomposition' AND active=1",
             "common_preferences": [
-              "task_granularity",
               "naming_convention",
               "auto_create_items",
               "default_priority"

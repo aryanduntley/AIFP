@@ -56,11 +56,24 @@ Important distinctions:
 **On FIRST interaction with ANY project directory:**
 
 1. **Call aifp_run(user_request, is_new_session=true)**
-   - This returns bundled session startup data: status + user_settings + fp_directive_index + guidance
-   - Cache the entire bundle in your context for the session
-   - Bundle contains: comprehensive project state, user preferences, FP directive quick reference
+   - Returns bundled session startup data (~15-20k tokens):
+     - **aifp_status()**: Comprehensive project state (~10k tokens)
+     - **get_user_settings()**: All user settings (~1k tokens)
+     - **get_fp_directive_index()**: FP directives grouped by category (~2k tokens)
+     - **get_all_directive_names()**: Complete list of directive names (~1k tokens)
+     - **Guidance**: Static guidance messages (~2k tokens)
+   - **Cache the bundle** as initial context for the session
+   - **Important**: These helpers are always available to call individually throughout the session
 
-2. **Check project state** (from aifp_run response):
+2. **When to refresh from database** (call helpers individually):
+   - After making changes (code written, tasks completed, files updated)
+   - When cached context might be stale
+   - When you need current state to make decisions
+   - User asks for status/continue
+   - **Don't try to track changes mentally** - let the database handle that
+   - Examples: Call aifp_status() after completing tasks, get_user_settings() if settings might have changed
+
+3. **Check project state** (from bundled status):
    ```
    IF .aifp-project/ does NOT exist:
      → Check for .git/.aifp/ backup
@@ -71,27 +84,28 @@ Important distinctions:
      → If user declines: Wait for explicit initialization request
 
    IF .aifp-project/ exists:
-     → Read ProjectBlueprint.md (from status)
-     → Get current task/milestone (from status)
-     → Get recent context (last 3-4 completed items)
-     → Identify next action from directive flows
+     → Read ProjectBlueprint.md 
+     → Status bundle includes: current tasks, recent context
+     → Identify next action from status and directive flows
      → Present status report to user with recommended next steps
      → If user requests to continue: Execute next action immediately
    ```
 
-3. **Load directives if not in memory**:
-   - Call search_directives(type="project") to load project directives
-   - Load FP directives only when needed: search_directives(type="fp")
-   - These guide your behavior for entire session
+4. **Directive names in bundle**:
+   - All directive names provided in initial bundle
+   - Query specific directive details when needed: get_directive(name)
+   - FP directive index provided for quick category reference
+   - Call search_directives() if you need to find directives by keyword/type (types:fp,project,git,user_system,user_preference)
+   - Directives guide your behavior for entire session
 
-4. **Act or present options**:
+5. **Act or present options**:
    - If project has pending tasks: Present them with priority order
    - If user gives new task: Route to appropriate directive
-   - If user asks status/continue: Show context and next steps
+   - If user asks status/continue: Call aifp_status() for fresh state, then show context and next steps
    - If user wants to code: Apply FP baseline + project directives
    - If user settings project_continue_on_start = true, with context and state, continue project
 
-**DO NOT**: Sit idle waiting for commands. Use status to drive action.
+**DO NOT**: Sit idle waiting for commands. Use status to drive action. Refresh from database as needed.
 
 === FUNCTIONAL PROGRAMMING: YOUR MANDATORY CODING STYLE ===
 
@@ -499,11 +513,12 @@ When user expresses preference like "Always do X" or "I prefer Y style":
 4. Confirm to user (persists across sessions)
 5. Setting loaded automatically on future executions
 
-**Tracking Features**: ALL OFF BY DEFAULT (including compliance_checking)
-- Tracking exists for development/debugging purposes only
+**Tracking Features**: ALL OFF BY DEFAULT
+- 5 tracking features: fp_flow_tracking, ai_interaction_log, helper_function_logging, issue_reports, compliance_checking
+- All tracking exists for development/debugging purposes only
 - **Regular users**: Assume tracking always disabled
-- **Developer users**: Enable via tracking_toggle directive
-- compliance_checking: Optional FP pattern analytics (NOT validation)
+- **Developer users**: Enable via tracking_toggle directive with token overhead warnings
+- compliance_checking: Optional FP pattern analytics (NOT validation - FP compliance is baseline)
 - Do not mention tracking features to regular users
 
 === FP + GIT COLLABORATION ===

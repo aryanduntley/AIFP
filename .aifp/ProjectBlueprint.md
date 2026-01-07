@@ -1,8 +1,8 @@
 # AIFP MCP Server - Project Blueprint
 
 **Version**: 1.0
-**Status**: Active Development
-**Last Updated**: 2025-12-22
+**Status**: Prep Phase Complete - Ready for MCP Implementation
+**Last Updated**: 2026-01-07
 **AIFP Compliance**: Strict
 
 ---
@@ -12,6 +12,22 @@
 ### Idea
 
 Build a Model Context Protocol (MCP) server that provides AI assistants with database-driven directives for functional programming enforcement and project management. The server enables AI to write pure functional code, manage project lifecycles, and support user-defined automation directives.
+
+### Current Phase
+
+**Prep Work Complete** - All design, documentation, and specifications finalized:
+- ✅ Four-database architecture specified (schemas complete)
+- ✅ Comprehensive directive system designed (125+ directives documented)
+- ✅ Helper function library designed (50+ helpers specified in `docs/helpers/json/`)
+- ✅ Settings system finalized (v3.1: 12-setting baseline)
+- ✅ All directive JSON files ready in `docs/directives-json/`
+- ✅ All directive MD documentation complete in `src/aifp/reference/directives/`
+
+**Next Phase: MCP Server Implementation** - Begin coding production-ready Python implementation:
+- All files will be in `src/aifp/` (production package)
+- Use `docs/helpers/json/` and `docs/directives-json/` as staging areas for modifications
+- Import JSON staging files to databases after dev modifications
+- All code must be FP-compliant (pure functions, immutable data, no OOP)
 
 ### Goals
 
@@ -59,7 +75,7 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 
 ### Package Structure
 
-**Standalone MCP Server** (`src/aifp/` - installable via pip):
+**Production Package** (`src/aifp/` - installable via pip):
 - `core/` - Immutable types and Result type definitions
 - `database/` - Schemas, query builders, effect functions
 - `helpers/` - Comprehensive helper function library organized by domain
@@ -67,12 +83,21 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 - `mcp_server/` - MCP protocol handlers and tool registration
 - `scripts/` - Standalone scripts (init_aifp_project.py)
 - `templates/` - Database templates for new projects
-- `reference/` - Documentation that ships with the package
+- `reference/directives/` - Directive MD documentation shipped with package
 
-**Development Files** (not in package):
-- `.aifp/` - Meta-circular development tracking
-- `docs/` - Blueprints, implementation plans, references
+**Development Staging** (not in package - dev only):
+- `docs/helpers/json/` - Helper definitions in JSON (modify here, then import to aifp_core.db)
+- `docs/directives-json/` - Directive definitions in JSON (modify here, then import to aifp_core.db)
+- `docs/db-schema/` - Database schemas (source of truth for structure)
+- `.aifp/` - Meta-circular development tracking (AIFP tracking AIFP's development)
+- `docs/` - Blueprints, implementation plans, compliance reports
 - `tests/` - Test suite
+
+**Dev Workflow**:
+1. Modify helper/directive JSON files in `docs/`
+2. Run import script to populate `aifp_core.db`
+3. Test with updated database
+4. Production users only see pre-populated `aifp_core.db` (never touch JSON files)
 
 ---
 
@@ -191,6 +216,25 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 
 ## 5. Evolution History
 
+### Version 1.3 - 2026-01-07
+
+- **Change**: Settings system finalized (v3.1) and all documentation cleaned
+- **Details**:
+  - Reduced from 18 settings to 12 settings baseline
+  - Removed 6 settings: fp_strictness_level, prefer_explicit_returns, auto_fix_violations, skip_warnings, strict_mode, task_granularity
+  - Added: project_continue_on_start (autostart setting), compliance_checking (5th tracking feature)
+  - Architectural clarification: FP compliance is baseline behavior (mandatory), not optional
+  - project_compliance_check repurposed as tracking-only analytics directive (not validation)
+  - Completed comprehensive documentation cleanup (11 issues found and fixed across all directive files)
+  - All user preference directives updated with correct examples and workflows
+- **Rationale**:
+  - FP compliance is non-negotiable baseline behavior enforced by system prompt
+  - Removed settings that implied FP was optional or configurable
+  - Simplified to atomic preference model: directive_name.preference_key = value
+  - All tracking features disabled by default (cost-conscious design)
+- **Documentation**: docs/settings-cleanup-FINAL-COMPLETE.md, docs/settings-specification.json
+- **Files**: All directive JSON and MD files, system prompt, README, ProjectBlueprint
+
 ### Version 1.2 - 2025-11-01
 
 - **Change**: Added helper classification system and complete directive-helper mappings
@@ -255,15 +299,20 @@ Allow users to customize AI behavior on a per-directive basis through atomic key
 - `fp_flow_tracking` - FP compliance history (opt-in only)
 - `issue_reports` - Contextual bug reports (opt-in only)
 
-### Example Preferences
+### Example Preferences (v3.1 Baseline)
 
 ```
 project_file_write.always_add_docstrings = true
 project_file_write.max_function_length = 50
 project_file_write.prefer_guard_clauses = true
-project_compliance_check.auto_fix_violations = false
-project_task_decomposition.task_granularity = medium
+project_file_write.code_style = explicit
+project_file_write.indent_style = spaces_2
+project_task_decomposition.naming_convention = descriptive
+project_task_decomposition.auto_create_items = true
+project_task_decomposition.default_priority = medium
 ```
+
+**Note**: FP compliance is baseline behavior (mandatory). The `project_compliance_check` directive is now tracking-only (optional analytics), not validation. Settings like `auto_fix_violations`, `skip_warnings`, and `strict_mode` were removed in v3.1.
 
 ### User Preferences Directives
 

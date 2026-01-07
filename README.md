@@ -182,12 +182,13 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 - `is_sub_helper = TRUE`: Sub-helper (only called by other helpers, no directive mapping)
 - Both FALSE: Helper used by directives (AI calls via directive workflows)
 
-**Helper Registry** (Development):
-- Helper definitions maintained in `docs/helpers/registry/*.json` during development
+**Helper Registry** (Development Staging):
+- Helper definitions maintained in `docs/helpers/json/*.json` during development
+- Developers modify JSON files, then import to database when complete
 - Each helper includes `used_by_directives` field for relationship mapping
-- Database import script populates `aifp_core.db` from registry files before release
+- Database import script populates `aifp_core.db` from JSON files before release
 - Production: Users query `aifp_core.db` (pre-populated), NOT JSON files
-- JSON files are dev-only staging, never shipped with package
+- JSON files are dev-only staging area, never shipped with package
 
 **Read-Only Philosophy**: This database is version-controlled and immutable once deployed. AI reads from it but never modifies it.
 
@@ -344,7 +345,7 @@ aifp run "Initialize project for calculator"
 1. Calls `aifp_run` → receives guidance
 2. Evaluates: "Project initialization = project management action"
 3. Checks memory: "Do I have directives? No."
-4. Calls `get_all_directives()` → receives comprehensive directive library (FP, Project, User Preferences, User Systems, Git)
+4. Calls directive loading → receives comprehensive directive library
 5. Reviews directives: "This matches `project_init`"
 6. Checks prerequisites: "Should run `project_status` first?"
 7. Executes `project_init` directive workflow:
@@ -368,8 +369,8 @@ Before acting, AI performs self-assessment using questions provided with directi
    - Yes: Proceed with cached directives
 
 3. **Which directives apply?**
-   - FP directives: Code structure, purity, immutability, composition
-   - Project directives: File writes, DB updates, task management, compliance
+   - FP baseline: Code structure, purity, immutability, composition (always active)
+   - Project directives: File writes, DB updates, task management
 
 4. **Action-reaction needed?**
    - Code write → FP compliance → DB update
@@ -380,14 +381,14 @@ Before acting, AI performs self-assessment using questions provided with directi
 ```
 User: "Write multiply_matrices function"
 AI thinks:
-  ✓ This is coding (FP directives apply)
+  ✓ This is coding (FP baseline applies)
   ✓ This is project management (project_file_write applies)
   ✓ I have directives in memory
-  ✓ Matches: fp_purity, fp_immutability, fp_no_oop, project_file_write
+  ✓ Matches: project_file_write directive
   ✓ Action-reaction: code → FP check → DB update
 
 AI executes:
-  1. Write function following FP directives
+  1. Write function following FP baseline
   2. Verify FP compliance (purity, immutability)
   3. Apply project_file_write directive
   4. Update project.db (files, functions, interactions)
@@ -474,17 +475,18 @@ Add to Claude Desktop config (`claude_desktop_config.json`):
 
 ## Directives System
 
-### FP Directives
+### FP Baseline vs FP Directives
 
-Comprehensive library enforcing functional programming standards:
+**FP Baseline** (Always Active):
+- Core functional programming rules AI follows naturally when writing code
+- Pure functions, immutability, no OOP, explicit error handling
+- Non-negotiable - all code must be FP-compliant
 
-| Category | Directives | Purpose |
-|----------|------------|---------|
-| **Purity** | `fp_purity`, `fp_state_elimination`, `fp_side_effect_detection` | Eliminate hidden state and side effects |
-| **Composition** | `fp_monadic_composition`, `fp_function_composition`, `fp_pipelines` | Enable function composition |
-| **Error Handling** | `fp_optionals`, `fp_result_types`, `fp_try_monad` | Replace exceptions with Result/Option types |
-| **OOP Elimination** | `fp_class_elimination`, `fp_inheritance_block`, `fp_wrapper_generation` | Convert OOP to FP patterns |
-| **Optimization** | `fp_memoization`, `fp_lazy_evaluation`, `fp_parallel_evaluation` | Optimize without breaking purity |
+**FP Directives** (Reference Documentation):
+- Detailed guidance for complex scenarios and edge cases
+- Consulted only when AI is uncertain about implementation
+- Categories: Purity, Composition, Error Handling, OOP Elimination, Optimization
+- Examples: `fp_purity`, `fp_monadic_composition`, `fp_result_types`, `fp_wrapper_generation`
 
 ### Project Directives
 
@@ -785,25 +787,24 @@ AI: ✅ Preference learned: project_file_write
 
 ### Reference Documents
 
-- **[Helper Registry Documentation](docs/helpers/registry/)** - **Development staging files** for helper function definitions organized by database and function type. Includes helper-registry-guide.md (design principles, AI vs Code framework), CURRENT_STATUS.md (overview), HELPER_REGISTRY_STATUS.md (detailed breakdown), CONSOLIDATION_REPORT.md (changes), and VERIFICATION_REPORT.md (validation results). Each helper includes full specifications, parameters, return types, error handling, and `used_by_directives` field. These JSON files are imported into `aifp_core.db` before release and are NOT shipped with the package.
-- **[Directive MD Files](src/aifp/reference/directives/)** - Complete **self-contained** documentation for all directives in individual MD files. Each directive MD file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, database operations, and testing scenarios. All original guide content has been absorbed into directive MD files for comprehensive self-documentation.
-- **[Directives Markdown Reference](docs/directives-markdown-reference.md)** - Template and standards for creating directive MD files.
-- **[Directive Documentation Status](docs/directive-documentation-status.md)** - Tracking document for directive MD file completion status.
+- **[Helper Registry](docs/helpers/json/)** - **Development staging area** for helper function definitions. Developers modify JSON files here, then import to `aifp_core.db`. Each helper includes full specifications, parameters, return types, error handling, and `used_by_directives` field. These JSON files are dev-only staging and are NOT shipped with the package.
+- **[Directive MD Files](src/aifp/reference/directives/)** - Complete documentation for all directives shipped with the package. Each directive MD file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, database operations, and testing scenarios.
 
 ### Directive Definitions (JSON + MD)
 
-**Development**: Directives defined in JSON files for easy editing:
+**Development Staging**: Directives defined in JSON files for easy editing:
 - **[FP Core Directives](docs/directives-json/directives-fp-core.json)** - Core functional programming directives
 - **[FP Aux Directives](docs/directives-json/directives-fp-aux.json)** - Auxiliary FP directives
 - **[Project Directives](docs/directives-json/directives-project.json)** - Project lifecycle management
 - **[User Preference Directives](docs/directives-json/directives-user-pref.json)** - User customization directives
 - **[User Directive System](docs/directives-json/directives-user-system.json)** - User-defined automation directives
 - **[Git Integration Directives](docs/directives-json/directives-git.json)** - Git collaboration directives
-- **[System Directives](docs/directives-json/)** - Core system directives (aifp_run, aifp_status)
 
-**Production**: JSON files imported into `aifp_core.db` before release. Users query database, NOT JSON files.
+Developers modify JSON files, then import to database when complete.
 
-**Documentation**: [MD Files](src/aifp/reference/directives/) - Comprehensive documentation shipped with package for `get_directive_content()`. Each includes workflows, examples, edge cases, database operations, FP compliance notes, and cross-directive relationships.
+**Production**: JSON files imported into `aifp_core.db` before release. Users query database, NOT JSON files. JSON files are dev-only staging area, never shipped with package.
+
+**Documentation**: [MD Files](src/aifp/reference/directives/) - Comprehensive documentation shipped with package. Each directive includes workflows, examples, edge cases, database operations, FP compliance notes, and cross-directive relationships.
 
 ---
 
@@ -843,24 +844,21 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ## Roadmap
 
-### Current (v1.0)
+### Current (v1.0 - Design & Documentation Phase)
 
-- ✅ Comprehensive directive system (FP, Project, User Preference, Git, User Directives)
-- ✅ Four-database architecture (aifp_core, project, user_preferences, user_directives)
-- ✅ MCP server design with command routing
-- ✅ User preference system with directive mapping and AI learning
-- ✅ User-defined directives system for domain-specific automation
-- ✅ Git integration with FP-powered multi-user collaboration
+- ✅ Comprehensive directive system designed (FP, Project, User Preference, Git, User Directives)
+- ✅ Four-database architecture specified (aifp_core, project, user_preferences, user_directives)
+- ✅ MCP server architecture designed with command routing
+- ✅ User preference system designed with directive mapping and AI learning
+- ✅ User-defined directives system designed for domain-specific automation
+- ✅ Git integration designed with FP-powered multi-user collaboration
   - External change detection
   - Branch-based workflows (`aifp-{user}-{number}`)
   - FP-powered conflict resolution (auto-resolve >0.8 confidence)
   - Merge history audit trail
-- ✅ Complete documentation:
-  - 9 comprehensive blueprints
-  - Helper functions fully documented in registries (see Helper Registry Documentation)
-  - Directive MD files with workflows, examples, and cross-references
-  - All guide content absorbed into directive MD files
-- ✅ Cost-conscious tracking (all features opt-in by default)
+- ✅ Complete documentation and specifications
+- ✅ Cost-conscious design (all tracking features disabled by default)
+- ✅ Settings system finalized (12-setting baseline, v3.1)
 
 ### Planned (v1.1+)
 

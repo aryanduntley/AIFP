@@ -549,7 +549,7 @@
         {
           "fallback": "prompt_user",
           "details": {
-            "clarify": "Which tracking feature? Options: fp_flow_tracking, issue_reports, ai_interaction_log, helper_function_logging"
+            "clarify": "Which tracking feature? Options: fp_flow_tracking, issue_reports, ai_interaction_log, helper_function_logging, compliance_checking"
           }
         }
       ],

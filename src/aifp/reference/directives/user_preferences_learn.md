@@ -108,8 +108,8 @@ Detects when user corrects or modifies AI output.
   - Pattern detection:
     - **Docstrings**: 3+ corrections adding docstrings → Preference: `always_add_docstrings`
     - **Guard clauses**: 3+ corrections converting nested if to guards → Preference: `prefer_guard_clauses`
-    - **Explicit returns**: 3+ corrections adding explicit returns → Preference: `prefer_explicit_returns`
     - **Indentation**: 3+ corrections changing spaces → Preference: `indent_style`
+    - **Naming**: 3+ corrections changing function names → Preference: `naming_convention`
   - Confidence scoring:
     - 3+ similar corrections → 0.80 confidence
     - 5+ similar corrections → 0.90 confidence

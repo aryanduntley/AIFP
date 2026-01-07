@@ -10,34 +10,9 @@ Everything above src/aifp/ is dev.
 helpers are in docs/json/helpers/
 directive flows are in docs/directives-json/directive_flow_(project,user-preferences,fp).json
 
-docs/settings-specification.json
-docs/settings-analysis-report.md
-docs/settings-directive-reference.md
-docs/settings-design-integration.md
-docs/settings-cleanup-summary.md
-
-=============================
-
-Check all of these for any needed changes. especially in regards to docs/settings-design-integration.md
-docs/directives-json/directives-user-pref.json
-docs/directives-json/directive_flow_user_preferences.json
-src/aifp/reference/directives/user_preferences_sync.md
-src/aifp/reference/directives/user_preferences_import.md
-src/aifp/reference/directives/user_preferences_update.md
-
-BOTH directive json and md files:
-check all directives for settings
-check directives for settings to see what is currently mentioned about them (any setting values already defined in directives?)
-docs/settings-cleanup-summary.md phase 5
-
-directive-flow was cleaned? I believe so, but let's ensure.
-settings minimalistic. They are meant to evolve and be added by the user according to user's preferences.
-
 check generic directive getters, if any. Must ensure we load queried directive specific settings along with directive data for AI to prevent possibility of setting not being queried separately or being "forgotten"
 
 Review aifp_run returns, including settings. How much data? too extensive? Should we tone it down?
-
-============================
 
 COMPLETED BUT VALUABLE INFO FOR when begin CODING AIFP_RUN
 docs/settings-integration-implementation.md

@@ -95,18 +95,18 @@ Checks if `user_preferences.db` exists and is accessible.
     - `tracking_settings` - Feature flags (all disabled)
   - Insert default settings:
     ```sql
-    INSERT INTO user_settings (setting_key, setting_value, description) VALUES
-      ('fp_strictness_level', '{"level": "standard", "exceptions": []}', 'FP enforcement strictness'),
-      ('prefer_explicit_returns', 'true', 'Always use explicit returns'),
-      ('suppress_warnings', '[]', 'Directives to suppress warnings');
+    INSERT INTO user_settings (setting_key, setting_value, description, scope) VALUES
+      ('project_continue_on_start', 'false', 'Automatically continue project work on session start', 'project'),
+      ('suppress_warnings', '[]', 'Directives to suppress warnings', 'project');
     ```
   - Insert default tracking settings (all disabled):
     ```sql
     INSERT INTO tracking_settings (feature_name, enabled, description, estimated_token_overhead) VALUES
-      ('fp_flow_tracking', 0, 'Track FP compliance', '~5% token increase per file write'),
+      ('fp_flow_tracking', 0, 'Track FP directive consultations', '~5% token increase per file write'),
       ('issue_reports', 0, 'Enable issue reports', '~2% token increase on errors'),
       ('ai_interaction_log', 0, 'Log AI interactions', '~3% token increase overall'),
-      ('helper_function_logging', 0, 'Log helper errors', '~1% token increase on errors');
+      ('helper_function_logging', 0, 'Log helper errors', '~1% token increase on errors'),
+      ('compliance_checking', 0, 'Track FP compliance patterns (analytics, NOT validation)', '~5-10% token increase per check');
     ```
   - Message: "Preferences database initialized with defaults"
 - **Result**: Database created, no preferences loaded yet
@@ -129,8 +129,8 @@ Checks if `user_preferences.db` exists and is accessible.
         "indent_style": "spaces_2"
       },
       "user_settings": {
-        "fp_strictness_level": {"level": "standard", "exceptions": []},
-        "prefer_explicit_returns": True
+        "project_continue_on_start": False,
+        "suppress_warnings": []
       }
     }
     ```
@@ -240,32 +240,31 @@ Checks if `user_preferences.db` exists and is accessible.
 
 ---
 
-**Loading Global FP Strictness:**
+**Loading Global Autostart Setting:**
 ```python
-# User set global FP strictness to "strict"
+# User enabled autostart
 # user_settings table:
-# - fp_strictness_level: {"level": "strict", "exceptions": []}
+# - project_continue_on_start: true
 
-# AI calls: user_preferences_sync(directive_name="project_compliance_check")
+# AI calls: user_preferences_sync(directive_name="aifp_run")
 
 # Workflow:
 # 1. check_preferences_db: ✓ Exists
 # 2. load_preferences:
-#    - Directive preferences: None specific to project_compliance_check
-#    - User settings: fp_strictness_level = {"level": "strict"}
+#    - User settings: project_continue_on_start = "true"
 # 3. apply_to_context:
 #    context = {
 #      "user_settings": {
-#        "fp_strictness_level": {"level": "strict", "exceptions": []}
+#        "project_continue_on_start": True
 #      },
 #      "preferences": {}
 #    }
-# 4. Project_compliance_check reads fp_strictness_level
-#    → Applies strict FP enforcement (zero tolerance)
+# 4. aifp_run checks project_continue_on_start
+#    → Automatically continues project work with context and state
 #
 # Result:
-# ✅ Global strictness setting applied
-# ✅ Compliance check runs in strict mode
+# ✅ Autostart setting applied
+# ✅ AI automatically resumes work on session start
 ```
 
 ---

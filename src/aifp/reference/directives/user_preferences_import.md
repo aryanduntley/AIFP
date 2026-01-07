@@ -32,13 +32,15 @@ The import workflow:
   "version": "1.0",
   "exported_at": "2024-10-27T14:30:00Z",
   "user_settings": [
-    {"key": "fp_strictness_level", "value": "{\"level\": \"strict\"}", "description": "..."}
+    {"key": "project_continue_on_start", "value": "true", "description": "Automatically continue project work on session start"},
+    {"key": "suppress_warnings", "value": "[]", "description": "Directives to suppress warnings"}
   ],
   "directive_preferences": [
-    {"directive": "project_file_write", "key": "always_add_docstrings", "value": "true", "description": "..."}
+    {"directive": "project_file_write", "key": "always_add_docstrings", "value": "true", "description": "Always add docstrings to functions"}
   ],
   "tracking_settings": [
-    {"feature": "ai_interaction_log", "enabled": false}
+    {"feature": "ai_interaction_log", "enabled": false},
+    {"feature": "compliance_checking", "enabled": false}
   ]
 }
 ```
@@ -347,11 +349,11 @@ Reads and parses the import JSON file.
 #    Conflict 1: always_add_docstrings
 #      → User chooses: Keep existing (true)
 #
-#    Conflict 2: strict_mode
-#      → User chooses: Use imported (true)
-#
-#    Conflict 3: max_function_length
+#    Conflict 2: max_function_length
 #      → User chooses: Use imported (100)
+#
+#    Conflict 3: indent_style
+#      → User chooses: Use imported (spaces_2)
 #
 # 6. import_preferences:
 #    - Import non-conflicting preferences (9 of 12)
@@ -368,8 +370,8 @@ Reads and parses the import JSON file.
 #
 #    Resolution:
 #    • always_add_docstrings: Kept existing (true)
-#    • strict_mode: Used imported (true)
 #    • max_function_length: Used imported (100)
+#    • indent_style: Used imported (spaces_2)
 #    """
 #
 # Result:

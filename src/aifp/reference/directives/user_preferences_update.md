@@ -341,39 +341,35 @@ Parses user's natural language preference request.
 
 ---
 
-**Setting Global FP Strictness:**
+**Enabling Compliance Tracking:**
 ```python
-# User: "Enable strict FP mode"
+# User: "I want to track FP compliance patterns"
 # AI calls: user_preferences_update()
 
 # Workflow:
 # 1. parse_preference_request:
-#    - Intent: "enable strict FP mode"
-#    - Global setting (not directive-specific)
+#    - Intent: "track FP compliance patterns"
+#    - This is a tracking feature request, not a preference
 #
-# 2. find_directive_by_intent("strict FP mode", 0.6):
-#    - Matches: project_compliance_check (0.88)
+# 2. Recognize tracking feature:
+#    - AI identifies this as tracking_toggle directive, not user_preferences_update
+#    - Inform user: "This is a tracking feature. Let me enable it for you."
 #
-# 3. single_directive_match: confirm
-#    User confirms
+# 3. Redirect to tracking_toggle:
+#    - Call: tracking_toggle(feature_name="compliance_checking", enable=True)
+#    - Show token overhead warning: "~5-10% token increase per check"
 #
-# 4. parse_preference_details:
-#    - Key: "strict_mode"
-#    - Value: "true"
+# 4. User confirms token overhead
 #
-# 5. update_or_insert:
-#    INSERT INTO directive_preferences
-#    (directive_name, preference_key, preference_value)
-#    VALUES ('project_compliance_check', 'strict_mode', 'true')
-#
-# 6. Alternative: Update user_settings (global)
-#    UPDATE user_settings
-#    SET setting_value = '{"level": "strict", "exceptions": []}'
-#    WHERE setting_key = 'fp_strictness_level'
+# 5. Enable tracking:
+#    UPDATE tracking_settings
+#    SET enabled = 1
+#    WHERE feature_name = 'compliance_checking'
 #
 # Result:
-# ✅ Strict FP mode enabled
-# ✅ Compliance checks now zero-tolerance
+# ✅ Compliance tracking enabled
+# ✅ project_compliance_check directive now available for analytics
+# ✅ Note: FP compliance is baseline behavior - this only tracks patterns
 ```
 
 ---
@@ -576,7 +572,7 @@ See `helper_functions` and `directive_helpers` tables in aifp_core.db for comple
 This directive updates the following tables:
 
 - **`directive_preferences`**: INSERT or UPDATE preference (UPSERT with UNIQUE constraint)
-- **`user_settings`**: UPDATE for global preferences (e.g., fp_strictness_level)
+- **`user_settings`**: UPDATE for global preferences (e.g., project_continue_on_start, suppress_warnings)
 
 **Queries from**:
 - **`directives`** (aifp_core.db): Read directive descriptions and keywords for intent matching

@@ -38,11 +38,10 @@
       "condition_value": "true",
       "condition_description": "Load user preferences before executing any directive that supports customization",
       "priority": 100,
-      "description": "Load preferences before executing customizable directives (project_file_write, project_task_create, etc.)",
+      "description": "Load preferences before executing customizable directives (project_file_write, project_task_decomposition, etc.)",
       "examples": [
-        "project_file_write: code style, docstrings, naming conventions",
-        "project_task_create: task granularity, default priorities",
-        "project_compliance_check: auto_fix_violations, strict_mode",
+        "project_file_write: code style, docstrings, max function length, naming conventions",
+        "project_task_decomposition: naming convention, auto-create items, default priority",
         "user_directive_validate: validation strictness",
         "user_directive_implement: code generation preferences"
       ],
@@ -203,7 +202,7 @@
       "condition_value": "true",
       "condition_description": "User wants to enable or disable tracking features",
       "priority": 80,
-      "description": "Toggle tracking features (fp_flow_tracking, ai_interaction_log, helper_function_logging, issue_reports)",
+      "description": "Toggle tracking features (fp_flow_tracking, ai_interaction_log, helper_function_logging, issue_reports, compliance_checking)",
       "user_intent_keywords": [
         "enable tracking",
         "disable tracking",
@@ -215,7 +214,8 @@
         "fp_flow_tracking - Track FP directive consultations",
         "ai_interaction_log - Log user corrections and feedback",
         "helper_function_logging - Log directive execution performance",
-        "issue_reports - Log errors and roadblocks"
+        "issue_reports - Log errors and roadblocks",
+        "compliance_checking - Track FP compliance patterns (opt-in analytics)"
       ],
       "flow_category": "user_preferences"
     },
@@ -358,6 +358,15 @@
         "table": "notes",
         "purpose": "Error tracking and debugging",
         "enabled_by": "tracking_toggle directive"
+      },
+      "compliance_checking": {
+        "description": "Track FP compliance patterns over time (analytics, NOT validation)",
+        "database": "user_preferences.db",
+        "table": "tracking_settings",
+        "purpose": "Optional analytics for FP compliance patterns (audits, research, education)",
+        "enabled_by": "tracking_toggle directive",
+        "activates": "project_compliance_check directive (tracking-only)",
+        "note": "FP compliance is baseline behavior. This tracks patterns, not validates code."
       }
     },
     "token_overhead_warning": "AI shows estimated token overhead before enabling tracking features",
@@ -367,10 +376,8 @@
     "project_directives": {
       "description": "Project directives check user_preferences_sync before execution",
       "directives": [
-        "project_file_write - code style, docstrings, max function length, naming conventions",
-        "project_task_create - task granularity, default priorities",
-        "project_task_decomposition - how detailed to break down tasks",
-        "project_compliance_check - auto_fix_violations, skip_warnings, strict_mode"
+        "project_file_write - code style, docstrings, max function length, naming conventions, indent style",
+        "project_task_decomposition - naming convention, auto-create items, default priority"
       ],
       "pattern": "Before execution → user_preferences_sync → load preferences → apply to context"
     },
@@ -383,15 +390,13 @@
       "pattern": "Same as project directives"
     },
     "fp_compliance": {
-      "description": "FP compliance checking respects user preferences",
+      "description": "FP compliance checking is opt-in tracking feature (NOT validation)",
       "directive": "project_compliance_check",
-      "preferences": [
-        "auto_fix_violations - Auto-fix FP violations vs. report only",
-        "skip_warnings - Skip warning-level issues",
-        "strict_mode - Strictest FP enforcement",
-        "fp_strictness_level - Low/medium/high strictness"
-      ],
-      "flow_location": "directive_flow_project.json (already implemented)"
+      "type": "tracking_only",
+      "activation": "tracking_settings.compliance_checking = enabled",
+      "preferences": [],
+      "note": "No preferences - this is an analytics directive. FP compliance is baseline behavior enforced by system prompt.",
+      "flow_location": "directive_flow_project.json"
     }
   },
   "helpers_used": [
