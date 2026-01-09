@@ -30,20 +30,34 @@ When applied, this directive analyzes code for:
 
 If OOP constructs are detected, the directive refactors code into flat, functional modules or prompts the user for guidance.
 
+**Important**: This directive is reference documentation for no-OOP patterns.
+AI consults this when uncertain about OOP alternatives or refactoring complex class hierarchies.
+
+**No-OOP is baseline behavior**:
+- AI writes functional code naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex OOP refactoring scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Writing new code** - All new code must be function-based, no classes
-- **Refactoring existing OOP code** - Converting classes to functions
-- **Compliance checking** - Verifying project-wide OOP elimination
-- **Code review** - Validating no OOP constructs before merge
-- **Library integration** - Wrapping OOP libraries in functional interfaces
-- **Called by other directives**:
-  - `project_file_write` - Validates no OOP before writing files
-  - `project_compliance_check` - Scans all code for OOP violations
-  - `fp_wrapper_generation` - Wraps OOP libraries functionally
+**When AI Consults This Directive**:
+- Uncertainty about functional alternatives to classes
+- Complex class hierarchy refactoring decisions
+- Need for patterns to replace inheritance or polymorphism
+- Library integration requiring OOP wrappers
+
+**Context**:
+- AI writes function-based code as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_wrapper_generation`) may reference this for OOP wrapping guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -493,11 +507,20 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Marks functions as OOP-free with `oop_compliant = true`
-- **`notes`**: Logs OOP violations with `note_type = 'compliance'` and details
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

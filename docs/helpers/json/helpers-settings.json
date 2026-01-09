@@ -599,16 +599,174 @@
           "description": "Called by aifp_run when is_new_session=true - returns all user settings for session cache"
         }
       ]
+    },
+    {
+      "name": "add_tracking_note",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [
+        {
+          "name": "content",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Note content/message"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'fp_analysis', 'user_interaction', 'validation', 'performance', 'debug'"
+        },
+        {
+          "name": "reference_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Type of reference (e.g., 'function', 'file', 'directive')"
+        },
+        {
+          "name": "reference_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Name of referenced entity (e.g., function name, file path)"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Optional ID if referencing project.db entity"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Directive that created this note"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": "info",
+          "description": "'info', 'warning', 'error' (default 'info')"
+        },
+        {
+          "name": "metadata_json",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Additional context as JSON string"
+        }
+      ],
+      "purpose": "Add tracking note to user_preferences.db (only when tracking enabled)",
+      "error_handling": "Returns error if tracking not enabled or note_type invalid",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "user_preferences",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_tracking_notes",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by note_type"
+        },
+        {
+          "name": "reference_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference_type"
+        },
+        {
+          "name": "reference_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference_name"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by directive_name"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by severity"
+        }
+      ],
+      "purpose": "Get tracking notes with optional filters",
+      "error_handling": "Returns empty array if no matches",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "user_preferences",
+      "used_by_directives": []
+    },
+    {
+      "name": "search_tracking_notes",
+      "file_path": "TODO_helpers/settings/module.py",
+      "parameters": [
+        {
+          "name": "search_string",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Search string for note content"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by note_type"
+        },
+        {
+          "name": "reference_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by reference_type"
+        },
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by directive_name"
+        }
+      ],
+      "purpose": "Search tracking note content with optional filters",
+      "error_handling": "Returns empty array if no matches",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "user_preferences",
+      "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-settings.json",
-    "count": 18,
-    "status": "COMPLETED - used_by_directives review complete",
+    "count": 21,
+    "status": "UPDATED - added tracking_notes helpers",
     "mapped_helpers": 9,
-    "unmapped_helpers": 8,
-    "note": "8 helpers are generic AI query tools (schema/CRUD operations) - intentionally empty. 9 helpers mapped to user preference directives (user_preferences_sync, user_preferences_update, user_preferences_learn, user_preferences_import, user_preferences_export, tracking_toggle).",
+    "unmapped_helpers": 11,
+    "note": "11 helpers are generic AI query tools (schema/CRUD operations) - intentionally empty. 9 helpers mapped to user preference directives (user_preferences_sync, user_preferences_update, user_preferences_learn, user_preferences_import, user_preferences_export, tracking_toggle). Added 3 helpers for tracking_notes table: add_tracking_note, get_tracking_notes, search_tracking_notes.",
     "total_mappings": 14,
-    "last_updated": "2026-01-01"
+    "last_updated": "2026-01-08"
   }
 }

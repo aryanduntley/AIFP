@@ -20,20 +20,34 @@ Monadic composition provides **composable error handling**, enabling:
 
 This directive acts as a **composition enabler** transforming nested error handling into flat monadic pipelines.
 
+**Important**: This directive is reference documentation for monadic composition patterns.
+AI consults this when uncertain about flattening nested Result/Option chains or complex monad composition scenarios.
+
+**FP monadic composition is baseline behavior**:
+- AI writes monadic compositions naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Chaining fallible operations** - Multiple operations that can fail
-- **Nested error handling detected** - Multiple if-checks for Result/Option
-- **Sequential dependencies** - Output of one operation feeds into next
-- **Error propagation needed** - Errors bubble up automatically
-- **Result/Option types in use** - Working with monadic error types
-- **Called by project directives**:
-  - `project_file_write` - Apply monadic composition before writing
-  - Works with `fp_result_types` - Use Result monad for composition
-  - Works with `fp_error_pipeline` - Build error handling pipelines
+**When AI Consults This Directive**:
+- Uncertainty about flattening nested Result/Option checks
+- Complex monad composition scenarios (multiple flatMaps)
+- Edge cases with mixed monad types or async/sync operations
+- Need for detailed guidance on monadic error handling patterns
+
+**Context**:
+- AI writes monadic compositions as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_result_types`, `fp_optionals`, `fp_error_pipeline`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -665,12 +679,21 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `uses_monadic_composition = 1` for monadic functions
 - **`interactions`**: Records monad composition chains
-- **`notes`**: Logs monadic refactorings with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

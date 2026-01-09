@@ -10,6 +10,21 @@ Everything above src/aifp/ is dev.
 helpers are in docs/json/helpers/
 directive flows are in docs/directives-json/directive_flow_(project,user-preferences,fp).json
 
+docs/note_type_analysis_REVISED.md
+docs/note_type_SUMMARY.md
+docs/note_type_IMPLEMENTATION_PLAN.md
+docs/note_type_QUICK_REFERENCE.md
+docs/FP_DIRECTIVE_CLEANUP_TASK.md
+docs/NOTE_TYPE_CLEANUP_READY.md
+docs/tracking_notes_REFERENCE.md
+docs/FP_DIRECTIVE_UPDATE_GUIDE.md
+docs/NOTE_TYPE_CLEANUP_TRACKER.md
+scripts/cleanup_fp_directives.py
+
+docs/helpers/json/helpers-settings.json
+delete_settings_entry
+this has notes entry, notes is in project database not settins. Must review all delete helpers in databases not in project for similar errors
+
 check generic directive getters, if any. Must ensure we load queried directive specific settings along with directive data for AI to prevent possibility of setting not being queried separately or being "forgotten"
 
 Review aifp_run returns, including settings. How much data? too extensive? Should we tone it down?
@@ -32,8 +47,6 @@ MUST make OOP wrapper examples
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
 docs/directives-json/sync-directives.py needs full overhaul based on new schema, structure and decisions
-
-docs/temp.txt note_type has massive list. Let's analyze. notes table note_type all over the place. Need to consolidate to just a handful of the most useful.
 
 =============================
 docs/HELPER_AUDIT_REPORT.md

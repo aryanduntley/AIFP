@@ -20,20 +20,34 @@ Null elimination creates a **null-free zone** in your codebase, enabling:
 
 This directive **complements** `fp_optionals` (which introduces Option) by ensuring Option is actually used everywhere instead of nulls. They work together as a comprehensive null-safety system.
 
+**Important**: This directive is reference documentation for null elimination patterns.
+AI consults this when uncertain about replacing nulls with Option types or complex null elimination scenarios.
+
+**FP null elimination is baseline behavior**:
+- AI avoids null values naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **After introducing Option types** - Remove remaining null literals
-- **Auditing codebase for null usage** - Find and eliminate all nulls
-- **Converting legacy code** - Systematically replace nulls with Options
-- **Validating null-free compliance** - Ensure no nulls remain
-- **Initializing variables** - Use Option.none() instead of null
-- **Called by project directives**:
-  - `project_file_write` - Validates no nulls before writing
-  - `project_compliance_check` - Scans for null literal usage
-  - Works with `fp_optionals` - Option introduction + null elimination
+**When AI Consults This Directive**:
+- Uncertainty about replacing null with Option in specific contexts
+- Complex null elimination scenarios (legacy code, external APIs, framework constraints)
+- Edge cases with null interop or language-specific null handling
+- Need for detailed guidance on null-free patterns
+
+**Context**:
+- AI writes null-free code as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_optionals`, `fp_result_types`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -523,12 +537,21 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `null_safety = 'null_free'` for compliant functions
 - **`functions`**: Updates `type_annotations_json` to show Option usage
-- **`notes`**: Logs null elimination issues with `note_type = 'compliance'`
 - **`project`**: Sets `null_free_compliance = true` when entire project null-free
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 

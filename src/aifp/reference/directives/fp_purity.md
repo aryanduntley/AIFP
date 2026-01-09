@@ -26,19 +26,34 @@ When applied, this directive analyzes function code for:
 
 If violations are detected, the directive refactors code to be pure or prompts the user for guidance.
 
+**Important**: This directive is reference documentation for FP purity patterns.
+AI consults this when uncertain about purity boundaries or complex edge cases.
+
+**FP purity is baseline behavior**:
+- AI writes pure functions naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Writing new functions** - All new code must be pure
-- **Refactoring existing code** - Converting impure code to pure
-- **Compliance checking** - Verifying project-wide FP adherence
-- **Code review** - Validating function purity before merge
-- **Called by other directives**:
-  - `project_file_write` - Validates purity before writing files
-  - `project_compliance_check` - Scans all functions for purity
-  - `fp_side_effect_detection` - Works in tandem to isolate effects
+**When AI Consults This Directive**:
+- Uncertainty about whether a function is pure
+- Complex purity boundary decisions (e.g., logging, time functions)
+- Edge cases with external state or hidden dependencies
+- Need for detailed guidance on refactoring impure code to pure
+
+**Context**:
+- AI writes pure functions as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_side_effect_detection`, `fp_io_isolation`) may reference this for purity guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -356,11 +371,20 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `purity_level = 'pure'` and `side_effects_json = 'none'` for compliant functions
-- **`notes`**: Logs purity uncertainties or violations with `note_type = 'compliance'`
 - **`interactions`**: Tracks dependencies when external state is converted to parameters
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 

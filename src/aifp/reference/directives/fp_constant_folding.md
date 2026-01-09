@@ -20,20 +20,34 @@ Constant folding provides **zero-cost abstractions**, enabling:
 
 This directive leverages FP purity to enable aggressive compile-time optimizations that would be unsafe in imperative code.
 
+**Important**: This directive is reference documentation for constant folding optimization patterns.
+AI consults this when uncertain about compile-time evaluation or complex constant folding scenarios.
+
+**FP constant folding is baseline behavior**:
+- AI applies constant folding naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Constant arithmetic expressions** - `3 * 7 + 2` → `23`
-- **Constant string concatenation** - `"Hello, " + "World"` → `"Hello, World"`
-- **Constant boolean expressions** - `True and False` → `False`
-- **Pure function calls on constants** - `len("hello")` → `5`
-- **Configuration constants** - Combine config values at compile time
-- **Called by project directives**:
-  - `project_file_write` - Fold constants before writing code
-  - Works with `fp_function_inlining` - Inline then fold constants
-  - Works with `fp_purity` - Only fold pure expressions
+**When AI Consults This Directive**:
+- Uncertainty about whether expressions can be safely folded at compile-time
+- Complex constant folding scenarios (nested expressions, pure function calls)
+- Edge cases with partial evaluation or configuration constants
+- Need for detailed guidance on optimization opportunities
+
+**Context**:
+- AI applies constant folding as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_function_inlining`, `fp_purity`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -416,10 +430,19 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `optimization_level = 'constant_folded'` for optimized code
-- **`notes`**: Logs constant folding with `note_type = 'optimization'`
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 

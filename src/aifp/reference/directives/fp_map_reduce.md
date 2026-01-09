@@ -20,20 +20,34 @@ Map-reduce provides **functional aggregation**, enabling:
 
 This directive is fundamental to functional data processing and is the basis of distributed computing frameworks (Hadoop, Spark).
 
+**Important**: This directive is reference documentation for map/reduce patterns.
+AI consults this when uncertain about converting imperative aggregations to functional reduce operations or complex fold scenarios.
+
+**FP map/reduce is baseline behavior**:
+- AI writes functional map/reduce operations naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Aggregating collections** - Sum, product, count, min/max operations
-- **Combining values** - Merge dictionaries, concatenate strings, flatten lists
-- **Mutable accumulator detected** - Loop variable that accumulates state
-- **Building complex aggregations** - Custom combining logic
-- **Data pipeline reductions** - Final aggregation in processing pipeline
-- **Called by project directives**:
-  - `project_file_write` - Validate reduce usage
-  - Works with `fp_list_operations` - Reduce is one of the core list operations
-  - Works with `fp_parallel_evaluation` - Pure reducers can parallelize
+**When AI Consults This Directive**:
+- Uncertainty about converting imperative aggregations to functional reduce
+- Complex fold/reduce scenarios (left fold vs right fold, custom accumulators)
+- Edge cases with stateful accumulators or nested reductions
+- Need for detailed guidance on map/reduce composition patterns
+
+**Context**:
+- AI writes functional map/reduce operations as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_list_operations`, `fp_purity`, `fp_immutability`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -512,12 +526,21 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `aggregation_style = 'reduce'` for functions using reduce
 - **`functions`**: Sets `mutable_accumulators = 0` when eliminated
-- **`notes`**: Logs reduce conversions with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

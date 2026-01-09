@@ -20,20 +20,34 @@ Lazy evaluation provides **performance and composability benefits**, enabling:
 
 This directive complements `fp_lazy_computation` (lazy function evaluation) by focusing specifically on lazy data structure processing.
 
+**Important**: This directive is reference documentation for lazy evaluation patterns.
+AI consults this when uncertain about lazy sequences or complex stream processing scenarios.
+
+**FP lazy evaluation is baseline behavior**:
+- AI applies lazy evaluation naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Processing large collections** - Avoid loading entire dataset into memory
-- **Chaining transformations** - Multiple map/filter operations on collections
-- **Early termination possible** - Finding first match, taking N elements
-- **Infinite or very large sequences** - Generating series, streams
-- **Pipeline composition** - Building reusable transformation pipelines
-- **Called by project directives**:
-  - `project_file_write` - Validates lazy evaluation patterns
-  - `project_compliance_check` - Scans for eager collection materialization
-  - Works with `fp_list_operations` - Lazy versions of list operations
+**When AI Consults This Directive**:
+- Uncertainty about specific optimization or pattern decisions
+- Complex scenarios requiring detailed guidance
+- Edge cases with performance vs correctness tradeoffs
+- Need for detailed guidance on implementation patterns
+
+**Context**:
+- AI applies this pattern as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -530,13 +544,23 @@ Query `get_helpers_for_directive()` to discover this directive's available helpe
 See system prompt for usage.
 ---
 
+
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `evaluation_strategy = 'lazy'` for lazy functions
 - **`functions`**: Updates `memory_efficiency = 'stream'` for streaming operations
-- **`notes`**: Logs lazy evaluation opportunities with `note_type = 'optimization'`
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 

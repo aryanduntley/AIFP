@@ -20,20 +20,34 @@ Function inlining provides **micro-optimization benefits**, enabling:
 
 This directive is **conservative** - it only inlines when clearly beneficial and doesn't harm readability. Unlike imperative inlining, FP inlining is **always safe** for pure functions (referential transparency).
 
+**Important**: This directive is reference documentation for function inlining optimization patterns.
+AI consults this when uncertain about inlining decisions or complex inlining scenarios.
+
+**FP function inlining is baseline behavior**:
+- AI applies function inlining naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Trivial wrapper functions** - Single-line functions that just call another
-- **Hot path micro-functions** - Small functions in performance-critical loops
-- **Single-use helper functions** - Function called only once
-- **Constant functions** - Functions that return constant values
-- **Simple getters** - Trivial field access or computation
-- **Called by project directives**:
-  - Works with `project_compliance_check` - Performance optimization audits
-  - Integrates with `fp_purity` - Only inline pure functions
-  - May conflict with readability - conservative approach
+**When AI Consults This Directive**:
+- Uncertainty about whether to inline specific functions
+- Complex inlining scenarios (recursive functions, closures, hot paths)
+- Edge cases with code size vs performance tradeoffs
+- Need for detailed guidance on inlining decisions
+
+**Context**:
+- AI applies function inlining as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_constant_folding`, `fp_purity`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -446,10 +460,19 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `optimization_level = 'inlined'` for inlined functions
-- **`notes`**: Logs inlining decisions with `note_type = 'optimization'`
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 

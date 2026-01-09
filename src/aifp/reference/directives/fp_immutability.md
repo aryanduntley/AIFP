@@ -27,20 +27,34 @@ When applied, this directive analyzes code for:
 
 If violations are detected, the directive refactors code to use immutable patterns or prompts the user for guidance.
 
+**Important**: This directive is reference documentation for FP immutability patterns.
+AI consults this when uncertain about immutable data structures or complex mutation scenarios.
+
+**FP immutability is baseline behavior**:
+- AI writes immutable code naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Writing new functions** - All new code must use immutable data
-- **Refactoring existing code** - Converting mutable patterns to immutable
-- **Compliance checking** - Verifying project-wide immutability
-- **Code review** - Validating immutability before merge
-- **Called by other directives**:
-  - `project_file_write` - Validates immutability before writing files
-  - `project_compliance_check` - Scans all functions for immutability
-  - `fp_purity` - Purity and immutability often checked together
-  - `fp_no_reassignment` - Enforces single-assignment semantics
+**When AI Consults This Directive**:
+- Uncertainty about immutable alternatives (e.g., replacing `list.append()`)
+- Complex data structure mutations requiring refactoring
+- Edge cases with mutable default arguments or class state
+- Need for detailed guidance on immutable patterns
+
+**Context**:
+- AI writes immutable code as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_purity`, `fp_no_reassignment`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -406,11 +420,20 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
+**Project Database** (project.db):
+- **`functions`**: Updates function metadata with immutability analysis results
 
-- **`functions`**: Updates functions with immutability analysis results
-- **`notes`**: Logs immutability violations with `note_type = 'compliance'`
+**Tracking** (Optional - Disabled by Default):
 
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

@@ -20,20 +20,34 @@ Pattern unpacking provides **clear data access**, enabling:
 
 This directive acts as a **clarity enhancer** transforming opaque index access into clear named bindings.
 
+**Important**: This directive is reference documentation for pattern unpacking patterns.
+AI consults this when uncertain about destructuring complex data structures or advanced unpacking scenarios.
+
+**FP pattern unpacking is baseline behavior**:
+- AI writes pattern unpacking naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Tuple access detected** - Code uses `tuple[0]`, `tuple[1]`
-- **List index access** - Accessing fixed positions `list[0]`, `list[1]`
-- **Dictionary key access** - Repeatedly accessing same keys
-- **Function returns multiple values** - Unpacking return values
-- **Nested data structures** - Extracting values from nested structures
-- **Called by project directives**:
-  - `project_file_write` - Refactor to destructuring before writing
-  - Works with `fp_pattern_matching` - Complement to pattern matching
-  - Works with `fp_list_operations` - Extract values from transformations
+**When AI Consults This Directive**:
+- Uncertainty about destructuring complex nested data structures
+- Complex unpacking scenarios (deep nesting, partial matches, wildcards)
+- Edge cases with optional fields or variable-length unpacking
+- Need for detailed guidance on pattern unpacking syntax
+
+**Context**:
+- AI writes pattern unpacking as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_pattern_matching`, `fp_immutability`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -587,11 +601,20 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `uses_pattern_unpacking = 1` for functions using destructuring
-- **`notes`**: Logs unpacking refactorings with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

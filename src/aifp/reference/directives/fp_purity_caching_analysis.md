@@ -20,20 +20,34 @@ Purity caching analysis provides **safety guarantees for performance optimizatio
 
 This directive works in tandem with `fp_memoization` and `fp_purity` to ensure performance optimizations don't compromise correctness.
 
+**Important**: This directive is reference documentation for purity-safe caching analysis patterns.
+AI consults this when uncertain about caching safety or complex memoization scenarios.
+
+**FP purity caching analysis is baseline behavior**:
+- AI analyzes cache safety naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Before applying memoization** - Verify function is safe to cache
-- **Validating cache implementations** - Ensure cache doesn't violate purity
-- **Auditing performance optimizations** - Check caching doesn't introduce bugs
-- **Cross-boundary caching** - Verify cache isolation between modules/contexts
-- **Shared cache analysis** - Ensure shared caches don't create dependencies
-- **Called by project directives**:
-  - `fp_memoization` - Validates caching safety before applying
-  - `project_compliance_check` - Audits all caching for purity violations
-  - Works with `fp_purity` - Cache correctness depends on function purity
+**When AI Consults This Directive**:
+- Uncertainty about specific optimization or pattern decisions
+- Complex scenarios requiring detailed guidance
+- Edge cases with performance vs correctness tradeoffs
+- Need for detailed guidance on implementation patterns
+
+**Context**:
+- AI applies this pattern as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -583,13 +597,23 @@ Query `get_helpers_for_directive()` to discover this directive's available helpe
 See system prompt for usage.
 ---
 
+
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `cache_safety = 'verified'` for safe caching
 - **`functions`**: Sets `cache_safety = 'unsafe'` for violations
-- **`notes`**: Logs cache safety issues with `note_type = 'compliance'`
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 

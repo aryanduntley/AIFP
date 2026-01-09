@@ -225,7 +225,17 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE TABLE IF NOT EXISTS notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
-    note_type TEXT NOT NULL CHECK (note_type IN ('clarification', 'pivot', 'research', 'entry_deletion', 'warning', 'error', 'info', 'auto_summary')),
+    note_type TEXT NOT NULL CHECK (note_type IN (
+        -- Original types (kept for compatibility)
+        'clarification', 'pivot', 'research', 'entry_deletion', 'warning', 'error', 'info', 'auto_summary',
+        -- New semantic types for better categorization
+        'decision',        -- User decisions, confirmations (broader than clarification)
+        'evolution',       -- Project direction changes, architecture shifts (broader than pivot)
+        'analysis',        -- AI research, findings, reasoning (broader than research)
+        'task_context',    -- Task/milestone/sidequest lifecycle context
+        'external',        -- Git changes, dependency updates, file system events
+        'summary'          -- Manual summaries (distinct from auto_summary which is automated)
+    )),
     reference_table TEXT,                   -- e.g., 'items', 'files', 'completion_path'
     reference_id INTEGER,
     source TEXT DEFAULT 'ai' CHECK (source IN ('ai', 'user', 'directive')),

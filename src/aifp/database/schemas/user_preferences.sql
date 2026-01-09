@@ -72,6 +72,31 @@ CREATE TABLE IF NOT EXISTS fp_flow_tracking (
 );
 
 -- ===============================================================
+-- Tracking Notes (Disabled by Default)
+-- ===============================================================
+
+-- Tracking Notes: General-purpose notes for tracking features (FP analysis, validation, debugging)
+-- Similar to project.db notes table but specifically for opt-in tracking purposes
+CREATE TABLE IF NOT EXISTS tracking_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    note_type TEXT NOT NULL CHECK (note_type IN (
+        'fp_analysis',      -- FP compliance, patterns, refactorings, optimizations
+        'user_interaction', -- User corrections, preferences, feedback patterns
+        'validation',       -- Validation results, checks, approvals
+        'performance',      -- Performance metrics, bottlenecks, profiling
+        'debug'             -- Debug traces, reasoning traces, experiments
+    )),
+    reference_type TEXT,                        -- e.g., 'function', 'file', 'directive'
+    reference_name TEXT,                        -- e.g., function name, file path, directive name
+    reference_id INTEGER,                       -- Optional ID if referencing project.db entity
+    directive_name TEXT,                        -- Directive that created this note
+    severity TEXT DEFAULT 'info' CHECK (severity IN ('info', 'warning', 'error')),
+    metadata_json TEXT,                         -- Additional context (JSON)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===============================================================
 -- Issue Reporting (Disabled by Default)
 -- ===============================================================
 
@@ -112,6 +137,9 @@ CREATE INDEX IF NOT EXISTS idx_directive_preferences_directive ON directive_pref
 CREATE INDEX IF NOT EXISTS idx_directive_preferences_active ON directive_preferences(active);
 CREATE INDEX IF NOT EXISTS idx_ai_interaction_log_directive ON ai_interaction_log(directive_name);
 CREATE INDEX IF NOT EXISTS idx_fp_flow_tracking_file ON fp_flow_tracking(file_path);
+CREATE INDEX IF NOT EXISTS idx_tracking_notes_type ON tracking_notes(note_type);
+CREATE INDEX IF NOT EXISTS idx_tracking_notes_directive ON tracking_notes(directive_name);
+CREATE INDEX IF NOT EXISTS idx_tracking_notes_reference ON tracking_notes(reference_type, reference_name);
 CREATE INDEX IF NOT EXISTS idx_issue_reports_status ON issue_reports(status);
 
 -- ===============================================================

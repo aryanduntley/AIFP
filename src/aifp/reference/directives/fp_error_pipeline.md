@@ -20,20 +20,34 @@ Error pipelines transform **scattered error handling** into **linear, readable s
 
 This directive integrates `fp_result_types`, `fp_optionals`, and `fp_try_monad` into cohesive error handling flows using functional composition.
 
+**Important**: This directive is reference documentation for error pipeline patterns.
+AI consults this when uncertain about chaining fallible operations or complex error handling composition.
+
+**FP error pipelines are baseline behavior**:
+- AI writes error pipelines naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Chaining multiple fallible operations** - Each step might fail
-- **Multi-step validation pipelines** - Series of validation checks
-- **Data transformation pipelines** - Parse → validate → transform → save
-- **Converting nested try/catch** - Flatten to linear pipeline
-- **Business logic workflows** - Sequential operations with error handling
-- **Called by project directives**:
-  - `project_file_write` - Validates error pipeline patterns
-  - `project_compliance_check` - Scans for nested error handling
-  - Integrates `fp_result_types`, `fp_optionals`, `fp_try_monad`
+**When AI Consults This Directive**:
+- Uncertainty about chaining multiple fallible operations
+- Complex error pipeline composition scenarios
+- Edge cases with nested try/catch blocks requiring refactoring
+- Need for detailed guidance on declarative error handling patterns
+
+**Context**:
+- AI writes error pipelines as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_result_types`, `fp_optionals`, `fp_try_monad`, `fp_monadic_composition`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -617,13 +631,22 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `error_handling_pattern = 'pipeline'` for pipeline functions
 - **`functions`**: Updates `composition_style = 'flatmap'` for monadic chains
 - **`interactions`**: Tracks pipeline dependencies (function call chains)
-- **`notes`**: Logs pipeline refactoring with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

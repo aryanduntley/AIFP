@@ -2848,7 +2848,7 @@
           "details": {
             "prompt_user": "What did you learn from this sidequest?",
             "log_to_notes": true,
-            "note_type": "sidequest_outcome",
+            "note_type": "task_context",
             "reference_table": "sidequests",
             "source": "user",
             "directive_name": "project_sidequest_complete"

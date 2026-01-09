@@ -20,20 +20,34 @@ Parallel evaluation provides **automatic concurrency benefits**, enabling:
 
 This directive is **uniquely powerful in FP** - purity and immutability mean parallel execution is always safe. Imperative code requires complex synchronization; FP code parallelizes trivially.
 
+**Important**: This directive is reference documentation for parallel evaluation optimization patterns.
+AI consults this when uncertain about parallelization opportunities or complex concurrency scenarios.
+
+**FP parallel evaluation is baseline behavior**:
+- AI applies parallel evaluation naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Independent pure computations** - Multiple operations that don't depend on each other
-- **Data parallelism** - Apply same operation to many items (map over collection)
-- **Pipeline parallelism** - Concurrent stages in data pipeline
-- **Expensive operations** - Long-running computations benefit from parallelism
-- **Multi-core utilization** - Maximize CPU usage
-- **Called by project directives**:
-  - `project_file_write` - Suggest parallelization opportunities
-  - Works with `fp_purity` - Only parallelize pure functions
-  - Works with `fp_lazy_evaluation` - Combine lazy + parallel for optimal performance
+**When AI Consults This Directive**:
+- Uncertainty about specific optimization or pattern decisions
+- Complex scenarios requiring detailed guidance
+- Edge cases with performance vs correctness tradeoffs
+- Need for detailed guidance on implementation patterns
+
+**Context**:
+- AI applies this pattern as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -539,13 +553,23 @@ Query `get_helpers_for_directive()` to discover this directive's available helpe
 See system prompt for usage.
 ---
 
+
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `parallelization = 'parallel'` for parallelized functions
 - **`functions`**: Sets `concurrency_safe = true` for pure functions
-- **`notes`**: Logs parallelization with `note_type = 'optimization'`
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 

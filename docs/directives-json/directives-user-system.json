@@ -435,7 +435,7 @@
                 "update": "user_directives (approved=true, approved_at=current_timestamp)"
               },
               {
-                "insert": "notes table (content='User approved directive implementation', note_type='approval', source='user')"
+                "insert": "notes table (content='User approved directive implementation', note_type='decision', source='user')"
               },
               {
                 "log": "User approved implementation",

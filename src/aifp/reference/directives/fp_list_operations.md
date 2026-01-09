@@ -20,20 +20,34 @@ List operations provide **core FP patterns**, enabling:
 
 This directive is often the **first step in FP conversion** - replacing for/while loops with functional list operations.
 
+**Important**: This directive is reference documentation for functional list operation patterns.
+AI consults this when uncertain about converting loops to functional operations or complex list transformation scenarios.
+
+**FP list operations are baseline behavior**:
+- AI writes functional list operations naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Transforming collections** - Apply function to each element (map)
-- **Selecting elements** - Filter based on predicate (filter)
-- **Aggregating values** - Combine elements into single result (reduce)
-- **Chaining operations** - Multiple transformations in sequence
-- **Imperative loops detected** - for/while loops that modify collections
-- **Called by project directives**:
-  - `project_file_write` - Validate functional list patterns
-  - `project_compliance_check` - Detect imperative loops
-  - Works with `fp_lazy_evaluation` - Lazy versions of list operations
+**When AI Consults This Directive**:
+- Uncertainty about converting imperative loops to functional operations
+- Complex list transformation scenarios (nested loops, multiple operations)
+- Edge cases with stateful aggregations or mixed patterns
+- Need for detailed guidance on map/filter/reduce usage
+
+**Context**:
+- AI writes functional list operations as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_purity`, `fp_immutability`, `fp_recursion_enforcement`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -513,12 +527,21 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `coding_style = 'functional'` for functions using list operations
 - **`functions`**: Updates `loop_count = 0` when imperative loops eliminated
-- **`notes`**: Logs functional conversions with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

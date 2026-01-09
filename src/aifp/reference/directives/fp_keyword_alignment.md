@@ -20,20 +20,34 @@ Keyword alignment provides **syntax safety**, enabling:
 
 This directive acts as a **syntax guardian** preventing reserved keyword violations in generated code.
 
+**Important**: This directive is reference documentation for keyword conflict resolution patterns.
+AI consults this when uncertain about naming conflicts or language-specific keyword handling.
+
+**FP keyword alignment is baseline behavior**:
+- AI avoids language keywords naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Keyword conflicts detected** - Identifier matches language reserved word
-- **Cross-language code generation** - Generating code for multiple languages
-- **Language migration** - Converting code between languages
-- **Standard name unavailable** - AIFP standard conflicts with keyword
-- **Syntax errors from keywords** - Compilation fails due to reserved words
-- **Called by project directives**:
-  - `project_file_write` - Check for keyword conflicts before writing
-  - Works with `fp_language_standardization` - Complement to naming standards
-  - Works with `fp_cross_language_wrappers` - Ensure wrapper names are valid
+**When AI Consults This Directive**:
+- Uncertainty about whether a name conflicts with language keywords
+- Complex keyword resolution scenarios (cross-language compatibility)
+- Edge cases with built-in shadowing or language-specific reserved words
+- Need for detailed guidance on keyword-safe naming patterns
+
+**Context**:
+- AI avoids language keywords as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_language_standardization`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -561,11 +575,20 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `keyword_safe = 1` for conflict-free functions
-- **`notes`**: Logs keyword conflict resolutions with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

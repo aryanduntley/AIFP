@@ -20,20 +20,34 @@ Option types make optionality **visible in function signatures**, enabling:
 
 This directive complements `fp_null_elimination` (which removes null literals) and `fp_result_types` (which handles errors). Together, they create a comprehensive declarative error handling strategy.
 
+**Important**: This directive is reference documentation for Option type patterns.
+AI consults this when uncertain about handling optional values or eliminating null checks.
+
+**Option types are baseline behavior**:
+- AI uses Option types naturally for optional values (enforced by system prompt)
+- This directive provides detailed guidance for complex optional scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Writing functions that might return no value** - Use Option instead of null
-- **Handling optional parameters** - Wrap in Option type
-- **Database queries that might return nothing** - Return Option instead of null
-- **Dictionary/map lookups** - Return Option for missing keys
-- **Array/list element access** - Return Option for out-of-bounds
-- **Called by project directives**:
-  - `project_file_write` - Validates optional handling before writing
-  - `project_compliance_check` - Scans for Option usage compliance
-  - `fp_null_elimination` - Works together to remove all null usage
+**When AI Consults This Directive**:
+- Uncertainty about whether to use Option, Result, or null for a scenario
+- Complex optional value chaining or transformation
+- Need for patterns to replace null checks with Option operations
+- Edge cases with optional parameters or default values
+
+**Context**:
+- AI uses Option types as baseline for optional values (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_null_elimination`, `fp_result_types`) may reference this
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -407,13 +421,22 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `error_handling_pattern = 'option'` for compliant functions
 - **`functions`**: Updates `type_annotations_json` with Option type info
-- **`notes`**: Logs Option compliance issues with `note_type = 'compliance'`
 - **`interactions`**: Tracks Option chaining between functions (flatMap dependencies)
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

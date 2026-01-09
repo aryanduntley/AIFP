@@ -20,20 +20,34 @@ Recursion enforcement provides **FP-style iteration**, enabling:
 
 This directive acts as a **loop eliminator** transforming imperative iteration into functional recursion.
 
+**Important**: This directive is reference documentation for recursion patterns.
+AI consults this when uncertain about converting imperative loops to recursion or complex recursive scenarios.
+
+**FP recursion is baseline behavior**:
+- AI writes recursive functions naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Imperative loops detected** - Code uses for/while loops
-- **Mutable accumulators** - Loop variables mutated each iteration
-- **List processing** - Iterating over collections
-- **Numerical iteration** - Counting loops (for i in range(...))
-- **Tail recursion possible** - Final operation is recursive call
-- **Called by project directives**:
-  - `project_file_write` - Convert loops before writing
-  - Works with `fp_no_reassignment` - Recursion eliminates reassignment
-  - Works with `fp_tail_recursion` - Optimize tail calls
+**When AI Consults This Directive**:
+- Uncertainty about converting imperative loops to recursive functions
+- Complex recursion scenarios (mutual recursion, continuation-passing style)
+- Edge cases with tail recursion optimization or stack depth concerns
+- Need for detailed guidance on recursive patterns
+
+**Context**:
+- AI writes recursive functions as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_tail_recursion`, `fp_purity`, `fp_list_operations`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -623,11 +637,20 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `is_recursive = 1`, `is_tail_recursive = 1` for recursive functions
-- **`notes`**: Logs recursion transformations with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

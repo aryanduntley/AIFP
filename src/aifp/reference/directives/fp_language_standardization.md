@@ -20,20 +20,34 @@ Language standardization provides **multi-language coherence**, enabling:
 
 This directive acts as a **translation layer** ensuring FP principles remain consistent across Python, JavaScript, TypeScript, Rust, Go, and other languages.
 
+**Important**: This directive is reference documentation for language standardization patterns.
+AI consults this when uncertain about language-specific FP idioms or cross-language compatibility concerns.
+
+**FP language standardization is baseline behavior**:
+- AI writes cross-language compatible code naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Multi-language projects** - Project uses multiple programming languages
-- **Language migration** - Converting code from one language to another
-- **Cross-language documentation** - Writing docs that span languages
-- **API boundaries** - Functions called across language boundaries
-- **Variant naming detected** - Same concept has different names in different files
-- **Called by project directives**:
-  - `project_file_write` - Standardize naming when writing files
-  - Works with `fp_cross_language_wrappers` - Standardize wrapper interfaces
-  - Works with `fp_syntax_normalization` - Complement to syntax normalization
+**When AI Consults This Directive**:
+- Uncertainty about language-specific FP idiom translation
+- Complex cross-language standardization scenarios
+- Edge cases with language-specific features or naming conventions
+- Need for detailed guidance on AIFP standardization patterns
+
+**Context**:
+- AI writes standardized code as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_keyword_alignment`, other FP directives) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -564,11 +578,20 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `naming_standard = 'aifp'` for standardized functions
-- **`notes`**: Logs standardization changes with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

@@ -20,20 +20,34 @@ Result types transform error handling from **exceptional control flow** to **nor
 
 This directive complements `fp_optionals` (for absence) and `fp_try_monad` (for exception wrapping). Together, they create a complete functional error handling ecosystem.
 
+**Important**: This directive is reference documentation for Result type patterns.
+AI consults this when uncertain about error handling strategies or Result type usage.
+
+**Result types are baseline behavior**:
+- AI uses Result types naturally for error handling (enforced by system prompt)
+- This directive provides detailed guidance for complex error scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Writing functions that can fail** - Return Result instead of throwing
-- **Validating input data** - Return Err for invalid input
-- **I/O operations that might fail** - Wrap in Result type
-- **Parsing or transformation** - Return Err on parse failure
-- **Business logic that can error** - Make errors explicit in return type
-- **Called by project directives**:
-  - `project_file_write` - Validates Result usage before writing
-  - `project_compliance_check` - Scans for exception elimination
-  - `fp_error_pipeline` - Results chain in error pipelines
+**When AI Consults This Directive**:
+- Uncertainty about whether to use Result, Option, or Try for a scenario
+- Complex error chaining or pipeline construction
+- Need for patterns to replace exception-based error handling
+- Edge cases with error recovery or transformation
+
+**Context**:
+- AI uses Result types as baseline error handling (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_optionals`, `fp_try_monad`, `fp_error_pipeline`) may reference this
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -569,14 +583,23 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `error_handling_pattern = 'result'` for compliant functions
 - **`functions`**: Updates `type_annotations_json` with Result type info
 - **`functions`**: Sets `exceptions_json = '[]'` (no exceptions thrown)
-- **`notes`**: Logs Result compliance issues with `note_type = 'compliance'`
 - **`interactions`**: Tracks Result chaining between functions (flatMap dependencies)
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

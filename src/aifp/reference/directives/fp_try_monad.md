@@ -20,17 +20,38 @@ Try monads provide a **bridge between exception-based and functional error handl
 
 This directive complements `fp_result_types` (explicit error returns) by providing a way to **wrap exception-throwing code** from legacy systems or third-party libraries in functional error handling.
 
+**Important**: This directive is reference documentation for Try monad patterns.
+AI consults this when uncertain about wrapping exceptions or complex Try monad scenarios.
+
+**FP Try monads are baseline behavior**:
+- AI uses Try monads naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Wrapping exception-throwing code** - External libraries, legacy code
-- **Converting imperative error handling** - try/catch to Try monad
-- **Risky operations** - Division, parsing, I/O that might throw
-- **Incremental FP adoption** - Gradually eliminate exceptions
-- **Interfacing with non-FP code** - Bridge between paradigms
-- **Called by project directives**:
+**When AI Consults This Directive**:
+- Uncertainty about wrapping exception-throwing code in Try monads
+- Complex Try monad scenarios (nested exceptions, exception translation)
+- Edge cases with mixed exception/Result error handling
+- Need for detailed guidance on exception capture patterns
+
+**Context**:
+- AI uses Try monads as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_result_types`, `fp_error_pipeline`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
+
+---
+
+## Workflow (continuing from header)
   - `project_file_write` - Validates Try usage for risky operations
   - `project_compliance_check` - Scans for unsafe operation wrapping
   - Works with `fp_result_types` - Try is specialized Result for exceptions
@@ -529,12 +550,21 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `error_handling_pattern = 'try_monad'` for Try-using functions
 - **`functions`**: Updates `exception_safety = 'try_wrapped'` for risky operations
-- **`notes`**: Logs Try compliance issues with `note_type = 'compliance'`
 - **`interactions`**: Tracks Try chaining between functions (flatMap dependencies)
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 

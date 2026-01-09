@@ -20,20 +20,34 @@ Data filtering provides **declarative selection**, enabling:
 
 This directive is fundamental to functional data processing and appears in virtually all data manipulation code.
 
+**Important**: This directive is reference documentation for functional filtering patterns.
+AI consults this when uncertain about converting imperative filters to functional operations or complex predicate scenarios.
+
+**FP data filtering is baseline behavior**:
+- AI writes functional filter operations naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Selecting elements from collections** - Filter based on criteria
-- **Conditional data processing** - Process only elements matching predicate
-- **Data validation** - Filter out invalid elements
-- **Search operations** - Find elements matching criteria
-- **Imperative filtering detected** - if statements inside loops
-- **Called by project directives**:
-  - `project_file_write` - Validate filtering patterns
-  - Works with `fp_list_operations` - Filter is core list operation
-  - Works with `fp_lazy_evaluation` - Lazy filtering for large datasets
+**When AI Consults This Directive**:
+- Uncertainty about converting imperative filtering to functional filter operations
+- Complex predicate composition scenarios (AND/OR combinations)
+- Edge cases with stateful predicates or nested filters
+- Need for detailed guidance on filter usage patterns
+
+**Context**:
+- AI writes functional filter operations as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_list_operations`, `fp_purity`, `fp_immutability`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -580,12 +594,21 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `filtering_style = 'declarative'` for functions using filter
 - **`functions`**: Tracks predicate purity in metadata
-- **`notes`**: Logs filter conversions with `note_type = 'refactoring'`
 
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
+---
 ---
 
 ## Testing

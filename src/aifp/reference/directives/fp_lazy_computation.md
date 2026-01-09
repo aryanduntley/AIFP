@@ -20,20 +20,34 @@ Lazy computation provides **performance optimization through deferral**, enablin
 
 This directive is particularly valuable for expensive calculations, configuration initialization, and resource-intensive operations that may not always be needed.
 
+**Important**: This directive is reference documentation for lazy computation optimization patterns.
+AI consults this when uncertain about deferring computations or complex lazy evaluation scenarios.
+
+**FP lazy computation is baseline behavior**:
+- AI applies lazy computation naturally (enforced by system prompt during code writing)
+- This directive provides detailed guidance for complex scenarios
+- NO post-write validation occurs
+- NO automatic checking after file writes
+
 ---
 
 ## When to Apply
 
-This directive applies when:
-- **Expensive computations may not be used** - Heavy calculations in conditional branches
-- **Configuration/initialization overhead** - Loading resources that may not be needed
-- **Default parameter values** - Computing defaults only when parameters not provided
-- **Conditional data loading** - Load data only if validation passes
-- **Building computation pipelines** - Compose operations, evaluate on demand
-- **Called by project directives**:
-  - `project_file_write` - Validates lazy computation patterns
-  - Works with `fp_lazy_evaluation` - Lazy sequences vs lazy functions
-  - Works with `fp_memoization` - Lazy + cache for optimal performance
+**When AI Consults This Directive**:
+- Uncertainty about whether to defer expensive computations
+- Complex lazy computation scenarios (initialization, default parameters, conditional loading)
+- Edge cases with lazy evaluation caching or shared state
+- Need for detailed guidance on performance optimization through deferral
+
+**Context**:
+- AI applies lazy computation as baseline behavior (system prompt enforcement)
+- This directive is consulted DURING code writing when uncertainty arises
+- Related directives (`fp_lazy_evaluation`, `fp_purity`) may reference this for guidance
+
+**NOT Applied**:
+- ❌ NOT called automatically after every file write
+- ❌ NOT used for post-write validation
+- ❌ NO validation loop
 
 ---
 
@@ -645,11 +659,20 @@ See system prompt for usage.
 
 ## Database Operations
 
-This directive updates the following tables:
-
+**Project Database** (project.db):
 - **`functions`**: Sets `evaluation_strategy = 'lazy_computation'` for lazy functions
 - **`functions`**: Updates `performance_optimization = 'deferred'` for deferred computations
-- **`notes`**: Logs lazy computation opportunities with `note_type = 'optimization'`
+
+**Tracking** (Optional - Disabled by Default):
+
+If tracking is enabled:
+- **`tracking_notes`** (user_preferences.db): Logs FP analysis with `note_type='fp_analysis'`
+
+Only occurs when `fp_flow_tracking` is enabled via `tracking_toggle`.
+Token overhead: ~5% per file write.
+Most users will never enable this. It's for AIFP development and debugging only.
+
+**Note**: When tracking is enabled, use helper functions from user_preferences helpers (e.g., `add_tracking_note`, `get_tracking_notes`, `search_tracking_notes`) to log FP analysis data. Never write SQL directly.
 
 ---
 
