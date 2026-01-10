@@ -58,13 +58,7 @@ Parses user's natural language preference request.
 - **Then**: Find matching directive
 - **Details**: AI queries directives table to find matching directive
   - Query aifp_core.db:
-    ```sql
-    SELECT name, description, intent_keywords_json, type
-    FROM directives
-    WHERE name LIKE '%file%' OR name LIKE '%write%'
-       OR description LIKE '%docstring%'
-       OR intent_keywords_json LIKE '%docstring%'
-    ```
+    **Use helper functions** to query aifp_core.db (read-only). Query available helpers for directive/helper lookups.
   - Returns scored matches:
     ```python
     [
@@ -144,33 +138,9 @@ Parses user's natural language preference request.
 - **Then**: `update_or_insert`
 - **Details**: UPSERT into directive_preferences table
   - Use UPSERT (INSERT OR REPLACE):
-    ```sql
-    INSERT INTO directive_preferences (
-      directive_name,
-      preference_key,
-      preference_value,
-      description,
-      active,
-      updated_at
-    ) VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
-    ON CONFLICT(directive_name, preference_key) DO UPDATE SET
-      preference_value = excluded.preference_value,
-      description = excluded.description,
-      updated_at = CURRENT_TIMESTAMP
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Example execution:
-    ```sql
-    INSERT INTO directive_preferences (
-      directive_name, preference_key, preference_value, description
-    ) VALUES (
-      'project_file_write',
-      'always_add_docstrings',
-      'true',
-      'Always add docstrings to functions'
-    ) ON CONFLICT DO UPDATE SET
-      preference_value='true',
-      updated_at=CURRENT_TIMESTAMP
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - UNIQUE constraint ensures only one value per directive+key
   - If preference already exists → updates value
   - If new → inserts

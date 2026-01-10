@@ -106,12 +106,9 @@ Loads user-defined preferences for task decomposition.
   - Create task with description, acceptance criteria
   - Set priority based on milestone
 - **SQL**:
-  ```sql
-  INSERT INTO tasks (milestone_id, name, description, priority, status, created_at)
-  VALUES (?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP);
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  UPDATE project SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: New independent task created and tracked
 
 **Branch 7: If subtask_needed**
@@ -123,12 +120,9 @@ Loads user-defined preferences for task decomposition.
   - Pause parent task (`status = 'paused'`)
   - Subtasks must complete before parent resumes
 - **SQL**:
-  ```sql
-  INSERT INTO subtasks (task_id, name, description, priority, status, created_at)
-  VALUES (?, ?, ?, 'high', 'in_progress', CURRENT_TIMESTAMP);
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  UPDATE tasks SET status = 'paused' WHERE id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Subtask created, parent task paused
 
 **Branch 8: If sidequest_needed**
@@ -139,10 +133,7 @@ Loads user-defined preferences for task decomposition.
   - Link to `project_id` (not task-specific)
   - Does not block other work
 - **SQL**:
-  ```sql
-  INSERT INTO sidequests (project_id, name, description, priority, status, created_at)
-  VALUES (?, ?, ?, 'low', 'pending', CURRENT_TIMESTAMP);
-  ```
+  **Use helper functions** for database operations. Query available helpers for the appropriate database.
 - **Result**: Sidequest created for exploration
 
 **Branch 9: If interruption_detected**
@@ -190,11 +181,7 @@ Loads user-defined preferences for task decomposition.
 ### Example 1: New Task with User Preferences
 
 **User Preference**:
-```sql
-INSERT INTO directive_preferences (directive_name, preference_key, preference_value)
-VALUES ('project_task_decomposition', 'default_priority', 'high');
-VALUES ('project_task_decomposition', 'auto_create_items', 'true');
-```
+**Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
 
 **User Request**: "Implement matrix multiplication"
 
@@ -296,25 +283,9 @@ VALUES ('project_task_decomposition', 'auto_create_items', 'true');
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Create new task
-INSERT INTO tasks (milestone_id, name, description, priority, status, created_at)
-VALUES (1, 'Implement matrix multiplication', 'Core matrix operation', 3, 'pending', CURRENT_TIMESTAMP);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Create subtask
-INSERT INTO subtasks (task_id, name, description, priority, status, created_at)
-VALUES (1, 'Add email verification', 'Verification flow for auth', 'high', 'in_progress', CURRENT_TIMESTAMP);
-
--- Pause parent task
-UPDATE tasks SET status = 'paused', updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-
--- Create sidequest
-INSERT INTO sidequests (project_id, name, description, priority, status, created_at)
-VALUES (1, 'Research hashing algorithms', 'Explore alternatives', 'low', 'pending', CURRENT_TIMESTAMP);
-
--- Increment project version
-UPDATE project SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

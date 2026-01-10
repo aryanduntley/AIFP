@@ -96,9 +96,7 @@ Ensures required parameters are present before proceeding.
 - **Then**: `update_version_and_date`
 - **Details**: Increment version in database and blueprint
   - Increment `project.version` in database:
-    ```sql
-    UPDATE project SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Update **Version** field in Section 1:
     ```markdown
     **Version**: 1.1
@@ -136,12 +134,7 @@ Ensures required parameters are present before proceeding.
 - **Details**: Sync checksum in database
   - Calculate SHA-256 checksum of updated file
   - Update database:
-    ```sql
-    UPDATE project
-    SET blueprint_checksum = ?,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE id = 1;
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Checksum enables blueprint/DB sync detection
 - **Result**: Database checksum matches file
 
@@ -193,9 +186,7 @@ Ensures required parameters are present before proceeding.
    - Path: `.aifp-project/backups/ProjectBlueprint.md.v1_20251027_143022`
 4. Replaces Section 2 content
 5. Increments version:
-   ```sql
-   UPDATE project SET version = 2, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 6. Updates Section 1 metadata:
    ```markdown
    **Version**: 2
@@ -209,9 +200,7 @@ Ensures required parameters are present before proceeding.
    ```
 8. Writes updated blueprint to disk
 9. Updates checksum:
-   ```sql
-   UPDATE project SET blueprint_checksum = 'sha256:abc123...', updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 10. Returns success: "Blueprint updated: Section 2. Version: 1 → 2."
 
 ### Example 2: Update Section 3 (Themes/Flows)
@@ -348,9 +337,7 @@ Ensures required parameters are present before proceeding.
 7. **Triggers rollback**:
    - Restore blueprint from backup
    - Rollback version increment:
-     ```sql
-     UPDATE project SET version = version - 1 WHERE id = 1;
-     ```
+     **Use helper functions** for database operations. Query available helpers for the appropriate database.
 8. Prompts user: "Blueprint update failed: Disk full. Changes rolled back. Please free disk space and retry."
 
 ---
@@ -374,16 +361,7 @@ Ensures required parameters are present before proceeding.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Increment version (if requested)
-UPDATE project SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-
--- Update checksum
-UPDATE project SET blueprint_checksum = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-
--- Update last updated date
-UPDATE project SET updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-```
+**Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 **Filesystem**:
 ```bash

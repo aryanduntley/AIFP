@@ -63,43 +63,9 @@ Collects quantitative data across project dimensions.
   - Calculate weighted progress score
   - Identify current focus (highest priority incomplete)
 - **SQL**:
-  ```sql
-  -- Stage completion
-  SELECT
-    cp.name,
-    cp.order_index,
-    COUNT(m.id) as total_milestones,
-    SUM(CASE WHEN m.status = 'completed' THEN 1 ELSE 0 END) as completed_milestones,
-    ROUND(100.0 * SUM(CASE WHEN m.status = 'completed' THEN 1 ELSE 0 END) / COUNT(m.id), 2) as completion_pct
-  FROM completion_path cp
-  LEFT JOIN milestones m ON cp.id = m.completion_path_id
-  WHERE cp.project_id = ?
-  GROUP BY cp.id
-  ORDER BY cp.order_index;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Task completion
-  SELECT
-    m.name as milestone,
-    COUNT(t.id) as total_tasks,
-    SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed_tasks,
-    ROUND(100.0 * SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) / COUNT(t.id), 2) as completion_pct
-  FROM milestones m
-  LEFT JOIN tasks t ON m.id = t.milestone_id
-  WHERE m.completion_path_id IN (SELECT id FROM completion_path WHERE project_id = ?)
-  GROUP BY m.id;
-
-  -- Item completion
-  SELECT
-    COUNT(*) as total_items,
-    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_items,
-    ROUND(100.0 * SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) / COUNT(*), 2) as completion_pct
-  FROM items
-  WHERE task_id IN (
-    SELECT t.id FROM tasks t
-    JOIN milestones m ON t.milestone_id = m.id
-    WHERE m.completion_path_id IN (SELECT id FROM completion_path WHERE project_id = ?)
-  );
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Completion metrics calculated, current focus identified
 
 **Branch 2: If function_table_updated**
@@ -110,28 +76,9 @@ Collects quantitative data across project dimensions.
   - Identify non-compliant functions
   - Track improvement trends
 - **SQL**:
-  ```sql
-  -- Purity distribution
-  SELECT
-    purity_level,
-    COUNT(*) as function_count,
-    ROUND(100.0 * COUNT(*) / (SELECT COUNT(*) FROM functions WHERE project_id = ?), 2) as percentage
-  FROM functions
-  WHERE project_id = ?
-  GROUP BY purity_level;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Compliance score (pure functions / total functions)
-  SELECT
-    ROUND(100.0 * SUM(CASE WHEN purity_level = 'pure' THEN 1 ELSE 0 END) / COUNT(*), 2) as compliance_score
-  FROM functions
-  WHERE project_id = ?;
-
-  -- Non-compliant functions needing refactoring
-  SELECT name, file_id, purity_level, side_effects_json
-  FROM functions
-  WHERE project_id = ? AND purity_level != 'pure'
-  ORDER BY purity_level DESC;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: FP compliance metrics calculated
 
 **Branch 3: If task_distribution_requested**
@@ -142,26 +89,9 @@ Collects quantitative data across project dimensions.
   - Detect empty milestones (0 tasks)
   - Calculate average tasks per milestone
 - **SQL**:
-  ```sql
-  SELECT
-    m.name as milestone,
-    cp.name as stage,
-    COUNT(t.id) as task_count,
-    SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed,
-    SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-    SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) as pending,
-    CASE
-      WHEN COUNT(t.id) = 0 THEN 'Empty'
-      WHEN COUNT(t.id) > 10 THEN 'Overloaded'
-      ELSE 'Balanced'
-    END as load_status
-  FROM milestones m
-  JOIN completion_path cp ON m.completion_path_id = cp.id
-  LEFT JOIN tasks t ON m.id = t.milestone_id
-  WHERE cp.project_id = ?
-  GROUP BY m.id
-  ORDER BY cp.order_index, m.priority;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Task distribution analyzed, imbalances flagged
 
 **Branch 4: If directive_success_tracking**
@@ -172,19 +102,9 @@ Collects quantitative data across project dimensions.
   - Calculate success rate per directive
   - Identify problematic directives (< 80% success)
 - **SQL**:
-  ```sql
-  -- Directive success rates
-  SELECT
-    directive_name,
-    COUNT(*) as total_executions,
-    SUM(CASE WHEN note_type IN ('error', 'failure') THEN 1 ELSE 0 END) as failures,
-    SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) as successes,
-    ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
-  FROM notes
-  WHERE source = 'directive' AND created_at > datetime('now', '-7 days')
-  GROUP BY directive_name
-  ORDER BY success_rate ASC;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Directive reliability metrics calculated
 
 **Branch 5: If velocity_tracking**
@@ -194,37 +114,9 @@ Collects quantitative data across project dimensions.
   - Estimate remaining time to milestone completion
   - Identify acceleration or deceleration trends
 - **SQL**:
-  ```sql
-  -- Completions per day (last 7 days)
-  SELECT
-    DATE(completed_at) as date,
-    COUNT(*) as items_completed
-  FROM items
-  WHERE completed_at > datetime('now', '-7 days') AND status = 'completed'
-  GROUP BY DATE(completed_at)
-  ORDER BY date;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Average velocity
-  SELECT
-    ROUND(COUNT(*) / 7.0, 2) as avg_items_per_day
-  FROM items
-  WHERE completed_at > datetime('now', '-7 days') AND status = 'completed';
-
-  -- Estimated days to milestone completion
-  SELECT
-    m.name,
-    COUNT(i.id) as remaining_items,
-    ROUND(COUNT(i.id) / (
-      SELECT COUNT(*) / 7.0
-      FROM items
-      WHERE completed_at > datetime('now', '-7 days') AND status = 'completed'
-    ), 1) as estimated_days
-  FROM milestones m
-  JOIN tasks t ON m.id = t.milestone_id
-  JOIN items i ON t.id = i.task_id
-  WHERE i.status != 'completed' AND m.status != 'completed'
-  GROUP BY m.id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Velocity metrics calculated, estimates provided
 
 **Branch 6: If bottleneck_detection**
@@ -234,35 +126,9 @@ Collects quantitative data across project dimensions.
   - Identify subtasks blocking parent tasks
   - Flag sidequests that may be abandoned
 - **SQL**:
-  ```sql
-  -- Stale in-progress tasks
-  SELECT
-    t.name,
-    t.status,
-    m.name as milestone,
-    t.updated_at,
-    ROUND(julianday('now') - julianday(t.updated_at), 1) as days_stale,
-    COUNT(i.id) as total_items,
-    SUM(CASE WHEN i.status = 'completed' THEN 1 ELSE 0 END) as completed_items
-  FROM tasks t
-  JOIN milestones m ON t.milestone_id = m.id
-  LEFT JOIN items i ON t.id = i.task_id
-  WHERE t.status = 'in_progress' AND t.updated_at < datetime('now', '-7 days')
-  GROUP BY t.id
-  ORDER BY days_stale DESC;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Blocking subtasks
-  SELECT
-    st.name as subtask,
-    t.name as parent_task,
-    st.status,
-    st.priority,
-    st.updated_at
-  FROM subtasks st
-  JOIN tasks t ON st.task_id = t.id
-  WHERE st.status != 'completed' AND t.status = 'paused'
-  ORDER BY st.priority DESC, st.created_at ASC;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Bottlenecks identified with recommendations
 
 **Branch 7: If generate_health_report**
@@ -330,16 +196,9 @@ Collects quantitative data across project dimensions.
   - Enable trend analysis over time
   - Support retrospectives
 - **SQL**:
-  ```sql
-  INSERT INTO notes (content, note_type, source, directive_name, severity)
-  VALUES (
-    'Metrics snapshot: Overall 62%, Compliance 85%, Velocity 8.5 items/day, Bottlenecks: 2',
-    'metrics',
-    'directive',
-    'project_metrics',
-    'info'
-  );
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Metrics logged for historical analysis
 
 **Fallback**: `log_metrics_to_notes`
@@ -391,25 +250,17 @@ Collects quantitative data across project dimensions.
 
 **AI Execution**:
 1. Queries function purity distribution:
-   ```sql
-   SELECT purity_level, COUNT(*) FROM functions WHERE project_id = 1 GROUP BY purity_level;
-   -- Results:
-   -- pure: 42
-   -- mostly_pure: 6
-   -- impure: 2
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Calculates compliance score:
    ```
    Compliance = (42 / 50) * 100 = 84%
    ```
 3. Identifies non-compliant:
-   ```sql
-   SELECT name, purity_level FROM functions WHERE purity_level != 'pure';
-   -- Results:
-   -- process_user_input (mostly_pure)
-   -- global_config_loader (impure)
-   -- legacy_auth_handler (impure)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Reports:
    ```
    FP Compliance: 84%
@@ -430,31 +281,17 @@ Collects quantitative data across project dimensions.
 
 **AI Execution**:
 1. Queries completions last 7 days:
-   ```sql
-   SELECT DATE(completed_at), COUNT(*) FROM items
-   WHERE completed_at > datetime('now', '-7 days') AND status = 'completed'
-   GROUP BY DATE(completed_at);
-   -- Results:
-   -- 2025-10-20: 12 items
-   -- 2025-10-21: 8 items
-   -- 2025-10-22: 10 items
-   -- 2025-10-23: 9 items
-   -- 2025-10-24: 7 items
-   -- 2025-10-25: 8 items
-   -- 2025-10-26: 6 items
-   -- Total: 60 items
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Calculates average velocity:
    ```
    Velocity = 60 items / 7 days = 8.57 items/day
    ```
 3. Queries remaining items in milestone:
-   ```sql
-   SELECT COUNT(*) FROM items i
-   JOIN tasks t ON i.task_id = t.id
-   WHERE t.milestone_id = 3 AND i.status != 'completed';
-   -- Result: 36 items
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Estimates completion:
    ```
    Days to completion = 36 / 8.57 = 4.2 days
@@ -477,21 +314,13 @@ Collects quantitative data across project dimensions.
 
 **AI Execution**:
 1. Queries stale tasks:
-   ```sql
-   SELECT name, updated_at,
-     ROUND(julianday('now') - julianday(updated_at), 1) as days_stale
-   FROM tasks
-   WHERE status = 'in_progress' AND updated_at < datetime('now', '-7 days');
-   -- Results:
-   -- "Refactor database layer" - 12.3 days stale
-   -- "Implement caching" - 8.1 days stale
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Analyzes task details:
-   ```sql
-   SELECT COUNT(*), SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)
-   FROM items WHERE task_id = 15;
-   -- Task "Refactor database layer": 3/8 items complete (38%)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Identifies causes:
    - Large task (8 items) with slow progress
    - No subtasks created (should decompose)
@@ -517,13 +346,9 @@ Collects quantitative data across project dimensions.
 
 **AI Execution**:
 1. Queries directive execution logs:
-   ```sql
-   SELECT directive_name, note_type, COUNT(*)
-   FROM notes
-   WHERE source = 'directive' AND created_at > datetime('now', '-7 days')
-   GROUP BY directive_name, note_type;
-   -- Results analyzed...
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Calculates success rates:
    - project_file_write: 25 successes, 0 failures = 100%
    - project_task_create: 18 successes, 1 failure = 95%
@@ -569,24 +394,15 @@ Collects quantitative data across project dimensions.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Log metrics snapshot
-INSERT INTO notes (content, note_type, source, directive_name, severity)
-VALUES (?, 'metrics', 'directive', 'project_metrics', 'info');
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Tables Queried:
 
-```sql
--- completion_path, milestones, tasks, items, subtasks
--- For completion percentages
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- functions
--- For FP compliance scoring
-
--- notes
--- For directive success rates and historical trends
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -90,11 +90,7 @@ Identifies the user (human or AI) creating the branch.
 - **Then**: `get_next_branch_number`
 - **Details**: Query database for next available number
   - Query:
-    ```sql
-    SELECT MAX(CAST(SUBSTR(branch_name, LENGTH('aifp-{user}-') + 1, 3) AS INTEGER))
-    FROM work_branches
-    WHERE user_name = '{user}'
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - If no branches yet: Use 1
   - Else: Increment max by 1
   - Example: alice has branches 001, 002 → next is 003
@@ -124,23 +120,7 @@ Identifies the user (human or AI) creating the branch.
 - **Then**: `store_branch_metadata`
 - **Details**: Record branch in database
   - Insert into `work_branches` table:
-    ```sql
-    INSERT INTO work_branches (
-      branch_name,
-      user_name,
-      purpose,
-      status,
-      created_from,
-      metadata_json
-    ) VALUES (
-      'aifp-alice-001',
-      'alice',
-      'Implement matrix multiplication',
-      'active',
-      'main',
-      '{"task_id": 15, "milestone_id": 3}'
-    )
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Fields:
     - `branch_name`: Full branch name
     - `user_name`: Who created branch
@@ -156,11 +136,9 @@ Identifies the user (human or AI) creating the branch.
   - Update metadata_json with task_id
   - Update task table to reference branch name
   - Example:
-    ```sql
-    UPDATE tasks
-    SET git_branch = 'aifp-alice-001'
-    WHERE id = 15
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Enables tracking which branch is working on which task
 - **Result**: Branch linked to task
 
@@ -441,10 +419,7 @@ How to verify this directive is working:
    ```
 
 3. **Branch stored in database** → Metadata recorded
-   ```sql
-   SELECT * FROM work_branches WHERE branch_name='aifp-alice-001';
-   -- Expected: 1 row with purpose, status='active', user_name='alice'
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 ---
 

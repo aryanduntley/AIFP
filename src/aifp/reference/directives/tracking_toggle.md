@@ -73,11 +73,7 @@ Parses user's request to enable/disable tracking feature.
 - **Then**: `check_current_status`
 - **Details**: Query current state of tracking feature
   - Query:
-    ```sql
-    SELECT enabled, description, estimated_token_overhead
-    FROM tracking_settings
-    WHERE feature_name = ?
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Example results:
     ```python
     {
@@ -122,18 +118,9 @@ Parses user's request to enable/disable tracking feature.
 - **Then**: `update_tracking_setting`
 - **Details**: Enable the tracking feature
   - Update database:
-    ```sql
-    UPDATE tracking_settings
-    SET enabled = 1,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE feature_name = ?
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Example:
-    ```sql
-    UPDATE tracking_settings
-    SET enabled = 1, updated_at = CURRENT_TIMESTAMP
-    WHERE feature_name = 'ai_interaction_log'
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Feature now active for this project
   - Next directive execution will use tracking
 - **Result**: Feature enabled
@@ -143,12 +130,7 @@ Parses user's request to enable/disable tracking feature.
 - **Details**: Disable without confirmation (user saving money)
   - No confirmation needed for disabling
   - Immediately update:
-    ```sql
-    UPDATE tracking_settings
-    SET enabled = 0,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE feature_name = ?
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Existing logged data is preserved (not deleted)
   - Can be re-enabled later
 - **Result**: Feature disabled

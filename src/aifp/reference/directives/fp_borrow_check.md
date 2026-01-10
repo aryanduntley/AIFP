@@ -134,12 +134,9 @@ Analyzes reference lifetimes and borrow scopes.
     - Returned values are copies or primitives
     - Closures capture values, not references
   - Update database:
-    ```sql
-    UPDATE functions
-    SET side_effects_json = '{"borrow_safe": true}',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = ? AND file_id = ?
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Borrow validated as safe
 
 **Branch 3: If closure_captures_reference**

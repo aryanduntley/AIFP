@@ -309,52 +309,26 @@ add_type_function(type_id=20, function_id=42, role='factory')
 ## Database Operations
 
 ### Reserve File
-```sql
-INSERT INTO files (name, path, language, is_reserved, created_at)
-VALUES ('calculator', 'src/calculator_id_42.py', 'python', 1, CURRENT_TIMESTAMP);
--- Returns: file_id
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Reserve Function
-```sql
-INSERT INTO functions (name, file_id, purpose, is_reserved, created_at)
-VALUES ('add_numbers', 42, 'Sum two numbers', 1, CURRENT_TIMESTAMP);
--- Returns: function_id
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Reserve Type
-```sql
-INSERT INTO types (name, file_id, purpose, is_reserved, created_at)
-VALUES ('Result', 42, 'Result ADT for error handling', 1, CURRENT_TIMESTAMP);
--- Returns: type_id
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Finalize Reservation
 Updates name to include embedded ID and sets is_reserved to FALSE:
 
-```sql
--- Finalize file: Update name and path with ID, set is_reserved=0
-UPDATE files
-SET name = 'calculator_id_42.py',
-    path = 'src/calculator_id_42.py',
-    is_reserved = 0,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = 42;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Finalize function: Update name with ID, set is_reserved=0
-UPDATE functions
-SET name = 'add_numbers_id_99',
-    is_reserved = 0,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = 99;
-
--- Finalize type: Update name with ID, set is_reserved=0
-UPDATE types
-SET name = 'Result_id_15',
-    is_reserved = 0,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = 15;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

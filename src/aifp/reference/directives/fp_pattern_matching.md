@@ -502,26 +502,15 @@ func ProcessResponse(r Response) string {
 
 When converting to pattern matching, record the transformation:
 
-```sql
--- Update function record
-UPDATE functions
-SET
-    control_flow_style = 'pattern_matching',
-    complexity_score = 2,  -- Reduced from 5 (nested if/else)
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'process_response' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions Needing Pattern Matching
 
-```sql
--- Find functions with high conditional complexity
-SELECT f.id, f.name, f.file_id, f.complexity_score
-FROM functions f
-WHERE f.control_flow_style IN ('if_else', 'nested_conditionals')
-  AND f.complexity_score > 3
-ORDER BY f.complexity_score DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

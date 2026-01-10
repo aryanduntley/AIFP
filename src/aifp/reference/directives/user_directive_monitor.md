@@ -93,24 +93,14 @@ This directive applies **automatically**:
    ```
 
 2. **Update database statistics**:
-   ```sql
-   UPDATE directive_executions
-   SET total_executions = total_executions + 1,
-       success_count = success_count + 1,
-       last_execution_time = CURRENT_TIMESTAMP,
-       last_execution_status = 'success',
-       avg_execution_time_ms = (
-           (avg_execution_time_ms * (total_executions - 1) + ?) / total_executions
-       )
-   WHERE directive_id = ?;
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 3. **Calculate next execution** (for time-based):
-   ```sql
-   UPDATE directive_executions
-   SET next_scheduled_time = ?
-   WHERE directive_id = ? AND trigger_type = 'time';
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### Step 3: Handle Errors (on execution failure)
 
@@ -137,17 +127,9 @@ This directive applies **automatically**:
    ```
 
 2. **Update error statistics**:
-   ```sql
-   UPDATE directive_executions
-   SET total_executions = total_executions + 1,
-       error_count = error_count + 1,
-       last_execution_time = CURRENT_TIMESTAMP,
-       last_execution_status = 'error',
-       last_error_time = CURRENT_TIMESTAMP,
-       last_error_type = ?,
-       last_error_message = ?
-   WHERE directive_id = ?;
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 3. **Check error threshold**:
    ```python
@@ -297,13 +279,7 @@ If monitoring system fails:
 ```
 
 **Database Update**:
-```sql
--- turn_off_lights_5pm stats
-total_executions: 24 → 25
-success_count: 24 → 25
-last_execution_time: updated
-avg_execution_time_ms: recalculated
-```
+**Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 ---
 
@@ -315,14 +291,7 @@ avg_execution_time_ms: recalculated
 ```
 
 **Database Update**:
-```sql
--- turn_off_lights_5pm error stats
-total_executions: 24 → 25
-error_count: 0 → 1
-last_error_time: updated
-last_error_type: "ConnectionError"
-last_error_message: "Failed to connect..."
-```
+**Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 **Alert to User**:
 ```
@@ -480,52 +449,21 @@ See system prompt for usage.
 ## Database Operations
 
 ### Tables Read
-```sql
--- Get all active directives
-SELECT id, name, trigger_type, process_id
-FROM user_directives
-WHERE status = 'active';
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
 
--- Get current stats
-SELECT total_executions, success_count, error_count
-FROM directive_executions
-WHERE directive_id = ?;
-```
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 ### Tables Updated
 
 #### directive_executions
-```sql
--- On successful execution
-UPDATE directive_executions
-SET total_executions = total_executions + 1,
-    success_count = success_count + 1,
-    last_execution_time = CURRENT_TIMESTAMP,
-    last_execution_status = 'success',
-    avg_execution_time_ms = (
-        (avg_execution_time_ms * (total_executions - 1) + ?) / total_executions
-    ),
-    next_scheduled_time = ?  -- For time-based
-WHERE directive_id = ?;
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
 
--- On error
-UPDATE directive_executions
-SET total_executions = total_executions + 1,
-    error_count = error_count + 1,
-    last_execution_time = CURRENT_TIMESTAMP,
-    last_execution_status = 'error',
-    last_error_time = CURRENT_TIMESTAMP,
-    last_error_type = ?,
-    last_error_message = ?
-WHERE directive_id = ?;
-```
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### user_directives (if health issue detected)
-```sql
-UPDATE user_directives
-SET status = 'degraded'  -- or 'error'
-WHERE id = ? AND error_rate > threshold;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 ---
 

@@ -335,10 +335,12 @@
         "Ensure the type code is also removed from the file, not just the database"
       ],
       "implementation_notes": [
+        "ERROR LOGIC: Query types table for is_reserved WHERE id=? - if is_reserved=1, return error",
+        "ERROR RETURN (reserved): {success: false, error: 'type_reserved', message: 'Cannot delete reserved type. Use delete_reserved helper or finalize_type first'}",
         "ERROR LOGIC: Query types_functions WHERE type_id=? - if not empty, return error with function relationships list",
         "ERROR RETURN: {success: false, error: 'types_functions_exist', function_relationships: [{function_id, function_name, role}, ...]}",
         "ERROR MESSAGE: 'Cannot delete type - function relationships exist. Delete types_functions entries first, then retry'",
-        "SUCCESS LOGIC: Only proceed if types_functions check returns empty",
+        "SUCCESS LOGIC: Only proceed if is_reserved=0 AND types_functions check returns empty",
         "SUCCESS LOGIC: Get file_id before deletion: SELECT file_id FROM types WHERE id=type_id",
         "SUCCESS LOGIC: Create note entry in notes table with reason, severity, source, type, reference details",
         "SUCCESS LOGIC: Delete type: DELETE FROM types WHERE id=type_id",

@@ -574,20 +574,9 @@ function runWithLogging<T>(
 
 ### Record Logging Safety Metadata
 
-```sql
--- Update function with logging safety info
-UPDATE functions
-SET
-    has_logging = 0,  -- Pure after isolation
-    logging_strategy = 'return_log_data',
-    side_effects_json = json_set(
-        COALESCE(side_effects_json, '{}'),
-        '$.logging',
-        'isolated'
-    ),
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'process_payment' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

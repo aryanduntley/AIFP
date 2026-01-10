@@ -214,29 +214,9 @@ def process_order(order: Order, tax_rate: float) -> ProcessedOrder:
 
 **Bulk Indexing (Compliant):**
 
-```sql
--- Query after bulk indexing entire project
-SELECT
-    f.name,
-    fi.path,
-    f.purity_level,
-    COUNT(i.target_function_id) as dependency_count
-FROM functions f
-JOIN files fi ON f.file_id = fi.id
-LEFT JOIN interactions i ON f.id = i.source_function_id
-GROUP BY f.id
-ORDER BY dependency_count DESC;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Result:
--- process_order | src/orders.py | pure | 3
--- calculate_total | src/calculations.py | pure | 0
--- format_invoice | src/formatters.py | pure | 2
-
--- ✅ All functions indexed
--- ✅ Dependencies tracked
--- ✅ Queryable via SQL
--- ✅ Instant context for AI
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Why Compliant**:
 - Entire project indexed
@@ -513,38 +493,15 @@ def index_function(func_metadata: dict, file_id: int):
 
 ### functions Table
 
-```sql
-CREATE TABLE functions (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    file_id INTEGER NOT NULL,
-    purpose TEXT,
-    parameters TEXT,  -- JSON array
-    return_type TEXT,
-    purity_level TEXT CHECK(purity_level IN ('pure', 'IO', 'impure')),
-    side_effects_json TEXT,  -- JSON
-    dependencies_json TEXT,  -- JSON array of function names
-    theme TEXT,
-    flow TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (file_id) REFERENCES files(id)
-);
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### interactions Table
 
-```sql
-CREATE TABLE interactions (
-    id INTEGER PRIMARY KEY,
-    source_function_id INTEGER NOT NULL,
-    target_function_id INTEGER NOT NULL,
-    interaction_type TEXT CHECK(interaction_type IN ('call', 'compose', 'callback')),
-    description TEXT,
-    FOREIGN KEY (source_function_id) REFERENCES functions(id),
-    FOREIGN KEY (target_function_id) REFERENCES functions(id)
-);
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 
@@ -552,45 +509,27 @@ CREATE TABLE interactions (
 
 ### Find All Pure Functions
 
-```sql
-SELECT name, file_id, purpose
-FROM functions
-WHERE purity_level = 'pure';
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Find Functions by Theme
 
-```sql
-SELECT f.name, fi.path, f.purpose
-FROM functions f
-JOIN files fi ON f.file_id = fi.id
-WHERE f.theme = 'authentication';
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Find Dependency Graph
 
-```sql
-SELECT
-    f1.name AS caller,
-    f2.name AS callee
-FROM interactions i
-JOIN functions f1 ON i.source_function_id = f1.id
-JOIN functions f2 ON i.target_function_id = f2.id
-WHERE f1.name = 'process_order';
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Find Functions with Most Dependencies
 
-```sql
-SELECT
-    f.name,
-    COUNT(i.target_function_id) AS dependency_count
-FROM functions f
-LEFT JOIN interactions i ON f.id = i.source_function_id
-GROUP BY f.id
-ORDER BY dependency_count DESC
-LIMIT 10;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 
@@ -706,23 +645,19 @@ This directive updates the following tables:
 How to verify this directive is working:
 
 1. **New function written** → Automatically indexed in database
-   ```sql
-   SELECT * FROM functions WHERE name = 'new_function';
-   -- Should return entry
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 2. **Function modified** → Database updated
-   ```sql
-   SELECT updated_at FROM functions WHERE name = 'modified_function';
-   -- Should show recent timestamp
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 3. **Check index completeness**
-   ```sql
-   SELECT
-       (SELECT COUNT(*) FROM functions) AS indexed_count,
-       -- Compare with actual function count in codebase
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

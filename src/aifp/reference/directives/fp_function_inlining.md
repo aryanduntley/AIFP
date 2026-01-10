@@ -498,11 +498,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify inlining decisions logged
-   ```sql
-   SELECT name, optimization_level, call_count
-   FROM functions
-   WHERE optimization_level = 'inlined';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

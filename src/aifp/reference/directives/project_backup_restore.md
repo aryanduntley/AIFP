@@ -475,13 +475,9 @@ How to verify this directive is working:
    ```
 
 3. **Verify scheduled backups**
-   ```sql
-   SELECT content, created_at
-   FROM notes
-   WHERE note_type = 'backup'
-   ORDER BY created_at DESC
-   LIMIT 5;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 4. **Test restore**
    ```bash

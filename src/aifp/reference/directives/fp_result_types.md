@@ -630,12 +630,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify `functions.error_handling_pattern = 'result'`
-   ```sql
-   SELECT name, error_handling_pattern, exceptions_json
-   FROM functions
-   WHERE name = 'parse';
-   -- Expected: error_handling_pattern='result', exceptions_json='[]'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

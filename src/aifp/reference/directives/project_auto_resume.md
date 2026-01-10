@@ -63,24 +63,9 @@ Identifies work that should be resumed based on status and priority.
   - Update task status from 'paused' to 'in_progress'
   - Load task context (items, completed work)
 - **SQL**:
-  ```sql
-  -- Find paused tasks
-  SELECT id, name, milestone_id, description, updated_at
-  FROM tasks
-  WHERE status = 'paused'
-  ORDER BY updated_at DESC;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Check blocking subtasks
-  SELECT id, name, status, priority
-  FROM subtasks
-  WHERE task_id = ? AND status != 'completed'
-  ORDER BY priority DESC;
-
-  -- If no blocking subtasks, resume task
-  UPDATE tasks
-  SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Paused task resumed, user notified of context
 
 **Branch 2: If sidequest_paused**
@@ -92,13 +77,7 @@ Identifies work that should be resumed based on status and priority.
   - If complete: Mark complete, return to main work
   - If cancel: Mark cancelled, return to main work
 - **SQL**:
-  ```sql
-  -- Find paused/in-progress sidequests
-  SELECT id, name, task_id, status, description, updated_at
-  FROM sidequests
-  WHERE status IN ('paused', 'in_progress')
-  ORDER BY updated_at DESC;
-  ```
+  **Use helper functions** for database operations. Query available helpers for the appropriate database.
 - **Prompt**:
   ```
   Sidequest in progress: "{sidequest_name}"
@@ -124,22 +103,13 @@ Identifies work that should be resumed based on status and priority.
   - Resume work on subtask
   - Parent task remains paused until subtask complete
 - **SQL**:
-  ```sql
-  -- Find in-progress subtasks
-  SELECT st.id, st.name, st.task_id, st.description, st.updated_at, t.name as parent_task
-  FROM subtasks st
-  JOIN tasks t ON st.task_id = t.id
-  WHERE st.status = 'in_progress'
-  ORDER BY st.priority DESC, st.updated_at DESC;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Context Loading**:
-  ```sql
-  -- Get subtask items
-  SELECT id, name, status, created_at
-  FROM items
-  WHERE subtask_id = ?
-  ORDER BY status ASC, created_at ASC;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Subtask work resumed, parent remains paused
 
 **Branch 4: If task_in_progress**
@@ -150,20 +120,9 @@ Identifies work that should be resumed based on status and priority.
   - Continue with next incomplete item
   - Update task as in-progress
 - **SQL**:
-  ```sql
-  -- Find in-progress tasks
-  SELECT t.id, t.name, t.milestone_id, t.description, m.name as milestone
-  FROM tasks t
-  JOIN milestones m ON t.milestone_id = m.id
-  WHERE t.status = 'in_progress'
-  ORDER BY t.priority DESC, t.updated_at DESC;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Get task items
-  SELECT id, name, status
-  FROM items
-  WHERE task_id = ?
-  ORDER BY status ASC, created_at ASC;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Context Report**:
   ```
   Resuming task: "{task_name}"
@@ -231,11 +190,7 @@ Identifies work that should be resumed based on status and priority.
   - Begin execution without user confirmation
   - Log auto-resume action
 - **User Preference Check**:
-  ```sql
-  SELECT preference_value FROM directive_preferences
-  WHERE directive_name = 'project_auto_resume' AND preference_key = 'auto_resume_enabled' AND active = 1;
-  -- If preference_value = 'true', auto-resume
-  ```
+  **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
 - **Result**: Work resumed automatically
 
 **Fallback**: `mark_as_resolved`
@@ -259,25 +214,22 @@ Identifies work that should be resumed based on status and priority.
 **AI Execution**:
 1. Subtask "Fix memory leak" marked complete (via `project_task_update`)
 2. `project_task_update` checks parent task:
-   ```sql
-   SELECT id, status FROM tasks WHERE id = (SELECT task_id FROM subtasks WHERE id = 8);
-   -- Result: Task #15 "Optimize database" (status: paused)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Checks for remaining subtasks:
-   ```sql
-   SELECT COUNT(*) FROM subtasks WHERE task_id = 15 AND status != 'completed';
-   -- Result: 0 (no more blocking subtasks)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Triggers `project_auto_resume` for task #15
 5. Updates task status:
-   ```sql
-   UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP WHERE id = 15;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Loads task context:
-   ```sql
-   SELECT id, name, status FROM items WHERE task_id = 15 ORDER BY status ASC;
-   -- Results: 3/5 items complete
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Reports to user:
    ```
    ✓ Subtask "Fix memory leak" complete!
@@ -305,25 +257,13 @@ Identifies work that should be resumed based on status and priority.
 **AI Execution**:
 1. Triggered by `aifp_run` detecting "continue" keyword
 2. Queries for incomplete work:
-   ```sql
-   -- Check sidequests
-   SELECT id, name FROM sidequests WHERE status IN ('paused', 'in_progress');
-   -- Result: None
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   -- Check subtasks
-   SELECT id, name, task_id FROM subtasks WHERE status = 'in_progress';
-   -- Result: None
-
-   -- Check tasks
-   SELECT id, name, milestone_id FROM tasks WHERE status = 'in_progress' ORDER BY priority DESC, updated_at DESC;
-   -- Result: Task #20 "Implement authentication" (updated 2 hours ago)
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Loads task context:
-   ```sql
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM items WHERE task_id = 20;
-   -- Result: 2/6 items complete
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Prompts user:
    ```
    Welcome back!
@@ -337,9 +277,9 @@ Identifies work that should be resumed based on status and priority.
    ```
 5. User: "y"
 6. Loads full context:
-   ```sql
-   SELECT id, name, status FROM items WHERE task_id = 20 ORDER BY status ASC, created_at ASC;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Reports:
    ```
    Resuming: "Implement authentication"
@@ -364,14 +304,9 @@ Identifies work that should be resumed based on status and priority.
 
 **AI Execution**:
 1. Queries all incomplete work:
-   ```sql
-   SELECT 'sidequest' as type, id, name, status, updated_at FROM sidequests WHERE status IN ('paused', 'in_progress')
-   UNION ALL
-   SELECT 'subtask' as type, id, name, status, updated_at FROM subtasks WHERE status = 'in_progress'
-   UNION ALL
-   SELECT 'task' as type, id, name, status, updated_at FROM tasks WHERE status IN ('paused', 'in_progress')
-   ORDER BY CASE type WHEN 'sidequest' THEN 1 WHEN 'subtask' THEN 2 ELSE 3 END, updated_at DESC;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Results:
    - Sidequest #5: "Research Redis alternatives" (in_progress, 1 week ago)
    - Task #18: "Implement caching" (in_progress, 3 days ago)
@@ -406,13 +341,9 @@ Identifies work that should be resumed based on status and priority.
 **AI Execution**:
 1. Detects sidequest #7: "Explore graph databases" (paused, 2 weeks ago)
 2. Loads sidequest context:
-   ```sql
-   SELECT sq.id, sq.name, sq.description, sq.task_id, t.name as parent_task
-   FROM sidequests sq
-   JOIN tasks t ON sq.task_id = t.id
-   WHERE sq.id = 7;
-   -- Result: Related to task "Choose database solution"
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Prompts user:
    ```
    Sidequest found: "Explore graph databases"
@@ -437,12 +368,9 @@ Identifies work that should be resumed based on status and priority.
    ```
 6. User: "Neo4j looks promising but too complex for our use case"
 7. Marks complete and logs:
-   ```sql
-   UPDATE sidequests SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 7;
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source)
-   VALUES ('Sidequest "Explore graph databases" complete. Findings: Neo4j looks promising but too complex for our use case', 'sidequest_completion', 'sidequests', 7, 'user');
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 8. Returns to main work
 
 ### Example 5: Auto-Resume Enabled
@@ -452,11 +380,7 @@ Identifies work that should be resumed based on status and priority.
 **AI Execution**:
 1. User says "continue" or starts session
 2. Checks user preference:
-   ```sql
-   SELECT preference_value FROM directive_preferences
-   WHERE directive_name = 'project_auto_resume' AND preference_key = 'auto_resume_enabled' AND active = 1;
-   -- Result: 'true'
-   ```
+   **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
 3. Queries incomplete work (same as Example 3)
 4. Selects highest priority automatically:
    - Sidequest #5 (highest priority by hierarchy)
@@ -478,10 +402,9 @@ Identifies work that should be resumed based on status and priority.
 
 **AI Execution**:
 1. Queries incomplete work:
-   ```sql
-   SELECT COUNT(*) FROM tasks WHERE status IN ('paused', 'in_progress');
-   -- Result: 0
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Reports:
    ```
    No work to resume.
@@ -520,20 +443,9 @@ Identifies work that should be resumed based on status and priority.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Resume paused task
-UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Complete sidequest
-UPDATE sidequests SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Cancel sidequest
-UPDATE sidequests SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Log resumption
-INSERT INTO notes (content, note_type, source, directive_name)
-VALUES (?, 'resumption', 'directive', 'project_auto_resume');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

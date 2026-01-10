@@ -619,12 +619,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify no reflection usage
-   ```sql
-   SELECT name, has_reflection
-   FROM functions
-   WHERE has_reflection = 1;
-   -- Should return no results
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

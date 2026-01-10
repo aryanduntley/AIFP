@@ -61,11 +61,7 @@ Checks if `user_preferences.db` exists and is accessible.
 - **Then**: `load_preferences`
 - **Details**: Load directive-specific preferences from database
   - Query:
-    ```sql
-    SELECT preference_key, preference_value, description
-    FROM directive_preferences
-    WHERE directive_name = ? AND active = 1
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Example query: `directive_name = 'project_file_write'`
   - Results:
     ```python
@@ -94,20 +90,9 @@ Checks if `user_preferences.db` exists and is accessible.
     - `issue_reports` - Bug reports (disabled)
     - `tracking_settings` - Feature flags (all disabled)
   - Insert default settings:
-    ```sql
-    INSERT INTO user_settings (setting_key, setting_value, description, scope) VALUES
-      ('project_continue_on_start', 'false', 'Automatically continue project work on session start', 'project'),
-      ('suppress_warnings', '[]', 'Directives to suppress warnings', 'project');
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Insert default tracking settings (all disabled):
-    ```sql
-    INSERT INTO tracking_settings (feature_name, enabled, description, estimated_token_overhead) VALUES
-      ('fp_flow_tracking', 0, 'Track FP directive consultations', '~5% token increase per file write'),
-      ('issue_reports', 0, 'Enable issue reports', '~2% token increase on errors'),
-      ('ai_interaction_log', 0, 'Log AI interactions', '~3% token increase overall'),
-      ('helper_function_logging', 0, 'Log helper errors', '~1% token increase on errors'),
-      ('compliance_checking', 0, 'Track FP compliance patterns (analytics, NOT validation)', '~5-10% token increase per check');
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Message: "Preferences database initialized with defaults"
 - **Result**: Database created, no preferences loaded yet
 
@@ -142,11 +127,7 @@ Checks if `user_preferences.db` exists and is accessible.
 - **Then**: `enable_logging`
 - **Details**: Check tracking_settings for opt-in features
   - Query:
-    ```sql
-    SELECT feature_name, enabled
-    FROM tracking_settings
-    WHERE enabled = 1
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Enabled features activate logging:
     - `ai_interaction_log=1` → Log all user corrections
     - `fp_flow_tracking=1` → Log FP compliance checks

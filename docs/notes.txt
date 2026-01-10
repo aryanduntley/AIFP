@@ -10,33 +10,12 @@ Everything above src/aifp/ is dev.
 helpers are in docs/json/helpers/
 directive flows are in docs/directives-json/directive_flow_(project,user-preferences,fp).json
 
-docs/note_type_analysis_REVISED.md
-docs/note_type_SUMMARY.md
-docs/note_type_IMPLEMENTATION_PLAN.md
-docs/note_type_QUICK_REFERENCE.md
-docs/FP_DIRECTIVE_CLEANUP_TASK.md
-docs/NOTE_TYPE_CLEANUP_READY.md
-docs/tracking_notes_REFERENCE.md
-docs/FP_DIRECTIVE_UPDATE_GUIDE.md
-docs/NOTE_TYPE_CLEANUP_TRACKER.md
-scripts/cleanup_fp_directives.py
-
-docs/helpers/json/helpers-settings.json
-delete_settings_entry
-this has notes entry, notes is in project database not settins. Must review all delete helpers in databases not in project for similar errors
-
-check generic directive getters, if any. Must ensure we load queried directive specific settings along with directive data for AI to prevent possibility of setting not being queried separately or being "forgotten"
-
-Review aifp_run returns, including settings. How much data? too extensive? Should we tone it down?
-
 COMPLETED BUT VALUABLE INFO FOR when begin CODING AIFP_RUN
 docs/settings-integration-implementation.md
 
 return_statements not to be passed if error returned. return statements are forward thinking, next steps only.
 
 when coding helpers, if case 2, ensure we make a return value that indicates to AI case 2 active. Probably during status call(s)
-
-must disallow generic setters for things like reserver/finalize
 
 think out useful return values for certain helper functions, like generic getter/setters should return schema, possibly some helper or directive references useful or relative to current function call and database.
 

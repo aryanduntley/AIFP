@@ -472,20 +472,9 @@ def map_users_to_emails(users):
 
 ### Record Naming Compliance
 
-```sql
--- Update function metadata with naming analysis
-UPDATE functions
-SET
-    name_compliant = 1,
-    naming_metadata = json_set(
-        COALESCE(naming_metadata, '{}'),
-        '$.pattern', 'verb_noun',
-        '$.purity_indicator', 'pure',
-        '$.effect_suffix', NULL
-    ),
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'calculate_total' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

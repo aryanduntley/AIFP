@@ -549,27 +549,15 @@ def process_batch(items):
 
 ### Record Guard Clause Refactoring
 
-```sql
--- Update function with guard clause metadata
-UPDATE functions
-SET
-    uses_guard_clauses = 1,
-    complexity_score = 2,  -- Reduced from 5
-    control_flow_style = 'guard_clauses',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'process_user' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions Needing Guard Clause Refactoring
 
-```sql
--- Find functions with high nesting depth
-SELECT f.id, f.name, f.file_id, f.complexity_score
-FROM functions f
-WHERE f.control_flow_style = 'nested_conditionals'
-  AND f.complexity_score > 4
-ORDER BY f.complexity_score DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

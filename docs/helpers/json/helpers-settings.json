@@ -269,46 +269,18 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Table name"
+          "description": "Table name in user_preferences.db"
         },
         {
           "name": "id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Record ID"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
+          "description": "Record ID to delete"
         }
       ],
-      "purpose": "Delete entry from user settings",
-      "error_handling": "",
+      "purpose": "Delete entry from user_preferences.db table",
+      "error_handling": "Returns error if table not found or ID doesn't exist",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],

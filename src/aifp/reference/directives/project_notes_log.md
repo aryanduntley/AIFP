@@ -84,25 +84,9 @@ Identifies the note's purpose, content, and metadata.
     - "User wants all functions to be pure (no side effects)"
     - "User clarified: Matrix operations should use immutable data structures"
   - SQL:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      reference_table,
-      reference_id,
-      source,
-      directive_name,
-      severity
-    ) VALUES (
-      'User confirmed: Use pure Python, no NumPy',
-      'clarification',
-      'project',
-      1,
-      'user',
-      NULL,  -- Not directive-specific
-      'info'
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Best practices:
     - Always quote exact user statement when possible
     - Link to relevant entity via reference_table/reference_id
@@ -119,32 +103,11 @@ Identifies the note's purpose, content, and metadata.
     - "User changed goal: Optimize for memory instead of speed"
     - "Abandoning OOP approach, switching to pure FP"
   - SQL:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      reference_table,
-      reference_id,
-      source,
-      directive_name,
-      severity
-    ) VALUES (
-      'Pivoting from CLI tool to web API',
-      'pivot',
-      'project',
-      1,
-      'ai',  -- AI detected pivot
-      NULL,
-      'warning'
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Update project version:
-    ```sql
-    UPDATE project
-    SET version = version + 1,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE id = 1
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Pivots are **high-severity** because they invalidate previous assumptions
 - **Result**: Pivot documented, project version incremented
 
@@ -158,25 +121,9 @@ Identifies the note's purpose, content, and metadata.
     - "Analyzed codebase: 15 functions are pure, 3 have side effects"
     - "Dependency analysis: matrix operations do not depend on I/O"
   - SQL:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      reference_table,
-      reference_id,
-      source,
-      directive_name,
-      severity
-    ) VALUES (
-      'Function refactored for purity: eliminated mutation in calculate_total',
-      'research',
-      'functions',
-      42,  -- function ID
-      'directive',
-      'project_file_write',  -- Directive that did refactoring
-      'info'
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Use directive_name when note relates to specific directive execution
   - Reference specific entity (function, file, task) when relevant
 - **Result**: Research findings stored for future reference
@@ -191,25 +138,9 @@ Identifies the note's purpose, content, and metadata.
     - "External library 'numpy' conflicts with pure FP requirement"
     - "User ambiguity: Unclear whether to use Result or Option type"
   - SQL:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      reference_table,
-      reference_id,
-      source,
-      directive_name,
-      severity
-    ) VALUES (
-      'Cannot write to /protected/ - needs elevated permissions',
-      'roadblock',
-      'files',
-      5,  -- file ID
-      'directive',
-      'project_file_write',
-      'error'
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Roadblocks should include:
     - What is blocked?
     - Why is it blocked?
@@ -227,25 +158,9 @@ Identifies the note's purpose, content, and metadata.
     - `project_task_decomposition`: "User request ambiguous - created subtask for clarification"
     - `git_merge_branch`: "Auto-resolved conflict using FP purity analysis (confidence 0.9)"
   - SQL:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      reference_table,
-      reference_id,
-      source,
-      directive_name,
-      severity
-    ) VALUES (
-      'FP compliance check required refactoring function X to eliminate mutation',
-      'clarification',
-      'functions',
-      10,
-      'directive',
-      'project_file_write',  -- Directive that made decision
-      'info'
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Provides traceability: Why did this directive make this choice?
 - **Result**: Directive reasoning documented with attribution
 
@@ -261,28 +176,13 @@ Identifies the note's purpose, content, and metadata.
     - `'themes'` - Theme-specific notes
     - `'flows'` - Flow-specific notes
   - Query to get entity ID:
-    ```sql
-    -- Example: Link to function
-    SELECT id FROM functions WHERE name = 'calculate_total'
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Insert with reference:
-    ```sql
-    INSERT INTO notes (
-      content,
-      note_type,
-      reference_table,
-      reference_id,
-      source,
-      severity
-    ) VALUES (
-      'Function optimized for performance',
-      'research',
-      'functions',
-      42,  -- function ID from query
-      'ai',
-      'info'
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Enables querying notes by entity
 - **Result**: Note linked to specific entity
 

@@ -54,14 +54,9 @@ Primary execution path for subtask completion and parent resumption.
   - Sets `completed_at` timestamp
   - Logs completion
 - **SQL**:
-  ```sql
-  UPDATE subtasks
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-  VALUES ('Subtask completed: [subtask_name]', 'completion', 'subtasks', ?, 'directive', 'project_subtask_complete');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Branch 2: If subtask_completed**
 - **Then**: `check_parent_subtasks`
@@ -70,11 +65,9 @@ Primary execution path for subtask completion and parent resumption.
   - Counts remaining pending/in_progress subtasks
   - Determines if parent can resume
 - **SQL**:
-  ```sql
-  SELECT COUNT(*) as remaining_subtasks
-  FROM subtasks
-  WHERE parent_task_id = ? AND status NOT IN ('completed', 'cancelled');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: all_subtasks_complete or subtasks_remaining
 
 **Branch 3: If all_subtasks_complete** ⭐ **AUTO-RESUME**
@@ -85,14 +78,9 @@ Primary execution path for subtask completion and parent resumption.
   - Notifies user that parent task is back in focus
   - Calls `aifp_status` (brief) to show current context
 - **SQL**:
-  ```sql
-  UPDATE tasks
-  SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP
-  WHERE id = ? AND status = 'paused';
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-  VALUES ('All subtasks complete for task [parent_id]. Parent task resumed.', 'resume', 'tasks', ?, 'directive', 'project_subtask_complete');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Notification**: "All subtasks complete for task '[parent_task_name]'. Parent task resumed."
 
 **Branch 4: If subtasks_remaining**
@@ -102,12 +90,9 @@ Primary execution path for subtask completion and parent resumption.
   - Shows user what's left
   - Parent stays paused
 - **SQL**:
-  ```sql
-  SELECT id, name, status
-  FROM subtasks
-  WHERE parent_task_id = ? AND status = 'pending'
-  ORDER BY priority DESC;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Notification**: "Subtask '[subtask_name]' complete. [X] subtasks remaining for parent task '[parent_name]'."
 
 **Fallback**: `prompt_user`
@@ -137,23 +122,21 @@ Primary execution path for subtask completion and parent resumption.
 
 **AI Execution**:
 1. Marks subtask complete:
-   ```sql
-   UPDATE subtasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 7;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Checks all subtasks for parent:
-   ```sql
-   SELECT COUNT(*) FROM subtasks WHERE parent_task_id = 15 AND status NOT IN ('completed', 'cancelled');
-   -- Result: 0 (all subtasks complete!)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. All subtasks complete → **Resume parent task**:
-   ```sql
-   UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP WHERE id = 15 AND status = 'paused';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Logs action:
-   ```sql
-   INSERT INTO notes (content, source, directive_name)
-   VALUES ('All subtasks complete for task 15 - Implement authentication system. Parent task resumed.', 'directive', 'project_subtask_complete');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Calls `aifp_status` (brief) to show updated context
 6. Notifies user:
    ```
@@ -180,17 +163,13 @@ Primary execution path for subtask completion and parent resumption.
 **AI Execution**:
 1. Marks subtask complete
 2. Checks all subtasks:
-   ```sql
-   SELECT COUNT(*) FROM subtasks WHERE parent_task_id = 22 AND status NOT IN ('completed', 'cancelled');
-   -- Result: 2 (subtasks remaining)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Subtasks remaining → **Show remaining work**:
-   ```sql
-   SELECT id, name FROM subtasks WHERE parent_task_id = 22 AND status = 'pending' ORDER BY priority DESC;
-   -- Result:
-   -- 24: Add user profile widget
-   -- 25: Add activity feed widget
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Notifies user:
    ```
    Subtask 'Create layout component' completed!
@@ -211,16 +190,14 @@ Primary execution path for subtask completion and parent resumption.
 **AI Execution**:
 1. Marks subtask complete
 2. Checks parent task status:
-   ```sql
-   SELECT status FROM tasks WHERE id = ?;
-   -- Result: 'in_progress' (expected 'paused')
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. **Data integrity issue detected**:
    - Logs warning:
-     ```sql
-     INSERT INTO notes (content, note_type, severity, source, directive_name)
-     VALUES ('Subtask completed but parent task not paused. Data integrity issue.', 'warning', 'warning', 'directive', 'project_subtask_complete');
-     ```
+     **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
    - Notifies user:
      ```
      ⚠️ Warning: Subtask 'Fix login bug' completed, but parent task is not paused.
@@ -251,32 +228,14 @@ Primary execution path for subtask completion and parent resumption.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Mark subtask complete
-UPDATE subtasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Resume parent task
-UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'paused';
-
--- Log completion and resume
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES ('Subtask completed: [name]', 'completion', 'subtasks', ?, 'directive', 'project_subtask_complete');
-
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES ('All subtasks complete. Parent task resumed.', 'resume', 'tasks', ?, 'directive', 'project_subtask_complete');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Tables Queried:
-```sql
--- Check remaining subtasks
-SELECT COUNT(*) FROM subtasks WHERE parent_task_id = ? AND status NOT IN ('completed', 'cancelled');
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get pending subtasks
-SELECT id, name, status FROM subtasks WHERE parent_task_id = ? AND status = 'pending' ORDER BY priority DESC;
-
--- Get parent task info
-SELECT name, status FROM tasks WHERE id = ?;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

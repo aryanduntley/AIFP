@@ -615,11 +615,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify standardization marked
-   ```sql
-   SELECT name, naming_standard
-   FROM functions
-   WHERE naming_standard = 'aifp';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

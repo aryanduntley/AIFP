@@ -195,21 +195,22 @@ SET checksum = ?,
     last_parsed_at = CURRENT_TIMESTAMP
 WHERE file_path = ?;
 
--- Log update
+-- Optional: Log update for record-keeping
 INSERT INTO notes (
     content,
-    note_type,
-    reference_table,
-    reference_id,
-    source,
-    directive_name
+    note_type,             -- 'lifecycle'
+    reference_type,        -- 'directive'
+    reference_name,        -- directive name
+    reference_id,          -- directive_id
+    severity,              -- 'info'
+    metadata_json          -- Additional context as JSON
 ) VALUES (
     'Directive updated due to source file change',
-    'update',
-    'user_directives',
-    ?,
+    'lifecycle',
     'directive',
-    'user_directive_update'
+    ?,
+    'info',
+    '{"reason": "source_file_changed", "fields_modified": ["trigger_config", "action_config"]}'
 );
 ```
 
@@ -519,47 +520,26 @@ See system prompt for usage.
 
 ## Database Operations
 
+**Primary Method**: Use helper functions for all database operations. Query available helpers for user_directives.db operations.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
+
 ### Tables Read
-```sql
--- Check for changed files
-SELECT sf.file_path, sf.checksum, ud.id, ud.name, ud.status
-FROM source_files sf
-JOIN user_directives ud ON ud.source_file_id = sf.id;
-```
+Load source files with checksums joined with user_directives to check for changes
 
 ### Tables Updated
 
 #### source_files
-```sql
-UPDATE source_files
-SET checksum = ?,
-    last_modified_at = CURRENT_TIMESTAMP,
-    last_parsed_at = CURRENT_TIMESTAMP
-WHERE file_path = ?;
-```
+**Use helpers** to update source file checksums.
+Fields: checksum, last_modified_at (timestamp), last_parsed_at (timestamp)
 
 #### user_directives
-```sql
--- Reset for update
-UPDATE user_directives
-SET approved = false,
-    status = 'in_progress',
-    updated_at = CURRENT_TIMESTAMP,
-    version = version + 1  -- Increment version
-WHERE id = ?;
-```
+**Use helpers** to reset directive for update.
+Fields: approved=false, status='in_progress', updated_at (timestamp), version (increment)
 
 #### directive_updates (tracking history)
-```sql
-INSERT INTO directive_updates (
-    directive_id,
-    old_config_json,
-    new_config_json,
-    changes_summary,
-    updated_by,
-    updated_at
-) VALUES (...);
-```
+**Use helpers** to insert update history.
+Fields: directive_id, old_config_json, new_config_json, changes_summary, updated_by, updated_at
 
 ---
 

@@ -577,12 +577,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify `functions.null_safety = 'null_free'`
-   ```sql
-   SELECT name, null_safety, type_annotations_json
-   FROM functions
-   WHERE name = 'get_value';
-   -- Expected: null_safety='null_free'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -439,33 +439,15 @@ def save(obj: T) -> None:
 
 ### Store Generic Constraint Metadata
 
-```sql
--- Update function with generic constraint info
-UPDATE functions
-SET
-    has_generics = 1,
-    generic_constraints = '{
-        "type_params": [
-            {"name": "T", "bound": "Comparable", "variance": "invariant"},
-            {"name": "U", "bound": "Serializable", "variance": "covariant"}
-        ],
-        "constraint_method": "protocol"
-    }',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'process_items' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions with Unbounded Generics
 
-```sql
--- Find functions with unconstrained generic parameters
-SELECT f.id, f.name, f.file_id, f.generic_constraints
-FROM functions f
-WHERE f.has_generics = 1
-  AND (f.generic_constraints IS NULL OR
-       json_extract(f.generic_constraints, '$.type_params[0].bound') IS NULL)
-ORDER BY f.call_count DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -41,11 +41,9 @@ This directive applies when:
 #### Step 1: Verify Directive is Active
 
 1. **Check current status**:
-   ```sql
-   SELECT id, name, status, trigger_type, process_id
-   FROM user_directives
-   WHERE name = ? AND status = 'active';
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 2. **If not active**:
    ```
@@ -155,44 +153,24 @@ if trigger_type == 'condition':
 #### Step 4: Update Database Status
 
 1. **Update directive status**:
-   ```sql
-   UPDATE user_directives
-   SET status = 'paused',  -- or 'inactive'
-       deactivated_at = CURRENT_TIMESTAMP,
-       deactivation_reason = ?
-   WHERE id = ?;
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 2. **Update execution tracking**:
-   ```sql
-   UPDATE directive_executions
-   SET status = 'inactive',
-       deactivated_at = CURRENT_TIMESTAMP,
-       total_active_time_seconds = total_active_time_seconds +
-           (CURRENT_TIMESTAMP - activated_at)
-   WHERE directive_id = ?;
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 3. **Update deployment info**:
-   ```sql
-   DELETE FROM deployment_info
-   WHERE directive_id = ?;
-   -- or UPDATE deployed = false
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 #### Step 5: Update Project Status
 
 **If this was the last active directive**:
-```sql
--- Check if any directives still active
-SELECT COUNT(*) FROM user_directives WHERE status = 'active';
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
 
--- If zero, update project status
-UPDATE project
-SET user_directives_status = 'disabled'  -- All directives paused
-WHERE id = ?
-  AND (SELECT COUNT(*) FROM user_directives WHERE status = 'active') = 0;
-```
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### Step 6: Clean Up Resources
 
@@ -514,49 +492,29 @@ See system prompt for usage.
 ## Database Operations
 
 ### Tables Read
-```sql
--- Check directive status
-SELECT id, name, status, trigger_type, process_id
-FROM user_directives
-WHERE name = ?;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 ### Tables Updated
 
 #### user_directives
-```sql
-UPDATE user_directives
-SET status = 'paused',  -- or 'inactive', 'error'
-    deactivated_at = CURRENT_TIMESTAMP,
-    deactivation_reason = ?  -- 'user_request', 'update', 'error_threshold'
-WHERE id = ?;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### directive_executions
-```sql
-UPDATE directive_executions
-SET status = 'inactive',
-    deactivated_at = CURRENT_TIMESTAMP,
-    total_active_time_seconds = total_active_time_seconds +
-        TIMESTAMPDIFF(SECOND, activated_at, CURRENT_TIMESTAMP)
-WHERE directive_id = ?;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### deployment_info
-```sql
-DELETE FROM deployment_info
-WHERE directive_id = ?;
--- Removes scheduler job IDs, process IDs, etc.
-```
+**Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 #### project
-```sql
--- If last active directive
-UPDATE project
-SET user_directives_status = 'disabled'
-WHERE id = ?
-  AND (SELECT COUNT(*) FROM user_directives WHERE status = 'active') = 0;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 ---
 

@@ -571,31 +571,15 @@ def handle_user_creation(user_id: int, user_data: dict):
 
 ### Flag Function with Side Effects
 
-```sql
--- Mark function as having side effects
-UPDATE functions
-SET
-    has_side_effects = 1,
-    side_effects_json = '{
-        "types": ["io_file_write", "logging"],
-        "description": "Writes processed data to file and logs progress",
-        "isolated": true
-    }',
-    purity_level = 'impure',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'process_and_save_data' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions with Side Effects
 
-```sql
--- Find functions with side effects
-SELECT f.id, f.name, f.file_id, f.side_effects_json
-FROM functions f
-WHERE f.has_side_effects = 1
-  AND json_extract(f.side_effects_json, '$.isolated') = 0
-ORDER BY f.call_count DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

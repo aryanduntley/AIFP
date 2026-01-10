@@ -437,32 +437,15 @@ def retry_operation(
 
 ### Store Inferred Type Metadata
 
-```sql
--- Update function with inferred types
-UPDATE functions
-SET
-    inferred_types = '{
-        "parameters": [
-            {"name": "width", "type": "float", "confidence": 0.85},
-            {"name": "height", "type": "float", "confidence": 0.85}
-        ],
-        "return_type": {"type": "float", "confidence": 0.90}
-    }',
-    type_inference_method = 'operation_based',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'calculate_area' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions Needing Type Inference
 
-```sql
--- Find functions without explicit or inferred types
-SELECT f.id, f.name, f.file_id, f.parameter_types
-FROM functions f
-WHERE f.has_type_annotations = 0
-  AND (f.inferred_types IS NULL OR f.inferred_types = '{}')
-ORDER BY f.call_count DESC;  -- Prioritize frequently called functions
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

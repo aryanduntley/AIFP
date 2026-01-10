@@ -288,46 +288,18 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Table name"
+          "description": "Table name in user_directives.db"
         },
         {
           "name": "id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Record ID"
-        },
-        {
-          "name": "note_reason",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Deletion reason"
-        },
-        {
-          "name": "note_severity",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'info', 'warning', 'error'"
-        },
-        {
-          "name": "note_source",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "'ai' or 'user'"
-        },
-        {
-          "name": "note_type",
-          "type": "string",
-          "required": true,
-          "default": "entry_deletion",
-          "description": "'entry_deletion'"
+          "description": "Record ID to delete"
         }
       ],
-      "purpose": "Delete entry from user custom directives",
-      "error_handling": "",
+      "purpose": "Delete entry from user_directives.db table",
+      "error_handling": "Returns error if table not found or ID doesn't exist",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
@@ -552,16 +524,181 @@
           "description": "Tool that implements user_directive_monitor directive - tracks executions (logs start/end times to file, updates directive_executions stats), handles errors (logs to error log file, increments error counts), rotates logs, performs health checks on background services"
         }
       ]
+    },
+    {
+      "name": "add_user_directive_note",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [
+        {
+          "name": "content",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Note content/message"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'implementation', 'validation', 'execution', 'dependency', 'error', 'optimization', 'user_feedback', 'lifecycle', 'testing', 'general'"
+        },
+        {
+          "name": "reference_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Type of reference: 'directive', 'helper', 'dependency', 'file'"
+        },
+        {
+          "name": "reference_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Name of referenced entity (e.g., directive name, helper name, file path)"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Optional ID linking to user_directives, helper_functions, etc."
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": "info",
+          "description": "'info', 'warning', 'error' (default 'info')"
+        },
+        {
+          "name": "metadata_json",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Additional context as JSON string"
+        }
+      ],
+      "purpose": "Add note to user_directives.db for AI record-keeping",
+      "error_handling": "Returns error if note_type invalid",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_user_directive_notes",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by note_type"
+        },
+        {
+          "name": "reference_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference_type"
+        },
+        {
+          "name": "reference_name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference_name"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Filter by reference_id"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter by severity"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": 100,
+          "description": "Maximum number of notes to return (default 100)"
+        }
+      ],
+      "purpose": "Get notes from user_directives.db with optional filters",
+      "error_handling": "Returns empty array if no matches",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "user_custom",
+      "used_by_directives": []
+    },
+    {
+      "name": "search_user_directive_notes",
+      "file_path": "TODO_helpers/user_custom/module.py",
+      "parameters": [
+        {
+          "name": "search_string",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Search string for note content (case-insensitive)"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by note_type"
+        },
+        {
+          "name": "reference_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by reference_type"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional filter by severity"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": 100,
+          "description": "Maximum number of notes to return (default 100)"
+        }
+      ],
+      "purpose": "Search note content in user_directives.db with optional filters",
+      "error_handling": "Returns empty array if no matches",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "user_custom",
+      "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-user-custom.json",
-    "count": 16,
-    "status": "COMPLETED - used_by_directives review complete",
+    "count": 19,
+    "status": "UPDATED - added note helpers for user_directives.db notes table",
     "mapped_helpers": 9,
-    "unmapped_helpers": 7,
-    "note": "7 helpers are generic AI query tools (schema/CRUD operations) - intentionally empty. 9 helpers mapped to user directive system directives (user_directive_parse, validate, implement, approve, activate, deactivate, update, status, monitor) plus aifp_status.",
+    "unmapped_helpers": 10,
+    "note": "10 helpers are generic AI query tools (schema/CRUD operations + note helpers) - intentionally empty. 9 helpers mapped to user directive system directives (user_directive_parse, validate, implement, approve, activate, deactivate, update, status, monitor) plus aifp_status. Added 3 note helpers: add_user_directive_note, get_user_directive_notes, search_user_directive_notes.",
     "total_mappings": 16,
-    "last_updated": "2026-01-01"
+    "last_updated": "2026-01-09"
   }
 }

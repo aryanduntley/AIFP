@@ -211,14 +211,9 @@ Evaluates AI confidence and determines if user referral is needed.
   - Log cancellation
   - Return to safe state
 - **SQL**:
-  ```sql
-  -- Rollback transaction
-  ROLLBACK;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Log cancellation
-  INSERT INTO notes (content, note_type, source, directive_name)
-  VALUES ('Operation cancelled by user: [directive] - [operation]', 'cancellation', 'user', 'project_user_referral');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Operation safely aborted
 
 **Branch 9: If pattern_for_learning**
@@ -278,10 +273,9 @@ Evaluates AI confidence and determines if user referral is needed.
    ```
 4. User clarifies: "4 - Sync database"
 5. Logs:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('User clarified: "database thing" = project_dependency_sync', 'clarification', 'user', 'project_user_referral');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Proceeds with `project_dependency_sync`
 
 ### Example 2: Workflow Failure - Cannot Create File
@@ -408,11 +402,9 @@ Evaluates AI confidence and determines if user referral is needed.
    ```
 4. User provides: "Process and validate user registration data"
 5. Updates function metadata:
-   ```sql
-   UPDATE functions
-   SET purpose = 'Process and validate user registration data'
-   WHERE name = 'process' AND file_id = ?;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Logs clarification
 
 ### Example 6: Learning from Pattern
@@ -434,10 +426,7 @@ Evaluates AI confidence and determines if user referral is needed.
    ```
 5. User: "y"
 6. Adds preference:
-   ```sql
-   INSERT INTO directive_preferences (directive_name, preference_key, preference_value)
-   VALUES ('project_theme_flow_mapping', 'auth_path_theme', 'Security');
-   ```
+   **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
 7. Future auth files automatically suggested "Security" theme
 
 ---
@@ -459,25 +448,9 @@ Evaluates AI confidence and determines if user referral is needed.
 
 ### Notes Table Format:
 
-```sql
-INSERT INTO notes (
-  content,
-  note_type,
-  reference_table,
-  reference_id,
-  source,
-  directive_name,
-  severity
-) VALUES (
-  'User referral: [directive] - [issue]. Confidence: [score]. User decision: [choice]. Rationale: [reasoning]',
-  'user_referral',
-  'directives',
-  [directive_id],
-  'user',
-  'project_user_referral',
-  'info'
-);
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -493,27 +493,15 @@ def update_stats(stats: dict, event: str) -> dict:
 
 ### Record Conditional Elimination
 
-```sql
--- Update function with declarative control flow
-UPDATE functions
-SET
-    control_flow_style = 'declarative',
-    uses_expressions = 1,
-    complexity_score = 1,  -- Reduced
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'get_status' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions with Imperative Conditionals
 
-```sql
--- Find functions using imperative control flow
-SELECT f.id, f.name, f.file_id, f.control_flow_style
-FROM functions f
-WHERE f.control_flow_style IN ('if_else', 'switch_case')
-  AND f.complexity_score < 5  -- Simple enough to convert
-ORDER BY f.complexity_score;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

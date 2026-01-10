@@ -475,12 +475,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify complexity stored
-   ```sql
-   SELECT name, time_complexity, space_complexity, cost_category
-   FROM functions
-   WHERE name = 'bubble_sort';
-   -- Expected: time_complexity='O(n²)', cost_category='expensive'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -596,19 +596,14 @@ How to verify this directive is working:
    ```
 
 2. **Metadata extraction** → Check database populated
-   ```sql
-   SELECT name, purity_level, dependencies_json
-   FROM functions
-   WHERE name = 'calculate_total';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 3. **Dependency tracking** → Verify interactions table
-   ```sql
-   SELECT s.name, t.name
-   FROM interactions i
-   JOIN functions s ON i.source_function_id = s.id
-   JOIN functions t ON i.target_function_id = t.id;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

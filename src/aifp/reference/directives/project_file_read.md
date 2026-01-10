@@ -62,29 +62,9 @@ Ensures file exists and is accessible.
   - Load theme/flow associations from `file_flows` table
   - Include task/item links if present
 - **Query**:
-  ```sql
-  -- Get file metadata
-  SELECT id, path, language, checksum, created_at, updated_at
-  FROM files WHERE path = ? AND project_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Get functions in file
-  SELECT name, purpose, purity_level, side_effects_json, parameters_json, return_type
-  FROM functions WHERE file_id = ?;
-
-  -- Get function dependencies
-  SELECT i.interaction_type, tf.name as target_function
-  FROM interactions i
-  JOIN functions tf ON i.target_function_id = tf.id
-  WHERE i.source_function_id IN (SELECT id FROM functions WHERE file_id = ?);
-
-  -- Get theme/flow associations
-  SELECT t.name as theme, f.name as flow
-  FROM file_flows ff
-  JOIN flows f ON ff.flow_id = f.id
-  JOIN flow_themes ft ON f.id = ft.flow_id
-  JOIN themes t ON ft.theme_id = t.id
-  WHERE ff.file_id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: File content + full database context
 
 **Branch 2: If file_not_in_db_but_exists**
@@ -131,10 +111,9 @@ Ensures file exists and is accessible.
   - Include function metadata (purity, dependencies, purpose)
   - Show callers and callees
 - **Query**:
-  ```sql
-  SELECT name, purpose, purity_level, side_effects_json, parameters_json, return_type
-  FROM functions WHERE name = ? AND file_id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Function code + metadata
 
 **Branch 7: If read_for_compliance_check**
@@ -279,12 +258,9 @@ Ensures file exists and is accessible.
 
 **AI Execution**:
 1. Queries database for function:
-   ```sql
-   SELECT name, purpose, purity_level, parameters_json, return_type
-   FROM functions f
-   JOIN files fi ON f.file_id = fi.id
-   WHERE f.name = 'multiply_matrices' AND fi.path = 'src/matrix.py';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Retrieves function metadata:
    - Purpose: "Multiplies two matrices"
    - Purity: pure
@@ -403,36 +379,9 @@ Ensures file exists and is accessible.
 ### Tables Read:
 
 **project.db**:
-```sql
--- Get file metadata
-SELECT id, path, language, checksum, created_at, updated_at
-FROM files WHERE path = ? AND project_id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get functions in file
-SELECT name, purpose, purity_level, side_effects_json, parameters_json, return_type
-FROM functions WHERE file_id = ?;
-
--- Get function dependencies
-SELECT i.interaction_type, sf.name as source, tf.name as target
-FROM interactions i
-JOIN functions sf ON i.source_function_id = sf.id
-JOIN functions tf ON i.target_function_id = tf.id
-WHERE sf.file_id = ? OR tf.file_id = ?;
-
--- Get theme/flow associations
-SELECT t.name as theme, f.name as flow
-FROM file_flows ff
-JOIN flows f ON ff.flow_id = f.id
-JOIN flow_themes ft ON f.id = ft.flow_id
-JOIN themes t ON ft.theme_id = t.id
-WHERE ff.file_id = ?;
-
--- Get task associations
-SELECT t.name as task, i.name as item
-FROM items i
-JOIN tasks t ON i.task_id = t.id
-WHERE i.reference_table = 'files' AND i.reference_id = ?;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

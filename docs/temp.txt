@@ -1,75 +1,113 @@
-~/Desktop/Projects/AIFP/src/aifp/reference/directives$ grep -r "note_type"
-fp_lazy_computation.md:- **`notes`**: Logs lazy computation opportunities with `note_type = 'optimization'`
+grep -r "INSERT INTO"
+user_preferences_import.md:              INSERT INTO user_settings (setting_key, setting_value, description)
+user_preferences_import.md:                  INSERT INTO directive_preferences
 user_preferences_import.md:    INSERT INTO notes (content, note_type, severity, source)
-fp_optionals.md:- **`notes`**: Logs Option compliance issues with `note_type = 'compliance'`
-git_detect_external_changes.md:- **`notes`**: Logs significant external changes with `note_type = 'external_change'`
+fp_dependency_tracking.md:INSERT INTO interactions (source_function_id, target_function_id, interaction_type, description)
+fp_dependency_tracking.md:INSERT INTO module_dependencies (source_module, target_module, dependency_type, symbols_used)
+fp_dependency_tracking.md:INSERT INTO interactions (source_function_id, target_function_id, interaction_type, description, call_count)
+project_update_db.md:  - INSERT INTO files (path, language, checksum, project_id)
+project_update_db.md:    - INSERT INTO functions (name, file_id, purpose, parameters)
+project_update_db.md:    - INSERT INTO interactions (source_function_id, target_function_id, interaction_type)
+project_update_db.md:# 1. INSERT INTO files (path='src/calc.py', language='python', checksum='abc123', project_id=1)
+project_update_db.md:# 2. INSERT INTO functions (name='calculate_total', file_id=5, purpose='Calculate total with tax',
+project_update_db.md:# 3. INSERT INTO functions (name='format_currency', file_id=5, purpose='Format amount as currency',
+project_update_db.md:# INSERT INTO files, functions, etc.
+project_update_db.md:conn.execute("INSERT INTO files VALUES (?)", (path,))
+project_update_db.md:conn.execute("INSERT INTO functions VALUES (?)", (name,))
+project_update_db.md:    file_id = conn.execute("INSERT INTO files VALUES (?)RETURNING id", (path,)).fetchone()[0]
+project_update_db.md:    conn.execute("INSERT INTO functions VALUES (?, ?)", (name, file_id))
+project_update_db.md:conn.execute("INSERT INTO files (path, language) VALUES (?, ?)", (path, lang))
+project_update_db.md:conn.execute("INSERT INTO files (path, language, checksum) VALUES (?, ?, ?)",
+project_update_db.md:    file_id = conn.execute("INSERT INTO files (path, language, checksum, project_id)
+project_update_db.md:    conn.execute("INSERT INTO interactions (source_function_id, target_function_id, interaction_type)
 project_update_db.md:    conn.execute("INSERT INTO notes (content, note_type, reference_table, reference_id)
-fp_dead_code_elimination.md:- **`notes`**: Logs dead code findings with `note_type = 'cleanup'`
-project_subtask_create.md:    note_type,
+project_update_db.md:    conn.execute("INSERT INTO files (path, language, checksum, project_id) VALUES (?, ?, ?, ?)",
+git_create_branch.md:    INSERT INTO work_branches (
+git_create_branch.md:#    - INSERT INTO work_branches (
+project_subtask_create.md:  INSERT INTO subtasks (
+project_subtask_create.md:  INSERT INTO notes (
+project_subtask_create.md:   INSERT INTO subtasks (task_id, name, description, priority, status, created_at, updated_at)
 project_subtask_create.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_subtask_create.md:INSERT INTO subtasks (
 project_subtask_create.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-project_dependency_map.md:- **`notes`**: Stores dependency map with `note_type = 'dependency_map'`
-project_dependency_map.md:   WHERE note_type = 'dependency_map'
-project_metrics.md:    SUM(CASE WHEN note_type IN ('error', 'failure') THEN 1 ELSE 0 END) as failures,
-project_metrics.md:    SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) as successes,
-project_metrics.md:    ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
 project_metrics.md:  INSERT INTO notes (content, note_type, source, directive_name, severity)
-project_metrics.md:   SELECT directive_name, note_type, COUNT(*)
-project_metrics.md:   GROUP BY directive_name, note_type;
 project_metrics.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
-project_task_create.md:    note_type,
+project_task_create.md:  INSERT INTO tasks (
+project_task_create.md:  INSERT INTO notes (
+project_task_create.md:   INSERT INTO tasks (milestone_id, name, description, priority, status, created_at, updated_at)
 project_task_create.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_task_create.md:INSERT INTO tasks (
 project_task_create.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_theme_flow_mapping.md:  INSERT INTO themes (project_id, name, description, created_at)
+project_theme_flow_mapping.md:  INSERT INTO flows (project_id, name, description, created_at)
 project_theme_flow_mapping.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_theme_flow_mapping.md:   INSERT INTO themes (project_id, name, description, created_at)
+project_theme_flow_mapping.md:   INSERT INTO flows (project_id, name, description, created_at)
 project_theme_flow_mapping.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_theme_flow_mapping.md:INSERT INTO themes (project_id, name, description, created_at)
+project_theme_flow_mapping.md:INSERT INTO flows (project_id, name, description, created_at)
 project_theme_flow_mapping.md:INSERT INTO notes (content, note_type, source, directive_name)
-fp_constant_folding.md:- **`notes`**: Logs constant folding with `note_type = 'optimization'`
-fp_encoding_consistency.md:- **`notes`**: Logs encoding fixes with `note_type = 'formatting'`
-user_directive_update.md:    note_type,
-user_directive_implement.md:    note_type,              -- 'code_generation'
-fp_error_pipeline.md:- **`notes`**: Logs pipeline refactoring with `note_type = 'refactoring'`
-fp_purity_caching_analysis.md:- **`notes`**: Logs cache safety issues with `note_type = 'compliance'`
-fp_keyword_alignment.md:- **`notes`**: Logs keyword conflict resolutions with `note_type = 'refactoring'`
-fp_null_elimination.md:- **`notes`**: Logs null elimination issues with `note_type = 'compliance'`
-fp_metadata_annotation.md:- **`notes`**: Logs metadata generation with `note_type = 'metadata'`
-fp_parallel_evaluation.md:- **`notes`**: Logs parallelization with `note_type = 'optimization'`
-project_archive.md:- **`notes`**: Logs archival with `note_type = 'archival'`
-fp_map_reduce.md:- **`notes`**: Logs reduce conversions with `note_type = 'refactoring'`
-fp_syntax_normalization.md:- **`notes`**: Logs normalization issues with `note_type = 'normalization'`
+project_init.md:    INSERT INTO project (name, purpose, goals_json, status, version)
+project_init.md:    INSERT INTO completion_path (name, order_index, status, description, project_id)
+project_init.md:    INSERT INTO tracking_settings (feature_name, enabled, description)
+user_directive_update.md:INSERT INTO notes (
+user_directive_update.md:INSERT INTO directive_updates (
+user_directive_implement.md:   INSERT INTO directive_implementations (
+user_directive_implement.md:INSERT INTO directive_implementations (
+user_directive_implement.md:INSERT INTO files (path, language, purpose, checksum) VALUES (...);
+user_directive_implement.md:INSERT INTO functions (
+user_directive_implement.md:INSERT INTO interactions (...) VALUES (...);
+user_directive_implement.md:INSERT INTO notes (
+project_file_write.md:INSERT INTO directive_preferences (directive_name, preference_key, preference_value)
+project_file_write.md:INSERT INTO files (path, language, checksum, project_id, created_at, updated_at)
+project_file_write.md:INSERT INTO functions (name, file_id, purpose, purity_level, side_effects_json, parameters_json, return_type)
+project_file_write.md:INSERT INTO interactions (source_function_id, target_function_id, interaction_type)
+project_file_write.md:INSERT INTO file_flows (file_id, flow_id)
+project_file_write.md:INSERT INTO directive_implementations (user_directive_id, file_path, entry_point, deployed, created_at)
 project_task_update.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_task_update.md:  INSERT INTO notes (content, source, directive_name)
 project_task_update.md:  INSERT INTO notes (content, note_type, source, directive_name)
 project_task_update.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_task_update.md:   INSERT INTO notes (content, source, directive_name)
+project_task_update.md:   INSERT INTO notes (content, source, directive_name)
 project_task_update.md:   INSERT INTO notes (content, note_type, source, directive_name)
 project_task_update.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_task_update.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-project_performance_summary.md:    AND note_type IN ('error', 'failure', 'roadblock')
-project_performance_summary.md:    AND note_type IN ('error', 'failure')
-project_performance_summary.md:    SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) as successes,
-project_performance_summary.md:    SUM(CASE WHEN note_type IN ('error', 'failure') THEN 1 ELSE 0 END) as failures,
-project_performance_summary.md:    SUM(CASE WHEN note_type = 'warning' THEN 1 ELSE 0 END) as warnings,
-project_performance_summary.md:    ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
-project_performance_summary.md:    AND (content LIKE '%retry%' OR note_type = 'retry')
-project_performance_summary.md:      ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
-project_performance_summary.md:      ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
 project_performance_summary.md:  INSERT INTO notes (content, note_type, source, directive_name, severity)
-project_performance_summary.md:   WHERE directive_name = 'fp_compliance_check' AND note_type = 'error'
 project_performance_summary.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
-project_performance_summary.md:**Resolution**: Use explicit note_type values (success, error, failure, info)
-project_sidequest_create.md:- **`notes`**: Logs sidequest creation with `note_type = 'sidequest'`
+project_sidequest_create.md:        f"INSERT INTO sidequests (name, paused_task_id) VALUES ('{name}', {task_id})"
+project_sidequest_create.md:        f"INSERT INTO sidequests (name, priority) VALUES ('{name}', 'high')"
 project_evolution.md:    INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_evolution.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_evolution.md:   INSERT INTO themes (name, description, project_id)
+project_evolution.md:   INSERT INTO completion_path (name, description, status, order_index, project_id)
+project_evolution.md:INSERT INTO themes (name, description, project_id) VALUES (?, ?, 1);
+project_evolution.md:INSERT INTO flows (name, description, project_id) VALUES (?, ?, 1);
+project_evolution.md:INSERT INTO completion_path (name, description, status, order_index, project_id) VALUES (?, ?, 'pending', ?, 1);
 project_evolution.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-aifp_status.md:SELECT content, note_type, source, created_at
-aifp_status.md:SELECT content, note_type, directive_name, severity
-fp_data_filtering.md:- **`notes`**: Logs filter conversions with `note_type = 'refactoring'`
+project_task_decomposition.md:  INSERT INTO tasks (milestone_id, name, description, priority, status, created_at)
+project_task_decomposition.md:  INSERT INTO subtasks (task_id, name, description, priority, status, created_at)
+project_task_decomposition.md:  INSERT INTO sidequests (project_id, name, description, priority, status, created_at)
+project_task_decomposition.md:INSERT INTO directive_preferences (directive_name, preference_key, preference_value)
+project_task_decomposition.md:INSERT INTO tasks (milestone_id, name, description, priority, status, created_at)
+project_task_decomposition.md:INSERT INTO subtasks (task_id, name, description, priority, status, created_at)
+project_task_decomposition.md:INSERT INTO sidequests (project_id, name, description, priority, status, created_at)
 project_task_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_task_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-fp_function_inlining.md:- **`notes`**: Logs inlining decisions with `note_type = 'optimization'`
-project_compliance_check.md:- **`notes`**: Logs compliance violations with `note_type = 'compliance'` and `severity` levels
-fp_pattern_unpacking.md:- **`notes`**: Logs unpacking refactorings with `note_type = 'refactoring'`
-user_directive_validate.md:    note_type,              -- 'validation_session'
-fp_list_operations.md:- **`notes`**: Logs functional conversions with `note_type = 'refactoring'`
-fp_function_indexing.md:- **`notes`**: Logs indexing operations with `note_type = 'indexing'`
+project_compliance_check.md:INSERT INTO user_settings (setting_key, setting_value)
+user_directive_validate.md:   INSERT INTO directive_dependencies (
+user_directive_validate.md:INSERT INTO directive_dependencies (
+user_directive_validate.md:INSERT INTO notes (
+fp_function_indexing.md:# INSERT INTO functions (name, file_id, purpose, purity_level, ...)
+fp_function_indexing.md:# INSERT INTO interactions:
+fp_function_indexing.md:        INSERT INTO functions (
+user_directive_activate.md:   INSERT INTO directive_executions (
+user_directive_activate.md:INSERT INTO directive_executions (
+user_directive_activate.md:INSERT INTO deployment_info (
+project_reserve_finalize.md:INSERT INTO files (name, path, language, is_reserved, created_at)
+project_reserve_finalize.md:INSERT INTO functions (name, file_id, purpose, is_reserved, created_at)
+project_reserve_finalize.md:INSERT INTO types (name, file_id, purpose, is_reserved, created_at)
+fp_test_purity.md:INSERT INTO files (path, language, file_type, metadata, project_id)
 project_integrity_check.md:  INSERT INTO notes (content, note_type, source, directive_name, severity)
 project_integrity_check.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
 project_integrity_check.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
@@ -82,92 +120,80 @@ project_sidequest_complete.md:     INSERT INTO notes (content, note_type, refere
 project_sidequest_complete.md:     INSERT INTO notes (content, note_type, severity, source, directive_name)
 project_sidequest_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
 project_sidequest_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-fp_immutability.md:- **`notes`**: Logs immutability violations with `note_type = 'compliance'`
-fp_language_standardization.md:- **`notes`**: Logs standardization changes with `note_type = 'refactoring'`
-user_directive_approve.md:       note_type,
-user_directive_approve.md:    note_type,              -- 'approval', 'rejection', 'feedback'
-fp_evaluation_order_control.md:- **`notes`**: Logs evaluation order issues with `note_type = 'determinism'`
+user_preferences_learn.md:    INSERT INTO ai_interaction_log (
+user_preferences_learn.md:    INSERT INTO directive_preferences (
+user_preferences_learn.md:INSERT INTO directive_preferences
+user_preferences_learn.md:      INSERT INTO ai_interaction_log (interaction_type, user_feedback, applied_to_preferences)
+user_directive_approve.md:   INSERT INTO notes (
+user_directive_approve.md:INSERT INTO notes (
 project_error_handling.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-project_error_handling.md:    note_type,
+project_error_handling.md:  INSERT INTO notes (
 project_error_handling.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
 project_error_handling.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
 project_error_handling.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
-project_error_handling.md:  note_type,
+project_error_handling.md:INSERT INTO notes (
 project_auto_resume.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source)
 project_auto_resume.md:INSERT INTO notes (content, note_type, source, directive_name)
-project_file_delete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-project_file_delete.md:  INSERT INTO notes (content, note_type, source, directive_name)
-project_file_delete.md:    INSERT INTO notes (content, note_type, source, directive_name)
-project_file_delete.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-project_file_delete.md:   INSERT INTO notes (content, note_type, source, directive_name)
-project_file_delete.md:   INSERT INTO notes (content, note_type, source, directive_name)
-project_file_delete.md:INSERT INTO notes (content, note_type, source, directive_name)
-project_file_delete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+git_merge_branch.md:    INSERT INTO merge_history (
 git_merge_branch.md:    INSERT INTO notes (content, note_type, severity)
 user_preferences_export.md:    INSERT INTO notes (content, note_type, severity, source)
-project_notes_log.md:      note_type,
-project_notes_log.md:      note_type,
-project_notes_log.md:      note_type,
-project_notes_log.md:      note_type,
-project_notes_log.md:      note_type,
-project_notes_log.md:      note_type,
-project_notes_log.md:  note_type,
-project_notes_log.md:  note_type,
-project_notes_log.md:  note_type,
-project_notes_log.md:  note_type,
-project_notes_log.md:  note_type,
+project_notes_log.md:    INSERT INTO notes (
+project_notes_log.md:    INSERT INTO notes (
+project_notes_log.md:    INSERT INTO notes (
+project_notes_log.md:    INSERT INTO notes (
+project_notes_log.md:    INSERT INTO notes (
+project_notes_log.md:    INSERT INTO notes (
+project_notes_log.md:INSERT INTO notes (
+project_notes_log.md:INSERT INTO notes (
+project_notes_log.md:INSERT INTO notes (
+project_notes_log.md:INSERT INTO notes (
+project_notes_log.md:INSERT INTO notes (
 project_notes_log.md:INSERT INTO notes (content, note_type, source, severity)
 project_notes_log.md:INSERT INTO notes (content, note_type, source, severity)
 project_notes_log.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
 project_notes_log.md:INSERT INTO notes (content, note_type, source, severity)
 project_notes_log.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, severity)
 project_notes_log.md:    INSERT INTO notes (content, note_type, source, severity)
+project_notes_log.md:    INSERT INTO notes (...)
 project_notes_log.md:    INSERT INTO notes (content, note_type, source, severity)
-project_notes_log.md:    VALUES (truncated_content, note_type, source, severity)
 project_notes_log.md:    INSERT INTO notes (content, note_type, source, severity)
-project_notes_log.md:    VALUES (note_content, note_type, source, severity)
-project_notes_log.md:     note_type="clarification",
-project_notes_log.md:   result = query_db("SELECT * FROM notes WHERE note_type='clarification'")
-project_notes_log.md:     note_type="research",
-project_notes_log.md:     note_type="roadblock",
-project_notes_log.md:   assert result[0]['note_type'] == 'roadblock'
-project_notes_log.md:     note_type="research",
-fp_purity.md:- **`notes`**: Logs purity uncertainties or violations with `note_type = 'compliance'`
-fp_symbol_map_validation.md:- **`notes`**: Logs symbol map discrepancies with `note_type = 'validation'`
-fp_lazy_evaluation.md:- **`notes`**: Logs lazy evaluation opportunities with `note_type = 'optimization'`
-project_refactor_path.md:- **`notes`**: Logs refactoring operations with `note_type = 'path_refactoring'`
-project_refactor_path.md:   WHERE note_type = 'path_refactoring'
-fp_result_types.md:- **`notes`**: Logs Result compliance issues with `note_type = 'compliance'`
-project_auto_summary.md:        note_type="auto_summary",
-project_auto_summary.md:- **`notes`**: Stores summary with `note_type = 'auto_summary'`
-project_auto_summary.md:   WHERE note_type = 'auto_summary'
-fp_monadic_composition.md:- **`notes`**: Logs monadic refactorings with `note_type = 'refactoring'`
-project_backup_restore.md:- **`notes`**: Logs backup and restore operations with `note_type = 'backup'` or `'restore'`
-project_backup_restore.md:   WHERE note_type = 'backup'
 project_milestone_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_milestone_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_milestone_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-project_user_referral.md:  - Use discovered helper with parameters: content, note_type="user_referral", reference_table="directives", source="user", directive_name="project_user_referral", severity="info"
 project_user_referral.md:  INSERT INTO notes (content, note_type, source, directive_name)
 project_user_referral.md:   INSERT INTO notes (content, note_type, source, directive_name)
-project_user_referral.md:  note_type,
-fp_cost_analysis.md:- **`notes`**: Logs complexity analysis with `note_type = 'performance'`
-fp_docstring_enforcement.md:- **`notes`**: Logs missing docstrings with `note_type = 'documentation'`
+project_user_referral.md:   INSERT INTO directive_preferences (directive_name, preference_key, preference_value)
+project_user_referral.md:INSERT INTO notes (
+user_preferences_update.md:    INSERT INTO directive_preferences (
+user_preferences_update.md:    INSERT INTO directive_preferences (
+user_preferences_update.md:#    INSERT INTO directive_preferences
+user_preferences_update.md:#    INSERT INTO directive_preferences
+fp_side_effects_flag.md:            "INSERT INTO users (name, email) VALUES (?, ?)",
 project_subtask_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_subtask_complete.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_subtask_complete.md:   INSERT INTO notes (content, source, directive_name)
 project_subtask_complete.md:     INSERT INTO notes (content, note_type, severity, source, directive_name)
 project_subtask_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_subtask_complete.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-fp_reflection_block.md:- **`notes`**: Logs reflection violations with `note_type = 'security'`
-fp_recursion_enforcement.md:- **`notes`**: Logs recursion transformations with `note_type = 'refactoring'`
-fp_try_monad.md:- **`notes`**: Logs Try compliance issues with `note_type = 'compliance'`
-fp_ai_reasoning_trace.md:- **`notes`**: Logs reasoning trace with `note_type = 'reasoning_trace'`
-fp_ai_reasoning_trace.md:   WHERE note_type = 'reasoning_trace'
-user_directive_status.md:  AND note_type = 'error'
+project_dependency_sync.md:  INSERT INTO functions (
+project_dependency_sync.md:  INSERT INTO files (project_id, path, language, checksum, created_at, updated_at)
+project_dependency_sync.md:  INSERT INTO interactions (source_function_id, target_function_id, interaction_type)
 project_dependency_sync.md:  INSERT INTO notes (content, note_type, source, directive_name)
+project_dependency_sync.md:   INSERT INTO functions (file_id, name, purpose, purity_level, parameters_json, return_type, created_at, updated_at)
+project_dependency_sync.md:   INSERT INTO files (project_id, path, language, checksum, created_at, updated_at)
+project_dependency_sync.md:   INSERT INTO functions (file_id, name, purity_level, ...) VALUES (48, 'dot_product', 'pure', ...);
+project_dependency_sync.md:   INSERT INTO functions (file_id, name, purity_level, ...) VALUES (48, 'cross_product', 'pure', ...);
+project_dependency_sync.md:   INSERT INTO functions (file_id, name, purity_level, ...) VALUES (48, 'magnitude', 'pure', ...);
+project_dependency_sync.md:INSERT INTO functions (file_id, name, purpose, purity_level, ...) VALUES (...);
+project_dependency_sync.md:INSERT INTO files (project_id, path, language, checksum, ...) VALUES (...);
+project_dependency_sync.md:INSERT INTO interactions (source_function_id, target_function_id, interaction_type) VALUES (?, ?, 'call');
 project_dependency_sync.md:INSERT INTO notes (content, note_type, source, directive_name)
-project_item_create.md:    note_type,
+project_item_create.md:  INSERT INTO items (
+project_item_create.md:  INSERT INTO notes (
+project_item_create.md:   INSERT INTO items (task_id, name, description, status, order_index, reference_table, reference_id, created_at, updated_at)
 project_item_create.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
+project_item_create.md:   INSERT INTO items (task_id, name, status, order_index, created_at, updated_at) VALUES
+project_item_create.md:INSERT INTO items (
 project_item_create.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_completion_check.md:  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_completion_check.md:  INSERT INTO notes (content, note_type, source, directive_name, severity)
@@ -176,9 +202,21 @@ project_completion_check.md:   INSERT INTO notes (content, note_type, source, di
 project_completion_check.md:   INSERT INTO notes (content, note_type, source, directive_name, severity)
 project_completion_check.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_completion_check.md:INSERT INTO notes (content, note_type, source, directive_name, severity)
+project_add_path.md:  INSERT INTO completion_path (
+project_add_path.md:  INSERT INTO milestones (
+project_add_path.md:   INSERT INTO completion_path (project_id, name, description, status, order_index, created_at, updated_at)
+project_add_path.md:   INSERT INTO milestones (completion_path_id, name, description, status, priority, created_at, updated_at)
 project_add_path.md:   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
 project_add_path.md:   INSERT INTO notes (content, note_type, source, directive_name)
+project_add_path.md:INSERT INTO completion_path (project_id, name, description, status, order_index, created_at, updated_at)
+project_add_path.md:INSERT INTO milestones (completion_path_id, name, description, status, priority, created_at, updated_at)
 project_add_path.md:INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-user_directive_parse.md:    note_type,             -- 'directive_parse'
-fp_cross_language_wrappers.md:- **`notes`**: Logs wrapper generation with `note_type = 'wrapper'`
-fp_no_oop.md:- **`notes`**: Logs OOP violations with `note_type = 'compliance'` and details
+user_directive_parse.md:   INSERT INTO user_directives (
+user_directive_parse.md:   INSERT INTO source_files (
+user_directive_parse.md:INSERT INTO user_directives (
+user_directive_parse.md:INSERT INTO source_files (
+user_directive_parse.md:INSERT INTO directive_dependencies (
+user_directive_parse.md:INSERT INTO notes (
+user_preferences_sync.md:    INSERT INTO user_settings (setting_key, setting_value, description, scope) VALUES
+user_preferences_sync.md:    INSERT INTO tracking_settings (feature_name, enabled, description, estimated_token_overhead) VALUES
+user_preferences_sync.md:   conn.execute("""INSERT INTO directive_preferences

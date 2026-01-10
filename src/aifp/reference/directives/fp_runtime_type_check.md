@@ -402,33 +402,15 @@ def add_coerce(a, b) -> int:
 
 ### Record Runtime Type Check Metadata
 
-```sql
--- Update function with runtime validation info
-UPDATE functions
-SET
-    has_runtime_type_checks = 1,
-    type_validation_strategy = 'parameter_and_return',
-    validation_metadata = '{
-        "checks_parameters": true,
-        "checks_return": true,
-        "validates_containers": false,
-        "performance_mode": "debug_only"
-    }',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'calculate_discount' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions Needing Runtime Validation
 
-```sql
--- Find functions with type hints but no runtime checks
-SELECT f.id, f.name, f.file_id, f.has_type_annotations
-FROM functions f
-WHERE f.has_type_annotations = 1
-  AND (f.has_runtime_type_checks = 0 OR f.has_runtime_type_checks IS NULL)
-  AND f.interfaces_external_code = 1  -- Priority: external boundaries
-ORDER BY f.call_count DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

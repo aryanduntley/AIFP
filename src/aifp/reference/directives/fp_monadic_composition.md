@@ -713,11 +713,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify monadic usage marked
-   ```sql
-   SELECT name, uses_monadic_composition
-   FROM functions
-   WHERE uses_monadic_composition = 1;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

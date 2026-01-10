@@ -442,27 +442,15 @@ def find_path_tail(
 
 ### Update Function with Tail Recursion Flag
 
-```sql
--- Mark function as tail-recursive
-UPDATE functions
-SET
-    is_tail_recursive = 1,
-    recursion_type = 'tail_call',
-    optimization_level = 'optimized',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'factorial' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions Needing Tail Call Optimization
 
-```sql
--- Find non-tail-recursive functions
-SELECT f.id, f.name, f.file_id, f.recursion_type
-FROM functions f
-WHERE f.is_recursive = 1
-  AND (f.is_tail_recursive = 0 OR f.recursion_type = 'non_tail')
-ORDER BY f.complexity_score DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

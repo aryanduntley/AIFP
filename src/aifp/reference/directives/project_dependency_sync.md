@@ -61,19 +61,9 @@ Compares physical files with database records to identify discrepancies.
   - Insert into functions table
   - Log addition
 - **SQL**:
-  ```sql
-  INSERT INTO functions (
-    file_id,
-    name,
-    purpose,
-    purity_level,
-    side_effects_json,
-    parameters_json,
-    return_type,
-    created_at,
-    updated_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Missing function added to database
 
 **Branch 2: If db_function_stale**
@@ -84,14 +74,9 @@ Compares physical files with database records to identify discrepancies.
   - Update changed fields (parameters, return type, purity)
   - Preserve user-defined fields (purpose, notes)
 - **SQL**:
-  ```sql
-  UPDATE functions
-  SET parameters_json = ?,
-      return_type = ?,
-      purity_level = ?,
-      updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Function metadata updated
 
 **Branch 3: If function_in_db_not_in_file**
@@ -101,13 +86,9 @@ Compares physical files with database records to identify discrepancies.
   - If file deleted: Mark function as deleted or remove
   - If file exists: Function was removed from file, delete from DB
 - **SQL**:
-  ```sql
-  -- Option 1: Soft delete (mark deleted_at)
-  UPDATE functions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Option 2: Hard delete (remove)
-  DELETE FROM functions WHERE id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Orphaned function removed or marked deleted
 
 **Branch 4: If unlinked_file**
@@ -127,13 +108,9 @@ Compares physical files with database records to identify discrepancies.
   - Assign theme/flow
   - Log addition
 - **SQL**:
-  ```sql
-  INSERT INTO files (project_id, path, language, checksum, created_at, updated_at)
-  VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Get file_id
-  SELECT last_insert_rowid() as file_id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: New file tracked in database
 
 **Branch 6: If file_in_db_not_on_disk**
@@ -143,16 +120,9 @@ Compares physical files with database records to identify discrepancies.
   - Hard delete: Remove file and cascade delete functions
   - Prompt user to choose
 - **SQL**:
-  ```sql
-  -- Soft delete
-  UPDATE files SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Hard delete (cascade)
-  DELETE FROM interactions WHERE source_function_id IN (SELECT id FROM functions WHERE file_id = ?);
-  DELETE FROM functions WHERE file_id = ?;
-  DELETE FROM file_flows WHERE file_id = ?;
-  DELETE FROM files WHERE id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Orphaned file cleaned from database
 
 **Branch 7: If checksum_mismatch**
@@ -164,12 +134,9 @@ Compares physical files with database records to identify discrepancies.
   - Update interactions
   - Log sync
 - **SQL**:
-  ```sql
-  UPDATE files SET checksum = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Update all functions from this file
-  -- (individual UPDATE statements per function)
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: File metadata synchronized
 
 **Branch 8: If dependency_missing**
@@ -179,10 +146,9 @@ Compares physical files with database records to identify discrepancies.
   - Identify called functions
   - Insert into interactions table
 - **SQL**:
-  ```sql
-  INSERT INTO interactions (source_function_id, target_function_id, interaction_type)
-  VALUES (?, ?, 'call');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Missing dependency tracked
 
 **Branch 9: If dependency_stale**
@@ -191,10 +157,9 @@ Compares physical files with database records to identify discrepancies.
   - Function no longer calls another
   - Delete interaction record
 - **SQL**:
-  ```sql
-  DELETE FROM interactions
-  WHERE source_function_id = ? AND target_function_id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Stale dependency removed
 
 **Branch 10: If sync_complete**
@@ -205,10 +170,9 @@ Compares physical files with database records to identify discrepancies.
   - Count interactions synced
   - Log to notes table
 - **SQL**:
-  ```sql
-  INSERT INTO notes (content, note_type, source, directive_name)
-  VALUES ('Dependency sync complete: [N] files, [M] functions, [K] interactions updated', 'sync', 'directive', 'project_dependency_sync');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Sync logged for audit
 
 **Fallback**: `prompt_user`
@@ -239,14 +203,13 @@ Compares physical files with database records to identify discrepancies.
    - New function found: `transpose`
 5. Checks DB for `transpose`: Not found
 6. Inserts new function:
-   ```sql
-   INSERT INTO functions (file_id, name, purpose, purity_level, parameters_json, return_type, created_at, updated_at)
-   VALUES (15, 'transpose', 'Transpose matrix', 'pure', '[{"name": "matrix", "type": "List[List[float]]"}]', 'List[List[float]]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Updates file checksum:
-   ```sql
-   UPDATE files SET checksum = 'sha256:new123...', updated_at = CURRENT_TIMESTAMP WHERE id = 15;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 8. Logs sync:
    ```
    File synced: src/matrix.py. Added function: transpose
@@ -271,12 +234,9 @@ Compares physical files with database records to identify discrepancies.
    ```
 4. User chooses: "2" (Hard delete)
 5. Cascades delete:
-   ```sql
-   DELETE FROM interactions WHERE source_function_id IN (SELECT id FROM functions WHERE file_id = 23);
-   DELETE FROM functions WHERE file_id = 23;
-   DELETE FROM file_flows WHERE file_id = 23;
-   DELETE FROM files WHERE id = 23;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Logs cleanup:
    ```
    File deleted: src/old_utils.py (removed from database)
@@ -292,12 +252,9 @@ Compares physical files with database records to identify discrepancies.
    - Old parameters: `[{"name": "a"}, {"name": "b"}]`
    - New parameters: `[{"name": "a"}, {"name": "b"}, {"name": "validate", "default": "True"}]`
 3. Updates function metadata:
-   ```sql
-   UPDATE functions
-   SET parameters_json = '[{"name": "a", "type": "List[List[float]]"}, {"name": "b", "type": "List[List[float]]"}, {"name": "validate", "type": "bool", "default": true}]',
-       updated_at = CURRENT_TIMESTAMP
-   WHERE file_id = 15 AND name = 'multiply_matrices';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Logs update:
    ```
    Function updated: multiply_matrices (parameters changed)
@@ -320,17 +277,13 @@ Compares physical files with database records to identify discrepancies.
 5. Parses file:
    - Functions: `dot_product`, `cross_product`, `magnitude`
 6. Inserts file record:
-   ```sql
-   INSERT INTO files (project_id, path, language, checksum, created_at, updated_at)
-   VALUES (1, 'src/vector.py', 'python', 'sha256:abc...', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-   -- Returns file_id: 48
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Inserts functions:
-   ```sql
-   INSERT INTO functions (file_id, name, purity_level, ...) VALUES (48, 'dot_product', 'pure', ...);
-   INSERT INTO functions (file_id, name, purity_level, ...) VALUES (48, 'cross_product', 'pure', ...);
-   INSERT INTO functions (file_id, name, purity_level, ...) VALUES (48, 'magnitude', 'pure', ...);
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 8. Calls `project_theme_flow_mapping` to assign theme/flow
 9. Logs addition:
    ```
@@ -343,19 +296,14 @@ Compares physical files with database records to identify discrepancies.
 
 **AI Execution**:
 1. Queries interactions table:
-   ```sql
-   SELECT i.id, sf.name as source, tf.name as target
-   FROM interactions i
-   LEFT JOIN functions sf ON i.source_function_id = sf.id
-   LEFT JOIN functions tf ON i.target_function_id = tf.id
-   WHERE sf.id IS NULL OR tf.id IS NULL;
-   -- Found: interaction referencing deleted function_id=99
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Identifies orphaned interactions
 3. Deletes orphaned records:
-   ```sql
-   DELETE FROM interactions WHERE source_function_id = 99 OR target_function_id = 99;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Logs cleanup:
    ```
    Cleaned 3 orphaned interaction records
@@ -407,38 +355,9 @@ Compares physical files with database records to identify discrepancies.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Update file checksum
-UPDATE files SET checksum = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Insert missing function
-INSERT INTO functions (file_id, name, purpose, purity_level, ...) VALUES (...);
-
--- Update stale function
-UPDATE functions SET parameters_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Delete orphaned function
-DELETE FROM functions WHERE id = ?;
-
--- Insert missing file
-INSERT INTO files (project_id, path, language, checksum, ...) VALUES (...);
-
--- Soft delete file
-UPDATE files SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Hard delete file (cascade)
-DELETE FROM files WHERE id = ?;
-
--- Insert missing interaction
-INSERT INTO interactions (source_function_id, target_function_id, interaction_type) VALUES (?, ?, 'call');
-
--- Delete stale interaction
-DELETE FROM interactions WHERE source_function_id = ? AND target_function_id = ?;
-
--- Log sync
-INSERT INTO notes (content, note_type, source, directive_name)
-VALUES (?, 'sync', 'directive', 'project_dependency_sync');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

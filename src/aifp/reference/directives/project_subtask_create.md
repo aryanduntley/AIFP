@@ -64,11 +64,9 @@ Ensures all required fields are present and parent task is valid.
   - Check task status (must be pending or in_progress)
   - If task completed/cancelled: Cannot create subtask
 - **Query**:
-  ```sql
-  SELECT id, name, status, milestone_id
-  FROM tasks
-  WHERE id = ? AND project_id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Parent task validated
 
 **Branch 2: If parent_task_valid**
@@ -78,12 +76,9 @@ Ensures all required fields are present and parent task is valid.
   - Warn if multiple active subtasks (context switching)
   - Prompt: "Another subtask '[name]' is active. Continue?"
 - **Query**:
-  ```sql
-  SELECT id, name, status
-  FROM subtasks
-  WHERE task_id = ? AND status IN ('pending', 'in_progress')
-  ORDER BY created_at DESC;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: User confirms or handles active subtasks
 
 **Branch 3: If no_blocking_subtasks_or_confirmed**
@@ -95,20 +90,9 @@ Ensures all required fields are present and parent task is valid.
   - Set created_at, updated_at timestamps
   - Return generated subtask ID
 - **SQL**:
-  ```sql
-  INSERT INTO subtasks (
-    task_id,
-    name,
-    description,
-    priority,
-    status,
-    created_at,
-    updated_at
-  ) VALUES (?, ?, ?, 'high', 'in_progress', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Get generated ID
-  SELECT last_insert_rowid() as subtask_id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Subtask created, ID returned
 
 **Branch 4: If subtask_created**
@@ -118,11 +102,9 @@ Ensures all required fields are present and parent task is valid.
   - Update parent task updated_at timestamp
   - Log pause reason (subtask created)
 - **SQL**:
-  ```sql
-  UPDATE tasks
-  SET status = 'paused', updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Parent task paused
 
 **Branch 5: If parent_paused**
@@ -132,23 +114,9 @@ Ensures all required fields are present and parent task is valid.
   - Source: directive
   - Include both subtask_id and task_id for reference
 - **SQL**:
-  ```sql
-  INSERT INTO notes (
-    content,
-    note_type,
-    reference_table,
-    reference_id,
-    source,
-    directive_name
-  ) VALUES (
-    'Subtask created: [name] (parent task: [task_name], status: paused)',
-    'subtask_creation',
-    'subtasks',
-    ?,
-    'directive',
-    'project_subtask_create'
-  );
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Creation logged
 
 **Branch 6: If parent_already_paused**
@@ -204,21 +172,17 @@ Ensures all required fields are present and parent task is valid.
    - ID=15, name="Implement authentication", status="in_progress" ✓
 3. Checks active subtasks: None found
 4. Creates subtask:
-   ```sql
-   INSERT INTO subtasks (task_id, name, description, priority, status, created_at, updated_at)
-   VALUES (15, 'Add email verification to auth', 'Implement email verification flow with token generation', 'high', 'in_progress', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   -- Returns subtask_id: 7
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Pauses parent task:
-   ```sql
-   UPDATE tasks SET status = 'paused', updated_at = CURRENT_TIMESTAMP WHERE id = 15;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Logs creation:
-   ```sql
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-   VALUES ('Subtask created: Add email verification to auth (parent task: Implement authentication, status: paused)', 'subtask_creation', 'subtasks', 7, 'directive', 'project_subtask_create');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Returns:
    ```json
    {
@@ -373,28 +337,9 @@ Ensures all required fields are present and parent task is valid.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Create subtask
-INSERT INTO subtasks (
-  task_id,
-  name,
-  description,
-  priority,
-  status,
-  created_at,
-  updated_at
-) VALUES (?, ?, ?, 'high', 'in_progress', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get subtask ID
-SELECT last_insert_rowid() as subtask_id;
-
--- Pause parent task
-UPDATE tasks SET status = 'paused', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Log creation
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES (?, 'subtask_creation', 'subtasks', ?, 'directive', 'project_subtask_create');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

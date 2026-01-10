@@ -464,20 +464,9 @@ def process_items_isolated(items: list[WorkItem]) -> list[dict]:
 
 ### Record Task Isolation Metadata
 
-```sql
--- Update function with task isolation info
-UPDATE functions
-SET
-    has_task_isolation = 1,
-    isolation_strategy = 'data_cloning',
-    concurrency_metadata = json_set(
-        COALESCE(concurrency_metadata, '{}'),
-        '$.task_isolation',
-        'safe'
-    ),
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'process_users_isolated' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

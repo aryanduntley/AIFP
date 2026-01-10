@@ -99,11 +99,7 @@ Reads and parses the import JSON file.
 - **Then**: `prompt_user`
 - **Details**: Compare imported vs existing preferences, ask resolution
   - Query existing preferences:
-    ```sql
-    SELECT directive_name, preference_key, preference_value
-    FROM directive_preferences
-    WHERE active=1
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Find conflicts:
     ```python
     conflicts = []
@@ -227,15 +223,9 @@ Reads and parses the import JSON file.
     Next directive execution will use these settings.
     ```
   - Log to notes table:
-    ```sql
-    INSERT INTO notes (content, note_type, severity, source)
-    VALUES (
-      'Preferences imported from preferences_backup_2024-10-27.json',
-      'preferences_import',
-      'info',
-      'user'
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: User informed of successful import
 
 **Fallback**: `prompt_user`

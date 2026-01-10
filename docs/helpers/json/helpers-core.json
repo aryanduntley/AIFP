@@ -193,6 +193,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of all directive objects with workflow, description, category, etc.",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -281,6 +285,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of matching directive objects with workflow, description, category, etc.",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -404,6 +412,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of directive objects matching keywords with workflow, description, category, etc.",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -581,6 +593,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of possible next directive objects based on flows, with evaluated conditions",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -631,6 +647,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of directive objects whose conditions match current state",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -975,6 +995,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of directive objects in the specified category",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -1013,6 +1037,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of directive objects of the specified type (with optional MD content)",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {

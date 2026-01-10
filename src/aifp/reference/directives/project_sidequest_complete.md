@@ -54,11 +54,7 @@ Primary execution path for sidequest completion and outcome capture.
   - Sets `completed_at` timestamp
   - Prompts for outcome description
 - **SQL**:
-  ```sql
-  UPDATE sidequests
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
-  ```
+  **Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 **Branch 2: If sidequest_completed** ⭐ **CAPTURE LESSONS**
 - **Then**: `capture_lessons_learned`
@@ -67,10 +63,9 @@ Primary execution path for sidequest completion and outcome capture.
   - Logs outcome to notes table
   - Captures context for future reference
 - **SQL**:
-  ```sql
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-  VALUES ('[user_response]', 'sidequest_outcome', 'sidequests', ?, 'user', 'project_sidequest_complete', 'info');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Prompt**: "What did you learn from this sidequest? (e.g., bug fix, architectural insight, new requirement)"
 
 **Branch 3: If linked_to_paused_task**
@@ -82,12 +77,9 @@ Primary execution path for sidequest completion and outcome capture.
     2. Continue with different work
     3. Create new task based on sidequest findings
 - **SQL**:
-  ```sql
-  SELECT paused_task_id, t.name
-  FROM sidequests sq
-  JOIN tasks t ON sq.paused_task_id = t.id
-  WHERE sq.id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Notification**: "Sidequest '[sidequest_name]' complete. Resume paused task '[task_name]'?"
 
 **Branch 4: If user_chooses_resume**
@@ -97,14 +89,9 @@ Primary execution path for sidequest completion and outcome capture.
   - Logs resume action
   - Returns user to original work
 - **SQL**:
-  ```sql
-  UPDATE tasks
-  SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  INSERT INTO notes (content, note_type, source, directive_name)
-  VALUES ('Task resumed after sidequest completion: [task_name]', 'resume', 'directive', 'project_sidequest_complete');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Branch 5: If sidequest_revealed_new_work**
 - **Then**: `offer_task_creation`
@@ -140,22 +127,18 @@ Primary execution path for sidequest completion and outcome capture.
 
 **AI Execution**:
 1. Marks sidequest complete:
-   ```sql
-   UPDATE sidequests SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 12;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 2. Captures lessons learned:
    - Prompts: "What did you learn from this sidequest?"
    - User responds: "Email regex was too strict, updated to RFC 5322 standard"
    - Logs:
-     ```sql
-     INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-     VALUES ('Email regex was too strict, updated to RFC 5322 standard', 'sidequest_outcome', 'sidequests', 12, 'user', 'project_sidequest_complete');
-     ```
+     **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Checks linked task:
-   ```sql
-   SELECT paused_task_id, t.name FROM sidequests sq JOIN tasks t ON sq.paused_task_id = t.id WHERE sq.id = 12;
-   -- Result: Task 8 - "Implement user registration"
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Prompts user:
    ```
    Sidequest 'Fix email validation bug in dependency' complete!
@@ -167,9 +150,9 @@ Primary execution path for sidequest completion and outcome capture.
    ```
 5. User chooses: "Resume paused task"
 6. Resumes task:
-   ```sql
-   UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP WHERE id = 8;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Notifies user:
    ```
    Task 'Implement user registration' resumed.
@@ -220,10 +203,9 @@ Primary execution path for sidequest completion and outcome capture.
    - User responds: "Current approach won't scale, need to pivot to OAuth 2.0"
 3. **Sidequest reveals pivot**:
    - Logs to notes with severity `warning`:
-     ```sql
-     INSERT INTO notes (content, note_type, severity, source, directive_name)
-     VALUES ('Research suggests pivot: Current approach won''t scale, need OAuth 2.0', 'sidequest_outcome', 'warning', 'user', 'project_sidequest_complete');
-     ```
+     **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Prompts user:
    ```
    ⚠️ Sidequest findings suggest a project pivot:
@@ -287,33 +269,14 @@ Primary execution path for sidequest completion and outcome capture.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Mark sidequest complete
-UPDATE sidequests SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Resume paused task (if user chooses)
-UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Log outcome
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-VALUES ('[user_response]', 'sidequest_outcome', 'sidequests', ?, 'user', 'project_sidequest_complete', 'info');
-
--- Log resume (if applicable)
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES ('Task resumed after sidequest completion', 'resume', 'tasks', ?, 'directive', 'project_sidequest_complete');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Tables Queried:
-```sql
--- Check linked task
-SELECT paused_task_id, paused_subtask_id, t.name as task_name
-FROM sidequests sq
-LEFT JOIN tasks t ON sq.paused_task_id = t.id
-WHERE sq.id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get sidequest details
-SELECT name, description, status FROM sidequests WHERE id = ?;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

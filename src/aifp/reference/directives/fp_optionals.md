@@ -462,12 +462,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify `functions.error_handling_pattern = 'option'`
-   ```sql
-   SELECT name, error_handling_pattern, type_annotations_json
-   FROM functions
-   WHERE name = 'find_item';
-   -- Expected: error_handling_pattern='option'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

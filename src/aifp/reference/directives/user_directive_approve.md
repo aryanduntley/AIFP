@@ -543,44 +543,28 @@ See system prompt for usage.
 
 ## Database Operations
 
+**Primary Method**: Use helper functions for all database operations. Query available helpers for user_directives.db operations.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
+
 ### Tables Read
-```sql
--- Check directive status
-SELECT id, name, implementation_status, approved, status
-FROM user_directives
-WHERE name = ?;
-```
+Load directive by name to check: id, name, implementation_status, approved, status
 
 ### Tables Updated
 
 #### user_directives
-```sql
--- On approval
-UPDATE user_directives
-SET approved = true,
-    approved_at = CURRENT_TIMESTAMP,
-    approved_by = ?  -- Optional user tracking
-WHERE id = ?;
+**Use helpers** to update approval status.
+- On approval: Set approved=true, approved_at (timestamp), approved_by (optional)
+- On rejection/rework: Set approved=false, feedback_json
 
--- On rejection/rework
-UPDATE user_directives
-SET approved = false,
-    feedback_json = ?  -- Store user feedback
-WHERE id = ?;
-```
+#### notes (optional AI record-keeping)
+**Use helpers for notes operations** - query available note helpers for user_directives.db.
 
-#### notes (approval logging)
-```sql
-INSERT INTO notes (
-    content,
-    note_type,              -- 'approval', 'rejection', 'feedback'
-    reference_table,        -- 'user_directives'
-    reference_id,           -- directive_id
-    source,                 -- 'user'
-    directive_name,         -- 'user_directive_approve'
-    severity                -- 'info'
-) VALUES (...);
-```
+**Note**: The notes table in user_directives.db is for flexible AI record-keeping. Useful for tracking:
+- User feedback during approval testing
+- Issues found during testing
+- User preferences or customization requests
+- Approval/rejection decisions and reasoning
 
 ---
 

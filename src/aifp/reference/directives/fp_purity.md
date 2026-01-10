@@ -410,12 +410,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify `functions.purity_level = 'pure'`
-   ```sql
-   SELECT name, purity_level, side_effects_json
-   FROM functions
-   WHERE name = 'calc';
-   -- Expected: purity_level='pure', side_effects_json='none'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

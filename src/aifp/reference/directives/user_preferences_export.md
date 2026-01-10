@@ -92,24 +92,11 @@ Queries all preferences from user_preferences.db.
 - **Then**: `export_to_json`
 - **Details**: Format preferences as JSON structure
   - Query user_settings:
-    ```sql
-    SELECT setting_key, setting_value, description
-    FROM user_settings
-    ORDER BY setting_key
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Query directive_preferences:
-    ```sql
-    SELECT directive_name, preference_key, preference_value, description
-    FROM directive_preferences
-    WHERE active = 1
-    ORDER BY directive_name, preference_key
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Query tracking_settings:
-    ```sql
-    SELECT feature_name, enabled, description, estimated_token_overhead
-    FROM tracking_settings
-    ORDER BY feature_name
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Build JSON structure:
     ```python
     export_data = {
@@ -138,19 +125,11 @@ Queries all preferences from user_preferences.db.
   - User can request: "Export preferences with tracking data"
   - Warning: This can create large files (tracking logs can be MB+)
   - Query ai_interaction_log:
-    ```sql
-    SELECT interaction_type, directive_context, user_feedback, created_at
-    FROM ai_interaction_log
-    ORDER BY created_at DESC
-    LIMIT 100  -- Last 100 interactions only
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Query fp_flow_tracking:
-    ```sql
-    SELECT function_name, file_path, compliance_score, created_at
-    FROM fp_flow_tracking
-    ORDER BY created_at DESC
-    LIMIT 100
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Add to export_data:
     ```python
     export_data["tracking_data"] = {
@@ -207,15 +186,9 @@ Queries all preferences from user_preferences.db.
     Import with: "Import preferences from <file>"
     ```
   - Log to notes table:
-    ```sql
-    INSERT INTO notes (content, note_type, severity, source)
-    VALUES (
-      'Preferences exported to preferences_export_2024-10-27.json',
-      'preferences_export',
-      'info',
-      'user'
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: User informed of successful export
 
 **Fallback**: `prompt_user`

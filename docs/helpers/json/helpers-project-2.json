@@ -507,12 +507,14 @@
         }
       ],
       "implementation_notes": [
+        "ERROR LOGIC: Query files table for is_reserved WHERE id=? - if is_reserved=1, return error",
+        "ERROR RETURN (reserved): {success: false, error: 'file_reserved', message: 'Cannot delete reserved file. Use delete_reserved helper to clean up abandoned reservation'}",
         "ERROR LOGIC: Query functions table WHERE file_id=? - if not empty, return error with function list",
         "ERROR LOGIC: Query types table WHERE file_id=? - if not empty, return error with type list",
         "ERROR LOGIC: Query file_flows table WHERE file_id=? - if not empty, return error with flow list",
         "ERROR RETURN: {success: false, error: 'dependencies_exist', functions: [...], types: [...], file_flows: [...]}",
         "ERROR MESSAGE: 'Cannot delete file - dependencies exist. Delete functions/types first, remove file_flows entries, then retry'",
-        "SUCCESS LOGIC: Only proceed with deletion if all three checks return empty results",
+        "SUCCESS LOGIC: Only proceed with deletion if is_reserved=0 AND all three dependency checks return empty results",
         "SUCCESS LOGIC: Create note entry in notes table with reason, severity, source, type, reference details",
         "SUCCESS LOGIC: Delete file entry: DELETE FROM files WHERE id=file_id",
         "SUCCESS RETURN: {success: true, deleted_file_id: file_id}",

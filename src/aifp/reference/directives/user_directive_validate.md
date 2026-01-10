@@ -495,50 +495,32 @@ See system prompt for usage.
 
 ## Database Operations
 
+**Primary Method**: Use helper functions for all database operations. Query available helpers for user_directives.db operations.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
+
 ### Tables Read
-```sql
--- Load directive for validation
-SELECT * FROM user_directives
-WHERE validation_status = 'needs_validation';
-```
+Load directives where validation_status = 'needs_validation'
 
 ### Tables Updated
 
 #### user_directives
-```sql
-UPDATE user_directives
-SET validated_config = ?,           -- JSON: complete configuration
-    validation_status = 'validated',
-    validated_at = CURRENT_TIMESTAMP,
-    validation_questions_count = ?,
-    validation_answers_json = ?      -- JSON: Q&A log for audit
-WHERE id = ?;
-```
+**Use helpers** to update validation status.
+Fields to update: validated_config (JSON), validation_status='validated', validated_at (timestamp), validation_questions_count, validation_answers_json (JSON audit log)
 
 #### directive_dependencies
-```sql
-INSERT INTO directive_dependencies (
-    directive_id,
-    dependency_type,        -- 'api', 'package', 'env_var', 'file'
-    dependency_name,        -- e.g., 'requests', 'SLACK_WEBHOOK_URL'
-    required,               -- boolean
-    installation_hint,      -- How to install/configure
-    availability_status     -- 'available', 'missing', 'unknown'
-) VALUES (...);
-```
+**Use helpers** to insert dependency records.
+Fields: directive_id, dependency_type ('api'/'package'/'env_var'/'file'), dependency_name, required (boolean), installation_hint, availability_status
 
-#### notes (audit trail)
-```sql
-INSERT INTO notes (
-    content,                -- Q&A transcript
-    note_type,              -- 'validation_session'
-    reference_table,        -- 'user_directives'
-    reference_id,           -- directive_id
-    source,                 -- 'directive'
-    directive_name,         -- 'user_directive_validate'
-    severity                -- 'info'
-) VALUES (...);
-```
+#### notes (optional AI record-keeping)
+**Use helpers for notes operations** - query available note helpers for user_directives.db.
+
+**Note**: The notes table in user_directives.db is for flexible AI record-keeping. Useful for tracking:
+- Q&A session transcripts and user answers
+- Ambiguities identified and resolutions chosen
+- Validation decisions and reasoning
+- Edge cases and special handling requirements
+- User preferences revealed during validation
 
 ---
 

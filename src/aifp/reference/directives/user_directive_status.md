@@ -41,9 +41,9 @@ This directive applies when:
 #### Step 1: Check Project Type
 
 1. **Verify user directives enabled**:
-   ```sql
-   SELECT user_directives_status FROM project WHERE id = ?;
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 2. **If NULL**:
    ```
@@ -57,45 +57,16 @@ This directive applies when:
 
 #### Step 2: Query All Directives
 
-```sql
-SELECT
-    ud.id,
-    ud.name,
-    ud.status,
-    ud.trigger_type,
-    ud.approved,
-    ud.activated_at,
-    ud.deactivated_at
-FROM user_directives ud
-ORDER BY
-    CASE ud.status
-        WHEN 'active' THEN 1
-        WHEN 'in_progress' THEN 2
-        WHEN 'paused' THEN 3
-        WHEN 'error' THEN 4
-        ELSE 5
-    END,
-    ud.name;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### Step 3: Get Execution Statistics
 
 For each directive:
-```sql
-SELECT
-    total_executions,
-    success_count,
-    error_count,
-    last_execution_time,
-    last_execution_status,
-    last_error_time,
-    last_error_type,
-    last_error_message,
-    avg_execution_time_ms,
-    next_scheduled_time
-FROM directive_executions
-WHERE directive_id = ?;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 Calculate:
 ```python
@@ -549,29 +520,9 @@ See system prompt for usage.
 
 ### Tables Read (No Writes)
 
-```sql
--- Project status
-SELECT user_directives_status FROM project;
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
 
--- All directives
-SELECT id, name, status, trigger_type, approved, activated_at, deactivated_at
-FROM user_directives
-ORDER BY status, name;
-
--- Execution statistics
-SELECT *
-FROM directive_executions
-WHERE directive_id = ?;
-
--- Recent errors (optional, mainly from logs)
-SELECT *
-FROM notes
-WHERE reference_table = 'user_directives'
-  AND reference_id = ?
-  AND note_type = 'error'
-  AND created_at > datetime('now', '-24 hours')
-ORDER BY created_at DESC;
-```
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 ---
 

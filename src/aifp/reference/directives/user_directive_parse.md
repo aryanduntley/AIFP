@@ -87,30 +87,9 @@ The main workflow follows these steps:
    - Store as semi-structured dict with `needs_validation: true` flag
 
 #### Step 4: Store in Database
-1. **Insert into user_directives table**:
-   ```sql
-   INSERT INTO user_directives (
-       name,
-       trigger_type,
-       trigger_config,
-       action_type,
-       action_config,
-       conditions_json,
-       status,
-       source_file_path,
-       parsed_at
-   ) VALUES (?, ?, ?, ?, ?, ?, 'parsed', ?, CURRENT_TIMESTAMP);
-   ```
+1. **Insert into user_directives table**: Use helpers to insert parsed directive data (name, trigger_type/config, action_type/config, conditions, status='parsed', source_file reference)
 
-2. **Track source file**:
-   ```sql
-   INSERT INTO source_files (
-       file_path,
-       format,
-       last_parsed_at,
-       checksum
-   ) VALUES (?, ?, CURRENT_TIMESTAMP, ?);
-   ```
+2. **Track source file**: Use helpers to insert/update source file tracking (file_path, format, checksum, parse timestamp)
 
 #### Step 5: Identify Ambiguities
 1. **Check for required fields**:
@@ -381,58 +360,31 @@ See system prompt for usage.
 
 ## Database Operations
 
+**Primary Method**: Use helper functions for all database operations. Query available helpers for user_directives.db operations.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
+
 ### Tables Updated
 
 #### user_directives
-```sql
-INSERT INTO user_directives (
-    name,
-    trigger_type,
-    trigger_config,        -- JSON
-    action_type,
-    action_config,         -- JSON
-    conditions_json,       -- JSON (optional)
-    status,                -- 'parsed'
-    validation_status,     -- 'needs_validation' or 'ready'
-    ambiguities_json,      -- JSON array of questions
-    source_file_id,        -- FK to source_files
-    parsed_at
-) VALUES (...);
-```
+Fields: name, trigger_type, trigger_config (JSON), action_type, action_config (JSON), conditions_json (JSON, optional), status ('parsed'), validation_status ('needs_validation' or 'ready'), ambiguities_json (JSON array), source_file_id (FK), parsed_at
 
 #### source_files
-```sql
-INSERT INTO source_files (
-    file_path,
-    format,                -- 'yaml', 'json', 'txt'
-    last_parsed_at,
-    checksum,
-    directive_count
-) VALUES (...);
-```
+Fields: file_path, format ('yaml'/'json'/'txt'), last_parsed_at, checksum, directive_count
 
 #### directive_dependencies (if external resources detected)
-```sql
-INSERT INTO directive_dependencies (
-    directive_id,
-    dependency_type,       -- 'api', 'package', 'env_var', 'config_file'
-    dependency_name,
-    required
-) VALUES (...);
-```
+Fields: directive_id, dependency_type ('api'/'package'/'env_var'/'config_file'), dependency_name, required
 
-#### notes (for logging)
-```sql
-INSERT INTO notes (
-    content,
-    note_type,             -- 'directive_parse'
-    reference_table,       -- 'user_directives'
-    reference_id,          -- directive_id
-    source,                -- 'directive'
-    directive_name,        -- 'user_directive_parse'
-    severity               -- 'info', 'warning', 'error'
-) VALUES (...);
-```
+#### notes (optional AI record-keeping)
+
+**Use helpers for notes operations** - query available note helpers for user_directives.db.
+
+**Note**: The notes table in user_directives.db is for flexible AI record-keeping. Use at AI's discretion for tracking important information like:
+- Parse results and ambiguities detected
+- Validation decisions and Q&A sessions
+- Implementation choices and code generation notes
+- Error patterns and debugging observations
+- Performance observations and optimization opportunities
 
 ---
 

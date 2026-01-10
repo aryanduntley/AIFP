@@ -484,13 +484,9 @@ How to verify this directive is working:
    ```
 
 2. **Check summary stored**
-   ```sql
-   SELECT content, created_at
-   FROM notes
-   WHERE note_type = 'auto_summary'
-   ORDER BY created_at DESC
-   LIMIT 1;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 3. **Verify summary content**
    ```python

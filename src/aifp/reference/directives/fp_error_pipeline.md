@@ -676,12 +676,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify `functions.error_handling_pattern = 'pipeline'`
-   ```sql
-   SELECT name, error_handling_pattern, composition_style
-   FROM functions
-   WHERE name = 'process';
-   -- Expected: error_handling_pattern='pipeline', composition_style='flatmap'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

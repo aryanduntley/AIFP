@@ -182,10 +182,9 @@ Identifies the type of project-wide change and routes to appropriate handler.
 - **Details**: Execute simultaneously
   - **Parallel 1**: Backup to `.aifp-project/backups/ProjectBlueprint.md.v{version}`
   - **Parallel 2**: Log to `notes` table:
-    ```sql
-    INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-    VALUES ('Project evolution: [change]. Version: [old] → [new].', 'evolution', 'project', 1, 'directive', 'project_evolution');
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Backup created and change logged
 
 **Fallback**: `prompt_user`
@@ -211,13 +210,11 @@ Identifies the type of project-wide change and routes to appropriate handler.
 1. Detects: Architecture change (language)
 2. Backs up blueprint to `.aifp-project/backups/ProjectBlueprint.md.v1`
 3. Increments version:
-   ```sql
-   UPDATE project SET version = 2, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 4. Updates infrastructure:
-   ```sql
-   UPDATE infrastructure SET value = 'Rust' WHERE type = 'language' AND project_id = 1;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Updates Section 2 of `ProjectBlueprint.md`:
    ```markdown
    ### Language & Runtime
@@ -231,10 +228,9 @@ Identifies the type of project-wide change and routes to appropriate handler.
    - **Rationale**: Benchmarks showed 10x performance improvement in matrix operations. Rust's memory safety aligns with AIFP principles.
    ```
 7. Logs to notes:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('Project evolution: Migrated to Rust. Version: 1 → 2.', 'evolution', 'directive', 'project_evolution');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 2: Goals Change - Scope Expansion
 
@@ -244,15 +240,9 @@ Identifies the type of project-wide change and routes to appropriate handler.
 1. Detects: Goals change (scope expansion)
 2. Backs up blueprint
 3. Increments version:
-   ```sql
-   UPDATE project SET version = 3, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 4. Updates goals:
-   ```sql
-   UPDATE project
-   SET goals_json = json_insert(goals_json, '$.goals[#]', 'Machine learning integration for predictive analytics')
-   WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 5. Updates Section 1 of blueprint:
    ```markdown
    ### Goals
@@ -276,16 +266,11 @@ Identifies the type of project-wide change and routes to appropriate handler.
 2. Detects: Themes change (restructuring)
 3. Backs up blueprint
 4. Increments version:
-   ```sql
-   UPDATE project SET version = 4, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 5. Updates themes table:
-   ```sql
-   UPDATE themes SET name = 'Authentication' WHERE name = 'Authentication' AND project_id = 1;
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   INSERT INTO themes (name, description, project_id)
-   VALUES ('Authorization', 'Role-based access control and permissions', 1);
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Updates Section 3 of blueprint:
    ```markdown
    ### Themes
@@ -313,18 +298,11 @@ Identifies the type of project-wide change and routes to appropriate handler.
 1. Detects: Completion path change (new stage)
 2. Backs up blueprint
 3. Increments version:
-   ```sql
-   UPDATE project SET version = 5, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 4. Updates completion_path:
-   ```sql
-   INSERT INTO completion_path (name, description, status, order_index, project_id)
-   VALUES ('Performance Optimization', 'Profiling and optimization', 'pending', 3, 1);
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   -- Reorder subsequent stages
-   UPDATE completion_path SET order_index = order_index + 1
-   WHERE order_index >= 3 AND project_id = 1 AND id != [new_id];
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Updates Section 4 of blueprint:
    ```markdown
    ### Stage 3: Performance Optimization (Weeks 5-6)
@@ -351,14 +329,11 @@ Identifies the type of project-wide change and routes to appropriate handler.
 1. Detects: Infrastructure change (testing framework)
 2. Backs up blueprint
 3. Increments version:
-   ```sql
-   UPDATE project SET version = 6, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 4. Updates infrastructure:
-   ```sql
-   UPDATE infrastructure SET value = 'pytest + hypothesis'
-   WHERE type = 'testing_framework' AND project_id = 1;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Updates Section 2 - Key Infrastructure:
    ```markdown
    ### Key Infrastructure
@@ -381,21 +356,9 @@ Identifies the type of project-wide change and routes to appropriate handler.
 3. User confirms
 4. Backs up blueprint
 5. Major version increment:
-   ```sql
-   UPDATE project
-   SET version = 10,  -- Major bump (1.x → 10.x)
-       purpose = 'Scientific computing platform with GPU acceleration',
-       updated_at = CURRENT_TIMESTAMP
-   WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 6. Updates goals:
-   ```sql
-   UPDATE project SET goals_json = '{"goals": [
-     "GPU-accelerated linear algebra",
-     "Distributed computing support",
-     "Scientific visualization"
-   ]}' WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 7. Updates completion path (major restructuring)
 8. Updates blueprint Section 1:
    ```markdown
@@ -437,31 +400,9 @@ Identifies the type of project-wide change and routes to appropriate handler.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Increment version
-UPDATE project SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Update goals
-UPDATE project SET goals_json = ?, purpose = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-
--- Update infrastructure
-UPDATE infrastructure SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE type = ? AND project_id = 1;
-
--- Update themes
-INSERT INTO themes (name, description, project_id) VALUES (?, ?, 1);
-UPDATE themes SET name = ?, description = ? WHERE id = ?;
-
--- Update flows
-INSERT INTO flows (name, description, project_id) VALUES (?, ?, 1);
-
--- Update completion path
-INSERT INTO completion_path (name, description, status, order_index, project_id) VALUES (?, ?, 'pending', ?, 1);
-UPDATE completion_path SET order_index = order_index + 1 WHERE order_index >= ? AND project_id = 1;
-
--- Log evolution
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES ('Project evolution: [change]. Version: [old] → [new].', 'evolution', 'project', 1, 'directive', 'project_evolution');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Filesystem**:
 ```bash

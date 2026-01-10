@@ -89,21 +89,9 @@ Scans function AST for side-effecting operations.
         return transform_data(data)
     ```
   - Update database:
-    ```sql
-    -- Mark pure function
-    UPDATE functions
-    SET purity_level = 'pure',
-        side_effects_json = '{"io": false, "mutation": false}',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = 'transform_data';
+    **Use helper functions** for all project.db operations. Query available helpers.
 
-    -- Mark effectful function
-    UPDATE functions
-    SET purity_level = 'effectful',
-        side_effects_json = '{"io": true, "mutation": false}',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = 'process_file';
-    ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Logic separated from I/O, pure function created
 
 **Branch 2: If logging_detected**
@@ -182,13 +170,9 @@ Scans function AST for side-effecting operations.
         return [*items, item]
     ```
   - Update database:
-    ```sql
-    UPDATE functions
-    SET purity_level = 'pure',
-        side_effects_json = '{"mutation": false}',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = 'add_item'
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Mutation eliminated, function returns new data
 
 **Branch 4: If random_number_generation**
@@ -234,19 +218,9 @@ Scans function AST for side-effecting operations.
 - **Then**: `update_side_effects_json`
 - **Details**: Record which side effects are present/absent
   - Update functions table:
-    ```sql
-    UPDATE functions
-    SET side_effects_json = '{
-      "io": false,
-      "mutation": false,
-      "logging": false,
-      "random": false,
-      "system_calls": false
-    }',
-    purity_level = 'pure',
-    updated_at = CURRENT_TIMESTAMP
-    WHERE name = ? AND file_id = ?
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Links to project_update_db for database synchronization
   - side_effects_json provides detailed effect analysis
 - **Result**: Database updated with effect analysis
@@ -278,13 +252,9 @@ Scans function AST for side-effecting operations.
 **Fallback**: `mark_as_pure_if_none_found`
 - **Details**: No side effects detected, function is pure
   - Update database:
-    ```sql
-    UPDATE functions
-    SET purity_level = 'pure',
-        side_effects_json = 'null',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = ? AND file_id = ?
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - No refactoring needed
 - **Result**: Function validated as pure
 

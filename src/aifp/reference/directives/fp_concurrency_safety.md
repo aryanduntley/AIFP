@@ -484,31 +484,15 @@ def parallel_with_error_handling(items: list[int]) -> list[Result]:
 
 ### Record Concurrency Safety Analysis
 
-```sql
--- Mark function as concurrency-safe
-UPDATE functions
-SET
-    is_concurrency_safe = 1,
-    concurrency_metadata = '{
-        "safe_for_parallelism": true,
-        "shared_state": false,
-        "synchronization_required": false,
-        "parallel_strategy": "pure_parallel_map"
-    }',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'process_items_parallel' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions for Concurrency Analysis
 
-```sql
--- Find functions using parallelism without safety verification
-SELECT f.id, f.name, f.file_id, f.concurrency_metadata
-FROM functions f
-WHERE (f.uses_parallelism = 1 OR f.uses_async = 1)
-  AND (f.is_concurrency_safe = 0 OR f.concurrency_metadata IS NULL)
-ORDER BY f.call_count DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

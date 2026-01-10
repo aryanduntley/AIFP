@@ -467,11 +467,7 @@ How to verify this directive is working:
    ```
 
 3. **Check project status updated**
-   ```sql
-   SELECT name, status, archived_date
-   FROM project
-   WHERE status = 'archived';
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 4. **Verify archive integrity**
    ```bash

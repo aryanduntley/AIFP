@@ -411,20 +411,9 @@ def parallel_with_errors(items: list[int]) -> list[Result]:
 
 ### Record Parallel Purity Metadata
 
-```sql
--- Update function with parallel purity info
-UPDATE functions
-SET
-    is_parallel_safe = 1,
-    parallelism_metadata = '{
-        "pure_tasks": true,
-        "shared_state": false,
-        "deterministic": true,
-        "associative_operations": true
-    }',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'parallel_process' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

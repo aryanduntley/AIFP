@@ -136,10 +136,7 @@ Loads and applies user-defined preferences for file writing.
 ### Example 1: Writing a Pure Function with User Preferences
 
 **User Preference**:
-```sql
-INSERT INTO directive_preferences (directive_name, preference_key, preference_value)
-VALUES ('project_file_write', 'always_add_docstrings', 'true');
-```
+**Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
 
 **User Request**: "Write multiply_matrices function"
 
@@ -275,30 +272,14 @@ def save_order_effect(order: Dict[str, Any]) -> Result[None, str]:
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Insert new file
-INSERT INTO files (path, language, checksum, project_id, created_at, updated_at)
-VALUES ('src/matrix.py', 'python', 'abc123...', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Insert functions
-INSERT INTO functions (name, file_id, purpose, purity_level, side_effects_json, parameters_json, return_type)
-VALUES ('multiply_matrices', 1, 'Multiply two matrices', 'pure', 'null', '[{"name": "a", "type": "List[List[float]]"}, ...]', 'Result[List[List[float]], str]');
-
--- Insert interactions (dependencies)
-INSERT INTO interactions (source_function_id, target_function_id, interaction_type)
-VALUES (1, 2, 'call');
-
--- Link to flow
-INSERT INTO file_flows (file_id, flow_id)
-VALUES (1, 3);
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **user_directives.db** (if user directive generated):
-```sql
--- Link implementation to directive
-INSERT INTO directive_implementations (user_directive_id, file_path, entry_point, deployed, created_at)
-VALUES (1, '.aifp-project/user-directives/generated/lights_controller.py', 'handle_lights_5pm', 0, CURRENT_TIMESTAMP);
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 ---
 

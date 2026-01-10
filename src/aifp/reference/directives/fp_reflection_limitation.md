@@ -400,16 +400,9 @@ result = dispatch_operation("add", 5, 3)  # Type-safe, predictable
 
 ### Record Reflection Violations
 
-```sql
--- Flag function with reflection usage
-UPDATE functions
-SET
-    uses_reflection = 1,
-    reflection_types = '["eval", "getattr"]',
-    compliance_status = 'violation',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'dynamic_function' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

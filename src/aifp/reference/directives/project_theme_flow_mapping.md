@@ -90,13 +90,9 @@ Attempts to determine theme and flow from file metadata.
   - If exists: Use existing ID
   - If not exists: Create new theme/flow
 - **Query**:
-  ```sql
-  -- Check theme exists
-  SELECT id, name FROM themes WHERE name = ? AND project_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Check flow exists
-  SELECT id, name FROM flows WHERE name = ? AND project_id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Theme/flow IDs obtained or created
 
 **Branch 4: If theme_exists**
@@ -113,12 +109,9 @@ Attempts to determine theme and flow from file metadata.
   - Infer description from name
   - Trigger `project_evolution` (themes changed)
 - **SQL**:
-  ```sql
-  INSERT INTO themes (project_id, name, description, created_at)
-  VALUES (?, ?, ?, CURRENT_TIMESTAMP);
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  SELECT last_insert_rowid() as theme_id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: New theme created, evolution triggered
 
 **Branch 6: If flow_not_exists**
@@ -128,12 +121,9 @@ Attempts to determine theme and flow from file metadata.
   - Infer description from name
   - Trigger `project_evolution` (flows changed)
 - **SQL**:
-  ```sql
-  INSERT INTO flows (project_id, name, description, created_at)
-  VALUES (?, ?, ?, CURRENT_TIMESTAMP);
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  SELECT last_insert_rowid() as flow_id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: New flow created, evolution triggered
 
 **Branch 7: If theme_and_flow_obtained**
@@ -142,11 +132,9 @@ Attempts to determine theme and flow from file metadata.
   - Insert into `file_flows` table (file_id, flow_id)
   - Update if already exists
 - **SQL**:
-  ```sql
-  -- Link file to flow
-  INSERT OR REPLACE INTO file_flows (file_id, flow_id)
-  VALUES (?, ?);
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: File linked to flow
 
 **Branch 8: If flow_obtained**
@@ -155,11 +143,9 @@ Attempts to determine theme and flow from file metadata.
   - Insert into `flow_themes` table (flow_id, theme_id)
   - Update if already exists
 - **SQL**:
-  ```sql
-  -- Link flow to theme
-  INSERT OR REPLACE INTO flow_themes (flow_id, theme_id)
-  VALUES (?, ?);
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Flow linked to theme
 
 **Branch 9: If theme_or_flow_created**
@@ -218,29 +204,26 @@ Attempts to determine theme and flow from file metadata.
 **AI Execution**:
 1. Reads AIFP_METADATA: Theme="Authentication", Flow="Login Flow"
 2. Checks if theme exists:
-   ```sql
-   SELECT id FROM themes WHERE name = 'Authentication' AND project_id = 1;
-   -- Result: theme_id = 5
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Checks if flow exists:
-   ```sql
-   SELECT id FROM flows WHERE name = 'Login Flow' AND project_id = 1;
-   -- Result: flow_id = 12
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Links file to flow:
-   ```sql
-   INSERT OR REPLACE INTO file_flows (file_id, flow_id) VALUES (42, 12);
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Links flow to theme:
-   ```sql
-   INSERT OR REPLACE INTO flow_themes (flow_id, theme_id) VALUES (12, 5);
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. No evolution needed (theme/flow already exist)
 7. Logs mapping:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('File mapped: src/auth/login.py → Authentication/Login Flow', 'mapping', 'directive', 'project_theme_flow_mapping');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 2: Infer from Path, Create New Theme
 
@@ -250,16 +233,13 @@ Attempts to determine theme and flow from file metadata.
 1. No metadata found → Infer from path
 2. Parses path: `/src/payment/` → Theme="Payment Processing"
 3. Checks if theme exists:
-   ```sql
-   SELECT id FROM themes WHERE name = 'Payment Processing' AND project_id = 1;
-   -- Result: None (doesn't exist)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Creates new theme:
-   ```sql
-   INSERT INTO themes (project_id, name, description, created_at)
-   VALUES (1, 'Payment Processing', 'Payment and transaction handling', CURRENT_TIMESTAMP);
-   -- Returns theme_id: 8
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Triggers `project_evolution`:
    - Change type: 'themes_or_flows_change'
    - Updates Section 3 of ProjectBlueprint.md
@@ -267,11 +247,9 @@ Attempts to determine theme and flow from file metadata.
 6. Prompts for flow: "Assign flow for payment/processor.py:"
 7. User provides: "Transaction Flow"
 8. Creates new flow:
-   ```sql
-   INSERT INTO flows (project_id, name, description, created_at)
-   VALUES (1, 'Transaction Flow', 'End-to-end transaction processing', CURRENT_TIMESTAMP);
-   -- Returns flow_id: 18
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 9. Links file to flow and flow to theme
 10. Logs mapping and evolution
 
@@ -327,19 +305,18 @@ Attempts to determine theme and flow from file metadata.
    - "Identity Verification" not found
    - Creates new flow
 4. Updates file_flows mapping:
-   ```sql
-   UPDATE file_flows SET flow_id = 20 WHERE file_id = 42;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Updates flow_themes mapping:
-   ```sql
-   INSERT OR REPLACE INTO flow_themes (flow_id, theme_id) VALUES (20, 9);
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Triggers `project_evolution` (new theme and flow created)
 7. Logs remapping:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('File remapped: src/auth/login.py → Security/Identity Verification (was Authentication/Login Flow)', 'remapping', 'directive', 'project_theme_flow_mapping');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 5: Multiple Files Same Theme
 
@@ -384,27 +361,9 @@ Attempts to determine theme and flow from file metadata.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Create new theme
-INSERT INTO themes (project_id, name, description, created_at)
-VALUES (?, ?, ?, CURRENT_TIMESTAMP);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Create new flow
-INSERT INTO flows (project_id, name, description, created_at)
-VALUES (?, ?, ?, CURRENT_TIMESTAMP);
-
--- Link file to flow
-INSERT OR REPLACE INTO file_flows (file_id, flow_id)
-VALUES (?, ?);
-
--- Link flow to theme
-INSERT OR REPLACE INTO flow_themes (flow_id, theme_id)
-VALUES (?, ?);
-
--- Log mapping
-INSERT INTO notes (content, note_type, source, directive_name)
-VALUES (?, 'mapping', 'directive', 'project_theme_flow_mapping');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

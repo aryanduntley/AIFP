@@ -398,12 +398,9 @@ else:
 
 ### Step 2: Query Database
 
-```sql
--- Get all functions for file
-SELECT name, visibility
-FROM functions
-WHERE file_id = (SELECT id FROM files WHERE path = 'src/math_operations.py');
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Step 3: Compare Sets
 
@@ -590,18 +587,12 @@ How to verify this directive is working:
    ```
 
 2. **Orphaned entry** → Directive removes from database
-   ```sql
-   -- Before: Database has entry for deleted function
-   -- After: Entry removed
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 3. **Check symbol map completeness**
-   ```sql
-   SELECT f.name, fi.path
-   FROM functions f
-   JOIN files fi ON f.file_id = fi.id
-   WHERE f.visibility = 'public';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

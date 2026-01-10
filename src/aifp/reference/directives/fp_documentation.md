@@ -636,21 +636,9 @@ References:
 
 ### Record Documentation Coverage
 
-```sql
--- Update function with documentation metadata
-UPDATE functions
-SET
-    has_docstring = 1,
-    docstring_completeness = 95,
-    documentation_metadata = json_set(
-        COALESCE(documentation_metadata, '{}'),
-        '$.has_examples', 1,
-        '$.has_purity_note', 1,
-        '$.has_type_annotations', 1
-    ),
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'calculate_discount' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

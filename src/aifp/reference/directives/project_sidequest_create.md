@@ -534,21 +534,12 @@ How to verify this directive is working:
    ```
 
 2. **Check task paused**
-   ```sql
-   SELECT is_paused, name
-   FROM tasks
-   WHERE id = 5;
-   -- Should show is_paused = 1
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 3. **Verify sidequest priority**
-   ```sql
-   SELECT name, priority, paused_task_id
-   FROM sidequests
-   WHERE status = 'pending'
-   ORDER BY created_at DESC
-   LIMIT 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 4. **Check priority order**
    ```python

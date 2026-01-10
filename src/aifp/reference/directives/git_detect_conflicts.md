@@ -102,17 +102,13 @@ Performs Git diff to identify changed files between branches.
        - Same name, different parameters → Conflict (signature change)
        - Function added/removed → Mark accordingly
     3. **Query purity levels** from project.db:
-       ```sql
-       SELECT purity_level, side_effects_json, test_results
-       FROM functions
-       WHERE name IN (conflicting_functions)
-       ```
+       **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
     4. **Query dependencies**:
-       ```sql
-       SELECT target_function_id, interaction_type
-       FROM interactions
-       WHERE source_function_id IN (conflicting_function_ids)
-       ```
+       **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
     5. **Query test results**:
        - Get test count and pass/fail status for both versions
        - Higher test coverage = higher confidence

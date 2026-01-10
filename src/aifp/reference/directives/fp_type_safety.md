@@ -432,29 +432,15 @@ function getPermissions(account: Account): string[] {
 
 ### Insert Type Safety Metadata
 
-```sql
--- Update function with type information
-UPDATE functions
-SET
-    has_type_annotations = 1,
-    parameter_types = '["items: list[Item]", "tax_rate: float"]',
-    return_type = 'float',
-    type_safety_level = 'fully_typed',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'calculate_total' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions Missing Type Annotations
 
-```sql
--- Find functions without complete type information
-SELECT f.id, f.name, f.file_id, f.parameter_types, f.return_type
-FROM functions f
-WHERE f.has_type_annotations = 0
-   OR f.parameter_types IS NULL
-   OR f.return_type IS NULL
-ORDER BY f.complexity_score DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

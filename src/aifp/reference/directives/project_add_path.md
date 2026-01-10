@@ -61,25 +61,9 @@ Determines what type of modification is needed to the roadmap.
   - Link to project_id
   - Create stage with name and description
 - **SQL**:
-  ```sql
-  -- Get next order_index
-  SELECT COALESCE(MAX(order_index), 0) + 1 as next_index
-  FROM completion_path WHERE project_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Insert new stage
-  INSERT INTO completion_path (
-    project_id,
-    name,
-    description,
-    status,
-    order_index,
-    created_at,
-    updated_at
-  ) VALUES (?, ?, ?, 'pending', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
-  -- Get generated ID
-  SELECT last_insert_rowid() as stage_id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: New completion path stage created
 
 **Branch 2: If new_milestone**
@@ -90,24 +74,9 @@ Determines what type of modification is needed to the roadmap.
   - Set priority based on stage order
   - Create with name and description
 - **SQL**:
-  ```sql
-  -- Validate stage exists
-  SELECT id, name FROM completion_path WHERE id = ? AND project_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Insert new milestone
-  INSERT INTO milestones (
-    completion_path_id,
-    name,
-    description,
-    status,
-    priority,
-    created_at,
-    updated_at
-  ) VALUES (?, ?, ?, 'pending', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
-  -- Get generated ID
-  SELECT last_insert_rowid() as milestone_id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: New milestone created within stage
 
 **Branch 3: If new_task_in_milestone**
@@ -134,11 +103,9 @@ Determines what type of modification is needed to the roadmap.
   - Preserve relationships
   - Call `project_evolution` to update blueprint
 - **SQL**:
-  ```sql
-  -- Update order indices (transactional)
-  UPDATE completion_path SET order_index = ? WHERE id = ?;
-  -- Repeat for each stage being reordered
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Stages reordered, blueprint updated
 
 **Branch 6: If path_or_milestone_created**
@@ -158,19 +125,9 @@ Determines what type of modification is needed to the roadmap.
   - Tasks must belong to milestones
   - No orphaned records
 - **Query**:
-  ```sql
-  -- Check for orphaned milestones
-  SELECT m.id, m.name
-  FROM milestones m
-  LEFT JOIN completion_path cp ON m.completion_path_id = cp.id
-  WHERE cp.id IS NULL;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Check for orphaned tasks
-  SELECT t.id, t.name
-  FROM tasks t
-  LEFT JOIN milestones m ON t.milestone_id = m.id
-  WHERE m.id IS NULL;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Hierarchy validated, orphans flagged
 
 **Branch 8: If duplicate_stage_name**
@@ -207,17 +164,13 @@ Determines what type of modification is needed to the roadmap.
 1. Validates inputs: ✓ All valid
 2. Checks for duplicates: None found
 3. Gets next order_index:
-   ```sql
-   SELECT COALESCE(MAX(order_index), 0) + 1 FROM completion_path WHERE project_id = 1;
-   -- Result: 5
-   ```
-4. Creates stage:
-   ```sql
-   INSERT INTO completion_path (project_id, name, description, status, order_index, created_at, updated_at)
-   VALUES (1, 'Performance Optimization', 'Profile and optimize critical paths', 'pending', 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   -- Returns stage_id: 5
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
+4. Creates stage:
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Triggers blueprint update:
    - Calls `project_evolution`
    - Change type: 'completion_path_change'
@@ -243,23 +196,18 @@ Determines what type of modification is needed to the roadmap.
 
 **AI Execution**:
 1. Validates stage exists:
-   ```sql
-   SELECT id, name FROM completion_path WHERE id = 2 AND project_id = 1;
-   -- Result: stage "Core Development" exists
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Checks for duplicate milestones: None found
 3. Creates milestone:
-   ```sql
-   INSERT INTO milestones (completion_path_id, name, description, status, priority, created_at, updated_at)
-   VALUES (2, 'Matrix Operations', 'Core matrix calculation functions', 'pending', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   -- Returns milestone_id: 8
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Logs creation:
-   ```sql
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-   VALUES ('Milestone created: Matrix Operations (stage: Core Development)', 'milestone_creation', 'milestones', 8, 'directive', 'project_add_path');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Returns:
    ```json
    {
@@ -283,23 +231,16 @@ Determines what type of modification is needed to the roadmap.
 1. Validates all stages exist
 2. Checks for order conflicts: None
 3. Updates order indices in transaction:
-   ```sql
-   BEGIN TRANSACTION;
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   UPDATE completion_path SET order_index = 99 WHERE id = 2;  -- Temp value
-   UPDATE completion_path SET order_index = 2 WHERE id = 3;
-   UPDATE completion_path SET order_index = 3 WHERE id = 2;
-
-   COMMIT;
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Triggers blueprint update:
    - Calls `project_evolution`
    - Updates Section 4 with new order
 5. Logs reordering:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('Completion path reordered: stages 2 and 3 swapped', 'reorder', 'directive', 'project_add_path');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Returns: "Stages reordered successfully"
 
 ### Example 4: Duplicate Stage Name Warning
@@ -312,10 +253,9 @@ Determines what type of modification is needed to the roadmap.
 
 **AI Execution**:
 1. Checks for duplicates:
-   ```sql
-   SELECT id, name, status FROM completion_path WHERE name = 'Core Development' AND project_id = 1;
-   -- Found: stage_id=2, status='in_progress'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Warns user:
    ```
    ⚠️  Stage with similar name already exists
@@ -361,13 +301,9 @@ Determines what type of modification is needed to the roadmap.
 
 **AI Execution**:
 1. Runs hierarchy validation:
-   ```sql
-   SELECT m.id, m.name
-   FROM milestones m
-   LEFT JOIN completion_path cp ON m.completion_path_id = cp.id
-   WHERE cp.id IS NULL;
-   -- Found: milestone_id=12, name="Orphaned Tests"
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Warns user:
    ```
    ⚠️  Orphaned milestone detected
@@ -384,9 +320,9 @@ Determines what type of modification is needed to the roadmap.
 4. Lists available stages
 5. User selects stage
 6. Updates milestone:
-   ```sql
-   UPDATE milestones SET completion_path_id = ? WHERE id = 12;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 
@@ -410,27 +346,9 @@ Determines what type of modification is needed to the roadmap.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Create completion path stage
-INSERT INTO completion_path (project_id, name, description, status, order_index, created_at, updated_at)
-VALUES (?, ?, ?, 'pending', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Create milestone
-INSERT INTO milestones (completion_path_id, name, description, status, priority, created_at, updated_at)
-VALUES (?, ?, ?, 'pending', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Reorder stages
-UPDATE completion_path SET order_index = ? WHERE id = ?;
-
--- Validate hierarchy (query only)
-SELECT m.id FROM milestones m
-LEFT JOIN completion_path cp ON m.completion_path_id = cp.id
-WHERE cp.id IS NULL;
-
--- Log creation
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES (?, 'path_modification', ?, ?, 'directive', 'project_add_path');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

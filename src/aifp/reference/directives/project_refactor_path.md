@@ -477,28 +477,19 @@ This directive updates the following tables:
 How to verify this directive is working:
 
 1. **Check milestone order**
-   ```sql
-   SELECT id, name, order_index
-   FROM milestones
-   WHERE completion_path_id = ?
-   ORDER BY order_index;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 2. **Verify no orphaned tasks**
-   ```sql
-   SELECT t.id, t.name
-   FROM tasks t
-   LEFT JOIN milestones m ON t.milestone_id = m.id
-   WHERE m.id IS NULL;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 3. **Check refactoring logs**
-   ```sql
-   SELECT content, created_at
-   FROM notes
-   WHERE note_type = 'path_refactoring'
-   ORDER BY created_at DESC;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

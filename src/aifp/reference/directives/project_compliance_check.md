@@ -29,10 +29,7 @@ The `project_compliance_check` directive is an **optional analytics and tracking
 - Cost-sensitive projects (5-10% token overhead per check)
 
 **Activation**:
-```sql
--- Enable compliance tracking
-UPDATE tracking_settings SET enabled = 1 WHERE feature_name = 'compliance_checking';
-```
+**Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
 
 **Analytics Provided** (when enabled):
 - FP directive consultation frequency
@@ -123,18 +120,7 @@ Verify compliance tracking is enabled before proceeding.
 
 ### Example 1: Enabling Compliance Tracking
 
-```sql
--- Check current status
-SELECT feature_name, enabled FROM tracking_settings WHERE feature_name = 'compliance_checking';
-
--- Enable tracking (user must acknowledge token overhead)
-UPDATE tracking_settings SET enabled = 1 WHERE feature_name = 'compliance_checking';
-
--- Verify enabled
-SELECT feature_name, enabled, estimated_token_overhead FROM tracking_settings
-WHERE feature_name = 'compliance_checking';
--- Result: compliance_checking | 1 | ~5-10% per check
-```
+**Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
 
 ---
 
@@ -285,14 +271,7 @@ report = generate_compliance_report(include_tracking=False)
 - User can configure retention period
 - Export functionality for long-term storage
 
-```sql
--- Configure retention (via user_preferences)
-INSERT INTO user_settings (setting_key, setting_value)
-VALUES ('tracking_retention_days', '90');
-
--- Manual cleanup
-DELETE FROM fp_flow_tracking WHERE timestamp < date('now', '-90 days');
-```
+**Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
 
 ---
 

@@ -70,10 +70,9 @@ Identifies error type and determines appropriate resolution.
   }
   ```
 - **Log**:
-  ```sql
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-  VALUES ('Known error handled: [issue]. Resolution: [resolution]. Directive: [name]', 'error_handling', 'directives', ?, 'directive', 'project_error_handling', 'info');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Known error resolved automatically or with guidance
 
 **Branch 2: If unknown_issue**
@@ -108,21 +107,9 @@ Identifies error type and determines appropriate resolution.
   - Source: directive
   - Enable future analysis and learning
 - **SQL**:
-  ```sql
-  INSERT INTO notes (
-    content,
-    note_type,
-    source,
-    directive_name,
-    severity
-  ) VALUES (
-    'Error resolved: [directive_name] - [issue]. Resolution: [resolution]',
-    'error_resolution',
-    'directive',
-    'project_error_handling',
-    'info'
-  );
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Error logged for audit trail
 
 **Branch 4: If resolution_failed**
@@ -246,10 +233,9 @@ Identifies error type and determines appropriate resolution.
    - Attempt 2: Wait 2s, retry
    - Success: Task created
 4. Logs resolution:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name, severity)
-   VALUES ('Database lock resolved: project_task_create. Retried 2 times, succeeded.', 'error_resolution', 'directive', 'project_error_handling', 'info');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Returns success to user
 
 ### Example 2: Known Issue - Checksum Mismatch
@@ -313,10 +299,9 @@ Identifies error type and determines appropriate resolution.
 6. Prompts: "Add this error to roadblock catalog for future?"
 7. User: "Yes"
 8. Logs:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name, severity)
-   VALUES ('Unknown error handled: CustomValidationError. Resolution: Validate matrix dimensions before operation. Added to catalog.', 'error_learning', 'directive', 'project_error_handling', 'warning');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 4: Retry with Exponential Backoff
 
@@ -333,10 +318,9 @@ Identifies error type and determines appropriate resolution.
    - Wait 2s
    - Attempt 3: Success
 4. Logs:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name, severity)
-   VALUES ('Network error recovered: user_directive_activate. Retried 3 times, succeeded after 2 failures.', 'error_resolution', 'directive', 'project_error_handling', 'warning');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Returns success
 
 ### Example 6: Permission Error
@@ -395,25 +379,9 @@ Identifies error type and determines appropriate resolution.
 
 ### Notes Table Entry:
 
-```sql
-INSERT INTO notes (
-  content,
-  note_type,
-  reference_table,
-  reference_id,
-  source,
-  directive_name,
-  severity
-) VALUES (
-  'Error in [directive]: [issue]. Resolution: [resolution]. Result: [success/failure]',
-  'error_handling',
-  'directives',
-  [directive_id],
-  'directive',
-  'project_error_handling',
-  '[info/warning/error]'
-);
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Severity Levels:
 

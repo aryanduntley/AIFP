@@ -598,28 +598,15 @@ def read_file_safe(path: str) -> Result:
 
 ### Record I/O Isolation Metadata
 
-```sql
--- Update function with I/O isolation status
-UPDATE functions
-SET
-    has_io_operations = 0,  -- Pure after isolation
-    io_isolation_strategy = 'repository_pattern',
-    side_effects_json = 'null',
-    purity_level = 'pure',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'calculate_user_orders' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Functions with Inline I/O
 
-```sql
--- Find functions with I/O operations
-SELECT f.id, f.name, f.file_id, f.side_effects_json
-FROM functions f
-WHERE f.has_io_operations = 1
-  AND json_extract(f.side_effects_json, '$.isolated') = 0
-ORDER BY f.call_count DESC;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

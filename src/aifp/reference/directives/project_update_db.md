@@ -408,23 +408,19 @@ This directive updates the following tables:
 How to verify this directive is working:
 
 1. **Write file and check DB** → Verify file record created
-   ```sql
-   SELECT * FROM files WHERE path='src/calc.py';
-   -- Expected: 1 row with checksum
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 2. **Check functions extracted** → Verify function records
-   ```sql
-   SELECT name FROM functions WHERE file_id=(SELECT id FROM files WHERE path='src/calc.py');
-   -- Expected: calculate_total, format_currency
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 3. **Check dependencies** → Verify interactions table
-   ```sql
-   SELECT interaction_type FROM interactions
-   WHERE source_function_id=(SELECT id FROM functions WHERE name='calculate_total');
-   -- Expected: 'call' records for dependencies
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 4. **Update existing file** → Verify UPDATE, not duplicate INSERT
    ```python

@@ -487,21 +487,9 @@ def _process_items_cached(items: tuple[int, ...]) -> int:
 
 ### Record Memoization Metadata
 
-```sql
--- Update function with memoization metadata
-UPDATE functions
-SET
-    is_memoized = 1,
-    memoization_metadata = json_set(
-        COALESCE(memoization_metadata, '{}'),
-        '$.cache_policy', 'lru',
-        '$.max_size', 128,
-        '$.hit_rate', NULL  -- Populated during runtime monitoring
-    ),
-    optimization_level = 'memoized',
-    updated_at = CURRENT_TIMESTAMP
-WHERE name = 'calculate_expensive_result' AND file_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

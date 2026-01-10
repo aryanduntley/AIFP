@@ -66,11 +66,9 @@ Determines what aspect of the task needs updating.
     - `cancelled` → any (cancelled tasks stay cancelled)
   - Update `updated_at` timestamp
 - **SQL**:
-  ```sql
-  UPDATE tasks
-  SET status = ?, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ? AND status NOT IN ('completed', 'cancelled');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Task status updated, timestamp recorded
 
 **Branch 2: If task_completed**
@@ -82,14 +80,9 @@ Determines what aspect of the task needs updating.
   - Log completion note with directive context
   - Calculate task duration: `completed_at - created_at`
 - **SQL**:
-  ```sql
-  UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  UPDATE items SET status = 'completed' WHERE task_id = ? AND status != 'completed';
-
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-  VALUES ('Task completed: [name]', 'completion', 'tasks', ?, 'directive', 'project_task_update');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Task marked complete, milestone checked
 
 **Branch 3: If subtask_completed_parent_paused**
@@ -100,15 +93,9 @@ Determines what aspect of the task needs updating.
   - If subtasks remaining: Keep parent paused
   - Log resume action
 - **SQL**:
-  ```sql
-  -- Check if all subtasks complete
-  SELECT COUNT(*) FROM subtasks
-  WHERE task_id = ? AND status NOT IN ('completed', 'cancelled');
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- If count = 0, resume parent
-  UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP
-  WHERE id = ? AND status = 'paused';
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Parent task resumed or kept paused
 
 **Branch 4: If priority_update_requested**
@@ -118,12 +105,9 @@ Determines what aspect of the task needs updating.
   - Update task priority
   - Log priority change with reason
 - **SQL**:
-  ```sql
-  UPDATE tasks SET priority = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  INSERT INTO notes (content, source, directive_name)
-  VALUES ('Task priority updated: [old] → [new]. Reason: [reason]', 'directive', 'project_task_update');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Priority adjusted, change logged
 
 **Branch 5: If description_update_requested**
@@ -132,9 +116,9 @@ Determines what aspect of the task needs updating.
   - Update task description
   - Log change for transparency
 - **SQL**:
-  ```sql
-  UPDATE tasks SET description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Description updated
 
 **Branch 6: If task_cancelled**
@@ -145,14 +129,9 @@ Determines what aspect of the task needs updating.
   - Log cancellation reason
   - Do NOT resume parent task (manual action required)
 - **SQL**:
-  ```sql
-  UPDATE tasks SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  UPDATE items SET status = 'cancelled' WHERE task_id = ?;
-
-  INSERT INTO notes (content, note_type, source, directive_name)
-  VALUES ('Task cancelled: [name]. Reason: [reason]', 'cancellation', 'directive', 'project_task_update');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Task cancelled, reason logged
 
 **Branch 7: If milestone_complete**
@@ -163,11 +142,9 @@ Determines what aspect of the task needs updating.
   - Trigger `project_completion_check`
   - Log milestone completion
 - **SQL**:
-  ```sql
-  UPDATE milestones SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  UPDATE completion_path SET status = 'completed' WHERE id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Milestone marked complete, progress updated
 
 **Branch 8: If item_status_update**
@@ -177,15 +154,9 @@ Determines what aspect of the task needs updating.
   - Check if all items complete → Mark parent task complete
   - Log item completion
 - **SQL**:
-  ```sql
-  UPDATE items SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Check if all items for task are complete
-  SELECT COUNT(*) FROM items WHERE task_id = ? AND status != 'completed';
-
-  -- If count = 0, mark task complete
-  UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Item updated, task completion checked
 
 **Branch 9: If sidequest_status_update**
@@ -194,9 +165,7 @@ Determines what aspect of the task needs updating.
   - Sidequests can be: pending, in_progress, completed, abandoned
   - Log outcome for future reference
 - **SQL**:
-  ```sql
-  UPDATE sidequests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-  ```
+  **Use helper functions** for database operations. Query available helpers for the appropriate database.
 - **Result**: Sidequest status updated
 
 **Branch 10: If validation_required**
@@ -232,11 +201,9 @@ Determines what aspect of the task needs updating.
 2. Validates transition: `in_progress` → `completed` ✓ Valid
 3. Checks for active subtasks: None found
 4. Updates task:
-   ```sql
-   UPDATE tasks
-   SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-   WHERE id = 15;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Marks all items as complete
 6. Checks milestone progress:
    - Milestone: "Authentication System"
@@ -244,11 +211,9 @@ Determines what aspect of the task needs updating.
    - Action: Mark milestone complete
 7. Triggers `project_completion_check`
 8. Logs completion:
-   ```sql
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-   VALUES ('Task completed: Implement authentication. Duration: 5 days.',
-           'completion', 'tasks', 15, 'directive', 'project_task_update');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 2: Resuming Paused Task
 
@@ -261,26 +226,21 @@ Determines what aspect of the task needs updating.
 
 **AI Execution**:
 1. Updates subtask:
-   ```sql
-   UPDATE subtasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 7;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Checks all subtasks for parent task:
-   ```sql
-   SELECT COUNT(*) FROM subtasks
-   WHERE task_id = 15 AND status NOT IN ('completed', 'cancelled');
-   -- Result: 0 (all subtasks complete)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Resumes parent task:
-   ```sql
-   UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP
-   WHERE id = 15 AND status = 'paused';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Logs action:
-   ```sql
-   INSERT INTO notes (content, source, directive_name)
-   VALUES ('All subtasks complete for task 15. Parent task resumed.',
-           'directive', 'project_task_update');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 3: Updating Priority
 
@@ -289,15 +249,13 @@ Determines what aspect of the task needs updating.
 **AI Execution**:
 1. Queries current priority: `priority = 3`
 2. Updates priority:
-   ```sql
-   UPDATE tasks SET priority = 1, updated_at = CURRENT_TIMESTAMP WHERE id = 42;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Logs change:
-   ```sql
-   INSERT INTO notes (content, source, directive_name)
-   VALUES ('Task priority updated: 42 - Fix security vulnerability. Priority: 3 → 1 (highest). Reason: Security critical.',
-           'directive', 'project_task_update');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 4: Cancelling Task
 
@@ -307,19 +265,17 @@ Determines what aspect of the task needs updating.
 1. Prompts for reason: "Why cancel this task?"
 2. User responds: "Not needed for v1.0"
 3. Updates task:
-   ```sql
-   UPDATE tasks SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = 28;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Cancels all items:
-   ```sql
-   UPDATE items SET status = 'cancelled' WHERE task_id = 28;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Logs cancellation:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('Task cancelled: 28 - Implement dark mode. Reason: Not needed for v1.0.',
-           'cancellation', 'directive', 'project_task_update');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 5: Invalid Transition
 
@@ -341,29 +297,26 @@ Determines what aspect of the task needs updating.
 
 **AI Execution**:
 1. Marks task complete:
-   ```sql
-   UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 18;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Checks milestone progress:
-   ```sql
-   SELECT COUNT(*) FROM tasks WHERE milestone_id = 3 AND status != 'completed';
-   -- Result: 0 (all tasks complete)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Marks milestone complete:
-   ```sql
-   UPDATE milestones SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 3;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Updates completion path:
-   ```sql
-   UPDATE completion_path SET status = 'completed' WHERE id = 2;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Triggers `project_completion_check` directive
 6. Logs milestone completion:
-   ```sql
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-   VALUES ('Milestone completed: Core Operations. All 5 tasks finished.',
-           'milestone_completion', 'milestones', 3, 'directive', 'project_task_update');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 
@@ -386,32 +339,9 @@ Determines what aspect of the task needs updating.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Update task status
-UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Update subtask and resume parent
-UPDATE subtasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
-UPDATE tasks SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'paused';
-
--- Update priority
-UPDATE tasks SET priority = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Update items
-UPDATE items SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Cancel task
-UPDATE tasks SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-UPDATE items SET status = 'cancelled' WHERE task_id = ?;
-
--- Milestone completion
-UPDATE milestones SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
-UPDATE completion_path SET status = 'completed' WHERE id = ?;
-
--- Log to notes
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-VALUES (?, ?, ?, ?, 'directive', 'project_task_update', 'info');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

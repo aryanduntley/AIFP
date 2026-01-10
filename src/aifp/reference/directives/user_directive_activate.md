@@ -42,11 +42,9 @@ This directive applies when:
 #### Step 1: Verify Approval Gate
 
 1. **Check approval status**:
-   ```sql
-   SELECT id, name, approved, implementation_status, status
-   FROM user_directives
-   WHERE name = ?;
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 2. **Gate check**:
    ```python
@@ -84,11 +82,9 @@ This directive applies when:
    ```
 
 2. **Check dependencies installed**:
-   ```sql
-   SELECT dependency_name, availability_status
-   FROM directive_dependencies
-   WHERE directive_id = ? AND required = true;
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
    ```python
    missing_deps = [dep for dep in deps if dep.availability_status != 'available']
@@ -194,18 +190,9 @@ if trigger_type == 'condition':
 #### Step 4: Initialize Execution Tracking
 
 1. **Create execution record**:
-   ```sql
-   INSERT INTO directive_executions (
-       directive_id,
-       status,                  -- 'active'
-       activated_at,
-       total_executions,        -- 0
-       success_count,           -- 0
-       error_count,             -- 0
-       last_execution_time,     -- NULL
-       next_scheduled_time      -- For time-based triggers
-   ) VALUES (?, 'active', CURRENT_TIMESTAMP, 0, 0, 0, NULL, ?);
-   ```
+   **Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 2. **Calculate next execution**:
    ```python
@@ -253,20 +240,14 @@ if trigger_type == 'condition':
 #### Step 6: Update Project Status
 
 **If this is first directive activated**:
-```sql
-UPDATE project
-SET user_directives_status = 'active',
-    purpose = 'User directive automation: ' || '{directives_summary}'
-WHERE id = ?;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 **Update directive status**:
-```sql
-UPDATE user_directives
-SET status = 'active',
-    activated_at = CURRENT_TIMESTAMP
-WHERE id = ?;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### Step 7: Confirmation and Monitoring
 
@@ -633,65 +614,29 @@ See system prompt for usage.
 ## Database Operations
 
 ### Tables Read
-```sql
--- Check approval
-SELECT id, name, approved, implementation_status, status
-FROM user_directives
-WHERE name = ?;
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
 
--- Get implementation files
-SELECT file_path FROM directive_implementations
-WHERE directive_id = ?;
-
--- Get dependencies
-SELECT dependency_name, availability_status
-FROM directive_dependencies
-WHERE directive_id = ? AND required = true;
-```
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 ### Tables Updated
 
 #### user_directives
-```sql
-UPDATE user_directives
-SET status = 'active',
-    activated_at = CURRENT_TIMESTAMP
-WHERE id = ?;
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### directive_executions
-```sql
-INSERT INTO directive_executions (
-    directive_id,
-    status,                  -- 'active'
-    activated_at,
-    total_executions,
-    success_count,
-    error_count,
-    next_scheduled_time      -- For time-based
-) VALUES (?, 'active', CURRENT_TIMESTAMP, 0, 0, 0, ?);
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 #### deployment_info (new table for tracking deployment)
-```sql
-INSERT INTO deployment_info (
-    directive_id,
-    deployment_type,         -- 'scheduler', 'event_listener', 'background_service'
-    scheduler_job_id,        -- If scheduler
-    process_id,              -- If background service
-    listener_port,           -- If event listener
-    event_source,            -- If event listener
-    next_run_time            -- If scheduler
-) VALUES (...);
-```
+**Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 #### project
-```sql
--- Update project status to active (if first activation)
-UPDATE project
-SET user_directives_status = 'active'
-WHERE id = ? AND user_directives_status = 'in_progress';
-```
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
+
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 ---
 

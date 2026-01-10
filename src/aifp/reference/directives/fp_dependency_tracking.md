@@ -83,13 +83,9 @@ def calculate_tax(amount):
 ```
 
 **Database Storage**:
-```sql
--- Store function dependencies
-INSERT INTO interactions (source_function_id, target_function_id, interaction_type, description)
-VALUES
-    (fn_id('calculate_total'), fn_id('calculate_subtotal'), 'call', 'Calculates subtotal before tax'),
-    (fn_id('calculate_total'), fn_id('calculate_tax'), 'call', 'Calculates tax on subtotal');
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Strategy 2: Detect Circular Dependencies
 Identify and break circular dependency chains.
@@ -165,16 +161,7 @@ import logging
 ```
 
 **Database Storage**:
-```sql
--- Store module dependencies
-INSERT INTO module_dependencies (source_module, target_module, dependency_type, symbols_used)
-VALUES
-    ('src.processors.data_processor', 'src.utils.validation', 'internal', '["validate_schema"]'),
-    ('src.processors.data_processor', 'src.utils.transform', 'internal', '["normalize_data"]'),
-    ('src.processors.data_processor', 'src.models.user', 'internal', '["User"]'),
-    ('src.processors.data_processor', 'json', 'stdlib', '["loads", "dumps"]'),
-    ('src.processors.data_processor', 'logging', 'stdlib', '["getLogger"]');
-```
+**Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 ### Strategy 4: Dependency Inversion for Decoupling
 Use dependency injection to break tight coupling.
@@ -281,13 +268,9 @@ main
 ```
 
 **Database Representation**:
-```sql
--- Interactions table
--- main → load_data, process_data, save_results
--- load_data → read_file
--- process_data → transform
--- save_results → write_file
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 2: Detecting Circular Dependency
 
@@ -321,32 +304,9 @@ def helper_b():
 **Scenario**: User wants to modify `calculate_tax` function
 
 **Impact Analysis Query**:
-```sql
--- Find all functions that depend on calculate_tax
-WITH RECURSIVE dependents AS (
-    -- Base case: direct callers
-    SELECT source_function_id, 1 as depth
-    FROM interactions
-    WHERE target_function_id = fn_id('calculate_tax')
+**Use helper functions** for all project.db operations. Query available helpers.
 
-    UNION ALL
-
-    -- Recursive case: indirect callers
-    SELECT i.source_function_id, d.depth + 1
-    FROM interactions i
-    JOIN dependents d ON i.target_function_id = d.source_function_id
-    WHERE d.depth < 5
-)
-SELECT DISTINCT f.name, f.file_id, d.depth
-FROM dependents d
-JOIN functions f ON f.id = d.source_function_id
-ORDER BY d.depth;
-
--- Result:
--- calculate_total (depth 1) - direct caller
--- process_invoice (depth 2) - calls calculate_total
--- generate_report (depth 3) - calls process_invoice
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 
@@ -436,54 +396,21 @@ def process(data, use_cache=False):
 
 ### Store Function Dependencies
 
-```sql
--- Record function call dependency
-INSERT INTO interactions (source_function_id, target_function_id, interaction_type, description, call_count)
-VALUES (
-    (SELECT id FROM functions WHERE name = 'calculate_total' AND file_id = 42),
-    (SELECT id FROM functions WHERE name = 'calculate_tax' AND file_id = 43),
-    'call',
-    'Calculates tax as part of total computation',
-    1
-);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Update call count on subsequent analysis
-UPDATE interactions
-SET call_count = call_count + 1, updated_at = CURRENT_TIMESTAMP
-WHERE source_function_id = ? AND target_function_id = ?;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Query Dependency Graph
 
-```sql
--- Get all dependencies for a function
-SELECT
-    f_target.name as calls,
-    f_target.file_id,
-    i.interaction_type,
-    i.description
-FROM interactions i
-JOIN functions f_source ON i.source_function_id = f_source.id
-JOIN functions f_target ON i.target_function_id = f_target.id
-WHERE f_source.name = 'calculate_total'
-ORDER BY i.created_at;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Detect Circular Dependencies
 
-```sql
--- Find circular dependencies (simplified 2-cycle detection)
-SELECT
-    f1.name as function_a,
-    f2.name as function_b
-FROM interactions i1
-JOIN interactions i2
-    ON i1.source_function_id = i2.target_function_id
-    AND i1.target_function_id = i2.source_function_id
-JOIN functions f1 ON i1.source_function_id = f1.id
-JOIN functions f2 ON i1.target_function_id = f2.id
-WHERE i1.source_function_id < i1.target_function_id;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

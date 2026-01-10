@@ -565,11 +565,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify reduce style marked
-   ```sql
-   SELECT name, aggregation_style, mutable_accumulators
-   FROM functions
-   WHERE aggregation_style = 'reduce';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

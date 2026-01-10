@@ -590,12 +590,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify `functions.error_handling_pattern = 'try_monad'`
-   ```sql
-   SELECT name, error_handling_pattern, exception_safety
-   FROM functions
-   WHERE name = 'parse';
-   -- Expected: error_handling_pattern='try_monad', exception_safety='try_wrapped'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

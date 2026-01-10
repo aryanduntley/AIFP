@@ -475,22 +475,9 @@ def test_business_hours_deterministic():
 
 ### Record Test Purity Metadata
 
-```sql
--- Track test purity in test files
-INSERT INTO files (path, language, file_type, metadata, project_id)
-VALUES (
-    'tests/test_user_service.py',
-    'Python',
-    'test',
-    json_object(
-        'test_purity', 'pure',
-        'uses_property_based', 1,
-        'fixtures_pure', 1,
-        'parallel_safe', 1
-    ),
-    1
-);
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

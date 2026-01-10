@@ -242,39 +242,7 @@ Validates that merge can proceed safely.
 - **Then**: `log_merge_history`
 - **Details**: Record merge to merge_history table
   - Insert:
-    ```sql
-    INSERT INTO merge_history (
-      source_branch,
-      target_branch,
-      merge_timestamp,
-      conflicts_detected,
-      conflicts_auto_resolved,
-      conflicts_manual_resolved,
-      resolution_details,
-      merged_by,
-      merge_commit_hash
-    ) VALUES (
-      'aifp-alice-001',
-      'main',
-      CURRENT_TIMESTAMP,
-      5,
-      3,
-      2,
-      '{
-        "auto_resolved": [
-          {"function": "calculate_tax", "strategy": "prefer_pure", "confidence": 0.9},
-          {"function": "format_result", "strategy": "prefer_more_tests", "confidence": 0.85},
-          {"function": "validate_input", "strategy": "keep_both", "confidence": 0.7}
-        ],
-        "manual_resolved": [
-          {"function": "apply_discount", "user_choice": "keep_bob", "reason": "User preferred Bob's implementation"},
-          {"function": "process_order", "user_choice": "manual_merge", "reason": "Complex logic required manual merge"}
-        ]
-      }',
-      'alice',
-      'abc123def456...'
-    )
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Provides full audit trail of merge decisions
 - **Result**: Merge history logged
 
@@ -282,14 +250,7 @@ Validates that merge can proceed safely.
 - **Then**: `update_work_branches`
 - **Details**: Mark branch as merged in work_branches table
   - Update:
-    ```sql
-    UPDATE work_branches
-    SET status = 'merged',
-        merged_at = CURRENT_TIMESTAMP,
-        merge_conflicts_count = ?,
-        merge_resolution_strategy = ?
-    WHERE branch_name = ?
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Branch now marked as inactive (merged)
   - Can be deleted from Git if desired
 - **Result**: Branch status updated
@@ -333,10 +294,9 @@ Validates that merge can proceed safely.
   - Command: `git merge --abort`
   - Rollback: Restore working directory to pre-merge state
   - Log failure:
-    ```sql
-    INSERT INTO notes (content, note_type, severity)
-    VALUES ('Merge failed: {error}', 'merge_failure', 'error')
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Suggest: Review conflicts manually or resolve issues
 - **Result**: Merge aborted, state restored
 
@@ -692,10 +652,7 @@ How to verify this directive is working:
    ```
 
 4. **Merge history logged** → Audit trail exists
-   ```sql
-   SELECT * FROM merge_history WHERE source_branch='aifp-alice-001';
-   -- Expected: 1 row with resolution details
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 ---
 

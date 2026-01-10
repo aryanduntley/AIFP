@@ -65,41 +65,13 @@ Executes a series of validation queries to detect inconsistencies.
   - Auto-fix if safe (remove orphaned items/subtasks)
   - Prompt user for critical repairs (files, functions)
 - **SQL**:
-  ```sql
-  -- Check items with missing task references
-  SELECT i.id, i.name, i.task_id
-  FROM items i
-  LEFT JOIN tasks t ON i.task_id = t.id
-  WHERE t.id IS NULL;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Check subtasks with missing task references
-  SELECT st.id, st.name, st.task_id
-  FROM subtasks st
-  LEFT JOIN tasks t ON st.task_id = t.id
-  WHERE t.id IS NULL;
-
-  -- Check tasks with missing milestone references
-  SELECT t.id, t.name, t.milestone_id
-  FROM tasks t
-  LEFT JOIN milestones m ON t.milestone_id = m.id
-  WHERE m.id IS NULL;
-
-  -- Check functions with missing file references
-  SELECT f.id, f.name, f.file_id
-  FROM functions f
-  LEFT JOIN files fi ON f.file_id = fi.id
-  WHERE fi.id IS NULL;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Auto-Fix**:
-  ```sql
-  -- Safe: Remove orphaned items (small granularity)
-  DELETE FROM items WHERE id IN (
-    SELECT i.id FROM items i LEFT JOIN tasks t ON i.task_id = t.id WHERE t.id IS NULL
-  );
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Prompt: Link orphaned task to default milestone or delete
-  -- (User decision required)
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Broken foreign keys repaired or flagged for user action
 
 **Branch 2: If orphaned_records_detected**
@@ -141,14 +113,9 @@ Executes a series of validation queries to detect inconsistencies.
   - If different: File modified externally
   - Trigger `project_dependency_sync` to update metadata
 - **SQL**:
-  ```sql
-  -- Check for checksum mismatches
-  SELECT id, path, checksum, updated_at
-  FROM files
-  WHERE project_id = ?
-  ORDER BY path;
-  -- (AI calculates actual checksum from filesystem and compares)
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Action**:
   ```python
   # Pseudo-code
@@ -168,19 +135,9 @@ Executes a series of validation queries to detect inconsistencies.
   - Detect duplicate functions (same name, same file)
   - Merge or prompt user to resolve
 - **SQL**:
-  ```sql
-  -- Duplicate tasks
-  SELECT milestone_id, name, COUNT(*) as count
-  FROM tasks
-  GROUP BY milestone_id, name
-  HAVING count > 1;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Duplicate functions
-  SELECT file_id, name, COUNT(*) as count
-  FROM functions
-  GROUP BY file_id, name
-  HAVING count > 1;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Duplicates identified, merge or flag
 
 **Branch 5: If circular_references**
@@ -190,21 +147,9 @@ Executes a series of validation queries to detect inconsistencies.
   - Check for circular function dependencies
   - Circular flows are valid, but flag for awareness
 - **SQL**:
-  ```sql
-  -- Circular function dependencies (recursive CTE)
-  WITH RECURSIVE dependency_chain(source_id, target_id, depth, path) AS (
-    SELECT source_function_id, target_function_id, 1, CAST(source_function_id AS TEXT) || '->' || CAST(target_function_id AS TEXT)
-    FROM interactions
-    UNION ALL
-    SELECT dc.source_id, i.target_function_id, dc.depth + 1, dc.path || '->' || CAST(i.target_function_id AS TEXT)
-    FROM dependency_chain dc
-    JOIN interactions i ON dc.target_id = i.source_function_id
-    WHERE dc.depth < 10 AND dc.path NOT LIKE '%' || CAST(i.target_function_id AS TEXT) || '%'
-  )
-  SELECT source_id, target_id, path
-  FROM dependency_chain
-  WHERE source_id = target_id;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Circular dependencies detected and logged
 
 **Branch 6: If data_type_violations**
@@ -215,16 +160,9 @@ Executes a series of validation queries to detect inconsistencies.
   - Dates must be valid timestamps
   - JSON fields must be valid JSON
 - **SQL**:
-  ```sql
-  -- Invalid status values
-  SELECT id, name, status FROM tasks WHERE status NOT IN ('pending', 'in_progress', 'paused', 'completed', 'cancelled');
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Invalid priority values
-  SELECT id, name, priority FROM tasks WHERE priority NOT BETWEEN 1 AND 5;
-
-  -- Invalid JSON (requires JSON validation function)
-  SELECT id, name FROM functions WHERE side_effects_json IS NOT NULL AND json_valid(side_effects_json) = 0;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Invalid data flagged for correction
 
 **Branch 7: If referential_integrity_passed**
@@ -234,10 +172,9 @@ Executes a series of validation queries to detect inconsistencies.
   - Report "No issues found"
   - Include check timestamp and scope
 - **SQL**:
-  ```sql
-  INSERT INTO notes (content, note_type, source, directive_name, severity)
-  VALUES ('Integrity check passed: No issues found. Scope: Full database.', 'integrity_check', 'directive', 'project_integrity_check', 'info');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Clean bill of health logged
 
 **Branch 8: If issues_found_and_auto_fixed**
@@ -268,24 +205,22 @@ Executes a series of validation queries to detect inconsistencies.
 
 **AI Execution**:
 1. Runs orphan check:
-   ```sql
-   SELECT i.id, i.name, i.task_id FROM items i LEFT JOIN tasks t ON i.task_id = t.id WHERE t.id IS NULL;
-   -- Results: 3 orphaned items
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Identifies orphans:
    - Item #42: "Fix bug" (task_id=99 not found)
    - Item #58: "Write test" (task_id=105 not found)
    - Item #67: "Deploy" (task_id=112 not found)
 3. Assesses severity: Low (items are granular, safe to delete)
 4. Auto-fixes:
-   ```sql
-   DELETE FROM items WHERE id IN (42, 58, 67);
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Logs:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name, severity)
-   VALUES ('Integrity check: Auto-deleted 3 orphaned items (task references invalid)', 'integrity_fix', 'directive', 'project_integrity_check', 'info');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Reports:
    ```
    ✓ Integrity Check Complete
@@ -303,9 +238,9 @@ Executes a series of validation queries to detect inconsistencies.
 
 **AI Execution**:
 1. Queries all files:
-   ```sql
-   SELECT id, path, checksum FROM files WHERE project_id = 1;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Calculates actual checksums from filesystem:
    - `src/auth.py`: Database=sha256:abc123, Actual=sha256:xyz789 ✗
 3. Detects mismatch for `src/auth.py`
@@ -315,10 +250,9 @@ Executes a series of validation queries to detect inconsistencies.
    Triggering dependency sync to update metadata...
    ```
 5. Logs:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name, severity)
-   VALUES ('Integrity check: Checksum mismatch for src/auth.py. Triggered dependency sync.', 'integrity_warning', 'directive', 'project_integrity_check', 'warning');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Returns after sync completes
 
 ### Example 3: Orphaned Task Requires User Decision
@@ -327,16 +261,14 @@ Executes a series of validation queries to detect inconsistencies.
 
 **AI Execution**:
 1. Runs orphan check:
-   ```sql
-   SELECT t.id, t.name, t.milestone_id FROM tasks t LEFT JOIN milestones m ON t.milestone_id = m.id WHERE m.id IS NULL;
-   -- Result: Task #15 "Implement caching" (milestone_id=8 not found)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Assesses severity: Medium (tasks are significant, user decision needed)
 3. Queries available milestones:
-   ```sql
-   SELECT id, name FROM milestones WHERE status != 'completed' ORDER BY priority DESC;
-   -- Results: Milestone #3 "Core Features", Milestone #5 "Performance"
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Prompts user:
    ```
    ⚠️ Orphaned Task Detected
@@ -354,14 +286,13 @@ Executes a series of validation queries to detect inconsistencies.
    ```
 5. User chooses: "2" (Link to Performance)
 6. Updates task:
-   ```sql
-   UPDATE tasks SET milestone_id = 5 WHERE id = 15;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Logs fix:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name)
-   VALUES ('Integrity fix: Linked orphaned task "Implement caching" to milestone "Performance"', 'integrity_fix', 'directive', 'project_integrity_check');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 4: Duplicate Functions Detected
 
@@ -369,17 +300,13 @@ Executes a series of validation queries to detect inconsistencies.
 
 **AI Execution**:
 1. Runs duplicate check:
-   ```sql
-   SELECT file_id, name, COUNT(*) as count FROM functions GROUP BY file_id, name HAVING count > 1;
-   -- Result: file_id=10, name="process", count=2
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Queries duplicate details:
-   ```sql
-   SELECT id, name, purity_level, created_at FROM functions WHERE file_id = 10 AND name = 'process';
-   -- Results:
-   -- id=42, process, pure, 2025-10-20
-   -- id=58, process, mostly_pure, 2025-10-25
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Detects: Likely the same function parsed twice
 4. Prompts user:
    ```
@@ -401,10 +328,9 @@ Executes a series of validation queries to detect inconsistencies.
    ```
 5. User chooses: "1" (Keep newer)
 6. Deletes old:
-   ```sql
-   DELETE FROM interactions WHERE source_function_id = 42 OR target_function_id = 42;
-   DELETE FROM functions WHERE id = 42;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Logs:
    ```
    Duplicate function resolved: Kept newer "process" (id=58), deleted old (id=42)
@@ -422,10 +348,9 @@ Executes a series of validation queries to detect inconsistencies.
    - Duplicates: ✓ None found
    - Data types: ✓ All valid
 2. Logs success:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name, severity)
-   VALUES ('Integrity check passed: No issues found. Checked 5 tables, 342 records.', 'integrity_check', 'directive', 'project_integrity_check', 'info');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Reports:
    ```
    ✓ Database Integrity: HEALTHY
@@ -449,10 +374,9 @@ Executes a series of validation queries to detect inconsistencies.
 
 **AI Execution**:
 1. Runs orphan check:
-   ```sql
-   SELECT f.id, f.name, f.file_id FROM functions f LEFT JOIN files fi ON f.file_id = fi.id WHERE fi.id IS NULL;
-   -- Result: Functions "calculate", "process" (file_id=22 not found)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Assesses severity: HIGH (functions without files are critical)
 3. Checks if file exists on filesystem:
    - File path from database: `src/math/utils.py`
@@ -479,10 +403,9 @@ Executes a series of validation queries to detect inconsistencies.
    ```
 5. User chooses: "2" (Delete functions)
 6. Executes cleanup:
-   ```sql
-   DELETE FROM interactions WHERE source_function_id IN (SELECT id FROM functions WHERE file_id = 22);
-   DELETE FROM functions WHERE file_id = 22;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Logs:
    ```
    Critical integrity fix: Deleted 2 orphaned functions (file_id=22 not found)
@@ -509,23 +432,9 @@ Executes a series of validation queries to detect inconsistencies.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Delete orphaned items (auto-fix)
-DELETE FROM items WHERE id IN (...);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Delete orphaned subtasks (auto-fix)
-DELETE FROM subtasks WHERE id IN (...);
-
--- Update orphaned task milestone (user-directed)
-UPDATE tasks SET milestone_id = ? WHERE id = ?;
-
--- Delete duplicate functions (user-directed)
-DELETE FROM functions WHERE id = ?;
-
--- Log integrity check results
-INSERT INTO notes (content, note_type, source, directive_name, severity)
-VALUES (?, 'integrity_check', 'directive', 'project_integrity_check', ?);
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -54,18 +54,9 @@ Primary execution path that handles task completion and next-step planning.
   - Marks all items as complete
   - Logs completion time and duration
 - **SQL**:
-  ```sql
-  UPDATE tasks
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  UPDATE items
-  SET status = 'completed', updated_at = CURRENT_TIMESTAMP
-  WHERE reference_table = 'tasks' AND reference_id = ?;
-
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-  VALUES ('Task completed: [task_name]. Duration: [duration]', 'completion', 'tasks', ?, 'directive', 'project_task_complete');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Branch 2: If task_completed**
 - **Then**: `check_milestone_status`
@@ -74,11 +65,9 @@ Primary execution path that handles task completion and next-step planning.
   - Counts pending/in_progress tasks
   - Determines if milestone is complete
 - **SQL**:
-  ```sql
-  SELECT COUNT(*) as remaining_tasks
-  FROM tasks
-  WHERE milestone_id = ? AND status NOT IN ('completed', 'cancelled');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: milestone_complete or milestone_not_complete
 
 **Branch 3: If milestone_complete**
@@ -96,13 +85,9 @@ Primary execution path that handles task completion and next-step planning.
   - Shows completion_path progress (e.g., "Foundation: 3/6 milestones complete")
   - Shows milestone progress (e.g., "Database Schemas: 4/5 tasks complete")
   - Queries next pending tasks:
-    ```sql
-    SELECT id, name, description
-    FROM tasks
-    WHERE milestone_id = ? AND status = 'pending'
-    ORDER BY priority DESC
-    LIMIT 5;
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Presents user with options:
     - Continue with next task
     - Create new task
@@ -131,11 +116,9 @@ Primary execution path that handles task completion and next-step planning.
   - Updates selected task to `in_progress`
   - Calls helper: `get_project_tasks(milestone_id, status='pending')`
 - **SQL**:
-  ```sql
-  UPDATE tasks
-  SET status = 'in_progress', updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Branch 6: If user_chooses_create_task**
 - **Then**: `call_project_task_create`
@@ -167,23 +150,21 @@ Primary execution path that handles task completion and next-step planning.
 **AI Execution**:
 1. Validates: Task exists, status is `in_progress`
 2. Marks task complete:
-   ```sql
-   UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 18;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Marks all items complete (5 items)
 4. Checks milestone:
-   ```sql
-   SELECT COUNT(*) FROM tasks WHERE milestone_id = 2 AND status NOT IN ('completed', 'cancelled');
-   -- Result: 1 (one task remaining)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Milestone NOT complete → **Review next steps**:
    - Calls `aifp_status` (brief)
    - Shows progress: "Database Schemas: 4/5 tasks complete"
    - Queries pending tasks:
-     ```sql
-     SELECT id, name FROM tasks WHERE milestone_id = 2 AND status = 'pending';
-     -- Result: Task #21 "Review and update sync-directives.py"
-     ```
+     **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Engages user:
    ```
    Task 'Create project.sql schema file' completed!
@@ -208,10 +189,9 @@ Primary execution path that handles task completion and next-step planning.
 **AI Execution**:
 1. Marks task complete (task #21)
 2. Checks milestone:
-   ```sql
-   SELECT COUNT(*) FROM tasks WHERE milestone_id = 2 AND status NOT IN ('completed', 'cancelled');
-   -- Result: 0 (all tasks complete!)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Milestone complete → **Delegates to project_milestone_complete**:
    - Passes milestone_id = 2
    - Milestone directive handles:
@@ -229,10 +209,9 @@ Primary execution path that handles task completion and next-step planning.
 1. Marks task complete
 2. Checks milestone: 4/5 tasks complete
 3. Queries pending tasks:
-   ```sql
-   SELECT id, name FROM tasks WHERE milestone_id = 2 AND status = 'pending';
-   -- Result: 0 rows (no pending tasks)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Engages user:
    ```
    Task 'Create user_directives.sql schema file' completed!
@@ -276,29 +255,14 @@ Primary execution path that handles task completion and next-step planning.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Mark task complete
-UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Mark items complete
-UPDATE items SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE reference_table = 'tasks' AND reference_id = ?;
-
--- Log completion
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name, severity)
-VALUES ('Task completed: [name]. Duration: [duration]', 'completion', 'tasks', ?, 'directive', 'project_task_complete', 'info');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Tables Queried:
-```sql
--- Check milestone status
-SELECT COUNT(*) FROM tasks WHERE milestone_id = ? AND status NOT IN ('completed', 'cancelled');
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get pending tasks
-SELECT id, name, description FROM tasks WHERE milestone_id = ? AND status = 'pending' ORDER BY priority DESC LIMIT 5;
-
--- Get milestone info
-SELECT m.name, cp.name as path_name FROM milestones m JOIN completion_path cp ON m.completion_path_id = cp.id WHERE m.id = ?;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

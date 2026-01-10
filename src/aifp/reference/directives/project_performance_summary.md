@@ -64,33 +64,9 @@ Analyzes recent directive execution logs from the notes table.
   - Calculate failure impact (blocking vs non-blocking)
   - Suggest resolutions or improvements
 - **SQL**:
-  ```sql
-  -- Query failures
-  SELECT
-    directive_name,
-    content,
-    severity,
-    created_at
-  FROM notes
-  WHERE
-    source = 'directive'
-    AND note_type IN ('error', 'failure', 'roadblock')
-    AND created_at > datetime('now', '-7 days')
-  ORDER BY directive_name, created_at DESC;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Count failures per directive
-  SELECT
-    directive_name,
-    COUNT(*) as failure_count,
-    GROUP_CONCAT(DISTINCT substr(content, 1, 50), '; ') as error_samples
-  FROM notes
-  WHERE
-    source = 'directive'
-    AND note_type IN ('error', 'failure')
-    AND created_at > datetime('now', '-7 days')
-  GROUP BY directive_name
-  ORDER BY failure_count DESC;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Failure analysis with common patterns identified
 
 **Branch 2: If recent_successes**
@@ -101,23 +77,9 @@ Analyzes recent directive execution logs from the notes table.
   - Compare to historical baseline
   - Identify improving/degrading directives
 - **SQL**:
-  ```sql
-  -- Success rate per directive
-  SELECT
-    directive_name,
-    COUNT(*) as total_executions,
-    SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) as successes,
-    SUM(CASE WHEN note_type IN ('error', 'failure') THEN 1 ELSE 0 END) as failures,
-    SUM(CASE WHEN note_type = 'warning' THEN 1 ELSE 0 END) as warnings,
-    ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
-  FROM notes
-  WHERE
-    source = 'directive'
-    AND created_at > datetime('now', '-7 days')
-  GROUP BY directive_name
-  HAVING total_executions > 0
-  ORDER BY success_rate ASC, total_executions DESC;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Success rates calculated, ranked by reliability
 
 **Branch 3: If retry_pattern_analysis**
@@ -128,21 +90,9 @@ Analyzes recent directive execution logs from the notes table.
   - Determine retry success rates
   - Flag directives with excessive retries
 - **SQL**:
-  ```sql
-  -- Retry patterns
-  SELECT
-    directive_name,
-    COUNT(*) as retry_attempts,
-    SUM(CASE WHEN content LIKE '%retry%success%' OR content LIKE '%succeeded after%' THEN 1 ELSE 0 END) as retry_successes,
-    SUM(CASE WHEN content LIKE '%max retries%' OR content LIKE '%retry failed%' THEN 1 ELSE 0 END) as retry_exhausted
-  FROM notes
-  WHERE
-    source = 'directive'
-    AND (content LIKE '%retry%' OR note_type = 'retry')
-    AND created_at > datetime('now', '-7 days')
-  GROUP BY directive_name
-  ORDER BY retry_attempts DESC;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Retry patterns analyzed, excessive retry directives flagged
 
 **Branch 4: If historical_comparison**
@@ -153,38 +103,9 @@ Analyzes recent directive execution logs from the notes table.
   - Identify improving directives (↗) and degrading directives (↘)
   - Flag significant changes (>10% delta)
 - **SQL**:
-  ```sql
-  -- Current period (last 7 days)
-  WITH current_period AS (
-    SELECT
-      directive_name,
-      ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
-    FROM notes
-    WHERE source = 'directive' AND created_at > datetime('now', '-7 days')
-    GROUP BY directive_name
-  ),
-  -- Previous period (8-14 days ago)
-  previous_period AS (
-    SELECT
-      directive_name,
-      ROUND(100.0 * SUM(CASE WHEN note_type IN ('success', 'completion', 'info') THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
-    FROM notes
-    WHERE source = 'directive' AND created_at BETWEEN datetime('now', '-14 days') AND datetime('now', '-7 days')
-    GROUP BY directive_name
-  )
-  SELECT
-    c.directive_name,
-    c.success_rate as current,
-    p.success_rate as previous,
-    ROUND(c.success_rate - p.success_rate, 2) as delta,
-    CASE
-      WHEN c.success_rate - p.success_rate > 10 THEN '↗ Improving'
-      WHEN c.success_rate - p.success_rate < -10 THEN '↘ Degrading'
-      ELSE '→ Stable'
-    END as trend
-  FROM current_period c
-  LEFT JOIN previous_period p ON c.directive_name = p.directive_name;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Historical comparison with trends identified
 
 **Branch 5: If top_performers_analysis**
@@ -294,16 +215,9 @@ Analyzes recent directive execution logs from the notes table.
   - Enable trend analysis over multiple periods
   - Support long-term reliability tracking
 - **SQL**:
-  ```sql
-  INSERT INTO notes (content, note_type, source, directive_name, severity)
-  VALUES (
-    'Directive Performance Summary: Overall 92%, Top: project_file_write (100%), Needs Attention: fp_compliance_check (76%), Total Executions: 284',
-    'performance_summary',
-    'directive',
-    'project_performance_summary',
-    'info'
-  );
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Performance snapshot logged
 
 **Fallback**: `write_summary_to_notes`
@@ -348,11 +262,9 @@ Analyzes recent directive execution logs from the notes table.
 
 **AI Execution**:
 1. Queries failures for fp_compliance_check:
-   ```sql
-   SELECT content, created_at FROM notes
-   WHERE directive_name = 'fp_compliance_check' AND note_type = 'error'
-   AND created_at > datetime('now', '-7 days');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Results:
    - "Cannot parse function signature: missing return type" (6 occurrences)
    - "Type annotation required but missing" (2 occurrences)
@@ -391,10 +303,9 @@ Analyzes recent directive execution logs from the notes table.
 
 **AI Execution**:
 1. Queries retry patterns:
-   ```sql
-   SELECT directive_name, content FROM notes
-   WHERE content LIKE '%retry%' AND created_at > datetime('now', '-7 days');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Analyzes results:
    - fp_compliance_check: 6 retries (3 successful, 3 exhausted)
    - project_dependency_sync: 4 retries (all successful)
@@ -511,18 +422,15 @@ Analyzes recent directive execution logs from the notes table.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Log performance snapshot
-INSERT INTO notes (content, note_type, source, directive_name, severity)
-VALUES (?, 'performance_summary', 'directive', 'project_performance_summary', 'info');
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Tables Queried:
 
-```sql
--- notes table
--- For directive execution logs, successes, failures, retries
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -76,14 +76,9 @@ Scans function body for references to global or static variables.
     result = check_value(150, config["threshold"])
     ```
   - SQL update:
-    ```sql
-    UPDATE functions
-    SET purity_level = 'pure',
-        side_effects_json = '{"global_state": false}',
-        parameters = '["value: int", "threshold: int"]',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = 'check_value'
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Global access eliminated, function signature updated
 
 **Branch 2: If mutable_static_data**
@@ -225,13 +220,9 @@ Scans function body for references to global or static variables.
 - **Then**: `mark_compliant`
 - **Details**: Function has no global state access
   - Update database:
-    ```sql
-    UPDATE functions
-    SET purity_level = 'pure',
-        side_effects_json = '{"global_state": false}',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = ? AND file_id = ?
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - No refactoring needed
 - **Result**: Function validated as stateless
 

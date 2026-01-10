@@ -66,23 +66,9 @@ Detects when user corrects or modifies AI output.
 - **Then**: `log_to_ai_interaction`
 - **Details**: Record correction to ai_interaction_log table
   - Insert:
-    ```sql
-    INSERT INTO ai_interaction_log (
-      interaction_type,
-      directive_context,
-      user_feedback,
-      ai_interpretation,
-      applied_to_preferences,
-      created_at
-    ) VALUES (
-      'correction',
-      'project_file_write',
-      'User added docstring to calculate_total function',
-      'User prefers functions to have docstrings',
-      0,  -- Not yet applied to preferences
-      CURRENT_TIMESTAMP
-    )
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Fields:
     - `interaction_type`: 'correction', 'clarification', 'preference_learned'
     - `directive_context`: Which directive was running
@@ -96,15 +82,7 @@ Detects when user corrects or modifies AI output.
 - **Then**: `infer_preference`
 - **Details**: Analyze recent corrections for patterns
   - Query recent corrections:
-    ```sql
-    SELECT user_feedback, ai_interpretation, directive_context
-    FROM ai_interaction_log
-    WHERE interaction_type = 'correction'
-      AND directive_context = 'project_file_write'
-      AND created_at > datetime('now', '-7 days')
-    ORDER BY created_at DESC
-    LIMIT 10
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Pattern detection:
     - **Docstrings**: 3+ corrections adding docstrings → Preference: `always_add_docstrings`
     - **Guard clauses**: 3+ corrections converting nested if to guards → Preference: `prefer_guard_clauses`
@@ -149,27 +127,9 @@ Detects when user corrects or modifies AI output.
 - **Details**: Apply learned preference to database
   - Call: `user_preferences_update`
   - Insert:
-    ```sql
-    INSERT INTO directive_preferences (
-      directive_name,
-      preference_key,
-      preference_value,
-      description
-    ) VALUES (
-      'project_file_write',
-      'always_add_docstrings',
-      'true',
-      'Learned from user corrections: Always add docstrings'
-    ) ON CONFLICT DO UPDATE SET
-      preference_value='true',
-      updated_at=CURRENT_TIMESTAMP
-    ```
+    **Use helper functions** for all user_preferences.db operations. Query available helpers for settings operations.
   - Mark interactions as applied:
-    ```sql
-    UPDATE ai_interaction_log
-    SET applied_to_preferences = 1
-    WHERE id IN (123, 124, 125)  -- IDs of related corrections
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Confirm with user:
     ```
     ✅ Preference Learned

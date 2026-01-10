@@ -102,13 +102,9 @@ Tracks all variable bindings and identifies reassignments.
     - Readability (new names if few)
     - Performance (avoid unnecessary intermediate values)
   - Update database:
-    ```sql
-    UPDATE functions
-    SET purity_level = 'pure',
-        side_effects_json = '{"mutation": false, "reassignment": false}',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = ? AND file_id = ?
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Reassignment eliminated, bindings immutable
 
 **Branch 2: If loop_counter_mutation**
@@ -298,13 +294,9 @@ Tracks all variable bindings and identifies reassignments.
 - **Then**: `mark_as_compliant`
 - **Details**: All bindings are single-assignment
   - Update database:
-    ```sql
-    UPDATE functions
-    SET purity_level = 'pure',
-        side_effects_json = '{"reassignment": false}',
-        updated_at = CURRENT_TIMESTAMP
-    WHERE name = ? AND file_id = ?
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - No refactoring needed
 - **Result**: Function validated as immutable-binding
 

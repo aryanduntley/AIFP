@@ -64,22 +64,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
   - If all complete: Mark task as 'completed'
   - Trigger milestone completion check
 - **SQL**:
-  ```sql
-  -- Check items
-  SELECT COUNT(*) as total,
-         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-  FROM items WHERE task_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Check subtasks
-  SELECT COUNT(*) as total,
-         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-  FROM subtasks WHERE task_id = ?;
-
-  -- If all complete, mark task done
-  UPDATE tasks
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ? AND status != 'completed';
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Task marked complete, parent milestone checked
 
 **Branch 2: If check_milestone_completion**
@@ -90,17 +77,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
   - If all complete: Mark milestone as 'completed'
   - Trigger completion_path stage check
 - **SQL**:
-  ```sql
-  -- Check all tasks in milestone
-  SELECT COUNT(*) as total,
-         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-  FROM tasks WHERE milestone_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- If all complete, mark milestone done
-  UPDATE milestones
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ? AND status != 'completed';
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Milestone marked complete, stage checked
 
 **Branch 3: If check_stage_completion**
@@ -111,17 +90,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
   - If all complete: Mark stage as 'completed'
   - Check if project completion path is fully complete
 - **SQL**:
-  ```sql
-  -- Check all milestones in stage
-  SELECT COUNT(*) as total,
-         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-  FROM milestones WHERE completion_path_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- If all complete, mark stage done
-  UPDATE completion_path
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ? AND status != 'completed';
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Stage marked complete, project completion evaluated
 
 **Branch 4: If criteria_met**
@@ -132,15 +103,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
   - Update parent entity
   - Log completion in notes
 - **SQL**:
-  ```sql
-  UPDATE {table}
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Log completion
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-  VALUES (?, 'completion', ?, ?, 'directive', 'project_completion_check');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Entity marked complete, logged
 
 **Branch 5: If criteria_not_met**
@@ -159,10 +124,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
   - Detect: Completion path out of order
   - Prompt user to realign or update roadmap
 - **Log**:
-  ```sql
-  INSERT INTO notes (content, note_type, source, directive_name, severity)
-  VALUES ('Roadmap drift detected: [details]', 'drift', 'directive', 'project_completion_check', 'warning');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: User alerted to alignment issue
 
 **Branch 7: If all_stages_complete**
@@ -173,17 +137,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
   - Log project completion
   - Suggest archiving (call project_archive)
 - **SQL**:
-  ```sql
-  -- Check all stages
-  SELECT COUNT(*) as total,
-         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-  FROM completion_path WHERE project_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- If all complete, mark project done
-  UPDATE project
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ? AND status != 'completed';
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Project marked complete, archival suggested
 
 **Branch 8: If incomplete_tasks_found**
@@ -216,28 +172,21 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
 **AI Execution**:
 1. Checks task_id=15 for completion
 2. Queries items:
-   ```sql
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM items WHERE task_id = 15;
-   -- Result: total=5, completed=5
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Queries subtasks:
-   ```sql
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM subtasks WHERE task_id = 15;
-   -- Result: total=0, completed=0 (no subtasks)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. All items complete, no subtasks: Mark task complete
-   ```sql
-   UPDATE tasks
-   SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-   WHERE id = 15;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Logs completion:
-   ```sql
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-   VALUES ('Task completed: Implement authentication (5/5 items)', 'completion', 'tasks', 15, 'directive', 'project_completion_check');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Checks parent milestone (milestone_id=3) for completion
 
 ### Example 2: Milestone Completion - All Tasks Done
@@ -247,17 +196,13 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
 **AI Execution**:
 1. Triggered by task completion check (from Example 1)
 2. Queries all tasks in milestone_id=3:
-   ```sql
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM tasks WHERE milestone_id = 3;
-   -- Result: total=3, completed=3
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. All tasks complete: Mark milestone complete
-   ```sql
-   UPDATE milestones
-   SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-   WHERE id = 3;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Logs:
    ```
    Milestone completed: Core Authentication (3/3 tasks)
@@ -311,10 +256,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
    3. Update roadmap structure
    ```
 5. Logs drift warning:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name, severity)
-   VALUES ('Roadmap drift: Working on Stage 5 while Stage 2 incomplete', 'drift', 'directive', 'project_completion_check', 'warning');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Example 5: Project Completion
 
@@ -323,22 +267,15 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
 **AI Execution**:
 1. Final stage "Finalization" marked complete (triggered by milestone completion)
 2. Checks all stages:
-   ```sql
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM completion_path WHERE project_id = 1;
-   -- Result: total=5, completed=5
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. All stages complete: Mark project complete
-   ```sql
-   UPDATE project
-   SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-   WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 4. Logs project completion:
-   ```sql
-   INSERT INTO notes (content, note_type, source, directive_name, severity)
-   VALUES ('Project completed: All 5 stages complete', 'completion', 'directive', 'project_completion_check', 'info');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Suggests archiving:
    ```
    ✓ Project Complete!
@@ -355,23 +292,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
 
 **AI Execution**:
 1. Queries completion at all levels:
-   ```sql
-   -- Items
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM items WHERE task_id IN (SELECT id FROM tasks WHERE milestone_id IN (SELECT id FROM milestones WHERE completion_path_id IN (SELECT id FROM completion_path WHERE project_id = 1)));
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   -- Tasks
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM tasks WHERE milestone_id IN (SELECT id FROM milestones WHERE completion_path_id IN (SELECT id FROM completion_path WHERE project_id = 1));
-
-   -- Milestones
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM milestones WHERE completion_path_id IN (SELECT id FROM completion_path WHERE project_id = 1);
-
-   -- Stages
-   SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-   FROM completion_path WHERE project_id = 1;
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Results:
    - Items: 42/65 (65%)
    - Tasks: 8/15 (53%)
@@ -414,27 +337,9 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Mark task complete
-UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Mark milestone complete
-UPDATE milestones SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Mark stage complete
-UPDATE completion_path SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Mark project complete
-UPDATE project SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Log completion
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES (?, 'completion', ?, ?, 'directive', 'project_completion_check');
-
--- Log drift warning
-INSERT INTO notes (content, note_type, source, directive_name, severity)
-VALUES (?, 'drift', 'directive', 'project_completion_check', 'warning');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

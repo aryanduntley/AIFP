@@ -59,11 +59,9 @@ Ensures all required fields are present and valid.
   - Check milestone status (must be pending or in_progress)
   - If milestone completed or doesn't exist: Prompt user
 - **Query**:
-  ```sql
-  SELECT id, name, status
-  FROM milestones
-  WHERE id = ? AND project_id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Milestone validated
 
 **Branch 2: If milestone_valid**
@@ -73,12 +71,9 @@ Ensures all required fields are present and valid.
   - Use fuzzy matching (Levenshtein distance < 3)
   - Prompt: "Similar task '[name]' exists. Create anyway?"
 - **Query**:
-  ```sql
-  SELECT name, status
-  FROM tasks
-  WHERE milestone_id = ? AND status != 'completed'
-  ORDER BY name;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: User confirms or cancels
 
 **Branch 3: If no_duplicates_or_confirmed**
@@ -89,20 +84,9 @@ Ensures all required fields are present and valid.
   - Set created_at, updated_at timestamps
   - Return generated task ID
 - **SQL**:
-  ```sql
-  INSERT INTO tasks (
-    milestone_id,
-    name,
-    description,
-    priority,
-    status,
-    created_at,
-    updated_at
-  ) VALUES (?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Get generated ID
-  SELECT last_insert_rowid() as task_id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Task created, ID returned
 
 **Branch 4: If task_created**
@@ -111,11 +95,7 @@ Ensures all required fields are present and valid.
   - Update `project.version`
   - Indicates project scope changed
 - **SQL**:
-  ```sql
-  UPDATE project
-  SET version = version + 1, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
-  ```
+  **Use helper functions** for database operations. Query available helpers for the appropriate database.
 - **Result**: Project version incremented
 
 **Branch 5: If version_incremented**
@@ -125,23 +105,9 @@ Ensures all required fields are present and valid.
   - Source: directive
   - Include task_id for reference
 - **SQL**:
-  ```sql
-  INSERT INTO notes (
-    content,
-    note_type,
-    reference_table,
-    reference_id,
-    source,
-    directive_name
-  ) VALUES (
-    'Task created: [name] (milestone: [milestone_name], priority: [priority])',
-    'task_creation',
-    'tasks',
-    ?,
-    'directive',
-    'project_task_create'
-  );
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Creation logged
 
 **Branch 6: If priority_not_specified**
@@ -196,21 +162,15 @@ Ensures all required fields are present and valid.
 2. Checks milestone: ID=3, name="Core Operations", status="in_progress" ✓
 3. Checks duplicates: No similar tasks found
 4. Creates task:
-   ```sql
-   INSERT INTO tasks (milestone_id, name, description, priority, status, created_at, updated_at)
-   VALUES (3, 'Implement matrix multiplication', 'Create pure functional matrix multiplication with validation', 2, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   -- Returns task_id: 42
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Increments project version:
-   ```sql
-   UPDATE project SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = 1;
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 6. Logs creation:
-   ```sql
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-   VALUES ('Task created: Implement matrix multiplication (milestone: Core Operations, priority: 2)', 'task_creation', 'tasks', 42, 'directive', 'project_task_create');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Returns:
    ```json
    {
@@ -343,28 +303,9 @@ Ensures all required fields are present and valid.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Create task
-INSERT INTO tasks (
-  milestone_id,
-  name,
-  description,
-  priority,
-  status,
-  created_at,
-  updated_at
-) VALUES (?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get task ID
-SELECT last_insert_rowid() as task_id;
-
--- Increment project version
-UPDATE project SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Log creation
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES (?, 'task_creation', 'tasks', ?, 'directive', 'project_task_create');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -697,12 +697,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify `functions.evaluation_strategy = 'lazy_computation'`
-   ```sql
-   SELECT name, evaluation_strategy, performance_optimization
-   FROM functions
-   WHERE name = 'process_data';
-   -- Expected: evaluation_strategy='lazy_computation', performance_optimization='deferred'
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

@@ -249,18 +249,7 @@ See system prompt for usage.
 ## Database Operations
 
 **Read Operations**:
-```sql
--- Get directive metadata (fallback when MD missing)
-SELECT name, description, type, level, category, md_file_path
-FROM directives
-WHERE name = ?;
-
--- Search directives by keyword
-SELECT name, description, type
-FROM directives
-WHERE name LIKE ? OR description LIKE ?
-ORDER BY name;
-```
+**Use helper functions** to query aifp_core.db (read-only). Query available helpers for directive/helper lookups.
 
 **No Write Operations**: This directive is read-only.
 

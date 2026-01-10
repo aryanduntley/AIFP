@@ -66,11 +66,9 @@ Ensures all required fields are present and parent task is valid.
   - If task completed: Cannot add items
   - If task cancelled: Warn but allow (for planning)
 - **Query**:
-  ```sql
-  SELECT id, name, status, milestone_id
-  FROM tasks
-  WHERE id = ? AND project_id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Parent task validated
 
 **Branch 2: If parent_task_valid**
@@ -80,12 +78,9 @@ Ensures all required fields are present and parent task is valid.
   - Use fuzzy matching
   - Prompt if duplicate found
 - **Query**:
-  ```sql
-  SELECT name, status
-  FROM items
-  WHERE task_id = ? AND status != 'completed'
-  ORDER BY order_index;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: User confirms or cancels
 
 **Branch 3: If no_duplicates_or_confirmed**
@@ -97,27 +92,9 @@ Ensures all required fields are present and parent task is valid.
   - Set created_at, updated_at timestamps
   - Return generated item ID
 - **SQL**:
-  ```sql
-  -- Get last order_index
-  SELECT COALESCE(MAX(order_index), 0) + 1 as next_index
-  FROM items WHERE task_id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  -- Create item
-  INSERT INTO items (
-    task_id,
-    name,
-    description,
-    status,
-    order_index,
-    reference_table,
-    reference_id,
-    created_at,
-    updated_at
-  ) VALUES (?, ?, ?, 'pending', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
-  -- Get generated ID
-  SELECT last_insert_rowid() as item_id;
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Item created, ID returned
 
 **Branch 4: If item_created_and_reference_provided**
@@ -127,12 +104,9 @@ Ensures all required fields are present and parent task is valid.
   - Set `reference_id` (entity ID)
   - Enables tracking which items relate to which code
 - **Example**:
-  ```sql
-  -- Link item to file
-  UPDATE items
-  SET reference_table = 'files', reference_id = 15
-  WHERE id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Item linked to specific entity
 
 **Branch 5: If all_items_completed_after_creation**
@@ -142,17 +116,13 @@ Ensures all required fields are present and parent task is valid.
   - If all items completed: Mark task complete
   - Else: Task remains in current status
 - **Query**:
-  ```sql
-  SELECT COUNT(*) as incomplete_count
-  FROM items
-  WHERE task_id = ? AND status != 'completed';
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **SQL** (if count = 0):
-  ```sql
-  UPDATE tasks
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Task auto-completed if all items done
 
 **Branch 6: If item_created**
@@ -162,23 +132,9 @@ Ensures all required fields are present and parent task is valid.
   - Source: directive
   - Include item_id for reference
 - **SQL**:
-  ```sql
-  INSERT INTO notes (
-    content,
-    note_type,
-    reference_table,
-    reference_id,
-    source,
-    directive_name
-  ) VALUES (
-    'Item created: [name] (task: [task_name])',
-    'item_creation',
-    'items',
-    ?,
-    'directive',
-    'project_item_create'
-  );
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: Creation logged
 
 **Branch 7: If bulk_create_requested**
@@ -229,17 +185,13 @@ Ensures all required fields are present and parent task is valid.
 3. Checks duplicates: None found
 4. Gets next order_index: 1 (first item)
 5. Creates item:
-   ```sql
-   INSERT INTO items (task_id, name, description, status, order_index, reference_table, reference_id, created_at, updated_at)
-   VALUES (42, 'Write multiply_matrices function', 'Implement pure functional matrix multiplication', 'pending', 1, 'files', 15, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+   **Use helper functions** for all project.db operations. Query available helpers.
 
-   -- Returns item_id: 123
-   ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 6. Logs creation:
-   ```sql
-   INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-   VALUES ('Item created: Write multiply_matrices function (task: Implement matrix operations)', 'item_creation', 'items', 123, 'directive', 'project_item_create');
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 7. Returns:
    ```json
    {
@@ -267,13 +219,9 @@ Ensures all required fields are present and parent task is valid.
 **AI Execution**:
 1. Validates parent task: ✓ Valid
 2. Creates multiple items:
-   ```sql
-   INSERT INTO items (task_id, name, status, order_index, created_at, updated_at) VALUES
-   (42, 'Write multiply_matrices function', 'pending', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-   (42, 'Write validate_dimensions helper', 'pending', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-   (42, 'Add error handling', 'pending', 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-   (42, 'Write unit tests', 'pending', 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Returns list of item IDs: [123, 124, 125, 126]
 4. Logs: "Created 4 items for task 42"
 5. Returns:
@@ -293,14 +241,13 @@ Ensures all required fields are present and parent task is valid.
 1. Creates item (status='pending')
 2. User marks item complete immediately
 3. Checks all items:
-   ```sql
-   SELECT COUNT(*) FROM items WHERE task_id = 42 AND status != 'completed';
-   -- Result: 0
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. All items complete → Mark task complete:
-   ```sql
-   UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 42;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Logs:
    ```
    Task 42 auto-completed: All 4 items finished
@@ -317,10 +264,9 @@ Ensures all required fields are present and parent task is valid.
 **AI Execution**:
 1. Validates parent task: ✓ Valid
 2. Validates function reference:
-   ```sql
-   SELECT id, name FROM functions WHERE id = 88;
-   -- Returns: process_data
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Creates item linked to function 88
 4. Returns item_id with reference metadata
 5. When item marked complete: Can trigger function metadata update
@@ -392,31 +338,9 @@ Ensures all required fields are present and parent task is valid.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Create item
-INSERT INTO items (
-  task_id,
-  name,
-  description,
-  status,
-  order_index,
-  reference_table,
-  reference_id,
-  created_at,
-  updated_at
-) VALUES (?, ?, ?, 'pending', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get item ID
-SELECT last_insert_rowid() as item_id;
-
--- Auto-complete task if all items done
-UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-WHERE id = ? AND (SELECT COUNT(*) FROM items WHERE task_id = ? AND status != 'completed') = 0;
-
--- Log creation
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES (?, 'item_creation', 'items', ?, 'directive', 'project_item_create');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

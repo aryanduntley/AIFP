@@ -769,68 +769,41 @@ See system prompt for usage.
 
 ## Database Operations
 
-### Tables Read
-```sql
--- Load validated directive
-SELECT * FROM user_directives
-WHERE validation_status = 'validated'
-  AND implementation_status IS NULL;
+**Primary Method**: Use helper functions for all database operations.
 
--- Load dependencies
-SELECT * FROM directive_dependencies
-WHERE directive_id = ?;
-```
+**For user_directives.db**: Query available helpers. Direct SQL queries are acceptable if helpers are insufficient.
+
+**For project.db**: ALWAYS use helpers (via project_file_write directive). Never use direct SQL for project.db.
+
+### Tables Read
+- Load validated directives where validation_status='validated' AND implementation_status IS NULL
+- Load dependencies for directive_id
 
 ### Tables Updated
 
 #### user_directives
-```sql
-UPDATE user_directives
-SET implementation_status = 'implemented',
-    implemented_at = CURRENT_TIMESTAMP,
-    implementation_loc = ?,  -- Lines of code generated
-    implementation_files_count = ?
-WHERE id = ?;
-```
+**Use helpers** to update implementation status.
+Fields: implementation_status='implemented', implemented_at (timestamp), implementation_loc, implementation_files_count
 
 #### directive_implementations
-```sql
-INSERT INTO directive_implementations (
-    directive_id,
-    file_path,
-    function_name,
-    function_type,    -- 'trigger', 'action', 'condition', 'orchestrator', 'test'
-    purity_level,     -- For functions: 'pure', 'effect'
-    loc               -- Lines of code
-) VALUES (...);
-```
+**Use helpers** to insert implementation records.
+Fields: directive_id, file_path, function_name, function_type ('trigger'/'action'/'condition'/'orchestrator'/'test'), purity_level, loc
 
-#### project.db (via project_file_write)
-```sql
--- Files table
-INSERT INTO files (path, language, purpose, checksum) VALUES (...);
+#### project.db (via project_file_write directive)
+**IMPORTANT**: Use project_file_write directive to track generated files. This directive calls the appropriate project.db helpers for:
+- Files table (path, language, purpose, checksum)
+- Functions table (name, file_id, purity_level, parameters_json, return_type)
+- Interactions table (function dependencies)
 
--- Functions table
-INSERT INTO functions (
-    name, file_id, purity_level, parameters_json, return_type
-) VALUES (...);
+#### notes (optional AI record-keeping)
+**Use helpers for notes operations** - query available note helpers for user_directives.db.
 
--- Interactions table (function dependencies)
-INSERT INTO interactions (...) VALUES (...);
-```
-
-#### notes (logging)
-```sql
-INSERT INTO notes (
-    content,
-    note_type,              -- 'code_generation'
-    reference_table,        -- 'user_directives'
-    reference_id,           -- directive_id
-    source,                 -- 'directive'
-    directive_name,         -- 'user_directive_implement'
-    severity                -- 'info' or 'error'
-) VALUES (...);
-```
+**Note**: The notes table in user_directives.db is for flexible AI record-keeping. Useful for tracking:
+- Implementation decisions and code generation choices
+- FP compliance challenges and resolutions
+- Dependency requirements and version selections
+- Error patterns during code generation
+- Optimization opportunities identified
 
 ---
 

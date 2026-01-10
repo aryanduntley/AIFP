@@ -90,50 +90,9 @@ completion_path = parse_section(blueprint_content, "4. Completion Path")
 
 **Step 2: Query project.db for Current State**
 
-```sql
--- Get project metadata (including user directive status)
-SELECT name, purpose, status, version, goals_json, user_directives_status
-FROM project
-WHERE id = 1;
+**Use helper functions** for database operations. Query available helpers for user_directives.db.
 
--- Get completion path with progress
-SELECT cp.name, cp.status, cp.description,
-       COUNT(m.id) as total_milestones,
-       SUM(CASE WHEN m.status = 'completed' THEN 1 ELSE 0 END) as completed_milestones
-FROM completion_path cp
-LEFT JOIN milestones m ON m.completion_path_id = cp.id
-GROUP BY cp.id
-ORDER BY cp.order_index;
-
--- Get active milestones
-SELECT m.name, m.status, m.description,
-       COUNT(t.id) as total_tasks,
-       SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed_tasks
-FROM milestones m
-LEFT JOIN tasks t ON t.milestone_id = m.id
-WHERE m.status IN ('in_progress', 'pending')
-GROUP BY m.id;
-
--- Get open tasks (pending or in_progress)
-SELECT t.id, t.name, t.status, t.priority, t.description,
-       m.name as milestone_name
-FROM tasks t
-JOIN milestones m ON t.milestone_id = m.id
-WHERE t.status IN ('pending', 'in_progress')
-ORDER BY t.priority DESC, t.created_at ASC;
-
--- Get active sidequests
-SELECT name, reason, status, priority
-FROM sidequests
-WHERE status IN ('pending', 'in_progress')
-ORDER BY priority DESC;
-
--- Get recent notes (last 10)
-SELECT content, note_type, source, created_at
-FROM notes
-ORDER BY created_at DESC
-LIMIT 10;
-```
+**Alternative**: Direct SQL queries are acceptable for user_directives.db if helpers are insufficient, but helpers should be preferred for efficiency.
 
 **Step 3: Check User Directive Status (Use Case 2 Projects)**
 
@@ -167,82 +126,25 @@ if project.user_directives_status is not None:
 AIFP uses a priority-based system for determining current focus:
 
 **Priority 1: Open Sidequests** (Highest priority)
-```sql
--- Find open sidequests
-SELECT sq.id, sq.name, sq.status, sq.paused_task_id, sq.paused_subtask_id
-FROM sidequests sq
-WHERE sq.status IN ('pending', 'in_progress')
-ORDER BY sq.created_at ASC;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get parent task context
-SELECT t.name, t.status, t.description
-FROM tasks t
-WHERE t.id = ?;
-
--- Get all items for parent task
-SELECT i.name, i.status, i.description
-FROM items i
-WHERE i.reference_table = 'tasks' AND i.reference_id = ?;
-
--- Get all items for sidequest
-SELECT i.name, i.status, i.description
-FROM items i
-WHERE i.reference_table = 'sidequests' AND i.reference_id = ?;
-
--- If no completed items in task, get historical context
-SELECT t.name, t.status, i.name AS item_name, i.status AS item_status
-FROM tasks t
-LEFT JOIN items i ON i.reference_table = 'tasks' AND i.reference_id = t.id
-WHERE t.milestone_id = ? AND t.created_at < ?
-ORDER BY t.created_at DESC, i.created_at DESC
-LIMIT 10;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Priority 2: Current Subtask** (If no sidequests)
-```sql
--- Find open subtask
-SELECT st.id, st.name, st.status, st.parent_task_id
-FROM subtasks st
-WHERE st.status IN ('pending', 'in_progress')
-ORDER BY st.priority DESC, st.created_at ASC
-LIMIT 1;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get all items for subtask
-SELECT i.name, i.status, i.description
-FROM items i
-WHERE i.reference_table = 'subtasks' AND i.reference_id = ?;
-
--- If no completed items, get historical context from parent task
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Priority 3: Current Task** (If no subtasks)
-```sql
--- Find open task
-SELECT t.id, t.name, t.status, t.milestone_id
-FROM tasks t
-WHERE t.status IN ('pending', 'in_progress')
-ORDER BY t.priority DESC, t.created_at ASC
-LIMIT 1;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Get all items for task
-SELECT i.name, i.status, i.description
-FROM items i
-WHERE i.reference_table = 'tasks' AND i.reference_id = ?;
-
--- Evaluate completed vs incomplete items
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Step 4: Check for Ambiguities and Recent Context**
 
-```sql
--- Query notes for recent clarifications or warnings
-SELECT content, note_type, directive_name, severity
-FROM notes
-WHERE source IN ('directive', 'ai')
-  AND severity IN ('warning', 'error')
-ORDER BY created_at DESC
-LIMIT 5;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Step 5: Build Status Report**
 

@@ -435,10 +435,7 @@ How to verify this directive is working:
    ```
 
 3. **Collaboration tables** → Created successfully
-   ```sql
-   SELECT name FROM sqlite_master WHERE type='table' AND name IN ('work_branches', 'merge_history');
-   -- Expected: 2 rows
-   ```
+   **Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 ---
 

@@ -127,10 +127,9 @@ b) If delete_function returns error:
 ```
 
 c) For each type_relationship: Delete the types_functions entry:
-```sql
-DELETE FROM types_functions
-WHERE type_id = ? AND function_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 d) Retry delete_function() - should now succeed
 
@@ -152,10 +151,9 @@ b) If delete_type returns error:
 ```
 
 c) For each function_relationship: Delete the types_functions entry:
-```sql
-DELETE FROM types_functions
-WHERE type_id = ? AND function_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 d) Retry delete_type() - should now succeed
 
@@ -164,10 +162,9 @@ d) Retry delete_type() - should now succeed
 For each file_flow in the error's `file_flows` array:
 
 Delete the entry manually:
-```sql
-DELETE FROM file_flows
-WHERE file_id = ? AND flow_id = ?;
-```
+**Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Step 4: Retry delete_file()**
 
@@ -257,9 +254,9 @@ If validation fails or user cancels.
       ```
 
       Unlink types_functions:
-      ```sql
-      DELETE FROM types_functions WHERE type_id=8 AND function_id=6;
-      ```
+      **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
       Retry:
       ```
@@ -268,9 +265,9 @@ If validation fails or user cancels.
       ```
 
    c) Remove file_flows:
-      ```sql
-      DELETE FROM file_flows WHERE file_id=10 AND flow_id=2;
-      ```
+      **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 6. **Retry delete_file**:
    ```

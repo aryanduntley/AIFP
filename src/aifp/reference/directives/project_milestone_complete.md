@@ -57,21 +57,9 @@ Primary execution path for milestone completion and next-phase planning.
   - Queries associated completion_path
   - Checks if completion_path is done
 - **SQL**:
-  ```sql
-  UPDATE milestones
-  SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  SELECT cp.id, cp.name, cp.status
-  FROM completion_path cp
-  JOIN milestones m ON m.completion_path_id = cp.id
-  WHERE m.id = ?;
-
-  -- Check if all milestones in path are complete
-  SELECT COUNT(*) as remaining_milestones
-  FROM milestones
-  WHERE completion_path_id = ? AND status NOT IN ('completed', 'cancelled');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Branch 2: If completion_path_complete**
 - **Then**: `mark_path_complete`
@@ -79,14 +67,9 @@ Primary execution path for milestone completion and next-phase planning.
   - Updates completion_path status to `completed`
   - Logs path completion
 - **SQL**:
-  ```sql
-  UPDATE completion_path
-  SET status = 'completed', updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?;
+  **Use helper functions** for all project.db operations. Query available helpers.
 
-  INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-  VALUES ('Completion path completed: [path_name]', 'path_completion', 'completion_path', ?, 'directive', 'project_milestone_complete');
-  ```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 **Branch 3: If completion_path_complete**
 - **Then**: `check_project_completion`
@@ -94,11 +77,9 @@ Primary execution path for milestone completion and next-phase planning.
   - Queries all completion_paths for project
   - Checks if project is entirely complete
 - **SQL**:
-  ```sql
-  SELECT COUNT(*) as remaining_paths
-  FROM completion_path
-  WHERE project_id = ? AND status NOT IN ('completed');
-  ```
+  **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: project_complete or project_not_complete
 
 **Branch 4: If project_complete** 🎉
@@ -115,14 +96,9 @@ Primary execution path for milestone completion and next-phase planning.
   - Calls `aifp_status` (brief) to show overall progress
   - Shows completion_path progress
   - Queries next pending milestone:
-    ```sql
-    SELECT m.id, m.name, m.description
-    FROM milestones m
-    JOIN completion_path cp ON m.completion_path_id = cp.id
-    WHERE cp.project_id = ? AND m.status = 'pending'
-    ORDER BY cp.order_index, m.id
-    LIMIT 1;
-    ```
+    **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
   - Presents milestone completion summary:
     ```
     Milestone '[milestone_name]' completed!
@@ -200,25 +176,19 @@ Primary execution path for milestone completion and next-phase planning.
 
 **AI Execution**:
 1. Marks milestone complete:
-   ```sql
-   UPDATE milestones SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = 2;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 2. Checks completion_path:
-   ```sql
-   SELECT COUNT(*) FROM milestones WHERE completion_path_id = 1 AND status NOT IN ('completed', 'cancelled');
-   -- Result: 3 (milestones remaining in path)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. Path NOT complete → **Move to next milestone**:
    - Calls `aifp_status` (brief)
    - Queries next milestone:
-     ```sql
-     SELECT m.id, m.name, m.description
-     FROM milestones m
-     JOIN completion_path cp ON m.completion_path_id = cp.id
-     WHERE cp.project_id = 1 AND m.status = 'pending'
-     ORDER BY cp.order_index, m.id LIMIT 1;
-     -- Result: Milestone 3 "Core Types" - "Define core FP-compliant types and data structures"
-     ```
+     **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Presents to user:
    ```
    🎉 Milestone 'Database Schemas' completed!
@@ -266,19 +236,17 @@ Primary execution path for milestone completion and next-phase planning.
 **AI Execution**:
 1. Marks milestone complete
 2. Checks completion_path:
-   ```sql
-   SELECT COUNT(*) FROM milestones WHERE completion_path_id = 6 AND status NOT IN ('completed');
-   -- Result: 0 (all milestones in path complete!)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. **Completion path complete**:
-   ```sql
-   UPDATE completion_path SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = 6;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. Checks project completion:
-   ```sql
-   SELECT COUNT(*) FROM completion_path WHERE project_id = 1 AND status NOT IN ('completed');
-   -- Result: 1 (one path remaining)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 5. Project NOT complete → **Move to next completion_path**:
    - Queries next milestone from remaining path
    - Presents similar workflow as Example 1
@@ -295,10 +263,9 @@ Primary execution path for milestone completion and next-phase planning.
 1. Marks milestone complete
 2. Marks completion_path complete
 3. Checks project completion:
-   ```sql
-   SELECT COUNT(*) FROM completion_path WHERE project_id = 1 AND status NOT IN ('completed');
-   -- Result: 0 (all paths complete!)
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 4. **Project complete**! 🎉
 5. Delegates to `project_completion_check`:
    - Validates project is truly done
@@ -335,10 +302,9 @@ Primary execution path for milestone completion and next-phase planning.
 **AI Execution**:
 1. Marks milestone complete
 2. Queries next milestone:
-   ```sql
-   SELECT m.id FROM milestones m WHERE ... LIMIT 1;
-   -- Result: No rows
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 3. **No next milestone found**:
    - Checks if all milestones/paths complete (should trigger project_complete)
    - If not, this is an issue
@@ -384,40 +350,14 @@ Primary execution path for milestone completion and next-phase planning.
 ### Tables Modified:
 
 **project.db**:
-```sql
--- Mark milestone complete
-UPDATE milestones SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?;
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Mark completion_path complete (if all milestones done)
-UPDATE completion_path SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?;
-
--- Log milestone completion
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES ('Milestone completed: [name]', 'milestone_completion', 'milestones', ?, 'directive', 'project_milestone_complete');
-
--- Log path completion (if applicable)
-INSERT INTO notes (content, note_type, reference_table, reference_id, source, directive_name)
-VALUES ('Completion path completed: [name]', 'path_completion', 'completion_path', ?, 'directive', 'project_milestone_complete');
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ### Tables Queried:
-```sql
--- Check remaining milestones in path
-SELECT COUNT(*) FROM milestones WHERE completion_path_id = ? AND status NOT IN ('completed', 'cancelled');
+**Use helper functions** for all project.db operations. Query available helpers.
 
--- Check remaining paths in project
-SELECT COUNT(*) FROM completion_path WHERE project_id = ? AND status NOT IN ('completed');
-
--- Get next milestone
-SELECT m.id, m.name, m.description
-FROM milestones m
-JOIN completion_path cp ON m.completion_path_id = cp.id
-WHERE cp.project_id = ? AND m.status = 'pending'
-ORDER BY cp.order_index, m.id LIMIT 1;
-
--- Get completion_path info
-SELECT id, name, order_index, status FROM completion_path WHERE project_id = ? ORDER BY order_index;
-```
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

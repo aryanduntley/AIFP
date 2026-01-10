@@ -1,7 +1,8 @@
 -- user_directives.db Schema
--- Version: 1.0
+-- Version: 1.1
 -- Purpose: Store user-defined domain-specific directives (home automation, cloud infrastructure, etc.)
 -- Location: .aifp-project/user_directives.db
+-- Changelog v1.1: Added notes table for AI record-keeping
 
 -- ===============================================================
 -- Core Directive Storage
@@ -321,6 +322,41 @@ CREATE TABLE IF NOT EXISTS logging_config (
 INSERT OR REPLACE INTO logging_config (id) VALUES (1);
 
 -- ===============================================================
+-- Notes (AI Record-Keeping)
+-- ===============================================================
+
+-- Notes: Flexible AI record-keeping for user directive lifecycle, implementation, debugging, etc.
+-- Purpose: AI can track important information, observations, decisions, and context
+-- Usage: Optional - AI uses as needed for record-keeping (not forced on operations)
+CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    note_type TEXT NOT NULL CHECK (note_type IN (
+        'implementation',   -- Implementation decisions, code generation notes
+        'validation',       -- Validation process, Q&A sessions, user answers
+        'execution',        -- Execution observations, behavior patterns
+        'dependency',       -- Dependency installation, version conflicts, API issues
+        'error',           -- Error analysis, debugging notes, failure patterns
+        'optimization',     -- Performance observations, improvement opportunities
+        'user_feedback',    -- User comments, preferences, customization requests
+        'lifecycle',        -- Status changes, activation, deactivation, updates
+        'testing',         -- Testing results, edge cases, approval process
+        'general'          -- General notes that don't fit other categories
+    )),
+    reference_type TEXT,                        -- e.g., 'directive', 'helper', 'dependency', 'file'
+    reference_name TEXT,                        -- e.g., directive name, helper name, file path
+    reference_id INTEGER,                       -- Optional: links to user_directives, helper_functions, etc.
+    severity TEXT DEFAULT 'info' CHECK (severity IN ('info', 'warning', 'error')),
+    metadata_json TEXT,                         -- Additional context as JSON
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_notes_note_type ON notes(note_type);
+CREATE INDEX IF NOT EXISTS idx_notes_reference_type ON notes(reference_type);
+CREATE INDEX IF NOT EXISTS idx_notes_severity ON notes(severity);
+CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at);
+
+-- ===============================================================
 -- Indexes for Performance
 -- ===============================================================
 
@@ -389,4 +425,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.0');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.1');

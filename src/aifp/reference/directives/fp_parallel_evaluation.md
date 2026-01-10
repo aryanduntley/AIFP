@@ -597,11 +597,9 @@ How to verify this directive is working:
    ```
 
 3. **Check database** → Verify parallelization marked
-   ```sql
-   SELECT name, parallelization, concurrency_safe
-   FROM functions
-   WHERE parallelization = 'parallel';
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 

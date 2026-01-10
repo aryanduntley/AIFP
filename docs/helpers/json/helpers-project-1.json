@@ -221,7 +221,12 @@
       "implementation_notes": [
         "Returns {success: true, id: new_id}",
         "SQL: INSERT INTO table (field1, field2, ...) VALUES (?, ?, ...) RETURNING id",
-        "Validate table exists and is not restricted before insert"
+        "Validate table exists and is not restricted before insert",
+        "CRITICAL WORKFLOW PROTECTION: Must reject inserts to tables with reserve/finalize workflows:",
+        "  - Reject if table is 'files' (use reserve_file helper instead)",
+        "  - Reject if table is 'functions' (use reserve_function helper instead)",
+        "  - Reject if table is 'types' (use reserve_type helper instead)",
+        "Return error message directing user to appropriate reserve helper"
       ]
     },
     {
@@ -260,7 +265,12 @@
       "implementation_notes": [
         "Returns {success: true, id: id}",
         "SQL: UPDATE table SET field1=?, field2=? WHERE id=?",
-        "Only updates fields present in data object - partial updates supported"
+        "Only updates fields present in data object - partial updates supported",
+        "CRITICAL WORKFLOW PROTECTION: Must check for reserved records before update:",
+        "  - If table is 'files', 'functions', or 'types': Query database for is_reserved status",
+        "  - If is_reserved=1: Reject update and return error directing to finalize_file/finalize_function/finalize_type helper",
+        "  - This prevents bypassing finalize workflow validation and proper state management",
+        "  - Only allow updates to non-reserved records in these tables"
       ]
     },
     {
@@ -322,6 +332,75 @@
         "Routes to specialized delete if available (delete_file, delete_type, delete_theme, delete_flow, etc.)",
         "Logs deletion to notes table: {reason: note_reason, severity: note_severity, source: note_source, type: note_type}",
         "SQL: DELETE FROM table WHERE id=? (after validation)"
+      ]
+    },
+    {
+      "name": "delete_reserved",
+      "file_path": "TODO_helpers/project/module.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name (must be 'files', 'functions', or 'types')"
+        },
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Reserved record ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason (e.g., 'User cancelled operation', 'Correcting reservation error')"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete abandoned reserved entries (escape hatch for cancelled reserve operations)",
+      "error_handling": "Return error if table not allowed, record not reserved, or dependencies exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "PURPOSE: Provides escape hatch when user cancels after reserve but before finalize",
+        "SCENARIO: AI reserves file/function/type, user says 'cancel that', AI needs way to delete without finalizing",
+        "VALIDATION: Reject if table not in ['files', 'functions', 'types']",
+        "ERROR LOGIC: Query table for is_reserved WHERE id=? - if is_reserved=0 or NULL, return error",
+        "ERROR RETURN (not reserved): {success: false, error: 'not_reserved', message: 'Record is finalized. Use delete_file/delete_function/delete_type instead'}",
+        "ERROR LOGIC: Check for dependencies (functions/types should have none while reserved, but validate anyway)",
+        "ERROR RETURN (dependencies): {success: false, error: 'dependencies_exist', message: 'Reserved entry has dependencies - manual cleanup required'}",
+        "SUCCESS LOGIC: Only proceed if is_reserved=1 AND no dependencies",
+        "SUCCESS LOGIC: Create note entry in notes table with reason, severity, source, type='entry_deletion'",
+        "SUCCESS LOGIC: Delete record: DELETE FROM table WHERE id=? AND is_reserved=1",
+        "SUCCESS RETURN: {success: true, deleted_id: id, table: table}",
+        "NOTE: This helper is specifically for cleaning up abandoned reservations, NOT for normal deletion workflow"
       ]
     },
     {
@@ -645,12 +724,12 @@
   ],
   "metadata": {
     "file": "helpers-project-1.json",
-    "count": 15,
-    "range": "helpers 1-15 of 112",
-    "description": "Database schema queries, generic CRUD operations, project metadata management",
+    "count": 16,
+    "range": "helpers 1-16 of 113",
+    "description": "Database schema queries, generic CRUD operations, project metadata management, workflow protection",
     "first_helper": "get_project_tables",
     "last_helper": "get_infrastructure_by_type",
-    "status": "return_statements enhanced - ready for review",
-    "last_updated": "2025-12-29"
+    "status": "Enhanced with delete_reserved escape hatch and workflow protection notes",
+    "last_updated": "2026-01-09"
   }
 }

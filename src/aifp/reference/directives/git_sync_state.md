@@ -64,11 +64,7 @@ Retrieves the current Git HEAD commit hash.
 - **Then**: `query_project_last_known_hash`
 - **Details**: Get stored hash from database
   - Query:
-    ```sql
-    SELECT last_known_git_hash, last_git_sync
-    FROM project
-    WHERE id = 1
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Store both hash and timestamp
   - If no hash found → First run (initialize)
 - **Result**: Stored hash retrieved
@@ -78,12 +74,7 @@ Retrieves the current Git HEAD commit hash.
 - **Details**: First run, no hash stored yet
   - This is initial project setup
   - Update database:
-    ```sql
-    UPDATE project
-    SET last_known_git_hash = ?,
-        last_git_sync = CURRENT_TIMESTAMP
-    WHERE id = 1
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - Message: "Git state initialized - tracking enabled"
   - No external changes to detect (baseline established)
 - **Result**: Hash initialized, sync complete
@@ -121,11 +112,7 @@ Retrieves the current Git HEAD commit hash.
 - **Then**: `update_sync_timestamp`
 - **Details**: No changes detected, refresh timestamp
   - Update:
-    ```sql
-    UPDATE project
-    SET last_git_sync = CURRENT_TIMESTAMP
-    WHERE id = 1
-    ```
+    **Use helper functions** for database operations. Query available helpers for the appropriate database.
   - This records last successful sync
   - Useful for tracking "last checked" time
   - No other action needed
@@ -287,15 +274,7 @@ git_sync_state()  # Update stored hash
 ---
 
 **Duplicating Git State in Database:**
-```sql
--- ❌ Creating separate git_state table
-CREATE TABLE git_state (
-    current_branch TEXT,
-    current_commit TEXT,
-    dirty_working_tree BOOLEAN
-);
--- This duplicates Git's state, can get out of sync
-```
+**Use helper functions** for database operations. Query available helpers for the appropriate database.
 
 **Why Non-Compliant**:
 - Duplicates data Git already tracks

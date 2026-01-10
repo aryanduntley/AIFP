@@ -85,18 +85,13 @@ Retrieves the last known Git commit hash from `project.db`.
        git diff --name-only {last_hash}..HEAD
        ```
     2. **Query file themes**: For each changed file, query database
-       ```sql
-       SELECT t.name, f.name FROM themes t
-       JOIN flow_themes ft ON t.id = ft.theme_id
-       JOIN file_flows ff ON ft.flow_id = ff.flow_id
-       JOIN files f ON ff.file_id = f.id
-       WHERE f.path IN (changed_files)
-       ```
+       **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
     3. **Query file functions**: Get affected functions
-       ```sql
-       SELECT name, purpose, purity_level FROM functions
-       WHERE file_id IN (SELECT id FROM files WHERE path IN (changed_files))
-       ```
+       **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
     4. **Build impact report**: Structure the analysis
        ```python
        {

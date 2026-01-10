@@ -618,18 +618,14 @@ How to verify this directive is working:
    ```
 
 2. **Check documentation coverage**
-   ```sql
-   SELECT COUNT(*) as total,
-          SUM(CASE WHEN has_docstring = 1 THEN 1 ELSE 0 END) as documented
-   FROM functions;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 3. **Find undocumented functions**
-   ```sql
-   SELECT name, file_id
-   FROM functions
-   WHERE has_docstring = 0;
-   ```
+   **Use helper functions** for all project.db operations. Query available helpers.
+
+**IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 
 ---
 
