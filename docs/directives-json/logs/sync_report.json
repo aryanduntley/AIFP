@@ -1,5 +1,6 @@
 {
-  "added": [
+  "added": [],
+  "updated": [
     "fp_purity",
     "fp_state_elimination",
     "fp_side_effect_detection",
@@ -28,7 +29,6 @@
     "fp_logging_safety",
     "fp_parallel_purity",
     "fp_task_isolation",
-    "fp_call_graph_generation",
     "fp_reflection_limitation",
     "fp_optionals",
     "fp_result_types",
@@ -71,6 +71,7 @@
     "project_task_decomposition",
     "project_add_path",
     "project_file_write",
+    "project_reserve_finalize",
     "project_update_db",
     "project_compliance_check",
     "project_completion_check",
@@ -125,7 +126,5 @@
     "git_detect_conflicts",
     "git_merge_branch",
     "git_sync_state"
-  ],
-  "updated": [],
-  "interactions": 118
+  ]
 }

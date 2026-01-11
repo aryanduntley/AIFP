@@ -1,6 +1,46 @@
 {
   "helpers": [
     {
+      "name": "user_directives_get_allowed_db_enum",
+      "file_path": "helpers/user_directives/validation.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to check for CHECK constraints"
+        },
+        {
+          "name": "field",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Field name to get allowed values for"
+        }
+      ],
+      "purpose": "Returns list of allowed values for CHECK constraint enum fields in user_directives.db. Parses schema to extract CHECK(field IN (...)) constraints.",
+      "error_handling": "Returns error if table does not exist, field does not exist, or field does not have a CHECK constraint list",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Returns array of allowed string values: [\"value1\", \"value2\", ...]",
+        "Error: \"Table {table} not found in user_directives database\"",
+        "Error: \"Field {field} not found in table {table}\"",
+        "Error: \"Field {field} does not have a CHECK constraint list\""
+      ],
+      "target_database": "user_directives",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Parse schema SQL for table definition",
+        "Find field with CHECK constraint: CHECK (field IN (...))",
+        "Extract values from IN clause",
+        "Return as array of strings",
+        "Examples: user_directives_get_allowed_db_enum(\"user_directives\", \"status\") -> [\"draft\", \"pending_approval\", \"approved\", \"active\", \"paused\", \"deprecated\"]",
+        "Examples: user_directives_get_allowed_db_enum(\"user_directives\", \"trigger_type\") -> [\"file_pattern\", \"time_based\", \"event_based\", \"manual\"]"
+      ]
+    },
+    {
       "name": "get_user_custom_tables",
       "file_path": "TODO_helpers/user_custom/module.py",
       "parameters": [],
@@ -9,7 +49,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -29,7 +69,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -41,7 +81,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -61,7 +101,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -81,7 +121,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -101,7 +141,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -128,7 +168,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -155,7 +195,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_parse",
@@ -209,7 +249,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_validate",
@@ -303,7 +343,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_update",
@@ -334,7 +374,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_parse",
@@ -373,7 +413,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_validate",
@@ -410,7 +450,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_implement",
@@ -447,7 +487,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_activate",
@@ -476,7 +516,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_status",
@@ -513,7 +553,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": [
         {
           "directive_name": "user_directive_monitor",
@@ -584,7 +624,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -639,7 +679,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     },
     {
@@ -687,18 +727,19 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "user_custom",
+      "target_database": "user_directives",
       "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-user-custom.json",
-    "count": 19,
-    "status": "UPDATED - added note helpers for user_directives.db notes table",
+    "count": 20,
+    "first_helper": "user_directives_get_allowed_db_enum",
+    "status": "UPDATED - added user_directives_get_allowed_db_enum for CHECK constraint validation",
     "mapped_helpers": 9,
-    "unmapped_helpers": 10,
-    "note": "10 helpers are generic AI query tools (schema/CRUD operations + note helpers) - intentionally empty. 9 helpers mapped to user directive system directives (user_directive_parse, validate, implement, approve, activate, deactivate, update, status, monitor) plus aifp_status. Added 3 note helpers: add_user_directive_note, get_user_directive_notes, search_user_directive_notes.",
+    "unmapped_helpers": 11,
+    "note": "11 helpers are generic AI query tools (schema/CRUD operations, CHECK constraint validation, note helpers) - intentionally empty. 9 helpers mapped to user directive system directives (user_directive_parse, validate, implement, approve, activate, deactivate, update, status, monitor) plus aifp_status. Added 3 note helpers: add_user_directive_note, get_user_directive_notes, search_user_directive_notes.",
     "total_mappings": 16,
-    "last_updated": "2026-01-09"
+    "last_updated": "2026-01-10"
   }
 }

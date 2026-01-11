@@ -1,6 +1,48 @@
 {
   "helpers": [
     {
+      "name": "core_get_allowed_db_enum",
+      "file_path": "helpers/core/validation.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to check for CHECK constraints"
+        },
+        {
+          "name": "field",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Field name to get allowed values for"
+        }
+      ],
+      "purpose": "Returns list of allowed values for CHECK constraint enum fields in aifp_core.db. Parses schema to extract CHECK(field IN (...)) constraints.",
+      "error_handling": "Returns error if table does not exist, field does not exist, or field does not have a CHECK constraint list",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Returns array of allowed string values: [\"value1\", \"value2\", ...]",
+        "Error: \"Table {table} not found in core database\"",
+        "Error: \"Field {field} not found in table {table}\"",
+        "Error: \"Field {field} does not have a CHECK constraint list\""
+      ],
+      "target_database": "core",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Parse schema SQL for table definition",
+        "Find field with CHECK constraint: CHECK (field IN (...))",
+        "Extract values from IN clause",
+        "Return as array of strings",
+        "Examples: core_get_allowed_db_enum(\"directives\", \"type\") -> [\"fp\", \"project\", \"git\", \"user_system\", \"user_preference\"]",
+        "Examples: core_get_allowed_db_enum(\"directive_flow\", \"flow_type\") -> [\"status_branch\", \"completion_loop\", \"conditional\", \"error\", \"reference_consultation\", \"canonical\", \"error_handler\", \"utility\"]",
+        "Examples: core_get_allowed_db_enum(\"directive_flow\", \"flow_category\") -> [\"project\", \"fp\", \"user_preferences\", \"git\"]",
+        "Examples: core_get_allowed_db_enum(\"helper_functions\", \"target_database\") -> [\"core\", \"project\", \"user_preferences\", \"user_directives\", \"orchestrator\", \"system\"]"
+      ]
+    },
+    {
       "name": "get_core_tables",
       "file_path": "TODO_helpers/core/module.py",
       "parameters": [],
@@ -171,16 +213,6 @@
             "directive_name": "user_specified_directive_name"
           },
           "description": "Look up specific directive by name when user asks about it - retrieves directive details for help display"
-        },
-        {
-          "directive_name": "fp_reference_consultation",
-          "execution_context": "inline_during_code_writing",
-          "sequence_order": 3,
-          "is_required": false,
-          "parameters_mapping": {
-            "directive_name": "identified_fp_directive_name"
-          },
-          "description": "Direct lookup of specific FP directive when AI knows exact directive name - faster than search when directive is known"
         }
       ]
     },
@@ -206,51 +238,6 @@
           "is_required": false,
           "parameters_mapping": {},
           "description": "Load all directives into memory when AI needs comprehensive directive library - provides guidance on available directives"
-        }
-      ]
-    },
-    {
-      "name": "get_directive_content",
-      "file_path": "TODO_helpers/core/module.py",
-      "parameters": [
-        {
-          "name": "directive_name",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Name of directive to load MD documentation for"
-        }
-      ],
-      "purpose": "Load full MD documentation for directive",
-      "error_handling": "Returns error if directive not found or MD file missing",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [],
-      "implementation_notes": [
-        "Returns: Full MD documentation including workflows, examples, edge cases, related directives",
-        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for this directive)"
-      ],
-      "target_database": "core",
-      "used_by_directives": [
-        {
-          "directive_name": "aifp_help",
-          "execution_context": "user_requests_help",
-          "sequence_order": 3,
-          "is_required": true,
-          "parameters_mapping": {
-            "directive_name": "user_specified_directive_name"
-          },
-          "description": "Load full MD documentation for directive when user requests detailed help - provides comprehensive directive documentation"
-        },
-        {
-          "directive_name": "fp_reference_consultation",
-          "execution_context": "inline_during_code_writing",
-          "sequence_order": 2,
-          "is_required": false,
-          "parameters_mapping": {
-            "directive_name": "identified_fp_directive_name"
-          },
-          "description": "AI consults FP directive MD documentation when implementation details unclear. Used for all 65 FP directives (29 core + 36 aux) as reference material."
         }
       ]
     },
@@ -291,17 +278,6 @@
       ],
       "target_database": "core",
       "used_by_directives": [
-        {
-          "directive_name": "fp_reference_consultation",
-          "execution_context": "inline_during_code_writing",
-          "sequence_order": 1,
-          "is_required": false,
-          "parameters_mapping": {
-            "keyword": "implementation_topic (e.g., 'currying', 'monad', 'lazy evaluation')",
-            "type": "'fp' (always for FP consultations)"
-          },
-          "description": "AI searches for relevant FP directives by keyword when uncertain about implementation. Returns list of candidate directives, then AI uses get_directive_content() to load full documentation."
-        },
         {
           "directive_name": "aifp_help",
           "execution_context": "user_requests_help",
@@ -579,22 +555,19 @@
           "required": true,
           "default": null,
           "description": "Usually 'aifp_status'"
-        },
-        {
-          "name": "status_object",
-          "type": "object",
-          "required": true,
-          "default": null,
-          "description": "Status returned from aifp_status()"
         }
       ],
-      "purpose": "Get all possible next directives with condition evaluation",
+      "purpose": "Get all possible next directives with condition evaluation (sequential workflow flows only, ignores wildcard '*' flows)",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
         "Returns: Array of possible next directive objects based on flows, with evaluated conditions",
+        "Implementation MUST retrieve current project status internally using get_project_status() - DO NOT require AI to pass status objects",
+        "This prevents AI from moving data objects around - helper handles status retrieval",
+        "Queries directive_flow WHERE from_directive = parameter (NOT wildcard '*')",
+        "Evaluates condition_key/condition_value against retrieved status",
         "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
       ],
       "target_database": "core",
@@ -605,8 +578,7 @@
           "sequence_order": 10,
           "is_required": true,
           "parameters_mapping": {
-            "from_directive": "aifp_status",
-            "status_object": "current_project_status"
+            "from_directive": "aifp_status"
           },
           "description": "Query directive_flow table to determine what directives AI should suggest next based on project state - enables status-driven workflow navigation"
         },
@@ -616,8 +588,7 @@
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {
-            "from_directive": "last_completed_directive",
-            "status_object": "current_project_status"
+            "from_directive": "last_completed_directive"
           },
           "description": "Determine where to resume work after interruption - finds next directive in workflow based on last completed state"
         }
@@ -633,22 +604,19 @@
           "required": true,
           "default": null,
           "description": "Directive name (usually 'aifp_status')"
-        },
-        {
-          "name": "status_object",
-          "type": "object",
-          "required": true,
-          "default": null,
-          "description": "Status object from aifp_status()"
         }
       ],
-      "purpose": "Get ONLY directives whose conditions match current state",
+      "purpose": "Get ONLY directives whose conditions match current state (filtered subset, ignores wildcard '*' flows)",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
         "Returns: Array of directive objects whose conditions match current state",
+        "Implementation MUST retrieve current project status internally using get_project_status() - DO NOT require AI to pass status objects",
+        "This prevents AI from moving data objects around - helper handles status retrieval",
+        "Queries directive_flow WHERE from_directive = parameter (NOT wildcard '*')",
+        "Filters flows to only those whose conditions evaluate to true against retrieved status",
         "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
       ],
       "target_database": "core",
@@ -659,8 +627,7 @@
           "sequence_order": 11,
           "is_required": false,
           "parameters_mapping": {
-            "from_directive": "aifp_status",
-            "status_object": "current_project_status"
+            "from_directive": "aifp_status"
           },
           "description": "Filter next directives to only those whose conditions match current state - provides refined recommendations to user"
         }
@@ -737,20 +704,23 @@
           "required": true,
           "default": null,
           "description": "Directive name (e.g., 'aifp_status', 'project_file_write')"
-        },
-        {
-          "name": "work_context",
-          "type": "object",
-          "required": true,
-          "default": null,
-          "description": "Current work context for condition evaluation"
         }
       ],
-      "purpose": "Query directive_flow table for flow_type='conditional' to determine context-based next directive - evaluates conditions against work_context and returns matching next directives",
+      "purpose": "Query directive_flow table for flow_type='conditional' to determine context-based next directive (ignores wildcard '*' flows, sequential flows only)",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of conditional flow objects with evaluated conditions",
+        "Implementation MUST retrieve current work context internally - DO NOT require AI to pass context objects",
+        "For aifp_status: retrieve via get_project_status()",
+        "For project_file_write: retrieve last file write result from project.db",
+        "For project_task_complete: retrieve milestone completion status from project.db",
+        "This prevents AI from moving data objects around - helper handles context retrieval",
+        "Queries directive_flow WHERE from_directive = parameter AND flow_type = 'conditional' (NOT wildcard '*')",
+        "Evaluates condition_key/condition_value against retrieved context"
+      ],
       "target_database": "core",
       "used_by_directives": [
         {
@@ -759,8 +729,7 @@
           "sequence_order": 12,
           "is_required": true,
           "parameters_mapping": {
-            "from_directive": "aifp_status",
-            "work_context": "current_project_status"
+            "from_directive": "aifp_status"
           },
           "description": "Query conditional flows from aifp_status to route to correct next directive based on project state - handles routing to project_init, task_decomposition, file_write, etc."
         },
@@ -770,8 +739,7 @@
           "sequence_order": 10,
           "is_required": false,
           "parameters_mapping": {
-            "from_directive": "project_file_write",
-            "work_context": "file_write_result_and_preferences"
+            "from_directive": "project_file_write"
           },
           "description": "Route to compliance_check if auto-check enabled in user preferences - conditional flow based on preference settings"
         },
@@ -781,8 +749,7 @@
           "sequence_order": 5,
           "is_required": false,
           "parameters_mapping": {
-            "from_directive": "project_task_complete",
-            "work_context": "milestone_completion_status"
+            "from_directive": "project_task_complete"
           },
           "description": "Route to project_milestone_complete if all milestone tasks complete - conditional flow based on task completion state"
         }
@@ -1076,7 +1043,7 @@
         "Groups by category name",
         "Lightweight: ~1-2k tokens vs ~10-15k for full FP flows",
         "Does NOT return full directive definitions or flows - just names grouped by category",
-        "Use search_directives(type='fp') or get_directive_content(name) for full details"
+        "Use search_directives(type='fp') or get_directive_by_name(name) for full details"
       ],
       "target_database": "core",
       "used_by_directives": [
@@ -1181,16 +1148,109 @@
       ],
       "target_database": "core",
       "used_by_directives": []
+    },
+    {
+      "name": "search_fp_references",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Keyword to search in directive names, descriptions, and intent_keywords"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Category filter (e.g., 'purity', 'error_handling', 'functional_composition')"
+        },
+        {
+          "name": "pattern",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "FP pattern name (e.g., 'monad', 'option', 'curry', 'lazy')"
+        }
+      ],
+      "purpose": "Get FP directives available for consultation from ANY context. Handles wildcard '*' reference_consultation flows. Returns FP directives AI can consult as reference material DURING any operation.",
+      "error_handling": "Returns empty array if no matches found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "FP directives are REFERENCE material for when AI is uncertain about implementation details",
+        "These are NOT workflow steps - they're available on-demand for guidance",
+        "AI writes FP code naturally - only consult these when genuinely uncertain about complex patterns"
+      ],
+      "implementation_notes": [
+        "Returns: Array of FP directive objects with usage descriptions from flows",
+        "Query: SELECT d.*, df.description as usage_hint FROM directives d JOIN directive_flow df ON d.name = df.to_directive WHERE df.from_directive = '*' AND df.flow_type = 'reference_consultation' AND d.type = 'fp'",
+        "Wildcard '*' means: Available from ANY context (not sequential workflow)",
+        "Optional filters: keyword match (directive name, description, intent_keywords), category filter, pattern filter",
+        "Example: search_fp_references(keyword='null') returns ['fp_null_elimination', 'fp_optionals']",
+        "Example: search_fp_references(category='error_handling') returns all error handling FP directives",
+        "Example: search_fp_references(pattern='monad') returns monadic FP directives",
+        "Use when: AI needs FP guidance during coding, uncertain about implementation pattern",
+        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_contextual_utilities",
+      "file_path": "TODO_helpers/core/module.py",
+      "parameters": [
+        {
+          "name": "current_directive",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Current directive being executed (optional - if null, returns only wildcard '*' utilities)"
+        },
+        {
+          "name": "condition",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Condition key to filter by (e.g., 'user_correction_detected')"
+        }
+      ],
+      "purpose": "Get utility directives available in current context. Handles wildcard '*' utility and conditional flows. Returns cross-cutting utilities AI can invoke from any directive.",
+      "error_handling": "Returns empty array if no utilities match filters",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Utilities are cross-cutting concerns available across directives",
+        "Wildcard '*' utilities can be called from ANY directive context",
+        "Conditional utilities trigger when specific conditions are met"
+      ],
+      "implementation_notes": [
+        "Returns: Array of utility flow objects with to_directive, condition_key, condition_value, description",
+        "Query: SELECT * FROM directive_flow WHERE (from_directive = '*' OR from_directive = ?) AND flow_type IN ('utility', 'conditional') AND (condition_key = ? OR ? IS NULL)",
+        "Wildcard '*' means: Available from ANY directive (not workflow-specific)",
+        "If current_directive provided: includes both '*' utilities AND directive-specific utilities",
+        "If current_directive NULL: returns only '*' utilities",
+        "If condition provided: filters to utilities matching that condition",
+        "Example: get_contextual_utilities(current_directive='project_file_write', condition='user_correction_detected') returns user_preferences_learn",
+        "Example: get_contextual_utilities(current_directive='project_task_create') returns project_notes_log (available from any context)",
+        "Use when: AI detects condition trigger (user correction, error logging need, etc.)",
+        "Does NOT retrieve current status internally - utilities are context-agnostic or triggered by explicit conditions"
+      ],
+      "target_database": "core",
+      "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-core.json",
-    "count": 35,
-    "status": "COMPLETED - used_by_directives review complete",
-    "mapped_helpers": 16,
-    "unmapped_helpers": 17,
-    "note": "17 helpers are generic AI query/navigation tools (schema queries, generic helper lookups) - intentionally empty. 16 helpers mapped to directives (primarily aifp_help for browsing/querying, aifp_status and completion directives for flow navigation, fp_reference_consultation for FP lookups, conditional routing helpers).",
-    "total_mappings": 27,
-    "last_updated": "2026-01-01"
+    "count": 38,
+    "first_helper": "core_get_allowed_db_enum",
+    "status": "UPDATED - removed get_directive_content (useless middleman), removed status_object/work_context parameters, added wildcard-aware helpers",
+    "mapped_helpers": 15,
+    "unmapped_helpers": 23,
+    "note": "23 helpers are generic AI query/navigation tools (schema queries, generic helper lookups, CHECK constraint validation, wildcard flow queries) - intentionally empty. 15 helpers mapped to directives (primarily aifp_help for browsing/querying, aifp_status and completion directives for flow navigation, conditional routing helpers). Status-passing helpers fixed to retrieve status internally. get_directive_content removed - AI should read MD files directly.",
+    "total_mappings": 26,
+    "last_updated": "2026-01-10"
   }
 }

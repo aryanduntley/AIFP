@@ -94,10 +94,14 @@ CREATE TABLE IF NOT EXISTS directive_flow (
 
     -- Flow classification
     flow_type TEXT CHECK (flow_type IN (
-        'status_branch',    -- Branch from status based on project state
-        'completion_loop',  -- Return to status after completing action
-        'conditional',      -- Conditional next step during work execution
-        'error'            -- Error handling path
+        'status_branch',         -- Branch from status based on project state
+        'completion_loop',       -- Return to status after completing action
+        'conditional',           -- Conditional next step during work execution
+        'error',                 -- Error handling path
+        'reference_consultation',-- FP directive lookup (consult when needed)
+        'canonical',             -- Standard workflow step (always follows)
+        'error_handler',         -- Error handling redirect
+        'utility'                -- Utility/helper operation
     )) NOT NULL DEFAULT 'conditional',
 
     -- Condition for this transition

@@ -1,6 +1,46 @@
 {
   "helpers": [
     {
+      "name": "user_preferences_get_allowed_db_enum",
+      "file_path": "helpers/user_preferences/validation.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to check for CHECK constraints"
+        },
+        {
+          "name": "field",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Field name to get allowed values for"
+        }
+      ],
+      "purpose": "Returns list of allowed values for CHECK constraint enum fields in user_preferences.db. Parses schema to extract CHECK(field IN (...)) constraints.",
+      "error_handling": "Returns error if table does not exist, field does not exist, or field does not have a CHECK constraint list",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Returns array of allowed string values: [\"value1\", \"value2\", ...]",
+        "Error: \"Table {table} not found in user_preferences database\"",
+        "Error: \"Field {field} not found in table {table}\"",
+        "Error: \"Field {field} does not have a CHECK constraint list\""
+      ],
+      "target_database": "user_preferences",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Parse schema SQL for table definition",
+        "Find field with CHECK constraint: CHECK (field IN (...))",
+        "Extract values from IN clause",
+        "Return as array of strings",
+        "Examples: user_preferences_get_allowed_db_enum(\"tracking_settings\", \"feature_name\") -> [\"fp_flow_tracking\", \"ai_interaction_log\", \"helper_function_logging\", \"issue_reports\", \"compliance_checking\"]",
+        "Examples: user_preferences_get_allowed_db_enum(\"tracking_settings\", \"status\") -> [\"enabled\", \"disabled\"]"
+      ]
+    },
+    {
       "name": "get_settings_tables",
       "file_path": "TODO_helpers/settings/module.py",
       "parameters": [],
@@ -9,7 +49,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
@@ -29,7 +69,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
@@ -41,7 +81,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
@@ -61,7 +101,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
@@ -88,7 +128,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
@@ -108,7 +148,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
@@ -135,7 +175,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "user_preferences_sync",
@@ -195,7 +235,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "user_preferences_import",
@@ -234,7 +274,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "user_preferences_update",
@@ -284,7 +324,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
@@ -304,7 +344,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "user_preferences_sync",
@@ -356,7 +396,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "user_preferences_update",
@@ -397,7 +437,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
@@ -431,7 +471,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "user_preferences_update",
@@ -464,7 +504,7 @@
       "is_tool": false,
       "is_sub_helper": true,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "user_preferences_sync",
@@ -485,7 +525,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "user_preferences_sync",
@@ -529,7 +569,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
-      "target_database": "settings",
+      "target_database": "user_preferences",
       "used_by_directives": [
         {
           "directive_name": "tracking_toggle",
@@ -733,12 +773,13 @@
   ],
   "metadata": {
     "file": "helpers-settings.json",
-    "count": 21,
-    "status": "UPDATED - added tracking_notes helpers",
+    "count": 22,
+    "first_helper": "user_preferences_get_allowed_db_enum",
+    "status": "UPDATED - added user_preferences_get_allowed_db_enum for CHECK constraint validation",
     "mapped_helpers": 9,
-    "unmapped_helpers": 11,
-    "note": "11 helpers are generic AI query tools (schema/CRUD operations) - intentionally empty. 9 helpers mapped to user preference directives (user_preferences_sync, user_preferences_update, user_preferences_learn, user_preferences_import, user_preferences_export, tracking_toggle). Added 3 helpers for tracking_notes table: add_tracking_note, get_tracking_notes, search_tracking_notes.",
+    "unmapped_helpers": 12,
+    "note": "12 helpers are generic AI query tools (schema/CRUD operations, CHECK constraint validation) - intentionally empty. 9 helpers mapped to user preference directives (user_preferences_sync, user_preferences_update, user_preferences_learn, user_preferences_import, user_preferences_export, tracking_toggle). Added 3 helpers for tracking_notes table: add_tracking_note, get_tracking_notes, search_tracking_notes.",
     "total_mappings": 14,
-    "last_updated": "2026-01-08"
+    "last_updated": "2026-01-10"
   }
 }

@@ -29,7 +29,7 @@
               "cache_bundle": "Cache entire bundle (status, settings, fp_index) in your context to avoid re-fetching",
               "when_to_refresh": "Call aifp_run(is_new_session=true) again after: (1) major state changes (init/milestone complete), (2) long breaks, (3) new conversation",
               "use_for_navigation": "Use returned state with get_next_directives_from_status() to find appropriate next directives",
-              "fp_reference": "Use fp_index for quick FP directive lookup by category. Call search_directives(type='fp') or get_directive_content(name) for full details",
+              "fp_reference": "Use fp_index for quick FP directive lookup by category. Call search_directives(type='fp') or get_directive_by_name(name) for directive JSON. If more context needed, read MD file directly (path provided in directive object's md_file_path field)",
               "settings_usage": "Apply user_settings preferences during directive execution (code style, task granularity, etc.)"
             }
           }
@@ -873,7 +873,7 @@
   },
   {
     "name": "project_compliance_check",
-    "type": "tracking",
+    "type": "fp",
     "level": null,
     "parent_directive": null,
     "activation_required": "tracking_settings.compliance_checking = enabled",
@@ -3049,7 +3049,7 @@
       "name": "orchestration",
       "description": "Documentation and guidance access for AIFP directives"
     },
-    "description": "Loads detailed documentation for a specific directive. Uses get_directive_content helper to retrieve full markdown documentation including purpose, workflow, examples, edge cases, and related directives. Provides comprehensive guidance beyond basic directive metadata.",
+    "description": "Loads detailed documentation for a specific directive. Uses get_directive_by_name helper to retrieve directive JSON (includes workflow, description, category, md_file_path). If comprehensive context needed, reads MD file directly for purpose, examples, edge cases, and related directives. Provides guidance beyond basic directive metadata.",
     "md_file_path": "directives/aifp_help.md",
     "workflow": {
       "trunk": "load_directive_documentation",
@@ -3061,7 +3061,7 @@
             "parameters": [
               "directive_name"
             ],
-            "returns": "Full markdown documentation from MD file"
+            "returns": "Directive JSON (includes workflow, description, category, md_file_path). Read MD file directly if detailed context needed."
           }
         },
         {

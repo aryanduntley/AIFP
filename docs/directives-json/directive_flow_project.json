@@ -625,7 +625,7 @@
       "condition_description": "Compliance analytics report generated",
       "priority": 100,
       "description": "Compliance analytics complete, return to status",
-      "flow_category": "tracking"
+      "flow_category": "fp"
     },
     {
       "from_directive": "aifp_status",
@@ -636,7 +636,7 @@
       "condition_description": "User explicitly requests compliance analytics report (tracking must be enabled)",
       "priority": 70,
       "description": "On-demand compliance analytics when user requests report",
-      "flow_category": "tracking"
+      "flow_category": "fp"
     },
     {
       "from_directive": "aifp_status",

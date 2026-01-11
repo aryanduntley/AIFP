@@ -1,38 +1,39 @@
 #!/usr/bin/env python3
 """
-AIFP Directive Sync Manager — Schema v1.5
+AIFP Directive Sync Manager — Schema v2.0
 ------------------------------------------
-Synchronizes all directive JSON definitions with the aifp_core.db database.
+Synchronizes all directive JSON definitions, helper functions, and directive flows
+with the aifp_core.db database.
 
 Handles:
 - Directives (FP Core + FP Aux + Project + User Preferences + User System + Git)
-- Categories & Linking
-- Directive Interactions (from directives-interactions.json)
+- Categories (from directive JSON) → categories table → directive_categories junction
+- Intent Keywords (from directive JSON) → intent_keywords table → directives_intent_keywords junction
+- Helper Functions (from docs/helpers/json/*.json) → helper_functions table
+- Directive-Helper Mappings (from helper's used_by_directives field) → directive_helpers junction
+- Directive Flows (from directive_flow_*.json) → directive_flow table
 - Parent relationships
-- Helper Functions, Tools, and Notes table presence
 - Integrity Validation (post-sync verification)
 
-Updated: 2025-10-29
-- Added support for user preference directives (directives-user-pref.json)
-- Added support for user system directives (directives-user-system.json)
-- Added support for git integration directives (directives-git.json)
-- Updated to use directives-interactions.json (replaces project_directive_graph.json)
-- Updated file paths to include directives-json/ prefix
-- Maintains backward compatibility with old graph format
-- Added MD file existence validation
-- Added guide file removal verification
+Updated: 2026-01-10
+- Updated to schema v2.0 (removed intent_keywords_json from directives table)
+- Added proper category extraction and linking via directive_categories
+- Added proper intent keyword extraction and linking via directives_intent_keywords
+- Added helper function import from multiple JSON files in docs/helpers/json/
+- Added directive_helpers population from helper's used_by_directives field
+- Added directive flow import from directive_flow_*.json files
+- Removed directives_interactions (no longer in schema v2.0)
 
-Total Directives: 124 (30 FP Core + 36 FP Aux + 36 Project + 7 User Pref + 9 User System + 6 Git)
+Total Directives: 125+ (30 FP Core + 36 FP Aux + 36 Project + 7 User Pref + 9 User System + 6 Git + ...)
 
-This version aligns with the full schema (v1.5) for aifp_core.db.
-Removed: tools table, notes table (not needed in read-only aifp_core.db)
+This version aligns with the full schema (v2.0) for aifp_core.db.
 """
 
 import os
 import json
 import sqlite3
-import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set, Tuple
+from pathlib import Path
 
 # ===================================
 # CONFIGURATION
@@ -64,16 +65,20 @@ GIT_DIRECTIVE_FILES = [
     "directives-git.json"
 ]
 
-DIRECTIVE_INTERACTIONS_FILE = "directives-interactions.json"
-DIRECTIVE_HELPER_INTERACTIONS_FILE = "directive-helper-interactions.json"
+# Helpers are in docs/helpers/json/
+HELPERS_DIR = "../helpers/json"
 
-# Deprecated - kept for backward compatibility
-DIRECTIVE_GRAPH_FILE = "project_directive_graph.json"
+# Directive flows are in docs/directives-json/
+DIRECTIVE_FLOW_FILES = [
+    "directive_flow_fp.json",
+    "directive_flow_project.json",
+    "directive_flow_user_preferences.json"
+]
 
 MIGRATIONS_DIR = "migrations"
 SYNC_REPORT_FILE = "logs/sync_report.json"
 
-CURRENT_SCHEMA_VERSION = "1.5"
+CURRENT_SCHEMA_VERSION = "2.0"
 DRY_RUN = False
 
 
@@ -225,25 +230,223 @@ def load_json_file(filepath: str) -> List[Dict[str, Any]]:
             # Handle different JSON structures:
             # - Direct array of directives: [...]
             # - Wrapper object with 'directives' key: {"directives": [...], ...}
+            # - Wrapper object with 'helpers' key: {"helpers": [...], ...}
+            # - Wrapper object with 'flows' key: {"flows": [...], ...}
             if isinstance(data, list):
                 return data
-            elif isinstance(data, dict) and 'directives' in data:
-                return data['directives']
+            elif isinstance(data, dict):
+                if 'directives' in data:
+                    return data['directives']
+                elif 'helpers' in data:
+                    return data['helpers']
+                elif 'flows' in data:
+                    return data['flows']
+                else:
+                    return [data]
             else:
-                return [data]
+                return []
         except Exception as e:
             print(f"❌ Error parsing {filepath}: {e}")
             return []
 
 
-def relation_type_map(rel: str) -> str:
-    return {
-        "triggers": "triggers",
-        "depends_on": "depends_on",
-        "escalates_to": "escalates_to",
-        "cross_links": "cross_link",
-        "fp_links": "fp_reference"
-    }.get(rel, "cross_link")
+# ===================================
+# CATEGORY MANAGEMENT
+# ===================================
+
+def extract_categories_from_directives(all_entries: List[Dict[str, Any]]) -> Set[Tuple[str, str]]:
+    """
+    Extract unique categories from directive entries.
+    Returns set of (name, description) tuples.
+    """
+    categories = set()
+    for entry in all_entries:
+        if "category" in entry and entry["category"]:
+            cat = entry["category"]
+            if isinstance(cat, dict):
+                name = cat.get("name", "")
+                description = cat.get("description", "")
+                if name:
+                    categories.add((name, description))
+    return categories
+
+
+def sync_categories(conn: sqlite3.Connection, categories: Set[Tuple[str, str]]) -> Dict[str, int]:
+    """
+    Insert categories into categories table.
+    Returns mapping of category_name -> category_id.
+    """
+    print(f"\n📂 Syncing {len(categories)} categories...")
+
+    cur = conn.cursor()
+    category_id_map = {}
+    inserted = 0
+
+    # Sort categories alphabetically by name for consistent ordering
+    for name, description in sorted(categories, key=lambda x: x[0]):
+        # Insert or ignore
+        cur.execute("""
+            INSERT OR IGNORE INTO categories (name, description)
+            VALUES (?, ?)
+        """, (name, description))
+
+        # Get the id
+        cur.execute("SELECT id FROM categories WHERE name = ?", (name,))
+        row = cur.fetchone()
+        if row:
+            category_id_map[name] = row['id']
+            if cur.rowcount > 0:
+                inserted += 1
+
+    conn.commit()
+    print(f"✅ Categories synced: {inserted} new, {len(categories) - inserted} existing")
+    return category_id_map
+
+
+def link_directive_categories(conn: sqlite3.Connection, all_entries: List[Dict[str, Any]],
+                               category_id_map: Dict[str, int]):
+    """
+    Link directives to categories via directive_categories junction table.
+    """
+    print(f"\n🔗 Linking directives to categories...")
+
+    cur = conn.cursor()
+    linked = 0
+
+    for entry in all_entries:
+        if "category" not in entry or not entry["category"]:
+            continue
+
+        directive_name = entry.get("name")
+        if not directive_name:
+            continue
+
+        # Get directive_id
+        cur.execute("SELECT id FROM directives WHERE name = ?", (directive_name,))
+        directive_row = cur.fetchone()
+        if not directive_row:
+            continue
+
+        directive_id = directive_row['id']
+
+        # Get category_id
+        cat = entry["category"]
+        if isinstance(cat, dict):
+            cat_name = cat.get("name", "")
+            if cat_name in category_id_map:
+                category_id = category_id_map[cat_name]
+
+                # Insert link (ignore if exists)
+                cur.execute("""
+                    INSERT OR IGNORE INTO directive_categories (directive_id, category_id)
+                    VALUES (?, ?)
+                """, (directive_id, category_id))
+
+                if cur.rowcount > 0:
+                    linked += 1
+
+    conn.commit()
+    print(f"✅ Linked {linked} directive-category relationships")
+
+
+# ===================================
+# INTENT KEYWORD MANAGEMENT
+# ===================================
+
+def extract_intent_keywords_from_directives(all_entries: List[Dict[str, Any]]) -> Set[str]:
+    """
+    Extract unique intent keywords from directive entries.
+    Returns set of keywords.
+    """
+    keywords = set()
+    for entry in all_entries:
+        if "intent_keywords_json" in entry and entry["intent_keywords_json"]:
+            kw_list = entry["intent_keywords_json"]
+            if isinstance(kw_list, list):
+                for kw in kw_list:
+                    if isinstance(kw, str) and kw.strip():
+                        keywords.add(kw.strip().lower())
+    return keywords
+
+
+def sync_intent_keywords(conn: sqlite3.Connection, keywords: Set[str]) -> Dict[str, int]:
+    """
+    Insert intent keywords into intent_keywords table.
+    Returns mapping of keyword -> keyword_id.
+    """
+    print(f"\n🔑 Syncing {len(keywords)} intent keywords...")
+
+    cur = conn.cursor()
+    keyword_id_map = {}
+    inserted = 0
+
+    # Sort keywords alphabetically for consistent ordering
+    for keyword in sorted(keywords):
+        # Insert or ignore
+        cur.execute("""
+            INSERT OR IGNORE INTO intent_keywords (keyword)
+            VALUES (?)
+        """, (keyword,))
+
+        # Get the id
+        cur.execute("SELECT id FROM intent_keywords WHERE keyword = ?", (keyword,))
+        row = cur.fetchone()
+        if row:
+            keyword_id_map[keyword] = row['id']
+            if cur.rowcount > 0:
+                inserted += 1
+
+    conn.commit()
+    print(f"✅ Intent keywords synced: {inserted} new, {len(keywords) - inserted} existing")
+    return keyword_id_map
+
+
+def link_directive_intent_keywords(conn: sqlite3.Connection, all_entries: List[Dict[str, Any]],
+                                   keyword_id_map: Dict[str, int]):
+    """
+    Link directives to intent keywords via directives_intent_keywords junction table.
+    """
+    print(f"\n🔗 Linking directives to intent keywords...")
+
+    cur = conn.cursor()
+    linked = 0
+
+    for entry in all_entries:
+        if "intent_keywords_json" not in entry or not entry["intent_keywords_json"]:
+            continue
+
+        directive_name = entry.get("name")
+        if not directive_name:
+            continue
+
+        # Get directive_id
+        cur.execute("SELECT id FROM directives WHERE name = ?", (directive_name,))
+        directive_row = cur.fetchone()
+        if not directive_row:
+            continue
+
+        directive_id = directive_row['id']
+
+        # Link keywords
+        kw_list = entry["intent_keywords_json"]
+        if isinstance(kw_list, list):
+            for kw in kw_list:
+                if isinstance(kw, str) and kw.strip():
+                    kw_normalized = kw.strip().lower()
+                    if kw_normalized in keyword_id_map:
+                        keyword_id = keyword_id_map[kw_normalized]
+
+                        # Insert link (ignore if exists)
+                        cur.execute("""
+                            INSERT OR IGNORE INTO directives_intent_keywords (directive_id, keyword_id)
+                            VALUES (?, ?)
+                        """, (directive_id, keyword_id))
+
+                        if cur.rowcount > 0:
+                            linked += 1
+
+    conn.commit()
+    print(f"✅ Linked {linked} directive-keyword relationships")
 
 
 # ===================================
@@ -255,11 +458,17 @@ def upsert_directive(conn, entry: Dict[str, Any]) -> str:
     cur.execute("SELECT id FROM directives WHERE name=?", (entry["name"],))
     existing = cur.fetchone()
 
+    # Note: intent_keywords_json and category are NOT in directives table anymore
+    # They are in separate tables with junction tables
     fields = (
-        entry["name"], entry["type"], entry.get("level"), entry.get("parent_directive"),
-        entry.get("description"), json.dumps(entry.get("workflow", {})),
-        entry.get("md_file_path"), json.dumps(entry.get("roadblocks_json", [])),
-        json.dumps(entry.get("intent_keywords_json", [])),
+        entry["name"],
+        entry["type"],
+        entry.get("level"),
+        entry.get("parent_directive"),
+        entry.get("description"),
+        json.dumps(entry.get("workflow", {})),
+        entry.get("md_file_path"),
+        json.dumps(entry.get("roadblocks_json", [])),
         entry.get("confidence_threshold", 0.5)
     )
 
@@ -267,8 +476,8 @@ def upsert_directive(conn, entry: Dict[str, Any]) -> str:
         cur.execute("""
             UPDATE directives SET
                 type=?, level=?, parent_directive=?, description=?, workflow=?,
-                md_file_path=?, roadblocks_json=?, intent_keywords_json=?,
-                confidence_threshold=?, updated_at=CURRENT_TIMESTAMP
+                md_file_path=?, roadblocks_json=?,
+                confidence_threshold=?
             WHERE name=?
         """, fields[1:] + (entry["name"],))
         conn.commit()
@@ -277,71 +486,64 @@ def upsert_directive(conn, entry: Dict[str, Any]) -> str:
         cur.execute("""
             INSERT INTO directives
             (name, type, level, parent_directive, description, workflow,
-             md_file_path, roadblocks_json, intent_keywords_json, confidence_threshold,
-             created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             md_file_path, roadblocks_json, confidence_threshold)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, fields)
         conn.commit()
         return "added"
-
-
-def sync_category(conn, entry: Dict[str, Any], directive_id: int):
-    if "category" not in entry:
-        return
-    cur = conn.cursor()
-    cat = entry["category"]
-    cur.execute("INSERT OR IGNORE INTO categories (name, description) VALUES (?, ?)",
-                (cat["name"], cat.get("description")))
-    conn.commit()
-    cur.execute("SELECT id FROM categories WHERE name=?", (cat["name"],))
-    cat_id = cur.fetchone()["id"]
-    cur.execute("INSERT OR IGNORE INTO directive_categories (directive_id, category_id) VALUES (?, ?)",
-                (directive_id, cat_id))
-    conn.commit()
-
-
-def insert_interaction(conn, src_id, tgt_id, relation_type, desc=""):
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT OR IGNORE INTO directives_interactions
-        (source_directive_id, target_directive_id, relation_type, description)
-        VALUES (?, ?, ?, ?)
-    """, (src_id, tgt_id, relation_type, desc))
-    conn.commit()
 
 
 # ===================================
 # HELPER FUNCTIONS SYNC
 # ===================================
 
-def sync_helper_functions(conn):
+def load_all_helper_files() -> List[Dict[str, Any]]:
     """
-    Load helper functions from helpers_parsed.json and populate helper_functions table.
+    Load all helper JSON files from docs/helpers/json/ directory.
+    Returns combined list of all helpers.
+    """
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    helpers_dir = os.path.join(script_dir, '..', 'helpers', 'json')
+
+    if not os.path.exists(helpers_dir):
+        print(f"⚠️  Helpers directory not found: {helpers_dir}")
+        return []
+
+    all_helpers = []
+    helper_files = sorted(Path(helpers_dir).glob("helpers-*.json"))
+
+    print(f"\n📚 Loading helper files from {helpers_dir}")
+    for helper_file in helper_files:
+        helpers = load_json_file(str(helper_file))
+        if helpers:
+            all_helpers.extend(helpers)
+            print(f"   📘 Loaded {len(helpers)} helpers from {helper_file.name}")
+
+    return all_helpers
+
+
+def sync_helper_functions(conn: sqlite3.Connection) -> int:
+    """
+    Load helper functions from all JSON files in docs/helpers/json/ and populate helper_functions table.
 
     Populates table with complete helper data:
     - name, file_path, parameters, purpose, error_handling
     - is_tool: Read from JSON (TRUE if exposed as MCP tool)
     - is_sub_helper: Read from JSON (TRUE if internal helper only)
+    - target_database: Read from JSON
+    - return_statements: Read from JSON
 
-    Source: docs/directives-json/helpers_parsed.json (49 helpers organized into 5 module files)
+    Source: docs/helpers/json/helpers-*.json
     """
-    print("\n🔧 Syncing helper functions from JSON...")
+    print("\n🔧 Syncing helper functions from JSON files...")
 
-    # Load helpers from JSON file
-    helpers_json_path = os.path.join(os.path.dirname(__file__), 'helpers_parsed.json')
-
-    if not os.path.exists(helpers_json_path):
-        print(f"⚠️  Helper functions file not found: {helpers_json_path}")
-        print("   Run parse_helpers.py to generate helpers_parsed.json")
-        return
-
-    helpers = load_json_file(helpers_json_path)
+    helpers = load_all_helper_files()
 
     if not helpers:
-        print("⚠️  No helpers found in helpers_parsed.json")
-        return
+        print("⚠️  No helpers found in JSON files")
+        return 0
 
-    print(f"📋 Loaded {len(helpers)} helper functions from JSON")
+    print(f"📋 Processing {len(helpers)} helper functions")
 
     # Insert helper functions into table
     cur = conn.cursor()
@@ -357,6 +559,24 @@ def sync_helper_functions(conn):
         cur.execute("SELECT id FROM helper_functions WHERE name=?", (name,))
         existing = cur.fetchone()
 
+        # Convert parameters to JSON string if it's a list
+        parameters = helper.get('parameters')
+        if isinstance(parameters, list):
+            parameters = json.dumps(parameters)
+        elif isinstance(parameters, str):
+            parameters = parameters  # Already JSON string
+        else:
+            parameters = json.dumps([])
+
+        # Convert return_statements to JSON string if it's a list
+        return_statements = helper.get('return_statements')
+        if isinstance(return_statements, list):
+            return_statements = json.dumps(return_statements)
+        elif isinstance(return_statements, str):
+            return_statements = return_statements
+        else:
+            return_statements = json.dumps([])
+
         if existing:
             # Update existing helper with latest data from JSON
             cur.execute("""
@@ -367,15 +587,18 @@ def sync_helper_functions(conn):
                     error_handling = ?,
                     is_tool = ?,
                     is_sub_helper = ?,
-                    updated_at = CURRENT_TIMESTAMP
+                    return_statements = ?,
+                    target_database = ?
                 WHERE name = ?
             """, (
                 helper.get('file_path'),
-                helper.get('parameters'),  # Already JSON string
+                parameters,
                 helper.get('purpose'),
                 helper.get('error_handling'),
                 1 if helper.get('is_tool', False) else 0,
                 1 if helper.get('is_sub_helper', False) else 0,
+                return_statements,
+                helper.get('target_database'),
                 name
             ))
             updated += 1
@@ -383,16 +606,19 @@ def sync_helper_functions(conn):
             # Insert new helper with all available data
             cur.execute("""
                 INSERT INTO helper_functions
-                (name, file_path, parameters, purpose, error_handling, is_tool, is_sub_helper)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (name, file_path, parameters, purpose, error_handling, is_tool, is_sub_helper,
+                 return_statements, target_database)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 name,
                 helper.get('file_path'),
-                helper.get('parameters'),  # Already JSON string
+                parameters,
                 helper.get('purpose'),
                 helper.get('error_handling'),
                 1 if helper.get('is_tool', False) else 0,
-                1 if helper.get('is_sub_helper', False) else 0
+                1 if helper.get('is_sub_helper', False) else 0,
+                return_statements,
+                helper.get('target_database')
             ))
             inserted += 1
 
@@ -401,126 +627,132 @@ def sync_helper_functions(conn):
 
     # Show module organization summary
     cur.execute("""
-        SELECT file_path, COUNT(*) as count
+        SELECT target_database, COUNT(*) as count
         FROM helper_functions
-        GROUP BY file_path
-        ORDER BY file_path
+        GROUP BY target_database
+        ORDER BY target_database
     """)
-    print("   Module organization:")
+    print("   Database organization:")
     for row in cur.fetchall():
-        print(f"     {row['count']:2d} helpers → {row['file_path']}")
+        print(f"     {row['count']:2d} helpers → {row['target_database']}")
+
+    return inserted + updated
 
 
-def sync_directive_helper_interactions(conn):
+def sync_directive_helper_mappings(conn: sqlite3.Connection, all_helpers: List[Dict[str, Any]]):
     """
-    Load directive-helper mappings from directive-helper-interactions.json
-    and populate directive_helpers junction table.
+    Populate directive_helpers junction table using used_by_directives field from helper JSONs.
 
-    Populates table with:
-    - directive_id, helper_function_id (foreign keys)
-    - execution_context, sequence_order, is_required
-    - parameters_mapping (optional), description
-
-    Source: docs/directive-helper-interactions.json (63 mappings)
+    Each helper's used_by_directives field contains:
+    [
+      {
+        "directive_name": "aifp_run",
+        "execution_context": "self_invocation",
+        "sequence_order": 1,
+        "is_required": true,
+        "parameters_mapping": {},
+        "description": "..."
+      }
+    ]
     """
-    print("\n🔗 Syncing directive-helper interactions...")
-
-    interactions_path = os.path.join(os.path.dirname(__file__), DIRECTIVE_HELPER_INTERACTIONS_FILE)
-
-    if not os.path.exists(interactions_path):
-        print(f"⚠️  Directive-helper interactions file not found: {interactions_path}")
-        print("   Run generate-directive-helper-interactions.py to generate this file")
-        return
-
-    # Load JSON directly (not using load_json_file since this has different structure)
-    with open(interactions_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-
-    if not data or 'mappings' not in data:
-        print("⚠️  No mappings found in directive-helper-interactions.json")
-        return
-
-    mappings = data['mappings']
-    print(f"📋 Loaded {len(mappings)} helper-directive mappings")
+    print("\n🔗 Syncing directive-helper mappings from helper JSONs...")
 
     cur = conn.cursor()
     inserted = 0
     skipped = 0
     errors = 0
 
-    for mapping in mappings:
-        directive_name = mapping.get('directive_name')
-        helper_name = mapping.get('helper_name')
-
-        if not directive_name or not helper_name:
-            skipped += 1
+    for helper in all_helpers:
+        helper_name = helper.get('name')
+        if not helper_name:
             continue
 
-        # Look up directive_id
-        cur.execute("SELECT id FROM directives WHERE name=?", (directive_name,))
-        directive_row = cur.fetchone()
-
-        if not directive_row:
-            print(f"   ⚠️  Directive not found: {directive_name}")
-            errors += 1
+        used_by = helper.get('used_by_directives', [])
+        if not used_by or not isinstance(used_by, list):
             continue
-
-        directive_id = directive_row['id']
 
         # Look up helper_function_id
         cur.execute("SELECT id FROM helper_functions WHERE name=?", (helper_name,))
         helper_row = cur.fetchone()
-
         if not helper_row:
-            print(f"   ⚠️  Helper not found: {helper_name}")
+            print(f"   ⚠️  Helper not found in database: {helper_name}")
             errors += 1
             continue
 
         helper_id = helper_row['id']
 
-        # Check if mapping already exists
-        cur.execute("""
-            SELECT id FROM directive_helpers
-            WHERE directive_id=? AND helper_function_id=? AND execution_context=?
-        """, (directive_id, helper_id, mapping.get('execution_context', '')))
+        # Process each directive mapping
+        for mapping in used_by:
+            directive_name = mapping.get('directive_name')
+            if not directive_name:
+                skipped += 1
+                continue
 
-        existing = cur.fetchone()
+            # Look up directive_id
+            cur.execute("SELECT id FROM directives WHERE name=?", (directive_name,))
+            directive_row = cur.fetchone()
+            if not directive_row:
+                print(f"   ⚠️  Directive not found: {directive_name}")
+                errors += 1
+                continue
 
-        if existing:
-            # Update existing mapping
+            directive_id = directive_row['id']
+
+            # Extract mapping fields
+            execution_context = mapping.get('execution_context', '')
+            sequence_order = mapping.get('sequence_order', 0)
+            is_required = 1 if mapping.get('is_required', True) else 0
+            parameters_mapping = mapping.get('parameters_mapping', {})
+            description = mapping.get('description', '')
+
+            # Convert parameters_mapping to JSON string if needed
+            if isinstance(parameters_mapping, dict):
+                parameters_mapping = json.dumps(parameters_mapping)
+
+            # Check if mapping already exists
             cur.execute("""
-                UPDATE directive_helpers
-                SET sequence_order = ?,
-                    is_required = ?,
-                    description = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            """, (
-                mapping.get('sequence_order', 0),
-                1 if mapping.get('is_required', True) else 0,
-                mapping.get('description', ''),
-                existing['id']
-            ))
-        else:
-            # Insert new mapping
-            cur.execute("""
-                INSERT INTO directive_helpers
-                (directive_id, helper_function_id, execution_context, sequence_order,
-                 is_required, parameters_mapping, description)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                directive_id,
-                helper_id,
-                mapping.get('execution_context', ''),
-                mapping.get('sequence_order', 0),
-                1 if mapping.get('is_required', True) else 0,
-                None,  # parameters_mapping not in current JSON format
-                mapping.get('description', '')
-            ))
-            inserted += 1
+                SELECT id FROM directive_helpers
+                WHERE directive_id=? AND helper_function_id=? AND execution_context=?
+            """, (directive_id, helper_id, execution_context))
+
+            existing = cur.fetchone()
+
+            if existing:
+                # Update existing mapping
+                cur.execute("""
+                    UPDATE directive_helpers
+                    SET sequence_order = ?,
+                        is_required = ?,
+                        parameters_mapping = ?,
+                        description = ?
+                    WHERE id = ?
+                """, (
+                    sequence_order,
+                    is_required,
+                    parameters_mapping,
+                    description,
+                    existing['id']
+                ))
+            else:
+                # Insert new mapping
+                cur.execute("""
+                    INSERT INTO directive_helpers
+                    (directive_id, helper_function_id, execution_context, sequence_order,
+                     is_required, parameters_mapping, description)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    directive_id,
+                    helper_id,
+                    execution_context,
+                    sequence_order,
+                    is_required,
+                    parameters_mapping,
+                    description
+                ))
+                inserted += 1
 
     conn.commit()
-    print(f"✅ Directive-helper interactions synced: {inserted} new")
+    print(f"✅ Directive-helper mappings synced: {inserted} new")
     if errors > 0:
         print(f"   ⚠️  {errors} mappings had errors (directive or helper not found)")
     if skipped > 0:
@@ -540,12 +772,167 @@ def sync_directive_helper_interactions(conn):
 
 
 # ===================================
+# DIRECTIVE FLOW SYNC
+# ===================================
+
+def sync_directive_flows(conn: sqlite3.Connection):
+    """
+    Load directive flows from directive_flow_*.json files and populate directive_flow table.
+
+    Flow structure:
+    {
+      "from_directive": "aifp_run",
+      "to_directive": "aifp_status",
+      "flow_type": "status_branch",
+      "flow_category": "project",
+      "condition_key": "is_new_session",
+      "condition_value": "true",
+      "condition_description": "...",
+      "priority": 100,
+      "description": "..."
+    }
+    """
+    print("\n🔄 Syncing directive flows from JSON files...")
+
+    all_flows = []
+    for flow_file in DIRECTIVE_FLOW_FILES:
+        flows = load_json_file(flow_file)
+        if flows:
+            all_flows.extend(flows)
+            print(f"   📘 Loaded {len(flows)} flows from {flow_file}")
+
+    if not all_flows:
+        print("⚠️  No directive flows found")
+        return
+
+    print(f"📋 Processing {len(all_flows)} directive flows")
+
+    cur = conn.cursor()
+    inserted = 0
+    updated = 0
+    errors = 0
+
+    for flow in all_flows:
+        from_directive = flow.get('from_directive')
+        to_directive = flow.get('to_directive')
+        flow_type = flow.get('flow_type', 'conditional')
+
+        if not to_directive:
+            errors += 1
+            continue
+
+        # Allow wildcard '*' for reference_consultation and utility flows
+        if from_directive == '*':
+            if flow_type not in ['reference_consultation', 'utility', 'conditional']:
+                print(f"   ⚠️  Wildcard '*' only allowed for reference_consultation, utility, or conditional flows: {to_directive}")
+                errors += 1
+                continue
+            # Wildcard is valid - only verify to_directive exists
+            cur.execute("SELECT name FROM directives WHERE name = ?", (to_directive,))
+            if not cur.fetchone():
+                print(f"   ⚠️  Target directive not found: {to_directive}")
+                errors += 1
+                continue
+        else:
+            # Normal flow - verify both directives exist
+            if not from_directive:
+                errors += 1
+                continue
+
+            cur.execute("SELECT name FROM directives WHERE name IN (?, ?)",
+                       (from_directive, to_directive))
+            found = [row['name'] for row in cur.fetchall()]
+
+            if from_directive not in found:
+                print(f"   ⚠️  Source directive not found: {from_directive}")
+                errors += 1
+                continue
+
+            if to_directive not in found:
+                print(f"   ⚠️  Target directive not found: {to_directive}")
+                errors += 1
+                continue
+
+        # Extract flow fields
+        flow_category = flow.get('flow_category', 'project')
+        condition_key = flow.get('condition_key')
+        condition_value = flow.get('condition_value')
+        condition_description = flow.get('condition_description')
+        priority = flow.get('priority', 0)
+        description = flow.get('description', '')
+
+        # Check if flow already exists
+        cur.execute("""
+            SELECT id FROM directive_flow
+            WHERE from_directive=? AND to_directive=? AND flow_type=? AND condition_key=?
+        """, (from_directive, to_directive, flow_type, condition_key))
+
+        existing = cur.fetchone()
+
+        if existing:
+            # Update existing flow
+            cur.execute("""
+                UPDATE directive_flow
+                SET flow_category = ?,
+                    condition_value = ?,
+                    condition_description = ?,
+                    priority = ?,
+                    description = ?
+                WHERE id = ?
+            """, (
+                flow_category,
+                condition_value,
+                condition_description,
+                priority,
+                description,
+                existing['id']
+            ))
+            updated += 1
+        else:
+            # Insert new flow
+            cur.execute("""
+                INSERT INTO directive_flow
+                (from_directive, to_directive, flow_category, flow_type,
+                 condition_key, condition_value, condition_description, priority, description)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                from_directive,
+                to_directive,
+                flow_category,
+                flow_type,
+                condition_key,
+                condition_value,
+                condition_description,
+                priority,
+                description
+            ))
+            inserted += 1
+
+    conn.commit()
+    print(f"✅ Directive flows synced: {inserted} new, {updated} updated")
+    if errors > 0:
+        print(f"   ⚠️  {errors} flows had errors (missing directives or fields)")
+
+    # Show summary statistics
+    cur.execute("""
+        SELECT flow_category, flow_type, COUNT(*) as count
+        FROM directive_flow
+        GROUP BY flow_category, flow_type
+        ORDER BY flow_category, flow_type
+    """)
+    print("   Flow organization:")
+    for row in cur.fetchall():
+        print(f"     {row['count']:2d} flows → {row['flow_category']}/{row['flow_type']}")
+
+
+# ===================================
 # SYNC EXECUTION
 # ===================================
 
 def sync_directives():
-    print("🔄 Starting Full AIFP Directive Sync (Schema v1.5)")
+    print("🔄 Starting Full AIFP Directive Sync (Schema v2.0)")
     print("📦 Including: FP Core, FP Aux, Project, User Prefs, User System, Git Integration")
+    print("📦 Including: Categories, Intent Keywords, Helpers, Directive-Helper Mappings, Directive Flows")
 
     # Ensure database directory exists
     db_dir = os.path.dirname(DB_PATH)
@@ -576,15 +963,21 @@ def sync_directives():
         all_entries.extend(entries)
         print(f"📘 Loaded {len(entries)} directives from {file}")
 
-    report = {"added": [], "updated": [], "interactions": 0}
+    # Extract and sync categories FIRST
+    categories = extract_categories_from_directives(all_entries)
+    category_id_map = sync_categories(conn, categories)
+
+    # Extract and sync intent keywords FIRST
+    intent_keywords = extract_intent_keywords_from_directives(all_entries)
+    keyword_id_map = sync_intent_keywords(conn, intent_keywords)
+
+    # Sync directives
+    report = {"added": [], "updated": []}
 
     for entry in all_entries:
         if not entry.get("name") or not entry.get("type"):
             continue
         result = upsert_directive(conn, entry)
-        cur.execute("SELECT id FROM directives WHERE name=?", (entry["name"],))
-        directive_id = cur.fetchone()["id"]
-        sync_category(conn, entry, directive_id)
         report[result].append(entry["name"])
 
     # Second pass: Parent linkage
@@ -596,78 +989,21 @@ def sync_directives():
             """, (entry["parent_directive"], entry["name"]))
     conn.commit()
 
-    # Sync helper functions from JSON file
+    # Link directives to categories
+    link_directive_categories(conn, all_entries, category_id_map)
+
+    # Link directives to intent keywords
+    link_directive_intent_keywords(conn, all_entries, keyword_id_map)
+
+    # Sync helper functions from JSON files
+    all_helpers = load_all_helper_files()
     sync_helper_functions(conn)
 
-    # Directive relationships from directives-interactions.json
-    if os.path.exists(DIRECTIVE_INTERACTIONS_FILE):
-        print(f"📊 Linking interactions from {DIRECTIVE_INTERACTIONS_FILE}")
-        interactions_data = load_json_file(DIRECTIVE_INTERACTIONS_FILE)
+    # Sync directive-helper mappings from helper's used_by_directives field
+    sync_directive_helper_mappings(conn, all_helpers)
 
-        # Handle both old graph format and new interactions format
-        for item in interactions_data:
-            # New format: direct interactions list with 'source' and 'target' keys
-            if "source" in item and "target" in item:
-                cur.execute("SELECT id FROM directives WHERE name=?", (item["source"],))
-                src = cur.fetchone()
-                cur.execute("SELECT id FROM directives WHERE name=?", (item["target"],))
-                tgt = cur.fetchone()
-
-                if src and tgt:
-                    insert_interaction(
-                        conn,
-                        src["id"],
-                        tgt["id"],
-                        relation_type_map(item.get("relation_type", "cross_link")),
-                        item.get("description", "")
-                    )
-                    report["interactions"] += 1
-                else:
-                    # Log missing directive references
-                    if not src:
-                        print(f"   ⚠️ Source directive not found: {item['source']}")
-                    if not tgt:
-                        print(f"   ⚠️ Target directive not found: {item['target']}")
-
-            # Old graph format: node with relationship lists
-            elif "name" in item:
-                cur.execute("SELECT id FROM directives WHERE name=?", (item["name"],))
-                src = cur.fetchone()
-                if not src:
-                    continue
-                src_id = src["id"]
-                for rel_type in ["triggers", "depends_on", "escalates_to", "cross_links", "fp_links"]:
-                    for target in item.get(rel_type, []):
-                        cur.execute("SELECT id FROM directives WHERE name=?", (target,))
-                        tgt = cur.fetchone()
-                        if tgt:
-                            insert_interaction(conn, src_id, tgt["id"],
-                                               relation_type_map(rel_type),
-                                               f"{item['name']} {rel_type} {target}")
-                            report["interactions"] += 1
-
-    # Fallback to old graph file if new file not found
-    elif os.path.exists(DIRECTIVE_GRAPH_FILE):
-        print(f"📊 Linking interactions from {DIRECTIVE_GRAPH_FILE} (deprecated)")
-        graph_data = load_json_file(DIRECTIVE_GRAPH_FILE)
-        for node in graph_data:
-            cur.execute("SELECT id FROM directives WHERE name=?", (node["name"],))
-            src = cur.fetchone()
-            if not src:
-                continue
-            src_id = src["id"]
-            for rel_type in ["triggers", "depends_on", "escalates_to", "cross_links", "fp_links"]:
-                for target in node.get(rel_type, []):
-                    cur.execute("SELECT id FROM directives WHERE name=?", (target,))
-                    tgt = cur.fetchone()
-                    if tgt:
-                        insert_interaction(conn, src_id, tgt["id"],
-                                           relation_type_map(rel_type),
-                                           f"{node['name']} {rel_type} {target}")
-                        report["interactions"] += 1
-
-    # Sync directive-helper interactions (junction table mappings)
-    sync_directive_helper_interactions(conn)
+    # Sync directive flows
+    sync_directive_flows(conn)
 
     if DRY_RUN:
         conn.rollback()
@@ -675,7 +1011,11 @@ def sync_directives():
     else:
         conn.commit()
 
-    print(f"✅ Added: {len(report['added'])} | 🔁 Updated: {len(report['updated'])} | 🔗 Interactions: {report['interactions']}")
+    print(f"\n✅ Directives: {len(report['added'])} added | {len(report['updated'])} updated")
+    print(f"✅ Categories: {len(categories)}")
+    print(f"✅ Intent Keywords: {len(intent_keywords)}")
+    print(f"✅ Helpers: {len(all_helpers)}")
+
     os.makedirs(os.path.dirname(SYNC_REPORT_FILE), exist_ok=True)
     with open(SYNC_REPORT_FILE, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
@@ -711,18 +1051,7 @@ def validate_integrity(conn):
     for row in cur.fetchall():
         issues.append(f"⚠️ Orphaned parent link: {row['name']} → {row['parent_directive']}")
 
-    # 3. Verify all interactions point to existing directives
-    cur.execute("""
-        SELECT i.id, d1.name AS source, d2.name AS target
-        FROM directives_interactions i
-        LEFT JOIN directives d1 ON d1.id = i.source_directive_id
-        LEFT JOIN directives d2 ON d2.id = i.target_directive_id
-        WHERE d1.name IS NULL OR d2.name IS NULL
-    """)
-    for row in cur.fetchall():
-        issues.append(f"⚠️ Broken interaction ID {row['id']} → Missing target/source.")
-
-    # 4. Check for duplicate category links
+    # 3. Check for duplicate category links
     cur.execute("""
         SELECT directive_id, category_id, COUNT(*) as c FROM directive_categories
         GROUP BY directive_id, category_id HAVING c > 1
@@ -730,7 +1059,7 @@ def validate_integrity(conn):
     for row in cur.fetchall():
         issues.append(f"⚠️ Duplicate directive-category link for directive_id={row['directive_id']}.")
 
-    # 5. Verify helper_functions loaded from JSON with is_tool and is_sub_helper
+    # 4. Verify helper_functions loaded from JSON with is_tool and is_sub_helper
     cur.execute("SELECT COUNT(*) as tool_count FROM helper_functions WHERE is_tool = 1;")
     tool_count = cur.fetchone()["tool_count"]
     cur.execute("SELECT COUNT(*) as sub_helper_count FROM helper_functions WHERE is_sub_helper = 1;")
@@ -744,7 +1073,21 @@ def validate_integrity(conn):
     if sub_helper_count > 0:
         print(f"   ✓ Found {sub_helper_count} sub-helpers (is_sub_helper=1)")
 
-    # 6. Validate directive_helpers junction table references
+    # 5. Verify directive_helpers junction table has entries
+    cur.execute("SELECT COUNT(*) as mapping_count FROM directive_helpers;")
+    mapping_count = cur.fetchone()["mapping_count"]
+    if mapping_count == 0:
+        issues.append("⚠️ No directive-helper mappings found. Check helper JSONs for used_by_directives field.")
+    else:
+        print(f"   ✓ Found {mapping_count} directive-helper mappings")
+
+    # 6. Verify directive_flow table has entries
+    cur.execute("SELECT COUNT(*) as flow_count FROM directive_flow;")
+    flow_count = cur.fetchone()["flow_count"]
+    if flow_count == 0:
+        issues.append("⚠️ No directive flows found. Check directive_flow_*.json files.")
+    else:
+        print(f"   ✓ Found {flow_count} directive flows")
 
     # 7. Verify all directives have valid workflow structure
     cur.execute("SELECT name, workflow FROM directives;")
@@ -775,26 +1118,44 @@ def validate_integrity(conn):
     if md_files_checked > 0:
         print(f"   ✓ Verified {md_files_checked} MD file paths")
 
-    # 9. Verify guide files have been removed (should not exist)
-    guides_dir = os.path.join(reference_dir, 'guides')
-    guide_files_to_check = [
-        os.path.join(guides_dir, "automation-projects.md"),
-        os.path.join(guides_dir, "project-structure.md"),
-        os.path.join(guides_dir, "git-integration.md"),
-        os.path.join(guides_dir, "directive-interactions.md")
-    ]
-    for guide_file in guide_files_to_check:
-        if os.path.exists(guide_file):
-            issues.append(f"⚠️ Guide file still exists (should be deleted): {guide_file}")
+    # 9. Verify categories table populated
+    cur.execute("SELECT COUNT(*) as cat_count FROM categories;")
+    cat_count = cur.fetchone()["cat_count"]
+    if cat_count == 0:
+        issues.append("⚠️ No categories found. Check directive JSON files for category field.")
+    else:
+        print(f"   ✓ Found {cat_count} categories")
 
-    print(f"   ✓ Verified {len(guide_files_to_check)} guide files removed")
+    # 10. Verify intent_keywords table populated
+    cur.execute("SELECT COUNT(*) as kw_count FROM intent_keywords;")
+    kw_count = cur.fetchone()["kw_count"]
+    if kw_count == 0:
+        issues.append("⚠️ No intent keywords found. Check directive JSON files for intent_keywords_json field.")
+    else:
+        print(f"   ✓ Found {kw_count} intent keywords")
+
+    # 11. Verify directive_categories links
+    cur.execute("SELECT COUNT(*) as link_count FROM directive_categories;")
+    dc_link_count = cur.fetchone()["link_count"]
+    if dc_link_count == 0:
+        issues.append("⚠️ No directive-category links found.")
+    else:
+        print(f"   ✓ Found {dc_link_count} directive-category links")
+
+    # 12. Verify directives_intent_keywords links
+    cur.execute("SELECT COUNT(*) as link_count FROM directives_intent_keywords;")
+    dik_link_count = cur.fetchone()["link_count"]
+    if dik_link_count == 0:
+        issues.append("⚠️ No directive-keyword links found.")
+    else:
+        print(f"   ✓ Found {dik_link_count} directive-keyword links")
 
     if issues:
-        print(f"❗ Found {len(issues)} integrity warnings:")
+        print(f"\n❗ Found {len(issues)} integrity warnings:")
         for i in issues:
             print("   " + i)
     else:
-        print("✅ Database passed all integrity checks cleanly.")
+        print("\n✅ Database passed all integrity checks cleanly.")
 
     print("🔍 Integrity validation complete.\n")
 
@@ -808,18 +1169,20 @@ if __name__ == "__main__":
         sync_directives()
     except Exception as e:
         print(f"❌ Sync failed: {e}")
+        import traceback
+        traceback.print_exc()
 
 # ==================================
 # MIGRATION GUIDE
 # ==================================
 # To create a new migration:
-# 1. Create file: directives-json/migrations/migration_1.4_to_1.5.sql
+# 1. Create file: directives-json/migrations/migration_1.5_to_2.0.sql
 # 2. Include schema changes (ALTER TABLE, CREATE TABLE, etc.)
 # 3. Update CURRENT_SCHEMA_VERSION at top of this file
 # 4. Run sync script - migrations apply automatically
 #
 # Example migration file structure:
-# -- Migration from v1.4 to v1.5
+# -- Migration from v1.5 to v2.0
 # -- Description: Add new feature X
 #
 # ALTER TABLE directives ADD COLUMN new_field TEXT;

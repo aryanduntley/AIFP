@@ -94,7 +94,7 @@
     },
     {
       "id": 5,
-      "from_directive": "code_writing",
+      "from_directive": "*",
       "to_directive": "user_preferences_learn",
       "flow_type": "conditional",
       "condition_key": "user_correction_detected",
@@ -233,7 +233,7 @@
     },
     {
       "id": 14,
-      "from_directive": "any_directive",
+      "from_directive": "*",
       "to_directive": "project_notes_log",
       "flow_type": "utility",
       "condition_key": "directive_needs_logging",
@@ -269,13 +269,13 @@
   "workflow_patterns": {
     "preference_loading": {
       "description": "Load preferences before executing customizable directives",
-      "flow": "aifp_run → user_preferences_sync → aifp_status",
+      "flow": "aifp_run \u2192 user_preferences_sync \u2192 aifp_status",
       "frequency": "Every time a customizable directive is executed",
       "caching": "Preferences cached for session duration"
     },
     "explicit_update": {
       "description": "User explicitly requests preference change",
-      "flow": "aifp_status → user_preferences_update → aifp_status",
+      "flow": "aifp_status \u2192 user_preferences_update \u2192 aifp_status",
       "frequency": "Ad-hoc, when user wants to change behavior",
       "examples": [
         "User: 'Always add docstrings to functions'",
@@ -285,7 +285,7 @@
     },
     "learned_update": {
       "description": "AI learns preference from user corrections",
-      "flow": "code_writing → user_preferences_learn → [user confirms] → user_preferences_update → aifp_status",
+      "flow": "code_writing \u2192 user_preferences_learn \u2192 [user confirms] \u2192 user_preferences_update \u2192 aifp_status",
       "frequency": "When AI detects correction pattern (opt-in)",
       "requirements": [
         "ai_interaction_log tracking must be enabled",
@@ -295,15 +295,15 @@
     "backup_restore": {
       "description": "Export/import preferences for portability",
       "flows": [
-        "aifp_status → user_preferences_export → aifp_status",
-        "aifp_status → user_preferences_import → aifp_status"
+        "aifp_status \u2192 user_preferences_export \u2192 aifp_status",
+        "aifp_status \u2192 user_preferences_import \u2192 aifp_status"
       ],
       "frequency": "Rarely, for backup or sharing across projects",
       "format": "JSON (includes directive_preferences and user_settings)"
     },
     "privacy_control": {
       "description": "User controls tracking features",
-      "flow": "aifp_status → tracking_toggle → aifp_status",
+      "flow": "aifp_status \u2192 tracking_toggle \u2192 aifp_status",
       "frequency": "Once per project (or when user changes privacy preference)",
       "default": "All tracking OFF by default",
       "granular_features": [
@@ -315,7 +315,7 @@
     },
     "logging_utility": {
       "description": "Any directive can log to project.db notes",
-      "flow": "any_directive → project_notes_log (no loop-back)",
+      "flow": "any_directive \u2192 project_notes_log (no loop-back)",
       "frequency": "As needed by individual directives",
       "use_cases": [
         "Record clarifications",
@@ -379,7 +379,7 @@
         "project_file_write - code style, docstrings, max function length, naming conventions, indent style",
         "project_task_decomposition - naming convention, auto-create items, default priority"
       ],
-      "pattern": "Before execution → user_preferences_sync → load preferences → apply to context"
+      "pattern": "Before execution \u2192 user_preferences_sync \u2192 load preferences \u2192 apply to context"
     },
     "user_system_directives": {
       "description": "User directive system checks preferences for customization",
