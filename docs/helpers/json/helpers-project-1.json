@@ -1,7 +1,7 @@
 {
   "helpers": [
     {
-      "name": "project_get_allowed_db_enum",
+      "name": "project_get_check_constraints",
       "file_path": "helpers/project/validation.py",
       "parameters": [
         {
@@ -36,11 +36,11 @@
         "Find field with CHECK constraint: CHECK (field IN (...))",
         "Extract values from IN clause",
         "Return as array of strings",
-        "Examples: project_get_allowed_db_enum(\"project\", \"user_directives_status\") -> [\"in_progress\", \"active\", \"disabled\"]",
-        "Examples: project_get_allowed_db_enum(\"tasks\", \"status\") -> [\"pending\", \"in_progress\", \"blocked\", \"completed\", \"cancelled\"]",
-        "Examples: project_get_allowed_db_enum(\"types_functions\", \"role\") -> [\"interface\", \"implementation\", \"utility\", \"test\"]",
-        "Examples: project_get_allowed_db_enum(\"interactions\", \"type\") -> [\"calls\", \"returns\", \"modifies\", \"reads\", \"creates\"]",
-        "Examples: project_get_allowed_db_enum(\"completion_path\", \"status\") -> [\"pending\", \"in_progress\", \"completed\", \"blocked\"]"
+        "Examples: project_get_check_constraints(\"project\", \"user_directives_status\") -> [\"in_progress\", \"active\", \"disabled\"]",
+        "Examples: project_get_check_constraints(\"tasks\", \"status\") -> [\"pending\", \"in_progress\", \"blocked\", \"completed\", \"cancelled\"]",
+        "Examples: project_get_check_constraints(\"types_functions\", \"role\") -> [\"interface\", \"implementation\", \"utility\", \"test\"]",
+        "Examples: project_get_check_constraints(\"interactions\", \"type\") -> [\"calls\", \"returns\", \"modifies\", \"reads\", \"creates\"]",
+        "Examples: project_get_check_constraints(\"completion_path\", \"status\") -> [\"pending\", \"in_progress\", \"completed\", \"blocked\"]"
       ]
     },
     {
@@ -770,9 +770,9 @@
     "count": 17,
     "range": "helpers 1-17 of 125",
     "description": "Database schema queries, CHECK constraint validation, generic CRUD operations, project metadata management, workflow protection",
-    "first_helper": "project_get_allowed_db_enum",
+    "first_helper": "project_get_check_constraints",
     "last_helper": "get_infrastructure_by_type",
-    "status": "UPDATED - added project_get_allowed_db_enum for CHECK constraint validation",
+    "status": "UPDATED - added project_get_check_constraints for CHECK constraint validation",
     "last_updated": "2026-01-10"
   }
 }

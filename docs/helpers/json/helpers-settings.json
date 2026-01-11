@@ -1,7 +1,7 @@
 {
   "helpers": [
     {
-      "name": "user_preferences_get_allowed_db_enum",
+      "name": "user_preferences_get_check_constraints",
       "file_path": "helpers/user_preferences/validation.py",
       "parameters": [
         {
@@ -36,8 +36,8 @@
         "Find field with CHECK constraint: CHECK (field IN (...))",
         "Extract values from IN clause",
         "Return as array of strings",
-        "Examples: user_preferences_get_allowed_db_enum(\"tracking_settings\", \"feature_name\") -> [\"fp_flow_tracking\", \"ai_interaction_log\", \"helper_function_logging\", \"issue_reports\", \"compliance_checking\"]",
-        "Examples: user_preferences_get_allowed_db_enum(\"tracking_settings\", \"status\") -> [\"enabled\", \"disabled\"]"
+        "Examples: user_preferences_get_check_constraints(\"tracking_settings\", \"feature_name\") -> [\"fp_flow_tracking\", \"ai_interaction_log\", \"helper_function_logging\", \"issue_reports\", \"compliance_checking\"]",
+        "Examples: user_preferences_get_check_constraints(\"tracking_settings\", \"status\") -> [\"enabled\", \"disabled\"]"
       ]
     },
     {
@@ -774,8 +774,8 @@
   "metadata": {
     "file": "helpers-settings.json",
     "count": 22,
-    "first_helper": "user_preferences_get_allowed_db_enum",
-    "status": "UPDATED - added user_preferences_get_allowed_db_enum for CHECK constraint validation",
+    "first_helper": "user_preferences_get_check_constraints",
+    "status": "UPDATED - added user_preferences_get_check_constraints for CHECK constraint validation",
     "mapped_helpers": 9,
     "unmapped_helpers": 12,
     "note": "12 helpers are generic AI query tools (schema/CRUD operations, CHECK constraint validation) - intentionally empty. 9 helpers mapped to user preference directives (user_preferences_sync, user_preferences_update, user_preferences_learn, user_preferences_import, user_preferences_export, tracking_toggle). Added 3 helpers for tracking_notes table: add_tracking_note, get_tracking_notes, search_tracking_notes.",

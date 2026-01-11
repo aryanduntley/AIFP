@@ -1,7 +1,7 @@
 {
   "helpers": [
     {
-      "name": "core_get_allowed_db_enum",
+      "name": "core_get_check_constraints",
       "file_path": "helpers/core/validation.py",
       "parameters": [
         {
@@ -36,10 +36,10 @@
         "Find field with CHECK constraint: CHECK (field IN (...))",
         "Extract values from IN clause",
         "Return as array of strings",
-        "Examples: core_get_allowed_db_enum(\"directives\", \"type\") -> [\"fp\", \"project\", \"git\", \"user_system\", \"user_preference\"]",
-        "Examples: core_get_allowed_db_enum(\"directive_flow\", \"flow_type\") -> [\"status_branch\", \"completion_loop\", \"conditional\", \"error\", \"reference_consultation\", \"canonical\", \"error_handler\", \"utility\"]",
-        "Examples: core_get_allowed_db_enum(\"directive_flow\", \"flow_category\") -> [\"project\", \"fp\", \"user_preferences\", \"git\"]",
-        "Examples: core_get_allowed_db_enum(\"helper_functions\", \"target_database\") -> [\"core\", \"project\", \"user_preferences\", \"user_directives\", \"orchestrator\", \"system\"]"
+        "Examples: core_get_check_constraints(\"directives\", \"type\") -> [\"fp\", \"project\", \"git\", \"user_system\", \"user_preference\"]",
+        "Examples: core_get_check_constraints(\"directive_flow\", \"flow_type\") -> [\"status_branch\", \"completion_loop\", \"conditional\", \"error\", \"reference_consultation\", \"canonical\", \"error_handler\", \"utility\"]",
+        "Examples: core_get_check_constraints(\"directive_flow\", \"flow_category\") -> [\"project\", \"fp\", \"user_preferences\", \"git\"]",
+        "Examples: core_get_check_constraints(\"helper_functions\", \"target_database\") -> [\"core\", \"project\", \"user_preferences\", \"user_directives\", \"orchestrator\", \"system\"]"
       ]
     },
     {
@@ -1245,7 +1245,7 @@
   "metadata": {
     "file": "helpers-core.json",
     "count": 38,
-    "first_helper": "core_get_allowed_db_enum",
+    "first_helper": "core_get_check_constraints",
     "status": "UPDATED - removed get_directive_content (useless middleman), removed status_object/work_context parameters, added wildcard-aware helpers",
     "mapped_helpers": 15,
     "unmapped_helpers": 23,

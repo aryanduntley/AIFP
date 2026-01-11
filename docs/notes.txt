@@ -25,9 +25,14 @@ MUST make OOP wrapper examples
 
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
-docs/directives-json/sync-directives.py needs full overhaul based on new schema, structure and decisions
+docs/directives-json/sync-directives.py
+
+
+get_check_constraints better than get_allowed_values_enum
 
 =============================
+docs/directives-json/IMPORT_REPORT_2026-01-10.md
+
 docs/HELPER_AUDIT_REPORT.md
 docs/helpers/json/PARAMETER_COMPLETION_PROGRESS.md
 
