@@ -51,10 +51,10 @@ Keywords normalized to lowercase for search optimization.
 | git | 1 | helpers-git.json |
 
 **Helpers Added:**
-- `core_get_check_constraints(table, field)` - Returns CHECK constraint enum values
-- `project_get_check_constraints(table, field)` - Returns CHECK constraint enum values
-- `user_preferences_get_check_constraints(table, field)` - Returns CHECK constraint enum values
-- `user_directives_get_check_constraints(table, field)` - Returns CHECK constraint enum values
+- `core_allowed_check_constraints(table, field)` - Returns CHECK constraint enum values
+- `project_allowed_check_constraints(table, field)` - Returns CHECK constraint enum values
+- `user_preferences_allowed_check_constraints(table, field)` - Returns CHECK constraint enum values
+- `user_directives_allowed_check_constraints(table, field)` - Returns CHECK constraint enum values
 - `search_fp_references(keyword, category, pattern)` - Query FP directives available from ANY context (wildcard '*' aware)
 - `get_contextual_utilities(current_directive, condition)` - Query utility directives available in current context (wildcard '*' aware)
 
@@ -267,7 +267,7 @@ CHECK (target_database IN (
 
 ### Helper JSON Files
 - `helpers-core.json`:
-  - Added `core_get_check_constraints` helper
+  - Added `core_allowed_check_constraints` helper
   - Added `search_fp_references` helper (wildcard-aware)
   - Added `get_contextual_utilities` helper (wildcard-aware)
   - Removed `get_directive_content` helper (useless middleman - AI reads MD directly)
@@ -277,9 +277,9 @@ CHECK (target_database IN (
   - Updated `get_fp_directive_index` implementation note to reference direct MD reading
   - Updated metadata: count from 37 → 38 helpers (net +1: added 2, removed 1)
 
-- `helpers-project-1.json` - Added `project_get_check_constraints`, updated metadata
-- `helpers-settings.json` - Added `user_preferences_get_check_constraints`, fixed target_database naming
-- `helpers-user-custom.json` - Added `user_directives_get_check_constraints`, fixed target_database naming
+- `helpers-project-1.json` - Added `project_allowed_check_constraints`, updated metadata
+- `helpers-settings.json` - Added `user_preferences_allowed_check_constraints`, fixed target_database naming
+- `helpers-user-custom.json` - Added `user_directives_allowed_check_constraints`, fixed target_database naming
 
 ### Schema Files
 - `src/aifp/database/schemas/aifp_core.sql` - Added 4 new flow_type values (reference_consultation, utility, etc.)

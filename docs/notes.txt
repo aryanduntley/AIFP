@@ -27,9 +27,6 @@ MUST make OOP wrapper examples
 
 docs/directives-json/sync-directives.py
 
-
-get_check_constraints better than get_allowed_values_enum
-
 =============================
 docs/directives-json/IMPORT_REPORT_2026-01-10.md
 

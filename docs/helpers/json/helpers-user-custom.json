@@ -1,7 +1,7 @@
 {
   "helpers": [
     {
-      "name": "user_directives_get_check_constraints",
+      "name": "user_directives_allowed_check_constraints",
       "file_path": "helpers/user_directives/validation.py",
       "parameters": [
         {
@@ -36,8 +36,8 @@
         "Find field with CHECK constraint: CHECK (field IN (...))",
         "Extract values from IN clause",
         "Return as array of strings",
-        "Examples: user_directives_get_check_constraints(\"user_directives\", \"status\") -> [\"draft\", \"pending_approval\", \"approved\", \"active\", \"paused\", \"deprecated\"]",
-        "Examples: user_directives_get_check_constraints(\"user_directives\", \"trigger_type\") -> [\"file_pattern\", \"time_based\", \"event_based\", \"manual\"]"
+        "Examples: user_directives_allowed_check_constraints(\"user_directives\", \"status\") -> [\"draft\", \"pending_approval\", \"approved\", \"active\", \"paused\", \"deprecated\"]",
+        "Examples: user_directives_allowed_check_constraints(\"user_directives\", \"trigger_type\") -> [\"file_pattern\", \"time_based\", \"event_based\", \"manual\"]"
       ]
     },
     {
@@ -734,8 +734,8 @@
   "metadata": {
     "file": "helpers-user-custom.json",
     "count": 20,
-    "first_helper": "user_directives_get_check_constraints",
-    "status": "UPDATED - added user_directives_get_check_constraints for CHECK constraint validation",
+    "first_helper": "user_directives_allowed_check_constraints",
+    "status": "UPDATED - added user_directives_allowed_check_constraints for CHECK constraint validation",
     "mapped_helpers": 9,
     "unmapped_helpers": 11,
     "note": "11 helpers are generic AI query tools (schema/CRUD operations, CHECK constraint validation, note helpers) - intentionally empty. 9 helpers mapped to user directive system directives (user_directive_parse, validate, implement, approve, activate, deactivate, update, status, monitor) plus aifp_status. Added 3 note helpers: add_user_directive_note, get_user_directive_notes, search_user_directive_notes.",
