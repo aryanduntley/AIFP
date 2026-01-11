@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "reserve_file",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_1.py",
       "parameters": [
         {
           "name": "name",
@@ -60,7 +60,7 @@
     },
     {
       "name": "reserve_files",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_1.py",
       "parameters": [
         {
           "name": "files",
@@ -87,7 +87,7 @@
     },
     {
       "name": "finalize_file",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_1.py",
       "parameters": [
         {
           "name": "file_id",
@@ -155,14 +155,14 @@
       "implementation_notes": [
         "Returns {success: true, file_id: file_id}",
         "Verifies file exists at path using os.path.exists()",
-        "Computes file checksum (SHA-256) and stores in checksum field",
-        "SQL: UPDATE files SET is_reserved=0, name=?, path=?, language=?, checksum=? WHERE id=?",
-        "Name validation: must contain '_id_{file_id}' pattern"
+        "SQL: UPDATE files SET is_reserved=0, name=?, path=?, language=? WHERE id=?",
+        "Name validation: must contain '_id_{file_id}' pattern",
+        "Note: File change tracking uses Git, not database checksums"
       ]
     },
     {
       "name": "finalize_files",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_1.py",
       "parameters": [
         {
           "name": "files",
@@ -183,14 +183,15 @@
       "used_by_directives": [],
       "implementation_notes": [
         "Returns {success: true, finalized_ids: [...]} confirming which IDs were finalized",
-        "Verifies each file exists, computes checksums for all",
-        "SQL: Multiple UPDATE files SET is_reserved=0, checksum=? WHERE id=? (in transaction)",
-        "All operations succeed or all fail - no partial finalization"
+        "Verifies each file exists on filesystem",
+        "SQL: Multiple UPDATE files SET is_reserved=0, name=?, path=?, language=? WHERE id=? (in transaction)",
+        "All operations succeed or all fail - no partial finalization",
+        "Note: File change tracking uses Git, not database checksums"
       ]
     },
     {
       "name": "get_file_by_name",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_1.py",
       "parameters": [
         {
           "name": "file_name",
@@ -227,12 +228,12 @@
       "implementation_notes": [
         "Returns file object or null if not found",
         "SQL: SELECT * FROM files WHERE name=? LIMIT 1",
-        "Returns: {id, name, path, language, checksum, is_reserved, created_at, updated_at}"
+        "Returns: {id, name, path, language, is_reserved, created_at, updated_at}"
       ]
     },
     {
       "name": "get_file_by_path",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_1.py",
       "parameters": [
         {
           "name": "file_path",
@@ -293,7 +294,7 @@
       "implementation_notes": [
         "Returns file object or null if not found",
         "SQL: SELECT * FROM files WHERE path=? LIMIT 1",
-        "Returns: {id, name, path, language, checksum, is_reserved, created_at, updated_at}"
+        "Returns: {id, name, path, language, is_reserved, created_at, updated_at}"
       ]
     },
     {
@@ -345,7 +346,7 @@
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Update file metadata after code generation - synchronizes checksum and file information"
+          "description": "Update file metadata after code generation - synchronizes file information"
         },
         {
           "directive_name": "project_dependency_sync",
@@ -353,22 +354,22 @@
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Update stale file metadata during DB-filesystem sync - recalculates checksum and updates file information"
+          "description": "Update stale file metadata during DB-filesystem sync - refreshes file information"
         },
         {
           "directive_name": "project_integrity_check",
-          "execution_context": "recalculate_file_checksum",
+          "execution_context": "verify_file_metadata",
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Fix file checksum mismatches during integrity validation - recalculates and updates checksums"
+          "description": "Verify file metadata during integrity validation - ensures database matches filesystem"
         }
       ],
       "implementation_notes": [
         "Returns {success: true, file_id: file_id}",
-        "Recalculates checksum from current file content",
-        "SQL: UPDATE files SET name=?, path=?, language=?, checksum=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-        "Only updates non-NULL parameters - partial updates supported"
+        "SQL: UPDATE files SET name=?, path=?, language=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        "Only updates non-NULL parameters - partial updates supported",
+        "Note: File change tracking uses Git, not database fields"
       ]
     },
     {
@@ -418,8 +419,8 @@
       "implementation_notes": [
         "Returns {changed: boolean, method: 'git'|'filesystem'}",
         "Git method: git diff --quiet <path> (if git available)",
-        "Filesystem method: Compute SHA-256 of file content, compare with stored checksum",
-        "Prefers git method if available, falls back to filesystem checksum"
+        "Filesystem method: Compare file's last modified timestamp with updated_at in database",
+        "Prefers git method if available, falls back to filesystem timestamp comparison"
       ]
     },
     {
@@ -444,8 +445,8 @@
       "implementation_notes": [
         "Returns {success: true}",
         "Sub-helper: not exposed as MCP tool, only called internally",
-        "Recalculates checksum from file content",
-        "SQL: UPDATE files SET updated_at=CURRENT_TIMESTAMP, checksum=? WHERE id=?"
+        "Updates timestamp to mark file as recently modified",
+        "SQL: UPDATE files SET updated_at=CURRENT_TIMESTAMP WHERE id=?"
       ]
     },
     {

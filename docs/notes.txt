@@ -10,10 +10,14 @@ Everything above src/aifp/ is dev.
 helpers are in docs/json/helpers/
 directive flows are in docs/directives-json/directive_flow_(project,user-preferences,fp).json
 
+src/aifp/database/schemas/user_directives.sql
+src/aifp/database/schemas/aifp_core.sql
+src/aifp/database/schemas/project.sql
+src/aifp/database/schemas/user_preferences.sql
+docs/HELPER_IMPLEMENTATION_PLAN.md
+
 COMPLETED BUT VALUABLE INFO FOR when begin CODING AIFP_RUN
 docs/settings-integration-implementation.md
-
-return_statements not to be passed if error returned. return statements are forward thinking, next steps only.
 
 when coding helpers, if case 2, ensure we make a return value that indicates to AI case 2 active. Probably during status call(s)
 

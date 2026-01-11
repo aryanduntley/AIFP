@@ -40,9 +40,9 @@ from pathlib import Path
 # ===================================
 
 # Database path - configurable via environment variable
-# Default: ../testdb/aifp_core.db (relative to script location - for testing)
-# For production: Set AIFP_CORE_DB_PATH to MCP server's database location
-DB_PATH = os.environ.get("AIFP_CORE_DB_PATH", "../testdb/aifp_core.db")
+# Default: ../../src/aifp/database/aifp_core.db (production location)
+# Override with AIFP_CORE_DB_PATH environment variable if needed
+DB_PATH = os.environ.get("AIFP_CORE_DB_PATH", "../../src/aifp/database/aifp_core.db")
 
 FP_DIRECTIVE_FILES = [
     "directives-fp-core.json",
