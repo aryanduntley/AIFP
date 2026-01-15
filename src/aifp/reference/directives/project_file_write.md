@@ -14,6 +14,7 @@ The `project_file_write` directive handles writing new or modified files using A
 Key responsibilities:
 - **Apply user preferences** from `directive_preferences` table (docstrings, max function length, guard clauses, code style)
 - **Validate FP compliance** by calling `fp_purity`, `fp_immutability`, `fp_side_effect_detection`
+- **Enforce DRY principle** - Extract common utilities to shared modules at appropriate scope level
 - **Track user directive implementations** when path starts with `.aifp-project/user-directives/generated/`
 - **Update project.db** with file metadata, functions, interactions, and dependencies
 - **Link to tasks** via AIFP_METADATA for completion tracking
@@ -128,6 +129,101 @@ Loads and applies user-defined preferences for file writing.
 **on_failure**: `prompt_user`
 - If file write fails, present error and ask user to resolve
 - Common issues: File permissions, path invalid, compliance violations
+
+---
+
+## Code Organization and DRY Principle
+
+**CRITICAL**: When writing code files, actively enforce DRY (Don't Repeat Yourself) by extracting common utilities to shared modules. This is essential for AI efficiency at scale.
+
+### Why DRY Matters for AI Efficiency
+
+At scale (hundreds/thousands of files), code duplication causes massive overhead:
+
+- **Token Generation**: Duplicating 50 lines × 1,000 files = 50,000 wasted lines (vs. 1,050 with DRY)
+- **Database Bloat**: Same function stored 1,000 times with different file_ids (vs. 1 definition with DRY)
+- **Maintenance Burden**: Logic change requires updating 1,000 files instead of 1
+- **Context Window Waste**: Every file carries boilerplate instead of unique logic
+- **Memory/Cache Overhead**: AI loads duplicated code repeatedly
+
+**Database Provides Context**: AI queries database for function metadata (signatures, purposes, relationships), not file contents. No "readability penalty" from imports—AI gets full context from database queries.
+
+### The Right DRY Philosophy
+
+✅ **Extract when** (GOOD DRY):
+- Code is **IDENTICAL** across 2+ files
+- Function has **single responsibility**
+- Use cases are **truly the same**
+- No conditionals or parameters needed to handle variations
+
+❌ **Don't extract when** (FORCED DRY—avoid this):
+- Code is **similar but not identical**
+- Would require adding parameters/conditionals to handle variations
+- Use cases are **actually different** (even if they look similar)
+- Would create "god functions" that try to do everything
+
+### Examples
+
+```python
+# ✅ GOOD DRY - Extract this (identical everywhere)
+def _open_connection(db_path: str) -> sqlite3.Connection:
+    """Effect: Open database connection with row factory."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# ❌ FORCED DRY - Don't do this (forced reuse with many parameters)
+def update_entity(conn, table, entity_id, field_name, new_value,
+                  validate=True, cascade=False, log_change=True, ...):
+    # 200 lines of conditionals trying to handle every case
+    # This becomes unmaintainable
+
+# ✅ GOOD DRY - Make separate focused functions instead
+def update_file(conn, file_id, name, path): ...
+def update_function(conn, func_id, name, purpose): ...
+def update_type(conn, type_id, name, variants): ...
+```
+
+### Scope-Based Extraction Strategy
+
+Files are NOT required to be self-contained. Extract common functions at the **highest appropriate scope level**:
+
+**1. Global Level** (`src/aifp/_common.py` or `src/aifp/helpers/_common.py`)
+- Use when: Function is used across ALL helper categories (project, core, git, user_preferences, user_directives)
+- Examples: Database connections, generic Result types, universal validation utilities
+- Extract if code appears in multiple categories
+
+**2. Category Level** (`src/aifp/helpers/project/_common.py`)
+- Use when: Function is used across multiple files within ONE category
+- Examples: Category-specific entity checks, domain-specific query builders
+- Extract if code appears in 2+ files within same category
+
+**3. File Level** (keep in the specific file)
+- Use when: Function is used only in ONE file
+- Examples: File-specific data transformations, unique business logic
+- Keep local if truly file-specific
+
+### Decision Rules
+
+When writing a file, ASK:
+1. **Is this function identical to one in another file?** → Extract to shared module immediately
+2. **Is this function similar but requires variations?** → Make separate focused functions (don't force extraction)
+3. **Is this function truly generic and focused?** → Extract proactively to appropriate scope
+4. **Is this function domain-specific to this file only?** → Keep local
+
+### Import Pattern
+
+```python
+# In src/aifp/helpers/project/files_1.py
+from ._common import (
+    _open_connection,
+    _check_file_exists,
+    _create_deletion_note
+)
+from helpers._common import _validate_result  # Global utility
+```
+
+**This is standard behavior for all AIFP projects** unless user explicitly overrides.
 
 ---
 

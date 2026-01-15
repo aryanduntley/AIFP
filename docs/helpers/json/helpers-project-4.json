@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "reserve_type",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_1.py",
       "parameters": [
         {
           "name": "name",
@@ -74,7 +74,7 @@
     },
     {
       "name": "reserve_types",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_1.py",
       "parameters": [
         {
           "name": "types",
@@ -101,7 +101,7 @@
     },
     {
       "name": "finalize_type",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_1.py",
       "parameters": [
         {
           "name": "type_id",
@@ -189,7 +189,7 @@
     },
     {
       "name": "finalize_types",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_1.py",
       "parameters": [
         {
           "name": "types",
@@ -216,7 +216,7 @@
     },
     {
       "name": "update_type",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_1.py",
       "parameters": [
         {
           "name": "type_id",
@@ -289,7 +289,7 @@
     },
     {
       "name": "delete_type",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_1.py",
       "parameters": [
         {
           "name": "type_id",
@@ -361,7 +361,7 @@
     },
     {
       "name": "add_types_functions",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_2.py",
       "parameters": [
         {
           "name": "relationships",
@@ -396,7 +396,7 @@
     },
     {
       "name": "update_type_function_role",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_2.py",
       "parameters": [
         {
           "name": "type_id",
@@ -435,7 +435,7 @@
     },
     {
       "name": "delete_type_function",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/types_2.py",
       "parameters": [
         {
           "name": "id",
@@ -488,7 +488,7 @@
     },
     {
       "name": "add_interaction",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/interactions.py",
       "parameters": [
         {
           "name": "source",
@@ -536,7 +536,7 @@
     },
     {
       "name": "add_interactions",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/interactions.py",
       "parameters": [
         {
           "name": "interactions",
@@ -570,7 +570,7 @@
     },
     {
       "name": "update_interaction",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/interactions.py",
       "parameters": [
         {
           "name": "id",
@@ -634,7 +634,7 @@
     },
     {
       "name": "delete_interaction",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/interactions.py",
       "parameters": [
         {
           "name": "id",

@@ -368,76 +368,76 @@ src/aifp/helpers/
   - [x] get_file_by_name
   - [x] get_file_by_path
 
-- [ ] **project/files_2.py** - `helpers-project-2.json` (4 helpers)
-  - [ ] update_file
-  - [ ] file_has_changed
-  - [ ] update_file_timestamp (sub-helper)
-  - [ ] delete_file
+- [x] **project/files_2.py** - `helpers-project-2.json` (4 helpers) ✅
+  - [x] update_file
+  - [x] file_has_changed
+  - [x] update_file_timestamp (sub-helper)
+  - [x] delete_file
 
 #### Functions (10 helpers)
-- [ ] **project/functions_1.py** - `helpers-project-3.json` (5 helpers)
-  - [ ] reserve_function
-  - [ ] reserve_functions
-  - [ ] finalize_function
-  - [ ] finalize_functions
-  - [ ] get_function_by_name
+- [x] **project/functions_1.py** - `helpers-project-3.json` (5 helpers) ✅
+  - [x] reserve_function
+  - [x] reserve_functions
+  - [x] finalize_function
+  - [x] finalize_functions
+  - [x] get_function_by_name
 
-- [ ] **project/functions_2.py** - `helpers-project-3.json` (5 helpers)
-  - [ ] get_functions_by_file
-  - [ ] update_function
-  - [ ] update_functions_for_file
-  - [ ] update_function_file_location
-  - [ ] delete_function
+- [x] **project/functions_2.py** - `helpers-project-3.json` (5 helpers) ✅
+  - [x] get_functions_by_file
+  - [x] update_function
+  - [x] update_functions_for_file
+  - [x] update_function_file_location
+  - [x] delete_function
 
 #### Types & Interactions (13 helpers)
-- [ ] **project/types_1.py** - `helpers-project-4.json` (6 helpers)
-  - [ ] reserve_type
-  - [ ] reserve_types
-  - [ ] finalize_type
-  - [ ] finalize_types
-  - [ ] update_type
-  - [ ] delete_type
+- [x] **project/types_1.py** - `helpers-project-4.json` (6 helpers) ✅
+  - [x] reserve_type
+  - [x] reserve_types
+  - [x] finalize_type
+  - [x] finalize_types
+  - [x] update_type
+  - [x] delete_type
 
-- [ ] **project/types_2.py** - `helpers-project-4.json` (3 helpers)
-  - [ ] add_types_functions
-  - [ ] update_type_function_role
-  - [ ] delete_type_function
+- [x] **project/types_2.py** - `helpers-project-4.json` (3 helpers) ✅
+  - [x] add_types_functions
+  - [x] update_type_function_role
+  - [x] delete_type_function
 
-- [ ] **project/interactions.py** - `helpers-project-4.json` (4 helpers)
-  - [ ] add_interaction
-  - [ ] add_interactions
-  - [ ] update_interaction
-  - [ ] delete_interaction
+- [x] **project/interactions.py** - `helpers-project-4.json` (4 helpers) ✅
+  - [x] add_interaction
+  - [x] add_interactions
+  - [x] update_interaction
+  - [x] delete_interaction
 
 #### Themes & Flows (25 helpers)
-- [ ] **project/themes_flows_1.py** - `helpers-project-5.json` (11 helpers)
-  - [ ] get_theme_by_name
-  - [ ] get_flow_by_name
-  - [ ] get_all_themes
-  - [ ] get_all_flows
-  - [ ] add_theme
-  - [ ] update_theme
-  - [ ] delete_theme
-  - [ ] add_flow
-  - [ ] get_file_ids_from_flows
-  - [ ] update_flow
-  - [ ] delete_flow
+- [x] **project/themes_flows_1.py** - `helpers-project-5.json` (11 helpers) ✅
+  - [x] get_theme_by_name
+  - [x] get_flow_by_name
+  - [x] get_all_themes
+  - [x] get_all_flows
+  - [x] add_theme
+  - [x] update_theme
+  - [x] delete_theme
+  - [x] add_flow
+  - [x] get_file_ids_from_flows
+  - [x] update_flow
+  - [x] delete_flow
 
-- [ ] **project/themes_flows_2.py** - `helpers-project-6.json` (14 helpers)
-  - [ ] get_flows_for_theme
-  - [ ] get_themes_for_flow
-  - [ ] get_files_by_flow
-  - [ ] get_flows_for_file
-  - [ ] add_completion_path
-  - [ ] get_all_completion_paths
-  - [ ] get_next_completion_path
-  - [ ] get_completion_paths_by_status
-  - [ ] get_incomplete_completion_paths
-  - [ ] update_completion_path
-  - [ ] delete_completion_path
-  - [ ] reorder_completion_path
-  - [ ] reorder_all_completion_paths
-  - [ ] swap_completion_paths_order
+- [x] **project/themes_flows_2.py** - `helpers-project-6.json` (14 helpers) ✅
+  - [x] get_flows_for_theme
+  - [x] get_themes_for_flow
+  - [x] get_files_by_flow
+  - [x] get_flows_for_file
+  - [x] add_completion_path
+  - [x] get_all_completion_paths
+  - [x] get_next_completion_path
+  - [x] get_completion_paths_by_status
+  - [x] get_incomplete_completion_paths
+  - [x] update_completion_path
+  - [x] delete_completion_path
+  - [x] reorder_completion_path
+  - [x] reorder_all_completion_paths
+  - [x] swap_completion_paths_order
 
 #### Tasks (15 helpers)
 - [ ] **project/tasks.py** - `helpers-project-7.json` (15 helpers)
@@ -695,6 +695,102 @@ All helpers MUST be FP-compliant:
 - ✅ All parameters explicit (no hidden state)
 - ✅ Type hints on all parameters and returns
 - ✅ Deterministic (same inputs → same outputs)
+- ✅ **DRY (Don't Repeat Yourself) - Extract common utilities to shared modules**
+
+### Code Reusability and DRY Principle
+
+**CRITICAL**: Helper files are NOT required to be self-contained. Extract common utilities at the **appropriate scope level**.
+
+**Why DRY Matters at Scale**:
+- At scale (hundreds/thousands of files), duplication causes massive overhead:
+  - **Token generation**: Duplicating 50 lines × 1,000 files = 50,000 wasted lines
+  - **Database bloat**: Same function stored 1,000 times with different file_ids
+  - **Maintenance burden**: Logic change requires updating 1,000 files instead of 1
+  - **Context window waste**: Every file carries boilerplate instead of unique logic
+  - **Memory/cache overhead**: AI loads duplicated code repeatedly
+- **Database provides context**: AI queries database for function metadata, not file contents
+  - Database has function signatures, purposes, relationships
+  - No need to read actual files for context
+  - So no "readability penalty" from imports
+
+**The Right DRY Philosophy**:
+
+✅ **Extract when** (GOOD DRY):
+- Code is **IDENTICAL** across 2+ files
+- Function has **single responsibility**
+- Use cases are **truly the same**
+- No conditionals or parameters needed to handle variations
+
+❌ **Don't extract when** (FORCED DRY - avoid this):
+- Code is **similar but not identical**
+- Would require adding parameters/conditionals to handle variations
+- Use cases are **actually different** (even if they look similar)
+- Would create "god functions" that try to do everything
+
+**Examples**:
+```python
+# ✅ GOOD DRY - Extract this (identical everywhere)
+def _open_connection(db_path: str) -> sqlite3.Connection:
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# ❌ FORCED DRY - Don't do this (forced reuse with many parameters)
+def update_entity(conn, table, entity_id, field_name, new_value,
+                  validate=True, cascade=False, log_change=True, ...):
+    # 200 lines of conditionals trying to handle every case
+    # This becomes unmaintainable
+
+# ✅ GOOD DRY - Make separate focused functions instead
+def update_file(conn, file_id, name, path): ...
+def update_function(conn, func_id, name, purpose): ...
+def update_type(conn, type_id, name, variants): ...
+```
+
+**Scope Levels for Common Utilities**:
+
+1. **Global Level** (`src/aifp/helpers/_common.py` or `src/aifp/_common.py`)
+   - Utilities used across ALL helper categories (project, core, git, user_preferences, user_directives)
+   - Examples: Database connection, generic Result types, validation utilities
+   - Extract if used in multiple categories
+
+2. **Category Level** (`src/aifp/helpers/project/_common.py`)
+   - Utilities used across multiple files within ONE category
+   - Examples: Category-specific entity checks, domain-specific query builders
+   - Extract if used in 2+ files within same category
+
+3. **File Level** (keep in the file)
+   - Utilities used only in ONE file
+   - Examples: File-specific data transformations, unique business logic
+   - Keep local if truly file-specific
+
+**Decision Rules**:
+- Function appears in 2+ files AND is identical → **Extract immediately**
+- Function is similar but needs variations → **Make separate functions** (don't force extraction)
+- Function is truly generic and focused → **Extract proactively** to appropriate scope
+- Function is domain-specific to one file → **Keep local**
+
+**Directory Structure Example**:
+```
+src/aifp/
+├── _common.py                    # GLOBAL utilities (all helpers use)
+└── helpers/
+    ├── _common.py                # Helpers-wide utilities (if needed)
+    ├── project/
+    │   ├── _common.py            # Project category utilities
+    │   ├── files_1.py            # Imports from project/_common AND global
+    │   ├── files_2.py
+    │   └── ...
+    ├── core/
+    │   ├── _common.py            # Core category utilities
+    │   └── ...
+    └── user_preferences/
+        ├── _common.py            # User preferences category utilities
+        └── ...
+```
+
+**This is project-wide standard behavior** for all AIFP projects unless user explicitly overrides.
+```
 
 ### Return Statements - AI Guidance System
 
@@ -798,18 +894,40 @@ Each helper JSON entry includes critical guidance:
 ### Code Organization Per File
 
 Each Python file should:
-1. Import dependencies at top (frozen dataclasses, Result types, database effects)
+1. Import dependencies at top (frozen dataclasses, Result types, **shared utilities from _common.py**)
 2. Define data structures (frozen dataclasses for return types)
 3. Implement helpers in logical order
 4. Include comprehensive docstrings
 5. Handle errors with Result types
 6. Keep files between 600-900 lines
+7. **Extract common functions to `_common.py` - avoid duplication across files**
 
 ---
 
 ## Progress Tracking
 
-**Current Status**: Ready to start Phase 3, Project Files
+**Current Status**: Phase 3 in progress - 58 of 218 helpers completed (26.6%)
+
+**Completed Modules** (9 of 32 files):
+- ✅ `project/files_1.py` - 6 helpers
+- ✅ `project/files_2.py` - 4 helpers
+- ✅ `project/functions_1.py` - 5 helpers
+- ✅ `project/functions_2.py` - 5 helpers
+- ✅ `project/types_1.py` - 6 helpers
+- ✅ `project/types_2.py` - 3 helpers
+- ✅ `project/interactions.py` - 4 helpers
+- ✅ `project/themes_flows_1.py` - 11 helpers
+- ✅ `project/themes_flows_2.py` - 14 helpers
+
+**Completed Milestones**:
+- ✅ Files module (10 helpers)
+- ✅ Functions module (10 helpers)
+- ✅ Types & Interactions module (13 helpers)
+- ✅ Themes & Flows module (25 helpers)
+
+**Next Up**:
+- ⏳ `project/tasks.py` - 15 helpers (task management)
+- ⏳ `project/subtasks_sidequests.py` - 14 helpers (subtasks and sidequests)
 
 Use checkboxes above to track implementation progress as each helper is completed and tested.
 
@@ -841,13 +959,18 @@ For detailed helper specifications, see: `docs/COMPLETE_HELPERS_LIST.md`
 
 1. ✅ Implementation plan complete with all 218 helpers listed
 2. ✅ Complete helper list generated in `COMPLETE_HELPERS_LIST.md`
-3. ⏳ **START: Implement `project/files_1.py`** (reserve_file, reserve_files, finalize_file, finalize_files, get_file_by_name, get_file_by_path)
-4. ⏳ Update JSON file_path fields as we progress
-5. ⏳ Write comprehensive tests for each helper
-6. ⏳ Integration testing with MCP server
+3. ✅ **COMPLETED: Files module** (`project/files_1.py` and `project/files_2.py`)
+4. ✅ **COMPLETED: Functions module** (`project/functions_1.py` and `project/functions_2.py`)
+5. ✅ **COMPLETED: Types & Interactions** (`project/types_1.py`, `project/types_2.py`, `project/interactions.py`)
+6. ✅ **COMPLETED: Themes & Flows Part 1** (`project/themes_flows_1.py` - 11 helpers)
+7. ✅ **COMPLETED: Themes & Flows Part 2** (`project/themes_flows_2.py` - 14 helpers)
+8. ⏳ Update JSON file_path fields as we progress (ongoing)
+8. ⏳ Write comprehensive tests for each helper
+9. ⏳ Integration testing with MCP server
 
 ---
 
 **Generated**: 2026-01-11
-**Status**: Complete plan - Ready for implementation
-**Next**: Begin with `src/aifp/helpers/project/files_1.py`
+**Last Updated**: 2026-01-15
+**Status**: Phase 3 in progress - 58/218 helpers complete (26.6%)
+**Next**: Implement `src/aifp/helpers/project/tasks.py` (15 helpers)

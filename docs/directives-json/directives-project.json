@@ -606,7 +606,7 @@
       "name": "file_operations",
       "description": "Handles file generation and metadata updates."
     },
-    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, and updates project.db accordingly. Should use project_reserve_finalize BEFORE writing to get database IDs for embedding in filenames/function names. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
+    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, enforces DRY principle by extracting IDENTICAL functions to shared modules at appropriate scope level (avoid forced DRY with god functions), and updates project.db accordingly. Should use project_reserve_finalize BEFORE writing to get database IDs for embedding in filenames/function names. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
     "md_file_path": "directives/project_file_write.md",
     "workflow": {
       "trunk": "check_user_preferences",

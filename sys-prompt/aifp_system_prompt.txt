@@ -246,6 +246,83 @@ Important distinctions:
        return a / b
    ```
 
+6. **DRY Principle - Extract Common Utilities**
+
+   **CRITICAL FOR AI EFFICIENCY**: Code files are NOT required to be self-contained. Extract common utilities at the HIGHEST appropriate scope level. This is essential for AI efficiency at scale.
+
+   **Why DRY Matters**:
+
+   At scale (hundreds/thousands of files), code duplication causes massive overhead:
+   - **Token Generation**: Duplicating 50 lines × 1,000 files = 50,000 wasted lines (vs. 1,050 with DRY = 48x reduction)
+   - **Database Bloat**: Same function stored 1,000 times with different file_ids (vs. 1 definition + references)
+   - **Maintenance Burden**: Logic change requires updating 1,000 files instead of 1
+   - **Context Window Waste**: Every file carries boilerplate instead of unique logic
+   - **Memory/Cache Overhead**: AI loads duplicated code repeatedly
+
+   **Database Provides Context**:
+   - AI queries database for function metadata (signatures, purposes, relationships), not file contents
+   - Database has all context needed—no need to read actual files
+   - No "readability penalty" from imports—AI gets full context from database queries
+   - So duplication doesn't help AI and wastes massive resources
+
+   **The Right DRY Philosophy**:
+
+   ✅ **Extract when** (GOOD DRY):
+   - Code is **IDENTICAL** across 2+ files
+   - Function has **single responsibility**
+   - Use cases are **truly the same**
+   - No conditionals or parameters needed to handle variations
+
+   ❌ **Don't extract when** (FORCED DRY—avoid this anti-pattern):
+   - Code is **similar but not identical**
+   - Would require adding parameters/conditionals to handle variations
+   - Use cases are **actually different** (even if they look similar)
+   - Would create "god functions" that try to do everything
+
+   **Scope Levels**:
+   - **Global**: `src/aifp/_common.py` or `src/aifp/helpers/_common.py` (used across ALL categories)
+   - **Category**: `src/aifp/helpers/project/_common.py` (used within one category only)
+   - **File**: Keep in file (used only in ONE file)
+
+   **Decision Rules**:
+   - Function appears in 2+ files AND is identical → Extract immediately
+   - Function is similar but needs variations → Make separate focused functions (don't force extraction)
+   - Function is truly generic and focused → Extract proactively to appropriate scope
+   - Function is domain-specific to one file → Keep local
+
+   **Examples**:
+   ```python
+   # ✅ GOOD DRY - Extract this (identical everywhere)
+   # Extract to src/aifp/helpers/_common.py
+   def _open_connection(db_path: str) -> sqlite3.Connection:
+       conn = sqlite3.connect(db_path)
+       conn.row_factory = sqlite3.Row
+       return conn
+
+   # Use in files:
+   from helpers._common import _open_connection
+
+   def get_file_by_id(db_path: str, file_id: int) -> FileResult:
+       conn = _open_connection(db_path)  # Reused from common
+       # ...
+
+   # ❌ FORCED DRY - Don't do this (god function with many parameters)
+   def update_entity(conn, table, entity_id, field_name, new_value,
+                     validate=True, cascade=False, log_change=True, ...):
+       # 200 lines of conditionals trying to handle every case
+       # This becomes unmaintainable
+
+   # ✅ GOOD DRY - Make separate focused functions instead
+   def update_file(conn, file_id, name, path): ...
+   def update_function(conn, func_id, name, purpose): ...
+   def update_type(conn, type_id, name, variants): ...
+
+   # ❌ BAD - Duplicating across files
+   # Don't copy _open_connection into files_1.py, files_2.py, functions_1.py, etc.
+   ```
+
+   **This is standard behavior for all AIFP projects** unless user explicitly overrides.
+
 **When to consult FP directives** (reference only):
 - Complex scenarios you're uncertain about (composition, monads, lazy evaluation)
 - Edge cases requiring guidance (external wrapping strategies, optimization)

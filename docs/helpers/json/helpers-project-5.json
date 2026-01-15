@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "get_theme_by_name",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "theme_name",
@@ -43,7 +43,7 @@
     },
     {
       "name": "get_flow_by_name",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "flow_name",
@@ -84,7 +84,7 @@
     },
     {
       "name": "get_all_themes",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [],
       "purpose": "Get all project themes",
       "error_handling": "",
@@ -125,7 +125,7 @@
     },
     {
       "name": "get_all_flows",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [],
       "purpose": "Get all project flows",
       "error_handling": "",
@@ -166,7 +166,7 @@
     },
     {
       "name": "add_theme",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "name",
@@ -229,7 +229,7 @@
     },
     {
       "name": "update_theme",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "theme_id",
@@ -284,7 +284,7 @@
     },
     {
       "name": "delete_theme",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "theme_id",
@@ -337,7 +337,7 @@
     },
     {
       "name": "add_flow",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "name",
@@ -402,7 +402,7 @@
     },
     {
       "name": "get_file_ids_from_flows",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "flow_ids",
@@ -436,7 +436,7 @@
     },
     {
       "name": "update_flow",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "flow_id",
@@ -491,7 +491,7 @@
     },
     {
       "name": "delete_flow",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/themes_flows_1.py",
       "parameters": [
         {
           "name": "flow_id",

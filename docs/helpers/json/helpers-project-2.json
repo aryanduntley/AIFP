@@ -299,7 +299,7 @@
     },
     {
       "name": "update_file",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_2.py",
       "parameters": [
         {
           "name": "file_id",
@@ -374,7 +374,7 @@
     },
     {
       "name": "file_has_changed",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_2.py",
       "parameters": [
         {
           "name": "file_id",
@@ -425,7 +425,7 @@
     },
     {
       "name": "update_file_timestamp",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_2.py",
       "parameters": [
         {
           "name": "file_id",
@@ -451,7 +451,7 @@
     },
     {
       "name": "delete_file",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/files_2.py",
       "parameters": [
         {
           "name": "file_id",

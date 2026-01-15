@@ -28,6 +28,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils import get_return_statements
 
+# Import common project utilities (DRY principle)
+from ._common import _open_connection
+
 
 # ============================================================================
 # Data Structures (Immutable)
@@ -143,21 +146,6 @@ def row_to_file_record(row: sqlite3.Row) -> FileRecord:
 # ============================================================================
 # Database Effect Functions
 # ============================================================================
-
-def _open_connection(db_path: str) -> sqlite3.Connection:
-    """
-    Effect: Open database connection.
-
-    Args:
-        db_path: Path to project.db
-
-    Returns:
-        Database connection with row factory
-    """
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
-
 
 def _reserve_file_effect(
     conn: sqlite3.Connection,

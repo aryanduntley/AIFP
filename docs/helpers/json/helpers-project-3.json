@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "reserve_function",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_1.py",
       "parameters": [
         {
           "name": "name",
@@ -74,7 +74,7 @@
     },
     {
       "name": "reserve_functions",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_1.py",
       "parameters": [
         {
           "name": "functions",
@@ -101,7 +101,7 @@
     },
     {
       "name": "finalize_function",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_1.py",
       "parameters": [
         {
           "name": "function_id",
@@ -189,7 +189,7 @@
     },
     {
       "name": "finalize_functions",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_1.py",
       "parameters": [
         {
           "name": "functions",
@@ -217,7 +217,7 @@
     },
     {
       "name": "get_function_by_name",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_1.py",
       "parameters": [
         {
           "name": "function_name",
@@ -267,7 +267,7 @@
     },
     {
       "name": "get_functions_by_file",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_2.py",
       "parameters": [
         {
           "name": "file_id",
@@ -325,7 +325,7 @@
     },
     {
       "name": "update_function",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_2.py",
       "parameters": [
         {
           "name": "function_id",
@@ -407,7 +407,7 @@
     },
     {
       "name": "update_functions_for_file",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_2.py",
       "parameters": [
         {
           "name": "file_id",
@@ -468,7 +468,7 @@
     },
     {
       "name": "update_function_file_location",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_2.py",
       "parameters": [
         {
           "name": "function_id",
@@ -510,7 +510,7 @@
     },
     {
       "name": "delete_function",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/functions_2.py",
       "parameters": [
         {
           "name": "function_id",
