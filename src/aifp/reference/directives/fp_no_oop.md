@@ -86,6 +86,7 @@ Scans code for OOP constructs and patterns.
   - Move class-level constants to module-level constants
   - Replace constructors with data creation functions
   - Use frozen dataclasses for data structures (no methods)
+  - **Apply DRY principle**: Extract common utilities to `_common.py` if used across multiple files
 - **Result**: Returns refactored code with no classes
 
 **Branch 2: If method_with_state**

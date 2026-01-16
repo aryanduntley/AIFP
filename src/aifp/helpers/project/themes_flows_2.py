@@ -36,7 +36,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils import get_return_statements
 
 # Import common project utilities (DRY principle)
-from ._common import _open_connection, _create_deletion_note
+from ._common import (
+    _open_connection,
+    _create_deletion_note,
+    _validate_status,
+    VALID_MILESTONE_STATUSES
+)
 
 
 # ============================================================================
@@ -897,6 +902,14 @@ def add_completion_path(
         >>> result.id
         2
     """
+    # Validate status before database operation
+    if not _validate_status(status, VALID_MILESTONE_STATUSES):
+        valid_statuses = ', '.join(sorted(VALID_MILESTONE_STATUSES))
+        return AddCompletionPathResult(
+            success=False,
+            error=f"Invalid status '{status}', must be one of: {valid_statuses}"
+        )
+
     conn = _open_connection(db_path)
 
     try:
@@ -1141,6 +1154,14 @@ def update_completion_path(
         return UpdateCompletionPathResult(
             success=False,
             error="At least one parameter must be provided for update"
+        )
+
+    # Validate status if provided
+    if status is not None and not _validate_status(status, VALID_MILESTONE_STATUSES):
+        valid_statuses = ', '.join(sorted(VALID_MILESTONE_STATUSES))
+        return UpdateCompletionPathResult(
+            success=False,
+            error=f"Invalid status '{status}', must be one of: {valid_statuses}"
         )
 
     conn = _open_connection(db_path)

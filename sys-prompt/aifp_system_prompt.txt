@@ -126,25 +126,73 @@ Important distinctions:
    - No hidden state or mutable global variables
    - Explicit parameters for all inputs
 
-   **Global Constants Exception**:
-   ✅ Read-only global constants for configuration/infrastructure are acceptable
-   - Examples: DATABASE_URL, API_KEYS, MAX_RETRIES, CONFIG_PATH
+   **Global Constants - Extensive Use Encouraged**:
+   ✅ Read-only global constants for configuration/infrastructure are encouraged
+   - Configuration: DATABASE_URL, API_KEYS, MAX_RETRIES, TIMEOUT, CONFIG_PATH
+   - Lookup tables: VALID_STATUSES = frozenset(['pending', 'completed'])
+   - Paths: PROJECT_DB_DIR, STATE_DB_PATH, BACKUP_DIR
+   - Business rules: MAX_CART_ITEMS, PAYMENT_TIMEOUT, RATE_LIMIT
    - Must be immutable (use `Final` in Python, `const` in JS/TS, etc.)
-   - ❌ Mutable global state is forbidden (no global counters, caches, or state objects)
 
-   Example:
+   **Runtime State Management**:
+   ⚠️ Mutable global variables strongly discouraged (cause race conditions, testing issues, hidden deps)
+
+   ✅ **Instead, use explicit state database for runtime mutable state:**
+   - Create lightweight SQLite database (e.g., `state.db`, `runtime.db`, `cache.db`)
+   - Use for: sessions, rate limits, progress tracking, job queues, temp caches, metrics
+   - Provide globally accessible helper module (e.g., `from state.operations import track_session`)
+   - State mutations isolated in effect functions (explicit, traceable, not hidden)
+   - Maintains FP compliance: all state access is explicit via function parameters
+   - Thread-safe: SQLite handles concurrent access automatically
+   - Examples: session tracking, rate limiting, background job progress, distributed locks
+
+   **Example - Read-Only Globals:**
    ```python
-   # ✅ Pure function
-   def add(a: int, b: int) -> int:
-       return a + b
+   from typing import Final
 
-   # ❌ Impure - uses global state
-   total = 0
-   def add_to_total(x):
-       global total
-       total += x
-       return total
+   # ✅ Read-only constants (encouraged)
+   MAX_RETRIES: Final[int] = 3
+   VALID_STATUSES: Final[frozenset] = frozenset(['pending', 'completed'])
+
+   def retry_operation(operation, max_retries: int = MAX_RETRIES):
+       for attempt in range(max_retries):
+           if operation().success: return result
+       return Err("Max retries exceeded")
+
+   # ❌ Avoid: total = 0; def inc(): global total; total += 1  # Mutable state
    ```
+
+   **See `fp_state_elimination.md` for detailed state management patterns and edge cases.**
+
+   **Example - State Database Pattern:**
+   ```python
+   from typing import Final
+   import sqlite3
+
+   STATE_DB_PATH: Final[str] = ".state/runtime.db"
+
+   def track_progress(job_id: str, progress: int) -> Result[None, str]:
+       """Effect: Update job progress in state database."""
+       conn = sqlite3.connect(STATE_DB_PATH)
+       try:
+           conn.execute(
+               "INSERT OR REPLACE INTO jobs VALUES (?, ?, CURRENT_TIMESTAMP)",
+               (job_id, progress)
+           )
+           conn.commit()
+           return Ok(None)
+       except Exception as e:
+           return Err(str(e))
+       finally:
+           conn.close()
+
+   # Use for: sessions, rate limits, job queues, caches, metrics
+   # Key: State mutations explicit through database, not hidden globals
+   ```
+
+   **Key Principle**: Mutable state via database (not global variables) maintains FP purity while solving real-world needs.
+
+   **See `fp_state_elimination.md` for comprehensive state management patterns.**
 
 2. **Immutability**
    - No mutations of data structures
@@ -152,9 +200,8 @@ Important distinctions:
    - Return new copies instead of modifying originals
    - Use immutable data structures (tuples, frozenset, etc.)
 
-   Example:
+   **Example:**
    ```python
-   # ✅ Immutable
    from dataclasses import dataclass
 
    @dataclass(frozen=True)
@@ -163,13 +210,10 @@ Important distinctions:
        age: int
 
    def update_age(user: User, new_age: int) -> User:
-       return User(name=user.name, age=new_age)
-
-   # ❌ Mutable - modifies in place
-   def update_age_bad(user, new_age):
-       user.age = new_age
-       return user
+       return User(name=user.name, age=new_age)  # New instance, not mutation
    ```
+
+   **See `fp_immutability.md` for advanced immutable patterns.**
 
 3. **No OOP** (except frozen dataclasses for data)
    - No classes with methods
@@ -177,9 +221,9 @@ Important distinctions:
    - No hidden state in objects
    - Convert OOP patterns to FP patterns
 
-   Example:
+   **Example:**
    ```python
-   # ✅ FP with frozen dataclass
+   # ✅ Frozen dataclass + function
    @dataclass(frozen=True)
    class Config:
        host: str
@@ -188,15 +232,10 @@ Important distinctions:
    def connect(config: Config) -> Connection:
        return create_connection(config.host, config.port)
 
-   # ❌ OOP with methods
-   class Database:
-       def __init__(self, host):
-           self.host = host
-           self.connection = None
-
-       def connect(self):
-           self.connection = create_connection(self.host)
+   # ❌ Avoid: class Database with __init__, methods, self.state
    ```
+
+   **See `fp_no_oop.md` for refactoring OOP to FP patterns.**
 
 4. **Wrap All External Libraries**
    - Nearly ALL projects use non-FP libraries
@@ -204,34 +243,28 @@ Important distinctions:
    - Maintain purity boundaries
    - Side effects only in wrapper layer
 
-   Example:
+   **Example:**
    ```python
-   # ✅ Wrapped external library
-   from typing import Result, Optional
-   import requests  # External OOP library
+   import requests
 
    def fetch_user_data(user_id: int) -> Result[dict, str]:
-       """Pure wrapper around requests library."""
+       """Pure wrapper - isolates external library side effects."""
        try:
            response = requests.get(f"https://api.example.com/users/{user_id}")
            return Ok(response.json())
        except Exception as e:
            return Err(str(e))
-
-   # ❌ Direct OOP library usage
-   def get_user(user_id):
-       response = requests.get(f"https://api.example.com/users/{user_id}")
-       return response.json()  # No error handling, side effects exposed
    ```
+
+   **See `fp_wrapper_generation.md` for complex wrapping strategies.**
 
 5. **Explicit Error Handling**
    - Use Result/Option types (not exceptions for control flow)
    - Make errors explicit in return types
    - No try/catch for business logic
 
-   Example:
+   **Example:**
    ```python
-   # ✅ Explicit error handling with Result
    from typing import Result
 
    def divide(a: float, b: float) -> Result[float, str]:
@@ -239,89 +272,46 @@ Important distinctions:
            return Err("Division by zero")
        return Ok(a / b)
 
-   # ❌ Exception-based control flow
-   def divide_bad(a, b):
-       if b == 0:
-           raise ValueError("Division by zero")
-       return a / b
+   # ❌ Avoid: raise ValueError() for control flow
    ```
+
+   **See `fp_result_types.md` for advanced error composition.**
 
 6. **DRY Principle - Extract Common Utilities**
 
-   **CRITICAL FOR AI EFFICIENCY**: Code files are NOT required to be self-contained. Extract common utilities at the HIGHEST appropriate scope level. This is essential for AI efficiency at scale.
+   **CRITICAL**: Extract common utilities at the HIGHEST appropriate scope level. Code duplication causes massive overhead at scale (50 lines × 1,000 files = 50,000 wasted lines vs. 1,050 with DRY = 48x reduction). Database queries provide context—no "readability penalty" from imports.
 
-   **Why DRY Matters**:
-
-   At scale (hundreds/thousands of files), code duplication causes massive overhead:
-   - **Token Generation**: Duplicating 50 lines × 1,000 files = 50,000 wasted lines (vs. 1,050 with DRY = 48x reduction)
-   - **Database Bloat**: Same function stored 1,000 times with different file_ids (vs. 1 definition + references)
-   - **Maintenance Burden**: Logic change requires updating 1,000 files instead of 1
-   - **Context Window Waste**: Every file carries boilerplate instead of unique logic
-   - **Memory/Cache Overhead**: AI loads duplicated code repeatedly
-
-   **Database Provides Context**:
-   - AI queries database for function metadata (signatures, purposes, relationships), not file contents
-   - Database has all context needed—no need to read actual files
-   - No "readability penalty" from imports—AI gets full context from database queries
-   - So duplication doesn't help AI and wastes massive resources
-
-   **The Right DRY Philosophy**:
-
-   ✅ **Extract when** (GOOD DRY):
+   **Extract When** (GOOD DRY):
    - Code is **IDENTICAL** across 2+ files
-   - Function has **single responsibility**
-   - Use cases are **truly the same**
-   - No conditionals or parameters needed to handle variations
+   - Function has single responsibility
+   - No conditionals needed for variations
 
-   ❌ **Don't extract when** (FORCED DRY—avoid this anti-pattern):
-   - Code is **similar but not identical**
-   - Would require adding parameters/conditionals to handle variations
-   - Use cases are **actually different** (even if they look similar)
-   - Would create "god functions" that try to do everything
+   **Don't Extract When** (FORCED DRY—avoid):
+   - Code is similar but not identical
+   - Would require many parameters/conditionals
+   - Would create "god functions"
 
    **Scope Levels**:
-   - **Global**: `src/aifp/_common.py` or `src/aifp/helpers/_common.py` (used across ALL categories)
-   - **Category**: `src/aifp/helpers/project/_common.py` (used within one category only)
-   - **File**: Keep in file (used only in ONE file)
+   - **Global**: `src/aifp/_common.py` (ALL categories use it)
+   - **Category**: `src/aifp/helpers/project/_common.py` (one category only)
+   - **File**: Keep in file (one file only)
 
-   **Decision Rules**:
-   - Function appears in 2+ files AND is identical → Extract immediately
-   - Function is similar but needs variations → Make separate focused functions (don't force extraction)
-   - Function is truly generic and focused → Extract proactively to appropriate scope
-   - Function is domain-specific to one file → Keep local
+   **Decision**: Function in 2+ files AND identical → Extract immediately
 
-   **Examples**:
+   **Example**:
    ```python
-   # ✅ GOOD DRY - Extract this (identical everywhere)
-   # Extract to src/aifp/helpers/_common.py
+   # ✅ Extract to _common.py (identical everywhere)
    def _open_connection(db_path: str) -> sqlite3.Connection:
        conn = sqlite3.connect(db_path)
        conn.row_factory = sqlite3.Row
        return conn
 
-   # Use in files:
-   from helpers._common import _open_connection
-
-   def get_file_by_id(db_path: str, file_id: int) -> FileResult:
-       conn = _open_connection(db_path)  # Reused from common
-       # ...
-
-   # ❌ FORCED DRY - Don't do this (god function with many parameters)
+   # ❌ Don't force extraction (too many parameters)
    def update_entity(conn, table, entity_id, field_name, new_value,
-                     validate=True, cascade=False, log_change=True, ...):
-       # 200 lines of conditionals trying to handle every case
-       # This becomes unmaintainable
-
-   # ✅ GOOD DRY - Make separate focused functions instead
-   def update_file(conn, file_id, name, path): ...
-   def update_function(conn, func_id, name, purpose): ...
-   def update_type(conn, type_id, name, variants): ...
-
-   # ❌ BAD - Duplicating across files
-   # Don't copy _open_connection into files_1.py, files_2.py, functions_1.py, etc.
+                     validate=True, cascade=False, ...):  # God function
    ```
 
-   **This is standard behavior for all AIFP projects** unless user explicitly overrides.
+   **Standard for all AIFP projects** unless user overrides.
 
 **When to consult FP directives** (reference only):
 - Complex scenarios you're uncertain about (composition, monads, lazy evaluation)

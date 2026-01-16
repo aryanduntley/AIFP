@@ -48,17 +48,35 @@
    - Use `Optional[T]`, `List[T]`, `Dict[K, V]`, etc.
    - Use type aliases for complex types
 
-7. **No Hidden State**
-   - ALL parameters explicit in function signature
-   - NO module-level variables (except constants)
-   - NO closure over mutable state
-   - Configuration passed as parameters
+7. **Global Constants - Extensive Use Encouraged**
+   - ✅ **Read-only global constants ENCOURAGED** (use `Final` in Python, `const` in JS/TS)
+   - Configuration: `DATABASE_URL`, `MAX_RETRIES`, `TIMEOUT`, `API_KEYS`
+   - Lookup tables: `VALID_STATUSES = frozenset(['pending', 'completed'])`
+   - Paths: `PROJECT_DB_DIR`, `STATE_DB_PATH`, `BACKUP_DIR`
+   - Business rules: `MAX_CART_ITEMS`, `PAYMENT_TIMEOUT`, `RATE_LIMIT`
+   - ❌ **Mutable global variables strongly discouraged** (cause race conditions, testing issues)
 
-8. **Composition Over Abstraction**
-   - Small, focused functions
-   - Compose complex behavior from simple functions
-   - Function pipelines over method chains
-   - Higher-order functions when appropriate
+8. **Runtime State Management**
+   - ⚠️ Avoid mutable global variables
+   - ✅ **For runtime mutable state, use state database pattern:**
+     - Create lightweight SQLite database (e.g., `state.db`, `runtime.db`)
+     - Use for: sessions, rate limits, progress tracking, job queues, temp caches, metrics
+     - State mutations isolated in effect functions (explicit, traceable)
+     - Thread-safe (SQLite handles concurrent access)
+     - Maintains FP compliance (all state access explicit via function parameters)
+   - See `docs/GLOBAL_STATE_AND_DRY_UPDATES.md` for detailed pattern
+
+9. **Explicit Parameters**
+   - ALL parameters explicit in function signature
+   - NO hidden dependencies
+   - NO closure over mutable state
+   - Configuration passed as parameters (or read from global constants)
+
+10. **Composition Over Abstraction**
+    - Small, focused functions
+    - Compose complex behavior from simple functions
+    - Function pipelines over method chains
+    - Higher-order functions when appropriate
 
 ### Example: FP-Compliant Helper
 
@@ -165,13 +183,53 @@ if not result.success:
     return Result(success=False, error="not found")
 ```
 
-❌ **Hidden dependencies:**
+❌ **Mutable global state:**
 ```python
-# BAD - global connection
-conn = sqlite3.connect(DB_PATH)
+# BAD - mutable global variable
+total_files = 0  # Mutable global
 
-def get_file(file_id):
-    return conn.execute(...)  # uses global
+def count_file():
+    global total_files
+    total_files += 1  # Mutation
+    return total_files
+```
+
+✅ **Read-only global constants (ENCOURAGED):**
+```python
+from typing import Final
+
+# GOOD - read-only constants
+MAX_RETRIES: Final[int] = 3
+PROJECT_DB_PATH: Final[str] = ".aifp-project/project.db"
+
+def retry_operation(operation, max_retries: int = MAX_RETRIES):
+    # Uses constant - still deterministic
+    for attempt in range(max_retries):
+        if operation().success: return result
+    return Err("Max retries exceeded")
+```
+
+✅ **State database for runtime mutable state:**
+```python
+from typing import Final
+import sqlite3
+
+STATE_DB_PATH: Final[str] = ".state/runtime.db"  # Read-only constant
+
+def track_progress(job_id: str, progress: int) -> Result[None, str]:
+    """Effect: Explicit state mutation via database."""
+    conn = sqlite3.connect(STATE_DB_PATH)
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO jobs VALUES (?, ?, CURRENT_TIMESTAMP)",
+            (job_id, progress)
+        )
+        conn.commit()
+        return Ok(None)
+    except Exception as e:
+        return Err(str(e))
+    finally:
+        conn.close()
 ```
 
 ✅ **Explicit parameters:**
@@ -974,3 +1032,37 @@ For detailed helper specifications, see: `docs/COMPLETE_HELPERS_LIST.md`
 **Last Updated**: 2026-01-15
 **Status**: Phase 3 in progress - 58/218 helpers complete (26.6%)
 **Next**: Implement `src/aifp/helpers/project/tasks.py` (15 helpers)
+
+---
+
+## Recent Updates (2026-01-15)
+
+### Methodology Updates
+
+**Global State Management Clarified**:
+- Read-only global constants now **extensively encouraged** (was "exception")
+- Added state database pattern for runtime mutable state (FP-compliant)
+- Updated FP rules #7-9 to reflect new patterns
+- See `docs/GLOBAL_STATE_AND_DRY_UPDATES.md` for full details
+
+**Documentation Updates**:
+- System prompt condensed (34 lines = 5% reduction, ~850 tokens saved)
+- Added MD file references for deeper FP pattern context
+- Updated directive JSONs (`fp_state_elimination`, `fp_no_oop`) to match MD changes
+- All three layers aligned: system prompt, directive MDs, directive JSONs
+
+**Key Changes**:
+- Rule #7: "No Hidden State" → "Global Constants - Extensive Use Encouraged"
+- Rule #8: Added "Runtime State Management" (state database pattern)
+- Rule #9: "Explicit Parameters" (clarified can use global constants)
+- Anti-patterns: Added positive examples for constants and state database
+
+**Implementation Impact**:
+- Helpers can freely use `Final` constants for config, paths, business rules
+- For runtime state (sessions, rate limits, job tracking), suggest state database pattern
+- Extract common utilities aggressively (DRY principle already covered)
+
+**Related Documentation**:
+- `docs/GLOBAL_STATE_AND_DRY_UPDATES.md` - Comprehensive changes
+- `docs/SYSTEM_PROMPT_CONDENSING.md` - Example optimization
+- `docs/DIRECTIVE_JSON_UPDATES_2026-01-15.md` - JSON alignment

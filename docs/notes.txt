@@ -16,6 +16,8 @@ src/aifp/database/schemas/project.sql
 src/aifp/database/schemas/user_preferences.sql
 docs/HELPER_IMPLEMENTATION_PLAN.md
 
+Do not read or modify notes.txt. That is just for me.
+
 BUT - this violates the DRY (Don't Repeat Yourself) principle and creates maintenance burden.
 
 COMPLETED BUT VALUABLE INFO FOR when begin CODING AIFP_RUN

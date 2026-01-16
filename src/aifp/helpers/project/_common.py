@@ -7,6 +7,11 @@ Extracted to avoid duplication and improve AI efficiency at scale.
 All functions are pure FP - immutable data, explicit parameters, Result types.
 Database operations isolated as effects with clear naming conventions.
 
+Global constants defined here per AIFP FP methodology:
+- Read-only validation lookup tables (use Final + frozenset)
+- Database schema validation constraints
+- Status/priority enumerations
+
 Common utilities:
 - _open_connection: Database connection with row factory
 - _check_entity_exists: Generic entity existence check
@@ -19,7 +24,125 @@ Common utilities:
 """
 
 import sqlite3
-from typing import Optional
+from typing import Optional, Final
+
+
+# ============================================================================
+# Global Constants - Validation Lookup Tables (FP-Compliant)
+# ============================================================================
+# These match CHECK constraints in project.sql schema
+# Use Final + frozenset for immutability and fast membership testing
+
+# Project statuses
+VALID_PROJECT_STATUSES: Final[frozenset[str]] = frozenset([
+    'active', 'paused', 'completed', 'abandoned'
+])
+
+# User directives statuses
+VALID_USER_DIRECTIVES_STATUSES: Final[frozenset[str]] = frozenset([
+    'in_progress', 'active', 'disabled'
+])
+
+# Function roles
+VALID_FUNCTION_ROLES: Final[frozenset[str]] = frozenset([
+    'factory', 'transformer', 'operator', 'pattern_matcher',
+    'accessor', 'validator', 'combinator'
+])
+
+# Interaction types
+VALID_INTERACTION_TYPES: Final[frozenset[str]] = frozenset([
+    'call', 'chain', 'borrow', 'compose', 'pipe'
+])
+
+# Task/Milestone/Sidequest statuses (some tables include 'blocked')
+VALID_TASK_STATUSES: Final[frozenset[str]] = frozenset([
+    'pending', 'in_progress', 'completed', 'blocked'
+])
+
+VALID_MILESTONE_STATUSES: Final[frozenset[str]] = frozenset([
+    'pending', 'in_progress', 'completed'
+])
+
+# Priority levels (used in tasks, subtasks, sidequests)
+VALID_PRIORITY_LEVELS: Final[frozenset[str]] = frozenset([
+    'low', 'medium', 'high', 'critical'
+])
+
+# Note types
+VALID_NOTE_TYPES: Final[frozenset[str]] = frozenset([
+    'entry_deletion', 'ai_decision', 'user_clarification',
+    'blocker', 'milestone', 'refactor', 'optimization',
+    'bug', 'feature', 'documentation', 'test', 'other'
+])
+
+# Note sources
+VALID_NOTE_SOURCES: Final[frozenset[str]] = frozenset([
+    'ai', 'user', 'directive'
+])
+
+# Severity levels
+VALID_SEVERITY_LEVELS: Final[frozenset[str]] = frozenset([
+    'info', 'warning', 'error'
+])
+
+# Branch statuses
+VALID_BRANCH_STATUSES: Final[frozenset[str]] = frozenset([
+    'active', 'merged', 'abandoned'
+])
+
+# Reference tables for notes (where notes can point)
+VALID_REFERENCE_TABLES: Final[frozenset[str]] = frozenset([
+    'tasks', 'subtasks', 'sidequests', 'files', 'functions',
+    'types', 'themes', 'flows', 'milestones'
+])
+
+
+# ============================================================================
+# Validation Utilities
+# ============================================================================
+
+def _validate_status(status: str, valid_statuses: frozenset[str]) -> bool:
+    """
+    Pure: Validate status value against allowed set.
+
+    Args:
+        status: Status value to validate
+        valid_statuses: Set of valid status values
+
+    Returns:
+        True if valid, False otherwise
+
+    Example:
+        _validate_status('completed', VALID_TASK_STATUSES)  # True
+        _validate_status('invalid', VALID_TASK_STATUSES)    # False
+    """
+    return status in valid_statuses
+
+
+def _validate_priority(priority: str) -> bool:
+    """
+    Pure: Validate priority value.
+
+    Args:
+        priority: Priority value to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    return priority in VALID_PRIORITY_LEVELS
+
+
+def _validate_severity(severity: str) -> bool:
+    """
+    Pure: Validate severity level.
+
+    Args:
+        severity: Severity value to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    return severity in VALID_SEVERITY_LEVELS
 
 
 # ============================================================================

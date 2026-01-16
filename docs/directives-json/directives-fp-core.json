@@ -85,20 +85,39 @@
     "parent_directive": null,
     "category": {
       "name": "purity",
-      "description": "Eliminates global or implicit state in function logic."
+      "description": "Eliminates hidden mutable global state in function logic."
     },
-    "description": "Detects and removes reliance on global variables or hidden mutable structures. Used during function analysis to strip implicit global state.",
+    "description": "Detects and removes reliance on mutable global variables or hidden mutable structures. Allows read-only global constants (Final). For runtime mutable state, suggests state database pattern (explicit state via SQLite). Used during function analysis to eliminate hidden mutable state.",
     "md_file_path": "directives/fp_state_elimination.md",
     "workflow": {
       "trunk": "scan_scope",
       "branches": [
         {
           "if": "global_references",
-          "then": "inline_dependencies"
+          "then": "inline_dependencies",
+          "details": {
+            "allow_immutable_constants": true,
+            "check_for_Final_annotation": true
+          }
         },
         {
           "if": "mutable_static_data",
-          "then": "convert_to_immutable"
+          "then": "convert_to_immutable",
+          "details": {
+            "options": [
+              "Make immutable constant (if never changes)",
+              "Pass as parameter (if changes)",
+              "Suggest state database pattern (if runtime mutable state needed)"
+            ]
+          }
+        },
+        {
+          "if": "runtime_state_needed",
+          "then": "suggest_state_database",
+          "details": {
+            "pattern": "Create state.db with explicit state tracking",
+            "use_cases": ["sessions", "rate_limits", "progress_tracking", "job_queues", "caches", "metrics"]
+          }
         },
         {
           "fallback": "prompt_user",
@@ -117,8 +136,12 @@
         "resolution": "Pass as explicit parameter"
       },
       {
-        "issue": "static_mutable_data",
-        "resolution": "Refactor to immutable constant"
+        "issue": "mutable_global_state",
+        "resolution": "Refactor to immutable constant OR state database pattern"
+      },
+      {
+        "issue": "runtime_state_tracking",
+        "resolution": "Use state database pattern (explicit state via SQLite)"
       }
     ],
     "intent_keywords_json": [
@@ -434,7 +457,12 @@
       "branches": [
         {
           "if": "class_detected",
-          "then": "refactor_to_module_function"
+          "then": "refactor_to_module_function",
+          "details": {
+            "apply_dry_principle": true,
+            "extract_common_utilities": "if used across multiple files",
+            "scope_levels": ["global", "category", "file"]
+          }
         },
         {
           "if": "method_with_state",

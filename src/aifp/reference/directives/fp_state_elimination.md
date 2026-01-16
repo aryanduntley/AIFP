@@ -16,14 +16,19 @@ The `fp_state_elimination` directive **detects and removes reliance on global va
 - **Concurrency safety**: No shared mutable state eliminates race conditions
 - **AI reasoning**: Clear data flow makes code predictable for AI analysis
 
-This directive works in tandem with `fp_purity` to eliminate all forms of hidden state:
-- **Global variables** - Variables defined outside function scope
-- **Module-level mutable state** - Counters, caches, configuration objects
+This directive works in tandem with `fp_purity` to eliminate **hidden mutable state**:
+- **Mutable global variables** - Variables that can be reassigned or mutated
+- **Module-level mutable state** - Counters, caches (mutable), configuration objects (mutable)
 - **Static/class variables** - State shared across instances
 - **Singleton patterns** - Hidden global instances
 - **Environment variables** - External configuration not passed explicitly
 
-**Refactoring approach**: Convert global state access into explicit parameter passing.
+**What's ALLOWED (FP-compliant)**:
+- ✅ **Read-only global constants** - Immutable config (`Final` in Python, `const` in JS/TS)
+- ✅ **Lookup tables** - `frozenset`, immutable tuples, frozen dataclasses
+- ✅ **State database pattern** - Explicit mutable state in SQLite (e.g., `state.db` for sessions, rate limits, progress tracking)
+
+**Refactoring approach**: Convert **mutable** global state into explicit parameter passing OR state database pattern.
 
 ---
 
@@ -303,6 +308,78 @@ WHERE name = 'log_message'
 
 ---
 
+**Using State Database for Runtime Mutable State:**
+```python
+# Initial code (non-compliant)
+active_jobs = {}  # Mutable global state
+
+def start_job(job_id: str):
+    active_jobs[job_id] = {  # Global mutation
+        'status': 'running',
+        'started_at': datetime.now()
+    }
+
+def get_job_status(job_id: str):
+    return active_jobs.get(job_id, {}).get('status')  # Global read
+
+# AI calls: fp_state_elimination()
+
+# Workflow:
+# 1. scan_scope:
+#    - Detects active_jobs is mutable global
+#    - Used for runtime state tracking
+#
+# 2. mutable_static_data: convert_to_state_database
+#    - Suggest state database pattern
+#    - Create state.db with jobs table
+#
+# Refactored code (FP-compliant)
+from typing import Final
+import sqlite3
+
+STATE_DB_PATH: Final[str] = ".state/runtime.db"  # Read-only constant
+
+def start_job(job_id: str) -> Result[None, str]:
+    """Effect: Track job start in state database."""
+    conn = sqlite3.connect(STATE_DB_PATH)
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO jobs VALUES (?, ?, CURRENT_TIMESTAMP)",
+            (job_id, 'running')
+        )
+        conn.commit()
+        return Ok(None)
+    except Exception as e:
+        return Err(str(e))
+    finally:
+        conn.close()
+
+def get_job_status(job_id: str) -> Result[str, str]:
+    """Effect: Read job status from state database."""
+    conn = sqlite3.connect(STATE_DB_PATH)
+    try:
+        row = conn.execute(
+            "SELECT status FROM jobs WHERE job_id=?",
+            (job_id,)
+        ).fetchone()
+        if not row:
+            return Err("Job not found")
+        return Ok(row[0])
+    except Exception as e:
+        return Err(str(e))
+    finally:
+        conn.close()
+
+# Result:
+# ✅ No mutable global state
+# ✅ State access is explicit (via function calls)
+# ✅ Thread-safe (SQLite handles concurrency)
+# ✅ Auditable (all state changes in database)
+# ✅ FP-compliant (state mutations isolated in effect functions)
+```
+
+---
+
 **Converting Mutable Global to Immutable:**
 ```python
 # Initial code (non-compliant)
@@ -446,29 +523,53 @@ def attempt_request(url: str, max_retries: int = 3) -> Optional[Response]:
 
 ## Edge Cases
 
-### Edge Case 1: Constant vs Mutable Global
+### Edge Case 1: Read-Only Constants vs Mutable State
 
-**Issue**: Global constant (immutable) vs mutable global variable
+**Issue**: Distinguishing between immutable constants (allowed) and mutable state (must refactor)
 
 **Handling**:
 ```python
-# Immutable constant (allowed)
-MAX_CONNECTIONS = 100  # UPPERCASE convention, never reassigned
-PI = 3.14159
+from typing import Final
 
-# Mutable global (must refactor)
-connection_pool = []  # List can be mutated
+# ✅ Read-only constants (ENCOURAGED)
+MAX_CONNECTIONS: Final[int] = 100
+API_BASE_URL: Final[str] = "https://api.example.com"
+VALID_STATUSES: Final[frozenset] = frozenset(['pending', 'active'])
 
-# Rule: If global is UPPERCASE and never mutated, it's a constant (acceptable)
-if is_constant(variable_name):
-    # Allow as constant
-    mark_compliant()
-else:
-    # Refactor to parameter
-    inline_dependencies()
+def check_status(status: str) -> bool:
+    return status in VALID_STATUSES  # Reading constant - pure!
+
+# ❌ Mutable globals (must refactor)
+connection_pool = []  # List can be mutated - NOT allowed
+active_sessions = {}  # Dict can be mutated - NOT allowed
+
+# ✅ Mutable state via state database (FP-compliant)
+STATE_DB_PATH: Final[str] = ".state/runtime.db"  # Constant path
+
+def track_session(session_id: str, user_id: int) -> Result[None, str]:
+    """Effect: Explicit state mutation in database."""
+    conn = sqlite3.connect(STATE_DB_PATH)
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO sessions VALUES (?, ?)",
+            (session_id, user_id)
+        )
+        conn.commit()
+        return Ok(None)
+    except Exception as e:
+        return Err(str(e))
+    finally:
+        conn.close()
+
+# Rule: Allow Final constants, refactor mutable globals to:
+# 1. Parameters (if passed between functions)
+# 2. State database (if runtime mutable state needed)
 ```
 
-**Directive Action**: Allow immutable constants, refactor mutable globals.
+**Directive Action**:
+- ✅ Allow immutable constants (use `Final` type hint)
+- ❌ Refactor mutable globals to parameters
+- ✅ Suggest state database pattern for runtime mutable state
 
 ---
 
