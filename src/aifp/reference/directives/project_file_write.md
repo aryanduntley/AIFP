@@ -225,6 +225,46 @@ from helpers._common import _validate_result  # Global utility
 
 **This is standard behavior for all AIFP projects** unless user explicitly overrides.
 
+### State Management Pattern
+
+**State Database Available**: For runtime mutable state needs, use the auto-generated state database instead of mutable globals.
+
+**Location**: `<source-dir>/.state/runtime.db`
+
+**Operations**: Import from `state_operations.{ext}`:
+- `set_var(var_name, value)` - Store variable
+- `get_var(var_name)` - Retrieve variable
+- `delete_var(var_name)` - Remove variable
+- `increment_var(var_name, amount)` - Increment counter
+
+**When to Use**:
+- ✅ Replacing mutable global variables
+- ✅ Application state that changes at runtime
+- ✅ Counters, toggles, runtime config
+
+**When NOT to Use**:
+- ❌ Session management (create separate DB)
+- ❌ User data (use application database)
+- ❌ Project-specific business logic (create separate DB)
+
+**Example**:
+```python
+from .state.state_operations import set_var, get_var, increment_var
+
+# Initialize counter
+result = set_var('request_count', 0)
+
+# Increment on each request
+def handle_request(request_data):
+    increment_var('request_count', 1)
+    # ... process request
+
+# Get current count
+count_result = get_var('request_count')
+if count_result.success:
+    print(f"Total requests: {count_result.data}")
+```
+
 ---
 
 ## Examples

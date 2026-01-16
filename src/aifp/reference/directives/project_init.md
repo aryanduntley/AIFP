@@ -166,6 +166,60 @@ project_info = {
 }
 ```
 
+**Step 3.5: Determine Source Code Directory**
+
+**Purpose**: Identify where project source code will live (required for state database placement).
+
+```python
+# Check user settings for interaction preference
+settings = get_user_settings()
+auto_proceed = settings.get('project_continue_without_user_interaction', False)
+
+# Scan for existing source directories
+candidates = ['src', 'lib', 'app', 'pkg', 'source']
+existing_source = None
+
+for candidate in candidates:
+    candidate_path = os.path.join(project_root, candidate)
+    if os.path.isdir(candidate_path):
+        # Check if it contains code files
+        code_files = scan_code_files(candidate_path, extensions=['.py', '.js', '.ts', '.rs', '.go'])
+        if len(code_files) > 0:
+            existing_source = candidate
+            break
+
+# Determine source directory based on language conventions if needed
+if not existing_source:
+    language_conventions = {
+        "python": "src",
+        "rust": "src",      # Cargo enforced
+        "go": ".",          # Often root
+        "javascript": "src",
+        "typescript": "src"
+    }
+    default_source = language_conventions.get(project_info['language'].lower(), "src")
+else:
+    default_source = existing_source
+
+# Decision logic
+if existing_source:
+    source_dir = existing_source
+elif auto_proceed:
+    source_dir = default_source
+else:
+    source_dir = prompt_user(f"Where will source code live? (default: {default_source})") or default_source
+
+# Store in infrastructure table
+result = add_source_directory(project_db_path, source_dir)
+if not result.success:
+    return {
+        "success": false,
+        "error": result.error
+    }
+```
+
+**Result**: Source directory determined and stored in infrastructure table with type `'source_directory'`.
+
 **Step 4: Create Directory Structure**
 
 ```bash
@@ -319,6 +373,77 @@ if project_is_automation:
     os.makedirs(f"{project_root}/.aifp-project/logs/errors/", exist_ok=True)
 ```
 
+**Step 9.5: Initialize State Database Infrastructure**
+
+**Purpose**: Create FP-compliant infrastructure for runtime mutable variables (replaces mutable global variables).
+
+**Prerequisites**: Source directory must be determined and stored (Step 3.5).
+
+```python
+# Get source directory from infrastructure table
+source_dir_result = get_source_directory(project_db_path)
+if not source_dir_result.success:
+    return {
+        "success": false,
+        "error": "Source directory not configured. Step 3.5 must complete first.",
+        "recommendation": "Re-run project_init"
+    }
+
+source_dir = source_dir_result.data
+
+# Get project language for language-specific operations file
+language = project_info['language']
+
+# Initialize state database infrastructure
+state_result = initialize_state_database(project_root, source_dir, language)
+
+if not state_result.success:
+    return {
+        "success": false,
+        "error": f"Failed to initialize state database: {state_result.error}"
+    }
+
+# If language is not Python, AI must rewrite operations file
+if state_result.needs_language_rewrite:
+    # AI task: Rewrite state_operations.py to target language
+    print(f"⚠️ State operations file needs rewriting to {language}")
+    print(f"Location: {state_result.state_helpers_path}")
+    print("AI will rewrite state_operations.py using language-specific SQLite library")
+
+    # AI instructions embedded in workflow:
+    # 1. Read state_operations.py to understand CRUD operations
+    # 2. Identify target language's SQLite library (e.g., better-sqlite3 for JS, rusqlite for Rust)
+    # 3. Rewrite all functions: set_var, get_var, delete_var, increment_var, list_vars
+    # 4. Use language conventions (naming, types, error handling, Result types)
+    # 5. Delete .py file
+    # 6. Write new state_operations.{ext} file
+
+    # This is handled by directive execution, not by this helper
+
+# Update ProjectBlueprint.md to document state management
+blueprint_path = f"{project_root}/.aifp-project/ProjectBlueprint.md"
+append_to_blueprint(blueprint_path, f"""
+
+## State Management
+
+**Runtime Mutable Variables**: FP-compliant state database for replacing mutable global variables.
+
+- **Location**: `{source_dir}/.state/runtime.db`
+- **Operations**: Import from `{source_dir}/.state/state_operations.{get_file_extension(language)}`
+- **Purpose**: Explicit, traceable state mutations (counters, toggles, runtime config)
+- **Usage**: `set_var()`, `get_var()`, `delete_var()`, `increment_var()`
+
+See `.state/README.md` for full documentation.
+""")
+```
+
+**Result**: State database infrastructure created at `{source_dir}/.state/`
+
+**Files created**:
+- `{source_dir}/.state/runtime.db` (pre-built SQLite database)
+- `{source_dir}/.state/README.md` (documentation)
+- `{source_dir}/.state/state_operations.{ext}` (CRUD operations, language-specific)
+
 **Step 10: Return Success**
 
 ```python
@@ -332,7 +457,10 @@ return {
         ".aifp-project/user_preferences.db",
         ".aifp-project/config.json",
         ".aifp-project/ProjectBlueprint.md",
-        ".aifp-project/.gitkeep"
+        ".aifp-project/.gitkeep",
+        f"{source_dir}/.state/runtime.db",
+        f"{source_dir}/.state/README.md",
+        f"{source_dir}/.state/state_operations.{get_file_extension(language)}"
     ],
     "next_steps": [
         "Review ProjectBlueprint.md" if project_is_automation else "Define project themes and flows",

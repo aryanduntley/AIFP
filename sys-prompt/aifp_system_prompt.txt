@@ -135,64 +135,31 @@ Important distinctions:
    - Must be immutable (use `Final` in Python, `const` in JS/TS, etc.)
 
    **Runtime State Management**:
-   ⚠️ Mutable global variables strongly discouraged (cause race conditions, testing issues, hidden deps)
+   ⚠️ Mutable global variables strongly discouraged (race conditions, testing issues, hidden deps)
 
-   ✅ **Instead, use explicit state database for runtime mutable state:**
-   - Create lightweight SQLite database (e.g., `state.db`, `runtime.db`, `cache.db`)
-   - Use for: sessions, rate limits, progress tracking, job queues, temp caches, metrics
-   - Provide globally accessible helper module (e.g., `from state.operations import track_session`)
-   - State mutations isolated in effect functions (explicit, traceable, not hidden)
-   - Maintains FP compliance: all state access is explicit via function parameters
-   - Thread-safe: SQLite handles concurrent access automatically
-   - Examples: session tracking, rate limiting, background job progress, distributed locks
+   ✅ **State database auto-created at `<source-dir>/.state/runtime.db`:**
+   - Purpose: Replace mutable globals with database-backed state
+   - Operations: `set_var()`, `get_var()`, `delete_var()`, `increment_var()`
+   - Import: `from .state.state_operations import set_var, get_var, increment_var`
+   - Use for: counters, toggles, runtime config, app state
+   - Don't use for: sessions, rate limits, job queues (create separate project-specific DB)
+   - Extensible: AI can add tables for edge cases
 
-   **Example - Read-Only Globals:**
    ```python
-   from typing import Final
+   # State database example
+   result = set_var('counter', 0)
+   result = increment_var('counter', 1)
+   result = get_var('counter')  # Returns: Result(success=True, data=1)
 
    # ✅ Read-only constants (encouraged)
    MAX_RETRIES: Final[int] = 3
-   VALID_STATUSES: Final[frozenset] = frozenset(['pending', 'completed'])
+   VALID_STATUSES: Final[frozenset] = frozenset(['active', 'paused'])
 
-   def retry_operation(operation, max_retries: int = MAX_RETRIES):
-       for attempt in range(max_retries):
-           if operation().success: return result
-       return Err("Max retries exceeded")
-
-   # ❌ Avoid: total = 0; def inc(): global total; total += 1  # Mutable state
+   # ❌ Avoid mutable globals
+   # total = 0; def inc(): global total; total += 1
    ```
 
    **See `fp_state_elimination.md` for detailed state management patterns and edge cases.**
-
-   **Example - State Database Pattern:**
-   ```python
-   from typing import Final
-   import sqlite3
-
-   STATE_DB_PATH: Final[str] = ".state/runtime.db"
-
-   def track_progress(job_id: str, progress: int) -> Result[None, str]:
-       """Effect: Update job progress in state database."""
-       conn = sqlite3.connect(STATE_DB_PATH)
-       try:
-           conn.execute(
-               "INSERT OR REPLACE INTO jobs VALUES (?, ?, CURRENT_TIMESTAMP)",
-               (job_id, progress)
-           )
-           conn.commit()
-           return Ok(None)
-       except Exception as e:
-           return Err(str(e))
-       finally:
-           conn.close()
-
-   # Use for: sessions, rate limits, job queues, caches, metrics
-   # Key: State mutations explicit through database, not hidden globals
-   ```
-
-   **Key Principle**: Mutable state via database (not global variables) maintains FP purity while solving real-world needs.
-
-   **See `fp_state_elimination.md` for comprehensive state management patterns.**
 
 2. **Immutability**
    - No mutations of data structures

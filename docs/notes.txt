@@ -18,10 +18,10 @@ docs/HELPER_IMPLEMENTATION_PLAN.md
 
 Do not read or modify notes.txt. That is just for me.
 
-BUT - this violates the DRY (Don't Repeat Yourself) principle and creates maintenance burden.
-
 COMPLETED BUT VALUABLE INFO FOR when begin CODING AIFP_RUN
 docs/settings-integration-implementation.md
+
+make sure we add the mutable global db to project src
 
 when coding helpers, if case 2, ensure we make a return value that indicates to AI case 2 active. Probably during status call(s)
 

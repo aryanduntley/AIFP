@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "add_subtask",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "name",
@@ -73,7 +73,7 @@
     },
     {
       "name": "get_incomplete_subtasks",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [],
       "purpose": "Get all non-completed subtasks",
       "error_handling": "",
@@ -122,7 +122,7 @@
     },
     {
       "name": "get_incomplete_subtasks_by_task",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "task_id",
@@ -163,7 +163,7 @@
     },
     {
       "name": "get_subtasks_by_task",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "task_id",
@@ -203,7 +203,7 @@
     },
     {
       "name": "get_subtasks_comprehensive",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "status",
@@ -279,7 +279,7 @@
     },
     {
       "name": "update_subtask",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "id",
@@ -356,7 +356,7 @@
     },
     {
       "name": "delete_subtask",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "id",
@@ -410,7 +410,7 @@
     },
     {
       "name": "add_sidequest",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "paused_subtask_id",
@@ -460,7 +460,7 @@
     },
     {
       "name": "get_incomplete_sidequests",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [],
       "purpose": "Get all non-completed sidequests",
       "error_handling": "",
@@ -509,7 +509,7 @@
     },
     {
       "name": "get_sidequests_comprehensive",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "status",
@@ -592,7 +592,7 @@
     },
     {
       "name": "get_sidequest_flows",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "sidequest_id",
@@ -625,7 +625,7 @@
     },
     {
       "name": "get_sidequest_files",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "sidequest_id",
@@ -658,7 +658,7 @@
     },
     {
       "name": "update_sidequest",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "id",
@@ -749,7 +749,7 @@
     },
     {
       "name": "delete_sidequest",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
           "name": "id",

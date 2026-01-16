@@ -32,6 +32,33 @@ This directive works in tandem with `fp_purity` to eliminate **hidden mutable st
 
 ---
 
+## State Database Infrastructure
+
+**Auto-Generated During Init**: AIFP creates `.state/runtime.db` during project initialization with base operations in `state_operations.{ext}`.
+
+**Use For**:
+- Replacing mutable global variables
+- Runtime configuration that changes during execution
+- Application state (counters, toggles, flags)
+
+**Import and Use**:
+```python
+from .state.state_operations import set_var, get_var, increment_var
+
+# Instead of global variable:
+# global counter  # ❌ Don't do this
+
+# Use state database:
+result = set_var('counter', 0)  # ✅ FP-compliant
+result = increment_var('counter', 1)
+```
+
+**Location**: `<source-dir>/.state/runtime.db`
+
+**Documentation**: See `.state/README.md` in your project for full documentation.
+
+---
+
 ## When to Apply
 
 This directive applies when:

@@ -217,6 +217,30 @@
         },
         {
           "if": "blueprint_prompts_complete",
+          "then": "determine_source_directory",
+          "details": {
+            "step": "3.5",
+            "purpose": "Identify where project source code will live (required for state database placement)",
+            "helper": "add_source_directory",
+            "scan_candidates": [
+              "src",
+              "lib",
+              "app",
+              "pkg",
+              "source"
+            ],
+            "language_conventions": {
+              "python": "src",
+              "rust": "src",
+              "go": ".",
+              "javascript": "src",
+              "typescript": "src"
+            },
+            "storage": "infrastructure table with type='source_directory'"
+          }
+        },
+        {
+          "if": "source_directory_determined",
           "then": "create_project_structure",
           "details": {
             "module": "aifp.scripts.init_aifp_project",
@@ -296,6 +320,27 @@
         },
         {
           "if": "project_data_populated",
+          "then": "initialize_state_database",
+          "details": {
+            "step": "9.5",
+            "purpose": "Create FP-compliant infrastructure for runtime mutable variables",
+            "helper": "initialize_state_database",
+            "parameters": {
+              "project_root": "from context",
+              "source_dir": "from get_source_directory()",
+              "language": "from project_info"
+            },
+            "creates": [
+              "<source-dir>/.state/runtime.db",
+              "<source-dir>/.state/README.md",
+              "<source-dir>/.state/state_operations.{ext}"
+            ],
+            "language_rewrite": "If language != Python, AI rewrites operations file to target language",
+            "blueprint_update": "Add State Management section to ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "state_database_initialized",
           "then": "create_initial_completion_path",
           "details": {
             "stages": [

@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "get_items_for_task",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "task_id",
@@ -38,7 +38,7 @@
     },
     {
       "name": "get_items_for_subtask",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "subtask_id",
@@ -74,7 +74,7 @@
     },
     {
       "name": "get_items_for_sidequest",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "sidequest_id",
@@ -110,7 +110,7 @@
     },
     {
       "name": "get_incomplete_items",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "for_table",
@@ -170,7 +170,7 @@
     },
     {
       "name": "delete_item",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "id",
@@ -218,7 +218,7 @@
     },
     {
       "name": "add_note",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "content",
@@ -302,7 +302,7 @@
     },
     {
       "name": "get_notes_comprehensive",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "note_type",
@@ -374,7 +374,7 @@
     },
     {
       "name": "search_notes",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "search_string",
@@ -453,7 +453,7 @@
     },
     {
       "name": "update_note",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "id",
@@ -522,7 +522,7 @@
     },
     {
       "name": "delete_note",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/items_notes.py",
       "parameters": [
         {
           "name": "id",

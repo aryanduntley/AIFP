@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "add_milestone",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "completion_path_id",
@@ -56,7 +56,7 @@
     },
     {
       "name": "get_milestones_by_path",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "completion_path_id",
@@ -89,7 +89,7 @@
     },
     {
       "name": "get_milestones_by_status",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "status",
@@ -130,7 +130,7 @@
     },
     {
       "name": "get_incomplete_milestones",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [],
       "purpose": "Get all non-completed milestones",
       "error_handling": "",
@@ -171,7 +171,7 @@
     },
     {
       "name": "update_milestone",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "id",
@@ -237,7 +237,7 @@
     },
     {
       "name": "delete_milestone",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "id",
@@ -291,7 +291,7 @@
     },
     {
       "name": "add_task",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "flow_ids",
@@ -354,7 +354,7 @@
     },
     {
       "name": "get_incomplete_tasks_by_milestone",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "skip_pending",
@@ -391,7 +391,7 @@
     },
     {
       "name": "get_incomplete_tasks",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [],
       "purpose": "Get all incomplete tasks with subtasks/sidequests",
       "error_handling": "",
@@ -441,7 +441,7 @@
     },
     {
       "name": "get_tasks_by_milestone",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "milestone_id",
@@ -477,7 +477,7 @@
     },
     {
       "name": "get_tasks_comprehensive",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "status",
@@ -554,7 +554,7 @@
     },
     {
       "name": "get_task_flows",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "task_id",
@@ -588,7 +588,7 @@
     },
     {
       "name": "get_task_files",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "task_id",
@@ -622,7 +622,7 @@
     },
     {
       "name": "update_task",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "id",
@@ -730,7 +730,7 @@
     },
     {
       "name": "delete_task",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
           "name": "id",
