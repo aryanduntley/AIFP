@@ -18,6 +18,10 @@ docs/HELPER_IMPLEMENTATION_PLAN.md
 
 Do not read or modify notes.txt. That is just for me.
 
+return_statements for global mutable db (remember to rewrite the reference CRUD for mutable global db file in project language... with reference to that CRUD reference file location)
+
+check all directive json and md files for direct queries (select, insert, etc.)
+
 COMPLETED BUT VALUABLE INFO FOR when begin CODING AIFP_RUN
 docs/settings-integration-implementation.md
 
