@@ -236,7 +236,7 @@
           "if": "user_determined",
           "then": "get_next_branch_number",
           "details": {
-            "query": "MAX(branch_number) FROM work_branches WHERE user_name = ?"
+            "use_helper": "get max branch number for user"
           }
         },
         {
@@ -645,7 +645,7 @@
           "if": "git_hash_retrieved",
           "then": "query_project_last_known_hash",
           "details": {
-            "query": "SELECT last_known_git_hash FROM project"
+            "use_helper": "get project metadata"
           }
         },
         {

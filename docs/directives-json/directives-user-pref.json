@@ -32,7 +32,7 @@
           "if": "directive_preferences_found",
           "then": "apply_to_context",
           "details": {
-            "query": "SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name=? AND active=1"
+            "use_helper": "load directive preferences for directive"
           }
         },
         {
@@ -513,8 +513,7 @@
           "if": "feature_identified",
           "then": "check_current_status",
           "details": {
-            "table": "tracking_settings",
-            "query": "SELECT enabled FROM tracking_settings WHERE feature_name=?"
+            "use_helper": "get tracking setting status"
           }
         },
         {

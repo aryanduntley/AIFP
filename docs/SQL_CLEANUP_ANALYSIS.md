@@ -1,8 +1,10 @@
 # SQL Query Cleanup Analysis
 
 **Date**: 2026-01-17
-**Status**: Analysis Complete - Ready for Cleanup
+**Status**: Analysis Complete - SEE DIRECTIVE_CLEANUP_REVISED.md for implementation approach
 **Total SQL Queries Found**: 24 in JSON files
+
+> **⚠️ NOTE**: This document contains the original analysis. See `DIRECTIVE_CLEANUP_REVISED.md` for the corrected approach based on existing helpers and AI natural capabilities.
 
 ---
 

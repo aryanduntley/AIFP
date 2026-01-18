@@ -1,8 +1,10 @@
 # aifp.scripts References - Cleanup Analysis
 
 **Date**: 2026-01-17
-**Status**: Analysis Complete - Ready for Cleanup
+**Status**: Analysis Complete - SEE DIRECTIVE_CLEANUP_REVISED.md for implementation approach
 **Total References**: 4 in active directives (all in `project_init`)
+
+> **⚠️ NOTE**: This document contains the original analysis. See `DIRECTIVE_CLEANUP_REVISED.md` for the corrected approach - most operations happen directly in the `project_init` orchestrator code rather than as separate helpers.
 
 ---
 

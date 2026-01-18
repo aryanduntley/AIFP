@@ -1,8 +1,10 @@
 # New Helper Specifications
 
 **Date**: 2026-01-17
-**Status**: Specification Document
+**Status**: SUPERSEDED - SEE DIRECTIVE_CLEANUP_REVISED.md
 **Purpose**: Define all new helpers needed from directive cleanup
+
+> **⚠️ NOTE**: This document contains the original specification (14 helpers). After reviewing existing helpers, only **2 helpers are actually needed**: `project_init` and `get_all_infrastructure`. See `DIRECTIVE_CLEANUP_REVISED.md` for the corrected implementation approach.
 
 ---
 
@@ -13,7 +15,8 @@ This document consolidates all new helper specifications identified from:
 2. **aifp.scripts Cleanup Analysis** (AIFP_SCRIPTS_CLEANUP_ANALYSIS.md)
 3. **Infrastructure Goals** (INFRASTRUCTURE_GOALS.md)
 
-**Total New Helpers Needed**: 14
+**Total New Helpers Originally Identified**: 14
+**Total New Helpers Actually Needed**: 2 (project_init, get_all_infrastructure)
 
 ---
 

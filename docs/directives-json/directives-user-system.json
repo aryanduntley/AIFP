@@ -914,7 +914,7 @@
             "step": "check_remaining_active_directives",
             "actions": [
               {
-                "query": "user_directives table for any remaining directives with status='active'"
+                "use_helper": "get active user directives"
               },
               {
                 "if_none_active": "update project.user_directives_status='disabled'"
@@ -974,10 +974,10 @@
             "step": "query_directive_statistics",
             "actions": [
               {
-                "query": "user_directives table for all directives grouped by status"
+                "use_helper": "get user directives grouped by status"
               },
               {
-                "query": "directive_executions table for execution statistics"
+                "use_helper": "get directive execution statistics"
               },
               {
                 "calculate": "totals: active, paused, error, pending_validation, implemented"

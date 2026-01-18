@@ -134,7 +134,7 @@
       "name": "initialization",
       "description": "Handles creation and setup of new AIFP projects with ProjectBlueprint.md creation."
     },
-    "description": "Initializes a new AIFP project using a two-phase approach: Phase 1 (Mechanical Setup) calls aifp_init helper to atomically create folders, databases, and templates. Phase 2 (Intelligent Population) uses AI to detect language/tools, prompt user for metadata, and populate ProjectBlueprint and infrastructure. Checks for existing .aifp-project/ or .git/.aifp/ folders before initialization. Scans existing codebase for OOP patterns and aborts if OOP detected (AIFP is FP-only). Offers restoration from .git/.aifp/ backup if found.",
+    "description": "Initializes a new AIFP project by creating .aifp-project/ folder structure, generating ProjectBlueprint.md through interactive prompts, initializing project.db and user_preferences.db, and populating with initial infrastructure, themes, flows, and completion path. Wraps the standalone initialization script (aifp.scripts.init_aifp_project) helper functions to ensure consistent setup. Checks for existing .aifp-project/ or .git/.aifp/ folders before initialization. Scans existing codebase for OOP patterns and aborts initialization if OOP detected (AIFP is FP-only). Offers restoration from .git/.aifp/ backup if found.",
     "md_file_path": "directives/project_init.md",
     "workflow": {
       "trunk": "check_existing_state",
@@ -204,78 +204,118 @@
         },
         {
           "if": "new_project_chosen",
-          "then": "determine_project_root",
+          "then": "interactive_blueprint_creation",
           "details": {
-            "action": "get_current_working_directory",
-            "note": "Project root is where AIFP is being initialized (current directory)"
-          }
-        },
-        {
-          "if": "project_root_determined",
-          "then": "phase_1_mechanical_setup",
-          "details": {
-            "phase": "1 - Mechanical Setup (Code)",
-            "use_helper": "aifp_init",
-            "parameters": {
-              "project_root": "full path to project root"
-            },
-            "operations": [
-              "Create .aifp-project/ and backups/ directories",
-              "Copy ProjectBlueprint_template.md to .aifp-project/",
-              "Create project.db from schemas/project.sql",
-              "Execute initialization/standard_infrastructure.sql (8 empty entries)",
-              "INSERT project_root into infrastructure table",
-              "Create user_preferences.db from schemas/user_preferences.sql",
-              "INSERT default tracking_settings (all disabled)",
-              "Validate initialization (all files and tables exist)"
-            ],
-            "note": "aifp_init helper does all file/database creation atomically. Returns success or error."
-          }
-        },
-        {
-          "if": "mechanical_setup_complete",
-          "then": "phase_2_intelligent_population",
-          "details": {
-            "phase": "2 - Intelligent Population (AI)",
-            "note": "AI now populates with real data through detection and user interaction"
-          }
-        },
-        {
-          "if": "phase_2_start",
-          "then": "detect_and_prompt_metadata",
-          "details": {
-            "detect": [
-              "primary_language (scan file extensions: .py, .rs, .js, .go)",
-              "source_directory (scan for src/, lib/, app/, or ask user)",
-              "build_tool (look for Cargo.toml, package.json, Makefile, pom.xml)",
-              "package_manager (infer from build_tool or language defaults)",
-              "test_framework (scan dependencies in build files)",
-              "runtime_version (check .tool-versions, .nvmrc, rust-toolchain.toml)"
-            ],
-            "prompt_user": [
-              "project_name (required)",
-              "purpose (required)",
-              "goals (required, array)",
-              "Confirm detected values or provide corrections"
-            ],
-            "update": [
-              "infrastructure table with detected/confirmed values",
-              "ProjectBlueprint.md with project metadata"
+            "prompts": [
+              "project_name",
+              "purpose",
+              "goals",
+              "language",
+              "build_tool"
             ]
           }
         },
         {
-          "if": "metadata_populated",
-          "then": "create_initial_completion_path",
+          "if": "blueprint_prompts_complete",
+          "then": "determine_source_directory",
           "details": {
-            "use_helper": "add completion path",
-            "default_path": {
-              "name": "Project Setup & Core Development",
-              "order_index": 1,
-              "status": "in_progress",
-              "description": "Initialize project structure and implement core functionality"
+            "step": "3.5",
+            "purpose": "Identify where project source code will live (required for state database placement)",
+            "helper": "add_source_directory",
+            "scan_candidates": [
+              "src",
+              "lib",
+              "app",
+              "pkg",
+              "source"
+            ],
+            "language_conventions": {
+              "python": "src",
+              "rust": "src",
+              "go": ".",
+              "javascript": "src",
+              "typescript": "src"
             },
-            "note": "AI can adjust based on project scope and user goals"
+            "storage": "infrastructure table with type='source_directory'"
+          }
+        },
+        {
+          "if": "source_directory_determined",
+          "then": "create_project_structure",
+          "details": {
+            "module": "aifp.scripts.init_aifp_project",
+            "parameters": {
+              "target_path": "user_working_dir"
+            },
+            "create_folders": [
+              ".aifp-project/",
+              ".aifp-project/backups/"
+            ],
+            "note": "Uses standalone initialization script helper function"
+          }
+        },
+        {
+          "if": "structure_created",
+          "then": "generate_project_blueprint",
+          "details": {
+            "module": "aifp.scripts.init_aifp_project",
+            "parameters": {
+              "aifp_dir": ".aifp-project/",
+              "metadata": "from_prompts"
+            },
+            "template": "ProjectBlueprint_template.md",
+            "output": ".aifp-project/ProjectBlueprint.md",
+            "note": "Uses standalone initialization script helper function"
+          }
+        },
+        {
+          "if": "blueprint_generated",
+          "then": "initialize_databases",
+          "details": {
+            "module": "aifp.scripts.init_aifp_project",
+            "parameters": {
+              "aifp_dir": ".aifp-project/",
+              "project_metadata": "from_prompts"
+            },
+            "databases": [
+              "project.db",
+              "user_preferences.db"
+            ],
+            "schemas": [
+              "project_db_schema.sql",
+              "user_preferences_schema.sql"
+            ],
+            "note": "Uses standalone initialization script helper functions"
+          }
+        },
+        {
+          "if": "databases_initialized",
+          "then": "validate_initialization",
+          "details": {
+            "module": "aifp.scripts.init_aifp_project",
+            "parameters": {
+              "aifp_dir": ".aifp-project/"
+            },
+            "checks": [
+              "project.db exists and has metadata",
+              "user_preferences.db has schema",
+              "ProjectBlueprint.md exists",
+              "all required tables created"
+            ],
+            "note": "Validates complete initialization using script function"
+          }
+        },
+        {
+          "if": "validation_passed",
+          "then": "populate_project_data",
+          "details": {
+            "tables": [
+              "project",
+              "infrastructure",
+              "completion_path",
+              "milestones"
+            ],
+            "note": "Project metadata already populated by initialize_project_db helper"
           }
         },
         {
@@ -421,7 +461,9 @@
           "if": "directive_preferences_exist",
           "then": "load_task_preferences",
           "details": {
-            "use_helper": "load directive preferences for project_task_decomposition",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for preference helpers by querying: target_database='user_preferences' AND purpose contains keywords 'directive', 'preference', 'load'. Pass directive_name='project_task_decomposition' as parameter.",
+            "note": "Helper names change frequently. Always query aifp_core.db helper_functions table for current helpers rather than hardcoding names.",
             "common_preferences": [
               "naming_convention",
               "auto_create_items",
@@ -620,7 +662,9 @@
           "if": "directive_preferences_exist",
           "then": "load_and_apply_preferences",
           "details": {
-            "use_helper": "load directive preferences for project_file_write",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for preference helpers by querying: target_database='user_preferences' AND purpose contains keywords 'directive', 'preference', 'load'. Pass directive_name='project_file_write' as parameter.",
+            "note": "Helper names change frequently. Always query aifp_core.db helper_functions table for current helpers.",
             "apply_to": "code_generation_context",
             "common_preferences": [
               "always_add_docstrings",
@@ -896,7 +940,9 @@
           "if": "tracking_disabled",
           "then": "skip",
           "details": {
-            "use_helper": "check if tracking enabled for compliance_checking",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for tracking setting helpers by querying: target_database='user_preferences' AND purpose contains keywords 'tracking', 'setting', 'enabled'. Pass feature_name='compliance_checking' as parameter.",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers.",
             "result": "Return early without checking if disabled",
             "optimization": "Most common path - tracking disabled by default, no token overhead"
           }
@@ -905,7 +951,9 @@
           "if": "tracking_enabled",
           "then": "collect_analytics",
           "details": {
-            "use_helper": "get all functions from project",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for function retrieval helpers by querying: target_database='project' AND purpose contains keywords 'function', 'get', 'all'. Use generic CRUD helper with table='functions' to retrieve all functions.",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers.",
             "analyze": "FP patterns, purity levels, compliance distribution",
             "log_to": "fp_flow_tracking table (if enabled)",
             "optimization": "Non-blocking, fire-and-forget analytics collection"
@@ -1867,14 +1915,18 @@
           "if": "blueprint_read",
           "then": "load_infrastructure_context",
           "details": {
-            "use_helper": "get all infrastructure"
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for infrastructure helpers by querying: target_database='project' AND purpose contains keywords 'infrastructure', 'all', 'get'. Should return helper that gets all infrastructure entries (including empty standard entries).",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers. Infrastructure table has NO project_id field (one project per database)."
           }
         },
         {
           "if": "infrastructure_loaded",
           "then": "check_user_directives_status",
           "details": {
-            "use_helper": "get project metadata",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for project metadata helpers by querying: target_database='project' AND purpose contains keywords 'project', 'metadata', 'get'. Use helper that returns full project record (includes user_directives_status field).",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers.",
             "include_in_report": true
           }
         },
@@ -2663,7 +2715,9 @@
           "if": "task_completed",
           "then": "check_milestone_status",
           "details": {
-            "use_helper": "get incomplete tasks for milestone",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for task helpers by querying: target_database='project' AND purpose contains keywords 'task', 'incomplete', 'milestone'. Use helper that returns incomplete tasks for milestone, then count results to check if all complete.",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers. No need for dedicated count helper - retrieve incomplete tasks and count them.",
             "check_all_tasks_complete": true
           }
         },
@@ -2683,7 +2737,9 @@
             "brief": true,
             "show_completion_path_progress": true,
             "show_milestone_progress": true,
-            "use_helper": "get pending tasks for milestone ordered by priority",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for task helpers by querying: target_database='project' AND purpose contains keywords 'task', 'milestone', 'pending' or 'incomplete'. Use helper that returns tasks for milestone filtered by status, ordered by priority. Limit results to top 5.",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers.",
             "discuss_with_user": true,
             "prompt_template": "Task '[task_name]' completed successfully! Milestone '[milestone_name]' progress: [X/Y tasks complete]. Next steps?",
             "offer_options": [
@@ -2769,7 +2825,9 @@
           "if": "subtask_completed",
           "then": "check_parent_subtasks",
           "details": {
-            "use_helper": "get incomplete subtasks for parent task",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for subtask helpers by querying: target_database='project' AND purpose contains keywords 'subtask', 'incomplete', 'task'. Use helper that returns incomplete subtasks for parent task, then count results to check if all complete.",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers. No need for dedicated count helper - retrieve incomplete subtasks and count them.",
             "check_all_subtasks_complete": true
           }
         },
@@ -2788,7 +2846,9 @@
           "if": "subtasks_remaining",
           "then": "notify_remaining_work",
           "details": {
-            "use_helper": "get pending subtasks for parent task ordered by priority",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for subtask helpers by querying: target_database='project' AND purpose contains keywords 'subtask', 'pending' or 'incomplete', 'task'. Use helper that returns subtasks for parent task filtered by status='pending', ordered by priority.",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers.",
             "show_remaining_subtasks": true,
             "prompt_user": "Subtask '[subtask_name]' complete. [X] subtasks remaining for parent task."
           }
@@ -2862,7 +2922,9 @@
           "if": "linked_to_paused_task",
           "then": "prompt_resume_work",
           "details": {
-            "use_helper": "get sidequest by id",
+            "action": "query_helpers_database",
+            "guidance": "Search helper_functions table for sidequest helpers by querying: target_database='project' AND purpose contains keywords 'sidequest', 'get'. Use generic CRUD helper to get sidequest by id (includes paused_task_id field).",
+            "note": "Helper names change frequently. Query aifp_core.db helper_functions table for current helpers.",
             "notify_user": "Sidequest '[sidequest_name]' complete. Resume paused task '[task_name]'?",
             "offer_options": [
               "Resume paused task",
@@ -2937,7 +2999,7 @@
           "details": {
             "update_milestone_status": "completed",
             "log_completion_time": true,
-            "use_helper": "get completion path for milestone",
+            "query_completion_path": "SELECT id, status FROM completion_path WHERE id = (SELECT completion_path_id FROM milestones WHERE id = ?)",
             "check_path_completion": true
           }
         },
@@ -2953,7 +3015,7 @@
           "if": "completion_path_complete",
           "then": "check_project_completion",
           "details": {
-            "use_helper": "get incomplete completion paths",
+            "query": "SELECT COUNT(*) FROM completion_path WHERE project_id = ? AND status NOT IN ('completed')",
             "check_all_paths_complete": true
           }
         },
@@ -2972,7 +3034,7 @@
             "call_aifp_status": true,
             "brief": true,
             "show_completion_path_progress": true,
-            "use_helper": "get next pending milestone",
+            "query_next_milestone": "SELECT m.id, m.name, m.description FROM milestones m JOIN completion_path cp ON m.completion_path_id = cp.id WHERE cp.project_id = ? AND m.status = 'pending' ORDER BY cp.order_index, m.id LIMIT 1",
             "prompt_template": "Milestone '[milestone_name]' completed! Project progress: [X/Y completion paths complete]. Moving to next milestone: '[next_milestone_name]'."
           }
         },

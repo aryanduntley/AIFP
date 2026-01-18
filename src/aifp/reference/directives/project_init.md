@@ -9,7 +9,12 @@
 
 ## Purpose
 
-`project_init` initializes a new AIFP project by creating the `.aifp-project/` directory structure, initializing databases, and generating the ProjectBlueprint.md file. This directive sets up the foundation for all subsequent AIFP project management operations.
+`project_init` initializes a new AIFP project using a **two-phase approach**:
+
+**Phase 1: Mechanical Setup (Code)** - The `aifp_init` helper atomically creates folders, databases, and templates
+**Phase 2: Intelligent Population (AI)** - AI detects language/tools, prompts user for metadata, and populates infrastructure
+
+This separation ensures fast, reliable initialization (code handles mechanics) while leveraging AI for intelligent decisions (language detection, user interaction).
 
 **CRITICAL: AIFP is FP-only**. This directive scans existing code for OOP patterns and **aborts initialization** if OOP is detected. AIFP cannot manage OOP projects.
 
@@ -97,7 +102,7 @@ Keywords that trigger `project_init`:
 
 ### Trunk: `initialize_project`
 
-**Step 1: Check Existing Project**
+**Pre-Flight Check: Check Existing Project**
 
 ```python
 # ALWAYS check first - never re-initialize
@@ -112,7 +117,7 @@ if status['initialized']:
     }
 ```
 
-**Step 2: Scan for OOP Patterns (if existing code present)**
+**Pre-Flight Check: Scan for OOP Patterns (if existing code present)**
 
 ```python
 # Check if directory has existing code (not empty or only config files)
@@ -154,149 +159,175 @@ AIFP cannot manage OOP projects - it enforces pure functions, immutability, and 
         }
 ```
 
-**Step 3: Gather Project Information**
+---
+
+### Phase 1: Mechanical Setup (Code)
+
+**Helper**: `aifp_init(project_root)`
+
+**Executes atomically** (all-or-nothing):
+
+1. **Create directories**:
+   ```bash
+   .aifp-project/
+   .aifp-project/backups/
+   ```
+
+2. **Copy template**:
+   - Copy `ProjectBlueprint_template.md` to `.aifp-project/ProjectBlueprint.md`
+
+3. **Create project.db**:
+   - Load and execute `schemas/project.sql`
+   - Execute `initialization/standard_infrastructure.sql` (8 empty entries)
+   - UPDATE infrastructure SET value='{project_root}' WHERE type='project_root'
+
+4. **Create user_preferences.db**:
+   - Load and execute `schemas/user_preferences.sql`
+   - INSERT default tracking_settings (all disabled by default)
+
+5. **Validate**:
+   - Check all files exist
+   - Check all tables created
+   - Return success or error
+
+**Result**: Complete `.aifp-project/` structure with empty databases and template blueprint
+
+---
+
+### Phase 2: Intelligent Population (AI)
+
+**After Phase 1 completes**, AI performs intelligent setup:
+
+**Step 1: Detect Infrastructure**
+
+AI scans the codebase to detect:
 
 ```python
-# Prompt user for project details
-project_info = {
-    "name": prompt_user("Project name?") or infer_from_directory(),
-    "purpose": prompt_user("Project purpose?") or "Software project",
-    "goals": prompt_user("Main goals?") or [],
-    "language": detect_primary_language(project_root) or "Python"
-}
-```
+# Detect primary language
+extensions = scan_file_extensions(project_root)
+# .py → Python, .rs → Rust, .js → JavaScript, .go → Go
 
-**Step 3.5: Determine Source Code Directory**
-
-**Purpose**: Identify where project source code will live (required for state database placement).
-
-```python
-# Check user settings for interaction preference
-settings = get_user_settings()
-auto_proceed = settings.get('project_continue_without_user_interaction', False)
-
-# Scan for existing source directories
+# Detect source directory
 candidates = ['src', 'lib', 'app', 'pkg', 'source']
-existing_source = None
+source_dir = scan_for_code_directory(project_root, candidates)
+# Full path: /home/user/my-project/src
 
-for candidate in candidates:
-    candidate_path = os.path.join(project_root, candidate)
-    if os.path.isdir(candidate_path):
-        # Check if it contains code files
-        code_files = scan_code_files(candidate_path, extensions=['.py', '.js', '.ts', '.rs', '.go'])
-        if len(code_files) > 0:
-            existing_source = candidate
-            break
+# Detect build tool
+build_files = {
+    'Cargo.toml': 'cargo',
+    'package.json': 'npm',
+    'Makefile': 'make',
+    'pom.xml': 'maven',
+    'build.gradle': 'gradle'
+}
+build_tool = detect_file_presence(project_root, build_files)
 
-# Determine source directory based on language conventions if needed
-if not existing_source:
-    language_conventions = {
-        "python": "src",
-        "rust": "src",      # Cargo enforced
-        "go": ".",          # Often root
-        "javascript": "src",
-        "typescript": "src"
-    }
-    default_source = language_conventions.get(project_info['language'].lower(), "src")
-else:
-    default_source = existing_source
+# Detect package manager
+# Inferred from build_tool or language defaults
 
-# Decision logic
-if existing_source:
-    source_dir = existing_source
-elif auto_proceed:
-    source_dir = default_source
-else:
-    source_dir = prompt_user(f"Where will source code live? (default: {default_source})") or default_source
+# Detect test framework
+# Scan dependencies in build files
 
-# Store in infrastructure table
-result = add_source_directory(project_db_path, source_dir)
-if not result.success:
-    return {
-        "success": false,
-        "error": result.error
-    }
+# Detect runtime version
+version_files = ['.tool-versions', '.nvmrc', 'rust-toolchain.toml']
+runtime_version = parse_version_files(version_files)
+
+# Detect main branch
+main_branch = git_default_branch() or 'main'
 ```
 
-**Result**: Source directory determined and stored in infrastructure table with type `'source_directory'`.
-
-**Step 4: Create Directory Structure**
-
-```bash
-{project_root}/
-└── .aifp-project/
-    ├── project.db                  # Project state database
-    ├── user_preferences.db         # User preferences
-    ├── config.json                 # Project-specific AIFP configuration
-    ├── ProjectBlueprint.md         # High-level architecture doc
-    ├── .gitkeep                    # Ensures directory tracked in Git
-    ├── backups/                    # Blueprint and database backups
-    └── logs/                       # Only for Use Case 2 (automation)
-        ├── execution/              # 30-day execution logs
-        └── errors/                 # 90-day error logs
-```
-
-**Note**: `aifp_core.db` is NOT copied - it remains in the MCP server and is accessed via MCP tools.
-
-**Step 5: Initialize project.db**
+**Step 2: Prompt User for Metadata**
 
 ```python
-# Load schema from src/aifp/database/schemas/schemaExampleProject.sql
-schema_sql = load_schema("project")
+# Prompt for project details
+project_name = prompt_user("Project name?") or infer_from_directory()
+purpose = prompt_user("Project purpose?")
+goals = prompt_user("Main goals? (comma-separated)") or []
 
-conn = sqlite3.connect(f"{project_root}/.aifp-project/project.db")
-conn.executescript(schema_sql)
-
-# Insert project metadata
-conn.execute("""
-    INSERT INTO project (name, purpose, goals_json, status, version)
-    VALUES (?, ?, ?, 'active', 1)
-""", (project_info['name'], project_info['purpose'], json.dumps(project_info['goals'])))
-
-project_id = conn.lastrowid
-
-# Insert default completion path
-conn.execute("""
-    INSERT INTO completion_path (name, order_index, status, description, project_id)
-    VALUES
-        ('Setup', 1, 'completed', 'Project initialization', ?),
-        ('Development', 2, 'pending', 'Core development phase', ?),
-        ('Testing', 3, 'pending', 'Testing and validation', ?),
-        ('Finalization', 4, 'pending', 'Documentation and completion', ?)
-""", (project_id, project_id, project_id, project_id))
-
-conn.commit()
+# Confirm detected values
+print(f"Detected: {primary_language}, {build_tool}, {source_directory}")
+confirm = prompt_user("Are these correct? (y/n)")
+if not confirm:
+    # Allow user corrections
 ```
 
-**Step 6: Initialize user_preferences.db**
+**Step 3: Update Infrastructure Table**
+
+Use helpers to update infrastructure with detected/confirmed values:
 
 ```python
-# Load schema from src/aifp/database/schemas/schemaExampleSettings.sql
-prefs_schema = load_schema("user_preferences")
-
-conn = sqlite3.connect(f"{project_root}/.aifp-project/user_preferences.db")
-conn.executescript(prefs_schema)
-
-# All tracking features disabled by default
-conn.execute("""
-    INSERT INTO tracking_settings (feature_name, enabled, description)
-    VALUES
-        ('fp_flow_tracking', false, 'Track FP compliance over time'),
-        ('ai_interaction_log', false, 'Log AI corrections for learning'),
-        ('issue_reports', false, 'Track issues with context')
-""")
-
-conn.commit()
+# Update each infrastructure entry
+update_infrastructure('primary_language', 'Python 3.11')
+update_infrastructure('source_directory', '/home/user/my-project/src')
+update_infrastructure('build_tool', 'make')
+update_infrastructure('package_manager', 'pip')
+update_infrastructure('test_framework', 'pytest')
+update_infrastructure('runtime_version', 'Python 3.11.2')
+update_infrastructure('main_branch', 'main')
 ```
 
-**Step 7: Create config.json**
+**Step 4: Populate ProjectBlueprint.md**
+
+Update the template blueprint with real project data:
 
 ```python
-# Create project-specific configuration
-config = {
-    "aifp_version": "1.0",
-    "project_name": project_info['name'],
-    "blueprint_path": ".aifp-project/ProjectBlueprint.md",
+# Load template
+blueprint = load_file('.aifp-project/ProjectBlueprint.md')
+
+# Replace placeholders
+blueprint = blueprint.replace('{{PROJECT_NAME}}', project_name)
+blueprint = blueprint.replace('{{PURPOSE}}', purpose)
+blueprint = blueprint.replace('{{GOALS}}', format_goals(goals))
+blueprint = blueprint.replace('{{LANGUAGE}}', primary_language)
+blueprint = blueprint.replace('{{SOURCE_DIR}}', source_directory)
+
+# Save updated blueprint
+save_file('.aifp-project/ProjectBlueprint.md', blueprint)
+```
+
+**Step 5: Create Initial Completion Path**
+
+Add default completion path based on project scope:
+
+```python
+# Add initial completion path
+add_completion_path(
+    name="Project Setup & Core Development",
+    order_index=1,
+    status="in_progress",
+    description="Initialize project structure and implement core functionality"
+)
+
+# AI can adjust based on user goals
+```
+
+**Step 6: Initialize State Database (Optional)**
+
+If project will use FP-compliant mutable state (runtime.db):
+
+```python
+# Call state database initialization
+initialize_state_database(
+    project_root=project_root,
+    source_dir=source_directory,
+    language=primary_language
+)
+# Creates: <source-dir>/.state/runtime.db
+```
+
+---
+
+### Result
+
+After both phases complete:
+
+- ✅ `.aifp-project/` directory with databases
+- ✅ ProjectBlueprint.md populated with real data
+- ✅ Infrastructure table populated with detected values
+- ✅ Initial completion path created
+- ✅ Optional: State database created
+
+**AI guidance**: Recommend next steps based on project type and goals
     "databases": {
         "project_db": ".aifp-project/project.db",
         "user_preferences_db": ".aifp-project/user_preferences.db"
