@@ -52,7 +52,7 @@ This directive applies when:
 Retrieves the last known Git commit hash from `project.db`.
 
 **Steps**:
-1. **Query database** - `SELECT last_known_git_hash FROM project WHERE id=1`
+1. **Query database** - Use helper to get project metadata (includes last_known_git_hash)
 2. **Get current Git hash** - Run `git rev-parse HEAD`
 3. **Compare hashes** - Are they the same?
 4. **Route to appropriate action** - Based on comparison result

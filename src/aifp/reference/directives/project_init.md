@@ -165,7 +165,7 @@ AIFP cannot manage OOP projects - it enforces pure functions, immutability, and 
 
 **Helper**: `aifp_init(project_root)`
 
-**Executes atomically** (all-or-nothing):
+**Executes atomically** (all-or-nothing) - Pure mechanical operations with no deep logic:
 
 1. **Create directories**:
    ```bash
@@ -179,7 +179,7 @@ AIFP cannot manage OOP projects - it enforces pure functions, immutability, and 
 3. **Create project.db**:
    - Load and execute `schemas/project.sql`
    - Execute `initialization/standard_infrastructure.sql` (8 empty entries)
-   - UPDATE infrastructure SET value='{project_root}' WHERE type='project_root'
+   - INSERT project_root into infrastructure table
 
 4. **Create user_preferences.db**:
    - Load and execute `schemas/user_preferences.sql`
@@ -191,6 +191,8 @@ AIFP cannot manage OOP projects - it enforces pure functions, immutability, and 
    - Return success or error
 
 **Result**: Complete `.aifp-project/` structure with empty databases and template blueprint
+
+**Note**: State database is NOT created in Phase 1. It's created by AI in Phase 2 after source directory is determined.
 
 ---
 
@@ -301,18 +303,34 @@ add_completion_path(
 # AI can adjust based on user goals
 ```
 
-**Step 6: Initialize State Database (Optional)**
+**Step 6: Initialize State Database (Step 9.5)**
 
-If project will use FP-compliant mutable state (runtime.db):
+**Purpose**: Create FP-compliant infrastructure for runtime mutable variables (ALWAYS done, not optional)
 
 ```python
-# Call state database initialization
-initialize_state_database(
+# Call helper to initialize state database
+result = initialize_state_database(
     project_root=project_root,
     source_dir=source_directory,
     language=primary_language
 )
-# Creates: <source-dir>/.state/runtime.db
+
+# Creates:
+# - {source_dir}/.state/runtime.db (SQLite database)
+# - {source_dir}/.state/README.md (documentation)
+# - {source_dir}/.state/state_operations.py (Python CRUD template)
+
+if result.needs_language_rewrite:
+    # AI Task: Rewrite state_operations.py to project language
+    print(f"⚠️ State operations file needs rewriting to {primary_language}")
+
+    # Steps:
+    # 1. Read state_operations.py to understand CRUD operations
+    # 2. Identify target language's SQLite library
+    # 3. Rewrite all functions: set_var, get_var, delete_var, increment_var, list_vars
+    # 4. Delete state_operations.py
+    # 5. Write new state_operations.{ext} in project language
+    # 6. Update README.md with language-specific usage examples
 ```
 
 ---
@@ -325,181 +343,10 @@ After both phases complete:
 - ✅ ProjectBlueprint.md populated with real data
 - ✅ Infrastructure table populated with detected values
 - ✅ Initial completion path created
-- ✅ Optional: State database created
+- ✅ State database created at `{source}/.state/` (Python CRUD template)
+- ✅ If non-Python: CRUD operations file rewritten to project language by AI
 
 **AI guidance**: Recommend next steps based on project type and goals
-    "databases": {
-        "project_db": ".aifp-project/project.db",
-        "user_preferences_db": ".aifp-project/user_preferences.db"
-    },
-    "backups": {
-        "enabled": True,
-        "directory": ".aifp-project/backups/",
-        "auto_backup_on_evolution": True
-    },
-    "status": {
-        "context_limit": 10,
-        "auto_browse": False,
-        "ambiguity_threshold": 0.7
-    },
-    "git_integration": {
-        "archive_to_git_aifp": True,
-        "sync_on_commit": False
-    }
-}
-
-# For Use Case 2 (automation), add logging config
-if project_is_automation:
-    config["logging"] = {
-        "execution_logs_enabled": True,
-        "execution_log_rotation": "daily",
-        "execution_log_retention_days": 30,
-        "error_logs_enabled": True,
-        "error_log_retention_days": 90,
-        "execution_log_dir": ".aifp-project/logs/execution/",
-        "error_log_dir": ".aifp-project/logs/errors/"
-    }
-    config["databases"]["user_directives_db"] = ".aifp-project/user_directives.db"
-
-write_json(f"{project_root}/.aifp-project/config.json", config)
-```
-
-**Step 8: Generate ProjectBlueprint.md**
-
-```python
-# Call create_project_blueprint() helper
-# Detects existing code structure and documents it
-blueprint_content = generate_blueprint({
-    "name": project_info['name'],
-    "purpose": project_info['purpose'],
-    "goals": project_info['goals'],
-    "language": project_info['language'],
-    "existing_structure": scan_existing_files(project_root),
-    "architecture": infer_architecture(project_root),
-    "completion_path": ["Setup", "Development", "Testing", "Finalization"],
-    "use_case": "automation" if project_is_automation else "development"
-})
-
-write_file(
-    f"{project_root}/.aifp-project/ProjectBlueprint.md",
-    blueprint_content
-)
-
-# Backup blueprint
-backup_file(
-    f"{project_root}/.aifp-project/ProjectBlueprint.md",
-    f"{project_root}/.aifp-project/backups/ProjectBlueprint.md.backup"
-)
-```
-
-**Step 9: Create .gitkeep (Optional but Recommended)**
-
-```python
-# Ensure .aifp-project/ is tracked in Git even if empty subdirectories
-write_file(f"{project_root}/.aifp-project/.gitkeep", "")
-
-# For automation projects, ensure logs/ subdirectories exist
-if project_is_automation:
-    os.makedirs(f"{project_root}/.aifp-project/logs/execution/", exist_ok=True)
-    os.makedirs(f"{project_root}/.aifp-project/logs/errors/", exist_ok=True)
-```
-
-**Step 9.5: Initialize State Database Infrastructure**
-
-**Purpose**: Create FP-compliant infrastructure for runtime mutable variables (replaces mutable global variables).
-
-**Prerequisites**: Source directory must be determined and stored (Step 3.5).
-
-```python
-# Get source directory from infrastructure table
-source_dir_result = get_source_directory(project_db_path)
-if not source_dir_result.success:
-    return {
-        "success": false,
-        "error": "Source directory not configured. Step 3.5 must complete first.",
-        "recommendation": "Re-run project_init"
-    }
-
-source_dir = source_dir_result.data
-
-# Get project language for language-specific operations file
-language = project_info['language']
-
-# Initialize state database infrastructure
-state_result = initialize_state_database(project_root, source_dir, language)
-
-if not state_result.success:
-    return {
-        "success": false,
-        "error": f"Failed to initialize state database: {state_result.error}"
-    }
-
-# If language is not Python, AI must rewrite operations file
-if state_result.needs_language_rewrite:
-    # AI task: Rewrite state_operations.py to target language
-    print(f"⚠️ State operations file needs rewriting to {language}")
-    print(f"Location: {state_result.state_helpers_path}")
-    print("AI will rewrite state_operations.py using language-specific SQLite library")
-
-    # AI instructions embedded in workflow:
-    # 1. Read state_operations.py to understand CRUD operations
-    # 2. Identify target language's SQLite library (e.g., better-sqlite3 for JS, rusqlite for Rust)
-    # 3. Rewrite all functions: set_var, get_var, delete_var, increment_var, list_vars
-    # 4. Use language conventions (naming, types, error handling, Result types)
-    # 5. Delete .py file
-    # 6. Write new state_operations.{ext} file
-
-    # This is handled by directive execution, not by this helper
-
-# Update ProjectBlueprint.md to document state management
-blueprint_path = f"{project_root}/.aifp-project/ProjectBlueprint.md"
-append_to_blueprint(blueprint_path, f"""
-
-## State Management
-
-**Runtime Mutable Variables**: FP-compliant state database for replacing mutable global variables.
-
-- **Location**: `{source_dir}/.state/runtime.db`
-- **Operations**: Import from `{source_dir}/.state/state_operations.{get_file_extension(language)}`
-- **Purpose**: Explicit, traceable state mutations (counters, toggles, runtime config)
-- **Usage**: `set_var()`, `get_var()`, `delete_var()`, `increment_var()`
-
-See `.state/README.md` for full documentation.
-""")
-```
-
-**Result**: State database infrastructure created at `{source_dir}/.state/`
-
-**Files created**:
-- `{source_dir}/.state/runtime.db` (pre-built SQLite database)
-- `{source_dir}/.state/README.md` (documentation)
-- `{source_dir}/.state/state_operations.{ext}` (CRUD operations, language-specific)
-
-**Step 10: Return Success**
-
-```python
-return {
-    "success": true,
-    "project_name": project_info['name'],
-    "project_root": project_root,
-    "use_case": "automation" if project_is_automation else "development",
-    "files_created": [
-        ".aifp-project/project.db",
-        ".aifp-project/user_preferences.db",
-        ".aifp-project/config.json",
-        ".aifp-project/ProjectBlueprint.md",
-        ".aifp-project/.gitkeep",
-        f"{source_dir}/.state/runtime.db",
-        f"{source_dir}/.state/README.md",
-        f"{source_dir}/.state/state_operations.{get_file_extension(language)}"
-    ],
-    "next_steps": [
-        "Review ProjectBlueprint.md" if project_is_automation else "Define project themes and flows",
-        "Parse directive files" if project_is_automation else "Create first milestone and tasks",
-        "AI will generate implementation code" if project_is_automation else "Start coding with FP directives"
-    ]
-}
-```
 
 ---
 
@@ -511,24 +358,30 @@ return {
 
 ### Calls
 
-- **`get_project_status()`** - Check if already initialized
-- **`create_project_blueprint()`** - Generate blueprint file
-- **`detect_primary_language()`** - Infer project language
-- **`infer_architecture()`** - Analyze existing code structure
+- **`aifp_init`** (Phase 1) - Mechanical setup helper
+- **Helpers** (Phase 2) - Infrastructure detection, metadata updates
 
 ### Data Flow
+
+**Note**: Phase 1 (`aifp_init` helper) handles mechanical setup: directories, databases, templates (no state DB). Phase 2 (AI) handles intelligent population: detection, user interaction, infrastructure updates, and state database initialization (Step 9.5). State database is ALWAYS created (in Phase 2) with Python CRUD template, then AI rewrites to project language if needed.
+
+---
 
 ```
 User: "Initialize AIFP for my calculator"
   ↓
 aifp_run → project_init
-  ├─ Checks get_project_status() → Not initialized ✓
-  ├─ Prompts: "Project purpose?" → "Pure FP calculator"
-  ├─ Creates .aifp-project/ structure
-  ├─ Initializes project.db
-  ├─ Copies aifp_core.db
-  ├─ Initializes user_preferences.db
-  ├─ Generates ProjectBlueprint.md
+  ├─ Phase 1: aifp_init helper (mechanical setup)
+  │   ├─ Creates .aifp-project/ structure
+  │   ├─ Initializes project.db with standard_infrastructure.sql
+  │   ├─ Initializes user_preferences.db
+  │   └─ Copies ProjectBlueprint template
+  ├─ Phase 2: AI intelligent population
+  │   ├─ Detects language, build tool, source directory
+  │   ├─ Prompts: "Project purpose?" → "Pure FP calculator"
+  │   ├─ Updates infrastructure table with detected values
+  │   ├─ Populates ProjectBlueprint.md with project data
+  │   └─ Creates initial completion path
   └─ Returns success with next steps
   ↓
 AI presents: "✅ Project initialized: Calculator. Next: Define themes."
@@ -554,10 +407,10 @@ AI presents: "✅ Project initialized: Calculator. Next: Define themes."
 ✅ Project initialized: Matrix Calculator
 
 Created:
-  • .aifp-project/project.db
+  • .aifp-project/project.db (with infrastructure entries)
   • .aifp-project/user_preferences.db
-  • .aifp-project/aifp_core.db
-  • .aifp-project/ProjectBlueprint.md
+  • .aifp-project/ProjectBlueprint.md (populated with project data)
+  • Optional: {source}/.state/ (state database infrastructure)
 
 Next steps:
   1. Define project themes and flows
@@ -584,10 +437,10 @@ Next steps:
 ✅ Automation project initialized: Home Automation
 
 Created:
-  • .aifp-project/project.db
+  • .aifp-project/project.db (with infrastructure entries)
   • .aifp-project/user_preferences.db
-  • .aifp-project/aifp_core.db
-  • .aifp-project/ProjectBlueprint.md
+  • .aifp-project/ProjectBlueprint.md (populated with project data)
+  • Optional: {source}/.state/ (state database infrastructure)
   • .aifp-project/logs/ (for automation execution)
 
 Next steps:

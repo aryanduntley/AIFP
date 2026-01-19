@@ -62,7 +62,7 @@ Loads and applies user-defined preferences for file writing.
   - `prefer_guard_clauses` - Use guard clauses instead of nested ifs
   - `code_style` - Apply specific coding style (e.g., "compact", "verbose")
   - `indent_style` - Use tabs or spaces
-- **Query**: `SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name='project_file_write' AND active=1`
+- **Helper**: Use helper to load directive preferences for project_file_write
 - **Result**: Preferences loaded and ready to apply
 
 **Branch 2: If preferences_applied**
@@ -89,16 +89,29 @@ Loads and applies user-defined preferences for file writing.
   - Link to parent user directive
 - **Result**: File written and tracked in both databases
 
+**Branch 4.5: If using_reservation_system**
+- **Then**: `reserve_finalize_workflow`
+- **Details**: Use reservation system for names with embedded IDs
+  - **When to use**: Creating files/functions that need database IDs in their names
+  - **Step 1**: Call `project_reserve_finalize` to reserve names (sets is_reserved=TRUE)
+  - **Step 2**: Get returned IDs from reservation
+  - **Step 3**: Generate code with IDs embedded in names (e.g., 'calculator-ID_42.py')
+  - **Step 4**: Write file to filesystem
+  - **Step 5**: Update database to finalize (sets is_reserved=FALSE, updates actual names)
+  - **Purpose**: Ensures unique names and prevents race conditions
+- **Result**: File/function created with embedded ID, reservation finalized
+
 **Branch 5: If code_compliant**
 - **Then**: `write_file`
 - **Details**: Standard file write with tracking
   - Include AIFP_METADATA in file header
   - Write to filesystem
-  - Update `project.db` tables:
-    - `files` - file path, language, checksum, project_id
-    - `functions` - function names, purposes, purity levels
+  - Update `project.db` tables using helpers:
+    - `files` - file path, name, language, is_reserved (NO checksums - Git handles this)
+    - `functions` - function names, purposes, parameters, returns, is_reserved
     - `interactions` - function dependencies
     - `file_flows` - theme/flow associations
+  - Finalize any reservations (set is_reserved=FALSE, update names with IDs)
   - Mark associated task/item as completed if linked
 - **Result**: File written and fully tracked
 
@@ -454,8 +467,8 @@ def save_order_effect(order: Dict[str, Any]) -> Result[None, str]:
 
 ## Related Directives
 
-- `project_reserve_finalize` - Reserve names BEFORE writing to get database IDs for embedding
-- `project_update_db` - Synchronizes file metadata to database
+- `project_reserve_finalize` - Reserve names BEFORE writing to get database IDs for embedding in filenames/function names. Finalizes after write to set is_reserved=FALSE
+- `project_update_db` - Synchronizes file metadata to database using helpers (no checksums)
 - `project_task_decomposition` - Creates files for tasks
 - `fp_purity` - Validates function purity
 - `fp_immutability` - Checks immutability
@@ -472,4 +485,7 @@ def save_order_effect(order: Dict[str, Any]) -> Result[None, str]:
 - **AIFP_METADATA required** in all generated files
 - **FP compliance mandatory** - no exceptions
 - **Transactional updates** - rollback on failure
+- **No checksums** - Git handles file change detection
+- **Reservation system** - Use when IDs need to be embedded in names
+- **Use helpers** - All database operations use project CRUD/query helpers, not direct SQL
 - **Link to tasks** via `task_id` in metadata for completion tracking

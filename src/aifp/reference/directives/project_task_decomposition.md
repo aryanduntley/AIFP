@@ -63,7 +63,7 @@ Loads user-defined preferences for task decomposition.
   - `naming_convention` - "descriptive", "short", "numbered" (default: descriptive)
   - `auto_create_items` - true/false (default: true)
   - `default_priority` - "low", "medium", "high", "critical" (default: medium)
-- **Query**: `SELECT preference_key, preference_value FROM directive_preferences WHERE directive_name='project_task_decomposition' AND active=1`
+- **Helper**: Use helper to load directive preferences for project_task_decomposition
 - **Result**: Preferences loaded and ready to apply
 
 **Branch 2: If preferences_loaded**

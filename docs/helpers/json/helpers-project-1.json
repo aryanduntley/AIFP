@@ -767,25 +767,13 @@
     {
       "name": "get_source_directory",
       "file_path": "helpers/project/metadata.py",
-      "parameters": [
-        {
-          "name": "db_path",
-          "type": "str",
-          "required": true,
-          "default": null,
-          "description": "Path to project.db"
-        }
-      ],
+      "parameters": [],
       "purpose": "Get project source directory from infrastructure table",
       "error_handling": "Return SourceDirResult(success=False, error='Source directory not configured') if not found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_type": "SourceDirResult",
-      "return_statements": [
-        "Source directory retrieved successfully",
-        "Error: 'Source directory not configured. Must call add_source_directory() first.'",
-        "Error: 'Database error: {exception}'"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -814,66 +802,9 @@
       ]
     },
     {
-      "name": "add_source_directory",
-      "file_path": "helpers/project/metadata.py",
-      "parameters": [
-        {
-          "name": "db_path",
-          "type": "str",
-          "required": true,
-          "default": null,
-          "description": "Path to project.db"
-        },
-        {
-          "name": "source_dir",
-          "type": "str",
-          "required": true,
-          "default": null,
-          "description": "Source directory path (e.g., 'src', 'lib', 'app')"
-        }
-      ],
-      "purpose": "Add source directory to infrastructure table",
-      "error_handling": "Return error if already exists or invalid path",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_type": "SourceDirResult",
-      "return_statements": [
-        "Source directory added to infrastructure table",
-        "Error: 'Source directory already configured. Use update_source_directory() to change.'",
-        "Error: 'Invalid source directory: {source_dir}. Must be relative path.'",
-        "Error: 'Database error: {exception}'"
-      ],
-      "target_database": "project",
-      "used_by_directives": [
-        {
-          "directive_name": "project_init",
-          "execution_context": "determine_source_directory",
-          "sequence_order": 3.5,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Store determined source directory in infrastructure table during Step 3.5"
-        }
-      ],
-      "implementation_notes": [
-        "Check if source_directory already exists in infrastructure table",
-        "Return error if duplicate",
-        "Validate source_dir (no absolute paths starting with '/', no parent references '..')",
-        "INSERT INTO infrastructure (type, value, description) VALUES ('source_directory', source_dir, 'Primary source code directory')",
-        "Universal entry name: 'source_directory'",
-        "Return SourceDirResult with success status"
-      ]
-    },
-    {
       "name": "update_source_directory",
       "file_path": "helpers/project/metadata.py",
       "parameters": [
-        {
-          "name": "db_path",
-          "type": "str",
-          "required": true,
-          "default": null,
-          "description": "Path to project.db"
-        },
         {
           "name": "new_source_dir",
           "type": "str",
@@ -887,12 +818,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_type": "SourceDirResult",
-      "return_statements": [
-        "Source directory updated in infrastructure table",
-        "Error: 'Source directory not configured. Use add_source_directory() first.'",
-        "Error: 'Invalid source directory: {new_source_dir}. Must be relative path.'",
-        "Error: 'Database error: {exception}'"
-      ],
+      "return_statements": [],
       "target_database": "project",
       "used_by_directives": [],
       "implementation_notes": [
@@ -904,80 +830,109 @@
       ]
     },
     {
-      "name": "initialize_state_database",
+      "name": "get_all_infrastructure",
       "file_path": "helpers/project/metadata.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "str",
-          "required": true,
-          "default": null,
-          "description": "Path to project root directory"
-        },
-        {
-          "name": "source_dir",
-          "type": "str",
-          "required": true,
-          "default": null,
-          "description": "Source directory path (e.g., 'src', 'lib', 'app')"
-        },
-        {
-          "name": "language",
-          "type": "str",
-          "required": true,
-          "default": null,
-          "description": "Project primary language (e.g., 'python', 'javascript', 'rust')"
-        }
-      ],
-      "purpose": "Initialize state database infrastructure by copying template files to project source directory",
-      "error_handling": "Return StateInitResult with error if directory creation or file copy fails",
+      "parameters": [],
+      "purpose": "Get all infrastructure entries including standard fields (even if empty). Returns complete infrastructure table for session bundling and status reports.",
+      "error_handling": "Return empty array if table doesn't exist or database not initialized",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_type": "StateInitResult",
+      "return_type": "list[dict]",
       "return_statements": [
-        "State database infrastructure created successfully",
-        "Returns: StateInitResult(success=True, state_db_path='{source_dir}/.state/runtime.db', state_helpers_path='{source_dir}/.state/state_operations.py', needs_language_rewrite=True/False)",
-        "Error: 'Failed to create .state directory: {exception}'",
-        "Error: 'Failed to copy template files: {exception}'"
+        "Check for empty infrastructure values - AI should detect and populate these",
+        "Use update_project_entry to populate empty infrastructure fields with detected/confirmed values",
+        "Infrastructure with empty values signals incomplete initialization - prompt user or detect from codebase"
       ],
-      "target_database": "none",
+      "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_init",
-          "execution_context": "state_db_initialization",
-          "sequence_order": 9.5,
+          "directive_name": "aifp_run",
+          "execution_context": "session_bundle",
+          "sequence_order": 5,
           "is_required": true,
-          "parameters_mapping": {
-            "project_root": "from project_init context",
-            "source_dir": "from get_source_directory()",
-            "language": "from infrastructure table or project metadata"
-          },
-          "description": "Create state database infrastructure during project initialization Step 9.5"
+          "parameters_mapping": {},
+          "description": "Include infrastructure data in session bundle when is_new_session=true"
+        },
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "load_infrastructure",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Retrieve all infrastructure data for comprehensive status report"
         }
       ],
       "implementation_notes": [
-        "Template files location: src/aifp/templates/state_db/",
-        "Step 1: Create directory: {project_root}/{source_dir}/.state/",
-        "Step 2: Copy runtime.db from templates/state_db/runtime.db to {source_dir}/.state/runtime.db",
-        "Step 3: Copy README.md from templates/state_db/README.md to {source_dir}/.state/README.md",
-        "Step 4: Copy state_operations.py from templates/state_db/state_operations.py to {source_dir}/.state/state_operations.py",
-        "Step 5: Set needs_language_rewrite=True if language != 'python', False otherwise",
-        "Step 6: Return StateInitResult with paths and status",
-        "StateInitResult dataclass: @dataclass(frozen=True) with fields: success: bool, state_db_path: str, state_helpers_path: str, needs_language_rewrite: bool, error: Optional[str]",
-        "Use shutil.copy2() to preserve file metadata",
-        "Use os.makedirs(exist_ok=True) for directory creation",
-        "If needs_language_rewrite=True, directive handles AI rewriting the operations file to target language"
+        "SQL: SELECT * FROM infrastructure ORDER BY created_at",
+        "Returns ALL rows including empty values",
+        "Used by aifp_run to bundle infrastructure in session context (~500 tokens)",
+        "AI caches this data and only re-calls if cache lost or infrastructure updated",
+        "Empty values signal 'needs population' - AI should detect and populate these"
+      ]
+    },
+    {
+      "name": "get_project_root",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [],
+      "purpose": "Get project root directory from infrastructure table",
+      "error_handling": "Return SourceDirResult(success=False, error='Project root not configured') if not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_type": "SourceDirResult",
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "SQL: SELECT value FROM infrastructure WHERE type = 'project_root'",
+        "Returns: SourceDirResult(success=True, data=project_root_path)",
+        "Error if project_root not configured (should never happen after init)"
+      ]
+    },
+    {
+      "name": "update_project_root",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [
+        {
+          "name": "new_project_root",
+          "type": "str",
+          "required": true,
+          "default": null,
+          "description": "New project root path (absolute path)"
+        }
+      ],
+      "purpose": "Update project root in infrastructure table. Failsafe: Inserts if not exists (should never happen, initialized by SQL).",
+      "error_handling": "Return error if path is not absolute. Failsafe insert if entry doesn't exist.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_type": "SourceDirResult",
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_init",
+          "execution_context": "populate_project_root",
+          "sequence_order": 5,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Populate project_root value after SQL initialization (Phase 1)"
+        }
+      ],
+      "implementation_notes": [
+        "SQL: UPDATE infrastructure SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE type = 'project_root'",
+        "Failsafe: If project_root entry doesn't exist, INSERT instead",
+        "Validates path is absolute with os.path.isabs()",
+        "Returns: SourceDirResult(success=True, data=new_project_root)"
       ]
     }
   ],
   "metadata": {
     "file": "helpers-project-1.json",
-    "count": 21,
-    "range": "helpers 1-21 of 129",
-    "description": "Database schema queries, CHECK constraint validation, generic CRUD operations, project metadata management, source directory management, state database initialization, workflow protection",
+    "count": 22,
+    "range": "helpers 1-22 of 130",
+    "description": "Database schema queries, CHECK constraint validation, generic CRUD operations, project metadata management, source directory management, state database initialization, infrastructure queries, workflow protection",
     "first_helper": "project_allowed_check_constraints",
-    "last_helper": "initialize_state_database",
-    "status": "UPDATED - added 4 helpers for state database infrastructure: source directory management (get/add/update) + state DB initialization",
-    "last_updated": "2026-01-16"
+    "last_helper": "get_all_infrastructure",
+    "status": "UPDATED - added 5 helpers: state database infrastructure (4) + infrastructure query (1)",
+    "last_updated": "2026-01-18"
   }
 }

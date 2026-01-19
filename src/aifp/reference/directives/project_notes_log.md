@@ -468,7 +468,9 @@ VALUES ('Function calculate_total optimized', 'research', 'ai', 'info')
 **Corrected:**
 ```python
 # ✅ Link to specific function
-function_id = query_db("SELECT id FROM functions WHERE name='calculate_total'")[0]
+# Use project query helper to find function by name
+functions = get_from_project_where('functions', {'name': 'calculate_total'})
+function_id = functions[0]['id'] if functions else None
 INSERT INTO notes (content, note_type, reference_table, reference_id, source, severity)
 VALUES (
   'Function calculate_total optimized for performance',
@@ -491,7 +493,9 @@ VALUES (
 **Handling**:
 ```python
 # Validate entity exists before inserting
-function_id = query_db("SELECT id FROM functions WHERE name=?", (function_name,))
+# Use project query helper
+functions = get_from_project_where('functions', {'name': function_name})
+function_id = functions[0]['id'] if functions else None
 
 if not function_id:
     # Entity doesn't exist - log without reference or create entity first
@@ -515,19 +519,20 @@ if not function_id:
 
 **Handling**:
 ```python
-# Check for recent duplicate notes
-recent_duplicate = query_db("""
-  SELECT id FROM notes
-  WHERE content = ?
-    AND created_at > datetime('now', '-5 minutes')
-""", (note_content,))
+# Use project query helper to check for duplicates
+# Note: For time-based queries, get all matching notes and filter
+all_notes = get_from_project_where('notes', {'content': note_content})
+# Filter for recent notes (last 5 minutes)
+from datetime import datetime, timedelta
+recent_cutoff = datetime.now() - timedelta(minutes=5)
+recent_duplicate = [n for n in all_notes if datetime.fromisoformat(n['created_at']) > recent_cutoff]
 
 if recent_duplicate:
     # Don't insert duplicate
     return {"skipped": True, "reason": "Duplicate note"}
 else:
-    # Insert new note
-    INSERT INTO notes (...)
+    # Use project CRUD helper to add note
+    # add_note(...)
 ```
 
 **Directive Action**: Prevent duplicate notes within short time window.
@@ -605,7 +610,8 @@ How to verify this directive is working:
      source="user"
    )
 
-   result = query_db("SELECT * FROM notes WHERE note_type='clarification'")
+   # Use project query helper
+   result = get_from_project_where('notes', {'note_type': 'clarification'})
    assert len(result) > 0
    assert result[0]['content'] == "User confirmed: pure Python only"
    ```
@@ -619,7 +625,8 @@ How to verify this directive is working:
      directive_name="project_file_write"
    )
 
-   result = query_db("SELECT * FROM notes WHERE directive_name='project_file_write'")
+   # Use project query helper
+   result = get_from_project_where('notes', {'directive_name': 'project_file_write'})
    assert len(result) > 0
    ```
 
@@ -631,7 +638,8 @@ How to verify this directive is working:
      severity="error"
    )
 
-   result = query_db("SELECT * FROM notes WHERE severity='error'")
+   # Use project query helper
+   result = get_from_project_where('notes', {'severity': 'error'})
    assert len(result) > 0
    assert result[0]['note_type'] == 'roadblock'
    ```
@@ -646,7 +654,8 @@ How to verify this directive is working:
      reference_id=function_id
    )
 
-   result = query_db("SELECT * FROM notes WHERE reference_table='functions' AND reference_id=42")
+   # Use project query helper
+   result = get_from_project_where('notes', {'reference_table': 'functions', 'reference_id': 42})
    assert len(result) > 0
    ```
 
@@ -681,6 +690,17 @@ How to verify this directive is working:
 ## References
 
 None
+
+---
+
+## Implementation Notes
+
+**Use Helpers, Not Direct SQL**:
+- All database operations use project CRUD/query helpers
+- Examples show conceptual operations - actual implementation uses helpers
+- For time-based queries: query all matching records, then filter in code
+- Never use direct SQL queries or conn.execute in directives
+
 ---
 
 *Part of AIFP v1.0 - Core context management directive for persistent AI memory*

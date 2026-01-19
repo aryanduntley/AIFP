@@ -21,16 +21,16 @@
         "When autostart enabled: Load pending tasks from status, present with priority order, proactively suggest next steps for project completion"
       ],
       "implementation_notes": [
-        "Returns: If is_new_session=true → bundles {status, user_settings, fp_directive_index, all_directive_names[], guidance}",
-        "Returns: If is_new_session=false → lightweight {guidance, common_starting_points[]}",
-        "Session bundle calls: aifp_status(), get_user_settings(), get_fp_directive_index(), get_all_directive_names()",
+        "Returns: If is_new_session=true \u2192 bundles {status, user_settings, fp_directive_index, all_directive_names[], infrastructure_data, guidance}",
+        "Returns: If is_new_session=false \u2192 lightweight {guidance, common_starting_points[]}",
+        "Session bundle calls: aifp_status(), get_user_settings(), get_fp_directive_index(), get_all_directive_names(), get_all_infrastructure()",
         "Directive names only - NOT full directive data (AI queries by name when needs details)",
         "fp_directive_index: FP directive names grouped by category for quick reference",
         "all_directive_names: Complete list of ALL directive names (project, fp, user, git) for AI to know what's available",
         "Does NOT parse user input or match intent - returns static guidance only",
         "AI receives guidance and makes own decisions about which directives to apply",
         "Called on EVERY interaction to keep AI on track with AIFP directives",
-        "Session bundle is ~15-20k tokens: status (~10k) + settings (~1k) + fp_index (~2k) + directive_names (~1k) + guidance (~2k)",
+        "Session bundle is ~15.5-20.5k tokens: status (~10k) + settings (~1k) + fp_index (~2k) + directive_names (~1k) + infrastructure (~500) + guidance (~2k)",
         "Always includes guidance on when to call aifp_run(is_new_session=true) again"
       ],
       "target_database": "orchestrator",
@@ -43,6 +43,56 @@
           "parameters_mapping": {},
           "description": "aifp_run directive uses aifp_run helper as entry point orchestrator"
         }
+      ]
+    },
+    {
+      "name": "aifp_init",
+      "file_path": "helpers/orchestrators/orchestrators.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        }
+      ],
+      "purpose": "Phase 1 mechanical setup orchestrator for project initialization. Atomically creates directories, databases with schemas, and templates. No deep logic - pure mechanical operations.",
+      "error_handling": "Return detailed error if: already initialized, directory permissions denied, database creation failed. Clean up partial initialization on error (delete .aifp-project/ if incomplete).",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "AI must now detect and populate infrastructure values (language, build tool, source directory)",
+        "Prompt user for project name, purpose, and goals to populate ProjectBlueprint.md",
+        "After populating source_directory: call aifp_init's state DB creation code to set up {source_dir}/.state/",
+        "Empty infrastructure entries signal what needs AI detection/population"
+      ],
+      "target_database": "orchestrator",
+      "used_by_directives": [
+        {
+          "directive_name": "project_init",
+          "execution_context": "phase_1_mechanical_setup",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "project_root": "from current working directory or user input"
+          },
+          "description": "project_init directive calls aifp_init for Phase 1 mechanical setup"
+        }
+      ],
+      "implementation_notes": [
+        "PHASE 1 ONLY - Mechanical setup with no intelligence",
+        "Step 1: Check if already initialized (error if .aifp-project/project.db exists)",
+        "Step 2: Create directories: .aifp-project/, .aifp-project/backups/",
+        "Step 3: Copy ProjectBlueprint_template.md to .aifp-project/ProjectBlueprint.md",
+        "Step 4: Initialize project.db: load schemas/project.sql, execute, then execute initialization/standard_infrastructure.sql (8 empty entries), then call update_project_root() to populate project_root value",
+        "Step 5: Initialize user_preferences.db: load schemas/user_preferences.sql, execute, INSERT default tracking_settings (all disabled)",
+        "Step 6: Create .gitkeep files for empty directories",
+        "Step 7: Validate all files and tables exist",
+        "Step 8: Return success - AI continues with Phase 2 intelligent population",
+        "State database creation: After AI populates source_directory in Phase 2, aifp_init includes code to create {source_dir}/.state/runtime.db, README.md, and state_operations.{ext} - this is done as part of the orchestrator's implementation, not as a separate helper call",
+        "State DB templates located at: src/aifp/templates/state_database/ (runtime.db schema, README.md, state_operations.py template)",
+        "All operations are direct file/DB operations - no helper calls except validation"
       ]
     },
     {
@@ -134,7 +184,7 @@
         "Returns: {success, updated_entity{}, note_created?}",
         "Actions: start_task, complete_task, pause_task, resume_task, block_task, unblock_task",
         "Updates entity status field and related timestamps",
-        "If create_note=true → inserts note record automatically",
+        "If create_note=true \u2192 inserts note record automatically",
         "Simplifies common state transitions with action-based interface"
       ],
       "target_database": "orchestrator",

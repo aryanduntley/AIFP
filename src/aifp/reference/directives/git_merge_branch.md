@@ -526,8 +526,9 @@ alice_db = extract_db_from_branch("aifp-alice-001")
 main_db = extract_db_from_branch("main")
 
 # Compare tasks table
-alice_task = alice_db.execute("SELECT * FROM tasks WHERE id=15").fetchone()
-main_task = main_db.execute("SELECT * FROM tasks WHERE id=15").fetchone()
+# Use project query helper
+alice_task = get_from_project_where('tasks', {'id': 15})[0]
+main_task = get_from_project_where('tasks', {'id': 15})[0]
 
 if alice_task != main_task:
     # Task conflict
@@ -550,11 +551,9 @@ if alice_task != main_task:
 
 **Handling**:
 ```python
-# Check work_branches table
-branch_status = conn.execute(
-    "SELECT status FROM work_branches WHERE branch_name=?",
-    (branch_name,)
-).fetchone()
+# Use project query helper
+branches = get_from_project_where('work_branches', {'branch_name': branch_name})
+branch_status = branches[0]['status'] if branches else None
 
 if branch_status and branch_status[0] == 'merged':
     return MergeResult(

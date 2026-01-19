@@ -12,18 +12,18 @@
 The `project_update_db` directive is the **central database synchronization directive** that ensures `project.db` accurately reflects the current state of project files, functions, and metadata after code generation. Every time code is written, this directive updates the relevant database tables to maintain a comprehensive, queryable record of the project state.
 
 This directive is essential for:
-- **File Tracking**: Recording all files in the `files` table with checksums
+- **File Tracking**: Recording all files in the `files` table with path and language
+- **Reservation System**: Managing is_reserved flag for names during multi-step creation
 - **Function Indexing**: Cataloging functions in the `functions` table with metadata
 - **Dependency Tracking**: Recording function dependencies in the `interactions` table
 - **Task Linking**: Connecting generated code to tasks/milestones in completion path
 - **User Directive Integration**: Updating `user_directives.db` for automation projects
-- **Change Detection**: Enabling detection of external modifications via checksums
 
 When called (typically by `project_file_write`), this directive:
 1. Parses generated code to extract functions and dependencies
-2. Calculates file checksums for change detection
-3. Updates database tables transactionally (atomic commits)
-4. Links code to tasks and completion path
+2. Updates database tables transactionally (atomic commits) using helpers
+3. Links code to tasks and completion path
+4. Finalizes reservations (updates names with IDs, sets is_reserved=FALSE)
 5. Handles special cases (user directive implementations, multi-file updates)
 
 ---
@@ -49,10 +49,10 @@ Parses generated code to extract metadata for database updates.
 **Steps**:
 1. **Read file content** - Load file that was just written
 2. **Parse AST** - Build abstract syntax tree for analysis
-3. **Extract functions** - Find all function definitions
+3. **Extract functions** - Find all function definitions with metadata
 4. **Extract dependencies** - Identify function calls and imports
-5. **Calculate checksum** - Compute file hash for change detection
-6. **Determine update type** - New file vs existing file update
+5. **Determine update type** - New file vs existing file update
+6. **Check reservation status** - Handle is_reserved flag if applicable
 
 ### Branches
 
@@ -76,40 +76,50 @@ Parses generated code to extract metadata for database updates.
 
 **Branch 3: If new_file**
 - **Then**: `update_files_table`
-- **Details**: Insert new file record
-  - INSERT INTO files (path, language, checksum, project_id)
+- **Details**: Use helper to insert new file record
+  - Use project CRUD helper to add file with: path, name, language, is_reserved
   - Detect language from file extension
-  - Store checksum for change detection
-  - Return file_id for function linking
+  - If part of reserve/finalize: name includes ID (e.g., 'calculator-ID_42.py')
+  - No checksums - Git handles file change detection
+  - Returns file_id for function linking
 - **Result**: File record created in database
 
 **Branch 4: If existing_file**
 - **Then**: `update_files_table`
-- **Details**: Update existing file record
-  - UPDATE files SET checksum=?, updated_at=CURRENT_TIMESTAMP WHERE path=?
-  - Update checksum for change detection
-  - Delete old function records (will be re-inserted)
+- **Details**: Use helper to update existing file record
+  - Use project CRUD helper to update file entry
+  - Delete old function records if re-parsing (CASCADE handles cleanup)
 - **Result**: File record updated
+
+**Branch 4.5: If finalize_reservation**
+- **Then**: `finalize_file_reservation`
+- **Details**: Update reserved file after creation
+  - Use project CRUD helper to update file: set name with actual ID, set is_reserved=FALSE
+  - Updates name field with actual ID (e.g., 'actual-ID_42.py')
+  - Sets is_reserved=FALSE to mark completion
+  - Called by `project_reserve_finalize` directive
+- **Result**: Reservation finalized
 
 **Branch 5: If new_function**
 - **Then**: `update_functions_table`
-- **Details**: Insert function records
+- **Details**: Use helpers to insert function records
   - For each extracted function:
-    - INSERT INTO functions (name, file_id, purpose, parameters)
+    - Use project CRUD helper to add function with: name, file_id, purpose, parameters, returns, is_reserved
     - Extract function purpose from docstring
     - Store parameters as JSON array
-    - Store purity_level and side_effects_json (from FP checks)
-  - Return function_ids for dependency linking
+    - Store returns as JSON object
+    - If part of reserve/finalize: is_reserved=TRUE initially
+  - Returns function_ids for dependency linking
 - **Result**: Function records created
 
 **Branch 6: If dependencies_found**
 - **Then**: `update_interactions_table`
-- **Details**: Record function dependencies
+- **Details**: Use helpers to record function dependencies
   - For each function call detected:
-    - Find target function_id by name
-    - INSERT INTO interactions (source_function_id, target_function_id, interaction_type)
-    - interaction_type = 'call', 'chain', or 'compose'
-  - Build call graph for dependency tracking
+    - Use project query helper to find target function by name
+    - Use project CRUD helper to add interaction between source and target functions
+    - interaction_type = 'call', 'chain', 'compose', 'pipe', or 'borrow'
+  - Builds call graph for dependency tracking
 - **Result**: Dependencies recorded
 
 **Branch 7: If task_related**
@@ -155,16 +165,23 @@ result = project_update_db(
     project_root="/path/to/project"
 )
 
-# Database updates (transactional):
-# 1. INSERT INTO files (path='src/calc.py', language='python', checksum='abc123', project_id=1)
+# Database updates (transactional, using helpers):
+# 1. Use project CRUD helper to add file:
+#    path='src/calc.py', name=None, language='python', is_reserved=False
 #    → Returns file_id=5
 #
-# 2. INSERT INTO functions (name='calculate_total', file_id=5, purpose='Calculate total with tax',
-#                            parameters='["items: tuple[float, ...]", "tax_rate: float"]')
+# 2. Use project CRUD helper to add function:
+#    name='calculate_total', file_id=5, purpose='Calculate total with tax',
+#    parameters='["items: tuple[float, ...]", "tax_rate: float"]',
+#    returns='{"type": "float", "description": "Total with tax"}',
+#    is_reserved=False
 #    → Returns func_id=42
 #
-# 3. INSERT INTO functions (name='format_currency', file_id=5, purpose='Format amount as currency',
-#                            parameters='["amount: float"]')
+# 3. Use project CRUD helper to add function:
+#    name='format_currency', file_id=5, purpose='Format amount as currency',
+#    parameters='["amount: float"]',
+#    returns='{"type": "str", "description": "Formatted currency string"}',
+#    is_reserved=False
 #    → Returns func_id=43
 #
 # 4. No dependencies detected (no function calls between them)

@@ -801,7 +801,7 @@
       "name": "file_operations",
       "description": "Synchronizes generated code metadata with the project database."
     },
-    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables accordingly to maintain accurate state tracking. Should finalize reservations (via project_reserve_finalize) to update names with embedded IDs and set is_reserved=FALSE after successful file writes. Handles user directive generated files by also updating user_directives.db tables (directive_implementations). Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle.",
+    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables using helpers to maintain accurate state tracking. Finalizes reservations (via project_reserve_finalize) to update names with embedded IDs and set is_reserved=FALSE after successful file writes. Handles user directive generated files by also updating user_directives.db tables (directive_implementations). Uses helper functions instead of direct SQL for all database operations. Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle.",
     "md_file_path": "directives/project_update_db.md",
     "workflow": {
       "trunk": "parse_content",
@@ -827,14 +827,24 @@
           "if": "new_file",
           "then": "update_files_table",
           "details": {
-            "checksum": true
+            "use_helper": "add file to project",
+            "note": "No checksums - Git handles file change detection. Include path, name, language, is_reserved"
           }
         },
         {
           "if": "new_function",
           "then": "update_functions_table",
           "details": {
-            "deps_json": true
+            "use_helper": "add function to project",
+            "note": "Extract metadata from AST, store parameters and returns as JSON. Include is_reserved for reservation system"
+          }
+        },
+        {
+          "if": "dependencies_found",
+          "then": "update_interactions_table",
+          "details": {
+            "use_helper": "add interaction between functions",
+            "note": "Find target function by name using project query helpers, then add interaction"
           }
         },
         {
@@ -861,8 +871,8 @@
         "resolution": "Parse again or prompt user for function metadata"
       },
       {
-        "issue": "checksum_mismatch",
-        "resolution": "Recalculate and resync file entry"
+        "issue": "reserved_name_conflict",
+        "resolution": "Check is_reserved flag, finalize existing reservation first"
       },
       {
         "issue": "user_directive_not_found",

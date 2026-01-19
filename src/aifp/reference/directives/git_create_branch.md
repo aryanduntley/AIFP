@@ -182,7 +182,7 @@ Identifies the user (human or AI) creating the branch.
 #    - Normalize: "alice-smith"
 #
 # 2. Get next number:
-#    - Query: SELECT MAX(...) FROM work_branches WHERE user_name='alice-smith'
+#    - Helper: Use helper to get max branch number for user 'alice-smith'
 #    - Result: 2 (alice-smith has 001, 002)
 #    - Next: 3
 #

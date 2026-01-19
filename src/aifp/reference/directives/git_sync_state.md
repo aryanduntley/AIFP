@@ -48,6 +48,8 @@ This directive applies when:
 
 ## Workflow
 
+**Note**: Examples show conceptual SQL for clarity. Actual implementation uses project CRUD/query helpers, not direct SQL.
+
 ### Trunk: get_current_git_hash
 
 Retrieves the current Git HEAD commit hash.
@@ -441,15 +443,19 @@ How to verify this directive is working:
 1. **Initial sync** → Hash stored
    ```python
    git_sync_state()
-   hash = query_db("SELECT last_known_git_hash FROM project WHERE id=1")
+   # Use project query helper
+   project_metadata = get_project()
+   hash = project_metadata['last_known_git_hash']
    assert hash is not None
    ```
 
 2. **No changes** → Timestamp updated only
    ```python
-   before = query_db("SELECT last_git_sync FROM project WHERE id=1")
+   project_before = get_project()
+   before = project_before['last_git_sync']
    git_sync_state()
-   after = query_db("SELECT last_git_sync FROM project WHERE id=1")
+   project_after = get_project()
+   after = project_after['last_git_sync']
    assert after > before
    ```
 
@@ -466,10 +472,12 @@ How to verify this directive is working:
 
 4. **After AIFP commit** → Hash updated
    ```python
-   old_hash = query_db("SELECT last_known_git_hash FROM project WHERE id=1")
+   project = get_project()
+   old_hash = project['last_known_git_hash']
    # AIFP creates commit
    git_sync_state()
-   new_hash = query_db("SELECT last_known_git_hash FROM project WHERE id=1")
+   project = get_project()
+   new_hash = project['last_known_git_hash']
    assert new_hash != old_hash
    ```
 

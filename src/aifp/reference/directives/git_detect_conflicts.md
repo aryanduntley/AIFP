@@ -472,7 +472,9 @@ if commits_behind > 50:
 **Handling**:
 ```python
 try:
-    purity_levels = query_db("SELECT purity_level FROM functions WHERE name=?", (fn_name,))
+    # Use project query helper
+    functions = get_from_project_where('functions', {'name': fn_name})
+    purity_levels = [f['purity_level'] for f in functions]
 except DatabaseError:
     # Fall back to file-level detection only
     return ConflictAnalysis(

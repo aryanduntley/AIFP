@@ -425,7 +425,7 @@ def get_highest_priority_sidequest() -> Optional[Sidequest]:
     """
     # Sidequests checked by: priority (medium > low), then created_at
     return query_one("""
-        SELECT * FROM sidequests
+        # Use project query helper: get_from_project_where('sidequests', {})
         WHERE status = 'pending' OR status = 'in_progress'
         ORDER BY
             CASE priority

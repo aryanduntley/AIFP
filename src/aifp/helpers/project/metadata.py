@@ -13,9 +13,11 @@ Helpers in this file:
 - update_project: Update project metadata
 - blueprint_has_changed: Check if ProjectBlueprint.md has changed
 - get_infrastructure_by_type: Get infrastructure entries by type
+- get_all_infrastructure: Get all infrastructure entries (including empty values)
 - get_source_directory: Get project source directory
-- add_source_directory: Add source directory to infrastructure
-- update_source_directory: Update existing source directory
+- update_source_directory: Update source directory (with failsafe insert if not exists)
+- get_project_root: Get project root directory
+- update_project_root: Update project root directory (with failsafe insert if not exists)
 - initialize_state_database: Initialize state DB infrastructure
 """
 
@@ -43,8 +45,12 @@ from ._common import _open_connection
 
 from typing import Final
 
-# Infrastructure type for source directory
+# Infrastructure types
+INFRASTRUCTURE_TYPE_PROJECT_ROOT: Final[str] = 'project_root'
 INFRASTRUCTURE_TYPE_SOURCE_DIR: Final[str] = 'source_directory'
+
+# Project database path
+PROJECT_DB_PATH: Final[str] = '.aifp-project/project.db'
 
 # Project statuses
 VALID_PROJECT_STATUSES: Final[frozenset[str]] = frozenset([
@@ -128,6 +134,7 @@ class InfrastructureResult:
     success: bool
     infrastructure: Tuple[InfrastructureRecord, ...] = ()
     error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -351,6 +358,24 @@ def _query_infrastructure_by_type(conn: sqlite3.Connection, infra_type: str) -> 
     )
 
 
+def _query_all_infrastructure(conn: sqlite3.Connection) -> Tuple[InfrastructureRecord, ...]:
+    """Effect: Query all infrastructure entries."""
+    cursor = conn.execute("SELECT * FROM infrastructure ORDER BY created_at")
+    rows = cursor.fetchall()
+
+    return tuple(
+        InfrastructureRecord(
+            id=row['id'],
+            type=row['type'],
+            value=row['value'],
+            description=row['description'],
+            created_at=row['created_at'],
+            updated_at=row['updated_at']
+        )
+        for row in rows
+    )
+
+
 def _get_source_dir_value(conn: sqlite3.Connection) -> Optional[str]:
     """Effect: Get source directory value from infrastructure."""
     cursor = conn.execute(
@@ -375,6 +400,34 @@ def _update_source_dir(conn: sqlite3.Connection, new_source_dir: str) -> None:
     conn.execute(
         "UPDATE infrastructure SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE type = ?",
         (new_source_dir, INFRASTRUCTURE_TYPE_SOURCE_DIR)
+    )
+    conn.commit()
+
+
+def _get_project_root_value(conn: sqlite3.Connection) -> Optional[str]:
+    """Effect: Get project root value from infrastructure."""
+    cursor = conn.execute(
+        "SELECT value FROM infrastructure WHERE type = ?",
+        (INFRASTRUCTURE_TYPE_PROJECT_ROOT,)
+    )
+    row = cursor.fetchone()
+    return row['value'] if row else None
+
+
+def _insert_project_root(conn: sqlite3.Connection, project_root: str) -> None:
+    """Effect: Insert project root into infrastructure."""
+    conn.execute(
+        "INSERT INTO infrastructure (type, value, description) VALUES (?, ?, ?)",
+        (INFRASTRUCTURE_TYPE_PROJECT_ROOT, project_root, 'Full path to project root directory')
+    )
+    conn.commit()
+
+
+def _update_project_root(conn: sqlite3.Connection, new_project_root: str) -> None:
+    """Effect: Update project root in infrastructure."""
+    conn.execute(
+        "UPDATE infrastructure SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE type = ?",
+        (new_project_root, INFRASTRUCTURE_TYPE_PROJECT_ROOT)
     )
     conn.commit()
 
@@ -641,17 +694,52 @@ def get_infrastructure_by_type(db_path: str, type: str) -> InfrastructureResult:
         )
 
 
-def get_source_directory(db_path: str) -> SourceDirResult:
+def get_all_infrastructure(db_path: str) -> InfrastructureResult:
     """
-    Get project source directory from infrastructure table.
+    Get all infrastructure entries including standard fields (even if empty).
+
+    Returns complete infrastructure table for session bundling and status reports.
+    Used by aifp_run to bundle infrastructure in session context.
 
     Args:
         db_path: Path to project.db
 
     Returns:
-        SourceDirResult with source directory path or error
+        InfrastructureResult with all infrastructure entries (empty tuple if table doesn't exist)
     """
     conn = _open_connection(db_path)
+
+    try:
+        infrastructure = _query_all_infrastructure(conn)
+        conn.close()
+
+        # Fetch return statements (only on success)
+        return_stmts = get_return_statements("get_all_infrastructure")
+
+        return InfrastructureResult(
+            success=True,
+            infrastructure=infrastructure,
+            return_statements=return_stmts
+        )
+
+    except Exception as e:
+        conn.close()
+        # Return empty array if table doesn't exist or database not initialized
+        return InfrastructureResult(
+            success=True,  # Not an error - just empty
+            infrastructure=(),
+            return_statements=()
+        )
+
+
+def get_source_directory() -> SourceDirResult:
+    """
+    Get project source directory from infrastructure table.
+
+    Returns:
+        SourceDirResult with source directory path or error
+    """
+    conn = _open_connection(PROJECT_DB_PATH)
 
     try:
         source_dir = _get_source_dir_value(conn)
@@ -680,44 +768,45 @@ def get_source_directory(db_path: str) -> SourceDirResult:
         )
 
 
-def add_source_directory(db_path: str, source_dir: str) -> SourceDirResult:
+def update_source_directory(new_source_dir: str) -> SourceDirResult:
     """
-    Add source directory to infrastructure table.
+    Update source directory in infrastructure table.
+
+    Failsafe: If source_directory entry doesn't exist, it will be created.
+    This should never happen (initialized by SQL), but provides safety.
 
     Args:
-        db_path: Path to project.db
-        source_dir: Source directory path (e.g., 'src', 'lib', 'app')
+        new_source_dir: New source directory path
 
     Returns:
         SourceDirResult with success status
     """
-    # Validate source_dir
-    error = _validate_source_dir(source_dir)
+    # Validate new_source_dir
+    error = _validate_source_dir(new_source_dir)
     if error:
         return SourceDirResult(success=False, error=error)
 
-    conn = _open_connection(db_path)
+    conn = _open_connection(PROJECT_DB_PATH)
 
     try:
-        # Check if already exists
+        # Check if exists
         existing = _get_source_dir_value(conn)
-        if existing is not None:
-            conn.close()
-            return SourceDirResult(
-                success=False,
-                error="Source directory already configured. Use update_source_directory() to change."
-            )
 
-        # Insert source directory
-        _insert_source_dir(conn, source_dir)
+        if existing is None:
+            # Failsafe: Insert if not exists (should never happen, but safe)
+            _insert_source_dir(conn, new_source_dir)
+        else:
+            # Normal path: Update existing entry
+            _update_source_dir(conn, new_source_dir)
+
         conn.close()
 
         # Fetch return statements
-        return_stmts = get_return_statements("add_source_directory")
+        return_stmts = get_return_statements("update_source_directory")
 
         return SourceDirResult(
             success=True,
-            data=source_dir,
+            data=new_source_dir,
             return_statements=return_stmts
         )
 
@@ -729,44 +818,79 @@ def add_source_directory(db_path: str, source_dir: str) -> SourceDirResult:
         )
 
 
-def update_source_directory(db_path: str, new_source_dir: str) -> SourceDirResult:
+def get_project_root() -> SourceDirResult:
     """
-    Update existing source directory in infrastructure table.
+    Get project root directory from infrastructure table.
+
+    Returns:
+        SourceDirResult with project root path or error
+    """
+    conn = _open_connection(PROJECT_DB_PATH)
+
+    try:
+        project_root = _get_project_root_value(conn)
+        conn.close()
+
+        if project_root is None:
+            return SourceDirResult(
+                success=False,
+                error="Project root not configured. Must call update_project_root() first."
+            )
+
+        return SourceDirResult(
+            success=True,
+            data=project_root
+        )
+
+    except Exception as e:
+        conn.close()
+        return SourceDirResult(
+            success=False,
+            error=f"Database error: {str(e)}"
+        )
+
+
+def update_project_root(new_project_root: str) -> SourceDirResult:
+    """
+    Update project root in infrastructure table.
+
+    Failsafe: If project_root entry doesn't exist, it will be created.
+    This should never happen (initialized by SQL), but provides safety.
 
     Args:
-        db_path: Path to project.db
-        new_source_dir: New source directory path
+        new_project_root: New project root path (absolute path)
 
     Returns:
         SourceDirResult with success status
     """
-    # Validate new_source_dir
-    error = _validate_source_dir(new_source_dir)
-    if error:
-        return SourceDirResult(success=False, error=error)
+    # Validate it's an absolute path
+    if not os.path.isabs(new_project_root):
+        return SourceDirResult(
+            success=False,
+            error=f"Project root must be an absolute path, got: {new_project_root}"
+        )
 
-    conn = _open_connection(db_path)
+    conn = _open_connection(PROJECT_DB_PATH)
 
     try:
         # Check if exists
-        existing = _get_source_dir_value(conn)
-        if existing is None:
-            conn.close()
-            return SourceDirResult(
-                success=False,
-                error="Source directory not configured. Use add_source_directory() first."
-            )
+        existing = _get_project_root_value(conn)
 
-        # Update source directory
-        _update_source_dir(conn, new_source_dir)
+        if existing is None:
+            # Failsafe: Insert if not exists (should never happen, but safe)
+            _insert_project_root(conn, new_project_root)
+        else:
+            # Normal path: Update existing entry
+            _update_project_root(conn, new_project_root)
+
         conn.close()
 
         # Fetch return statements
-        return_stmts = get_return_statements("update_source_directory")
+        return_stmts = get_return_statements("update_project_root")
 
         return SourceDirResult(
             success=True,
-            data=new_source_dir,
+            data=new_project_root,
             return_statements=return_stmts
         )
 

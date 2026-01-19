@@ -1,6 +1,6 @@
 # AIFP Helper Functions - Complete Implementation Plan
 
-**Total Helpers**: 222 across 15 JSON files (updated 2026-01-16: +4 state database helpers)
+**Total Helpers**: 224 across 15 JSON files (updated 2026-01-18: +2 infrastructure/orchestrator helpers)
 **Target**: 600-900 lines per Python file (prefer ~600)
 **Estimated**: ~30-50 lines per helper → ~12-20 helpers per file
 
@@ -365,10 +365,11 @@ src/aifp/helpers/
 
 ---
 
-### Phase 2: Orchestrators (12 helpers)
+### Phase 2: Orchestrators (13 helpers)
 
 - [ ] **orchestrators/entry_points.py** - `helpers-orchestrators.json`
-  - [ ] aifp_run
+  - [ ] aifp_run (needs update to include infrastructure_data)
+  - [ ] aifp_init (JSON defined, code pending)
   - [ ] aifp_status
 
 - [ ] **orchestrators/status.py** - `helpers-orchestrators.json`
@@ -410,16 +411,19 @@ src/aifp/helpers/
   - [x] delete_project_entry
   - [x] delete_reserved
 
-- [x] **project/metadata.py** - `helpers-project-1.json` (9 helpers) ✅
+- [x] **project/metadata.py** - `helpers-project-1.json` (22 total, 10 coded, 2 removed) ✅
   - [x] create_project
   - [x] get_project
   - [x] update_project
   - [x] blueprint_has_changed
   - [x] get_infrastructure_by_type
+  - [x] get_all_infrastructure
   - [x] get_source_directory
-  - [x] add_source_directory
-  - [x] update_source_directory
-  - [x] initialize_state_database
+  - [x] update_source_directory (now includes failsafe insert if not exists)
+  - [x] get_project_root
+  - [x] update_project_root (with failsafe insert if not exists)
+  - ~~add_source_directory~~ (REMOVED - SQL creates entry, update_source_directory has failsafe)
+  - ~~initialize_state_database~~ (REMOVED - now part of aifp_init implementation)
 
 #### Files (10 helpers)
 - [x] **project/files_1.py** - `helpers-project-2.json` (6 helpers) ✅
@@ -968,13 +972,13 @@ Each Python file should:
 
 ## Progress Tracking
 
-**Current Status**: Phase 3 complete! - 118 of 218 helpers completed (54.1%)
+**Current Status**: Phase 3 COMPLETE! - 119 of 224 helpers completed (53.1%)
 
 **Completed Modules** (16 of 32 files):
 - ✅ `project/validation.py` - 1 helper
 - ✅ `project/schema.py` - 4 helpers
 - ✅ `project/crud.py` - 7 helpers
-- ✅ `project/metadata.py` - 9 helpers
+- ✅ `project/metadata.py` - 10 helpers (2 removed: add_source_directory, initialize_state_database)
 - ✅ `project/files_1.py` - 6 helpers
 - ✅ `project/files_2.py` - 4 helpers
 - ✅ `project/functions_1.py` - 5 helpers
@@ -989,7 +993,7 @@ Each Python file should:
 - ✅ `project/items_notes.py` - 10 helpers
 
 **Completed Milestones**:
-- ✅ Schema, CRUD & Metadata module (21 helpers)
+- ✅ Schema, CRUD & Metadata module (22 helpers total: 10 coded + 2 removed)
 - ✅ Files module (10 helpers)
 - ✅ Functions module (10 helpers)
 - ✅ Types & Interactions module (13 helpers)
@@ -997,7 +1001,7 @@ Each Python file should:
 - ✅ Tasks module (15 helpers)
 - ✅ Subtasks & Sidequests module (14 helpers)
 - ✅ Items & Notes module (10 helpers)
-- ✅ **ALL PROJECT DATABASE HELPERS COMPLETE!** (118 helpers)
+- ✅ **ALL PROJECT DATABASE HELPERS COMPLETE!** (119 coded; 2 removed: add_source_directory, initialize_state_database)
 
 **Next Up**:
 - ⏳ Orchestrators (12 helpers)
@@ -1046,9 +1050,59 @@ For detailed helper specifications, see: `docs/COMPLETE_HELPERS_LIST.md`
 ---
 
 **Generated**: 2026-01-11
-**Last Updated**: 2026-01-16
-**Status**: Phase 3 COMPLETE! - 118/218 helpers complete (54.1%)
-**Next**: Move to Core database operations or Orchestrators
+**Last Updated**: 2026-01-19
+**Status**: Phase 3 COMPLETE! - 119/224 helpers complete (53.1%) - All project database helpers coded
+**Next**: Implement aifp_init orchestrator, then move to Core database operations or Orchestrators
+
+---
+
+## Recent Updates (2026-01-19)
+
+### Project Root Helpers Added and add_source_directory Removed
+
+**Changes**:
+- ❌ Removed `add_source_directory` - Redundant since SQL creates entry and update has failsafe
+- ✅ Added `get_project_root` - Get project root from infrastructure table
+- ✅ Added `update_project_root` - Update project root (with failsafe insert if not exists)
+- ✅ Updated `update_source_directory` - Added failsafe insert if entry doesn't exist
+- ✅ Updated `aifp_init` implementation notes - Call update_project_root() after SQL to populate value
+
+**Rationale**:
+- Both `project_root` and `source_directory` need get/update helpers for symmetry
+- Add functions are unnecessary - SQL creates entries, update functions have failsafe insert
+- This provides safety while reducing API surface (fewer functions = clearer intent)
+
+**Progress Impact**:
+- Total: 224 helpers (was 223, -1 add_source_directory, +2 project_root helpers)
+- Coded: 119 helpers (was 118, -1 add_source_directory, +2 project_root helpers)
+- Percentage: 53.1% (was 52.9%)
+
+---
+
+### Infrastructure Helpers Verification and State DB Removal
+
+**Verification Results**:
+- ✅ `get_source_directory` - VERIFIED: Fully implemented (lines 700-737 in metadata.py)
+- ✅ `add_source_directory` - VERIFIED: Fully implemented (lines 740-786 in metadata.py)
+- ✅ `update_source_directory` - VERIFIED: Fully implemented (lines 789-837 in metadata.py)
+- ✅ `get_all_infrastructure` - COMPLETED: Implemented (lines 662-698 in metadata.py)
+- ❌ `initialize_state_database` - REMOVED: State DB initialization moved to aifp_init orchestrator
+
+**State Database Helper Removal**:
+- **Rationale**: State DB initialization is part of aifp_init's setup work, just like directory creation and database initialization. No separate helper needed.
+- **Action**: Removed from helpers-project-1.json and moved to aifp_init's implementation_notes
+- **Impact**: Total helper count reduced from 224 to 223
+
+**Helper Count Correction**:
+- 3 helpers were already coded but marked as pending (get_source_directory, add_source_directory, update_source_directory)
+- 1 helper removed (initialize_state_database → now part of aifp_init)
+- Net change: +3 coded, -1 total = 117 of 223 complete
+
+**Progress Impact**:
+- **FINAL**: 118 of 223 helpers complete (52.9%)
+- **metadata.py**: 9 of 9 helpers coded (was incorrectly showing 5 of 10, then 8 of 9)
+- **Schema, CRUD & Metadata module**: 21 of 21 helpers COMPLETE (was incorrectly showing 17 of 21)
+- **Phase 3 (Project Database)**: 118 of 118 helpers COMPLETE! 🎉
 
 ---
 
