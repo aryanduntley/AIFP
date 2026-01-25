@@ -9,6 +9,7 @@ helpers json is in docs/helpers/json/
 Everything above src/aifp/ is dev.
 helpers are in docs/json/helpers/
 directive flows are in docs/directives-json/directive_flow_(project,user-preferences,fp).json
+helper functions are AI tools for  repeated operations. State DB creation for example is one-time during init, so it's internal to aifp_init code, not a helper.  
 
 src/aifp/database/schemas/user_directives.sql
 src/aifp/database/schemas/aifp_core.sql
@@ -16,13 +17,8 @@ src/aifp/database/schemas/project.sql
 src/aifp/database/schemas/user_preferences.sql
 docs/HELPER_IMPLEMENTATION_PLAN.md
 
-Do not read or modify notes.txt. That is just for me.
+Do not read or modify notes.txt. That is just for me.                         
 
-are we done with all the sidequests?
-
-project helpers coded, but database file location. How is it being determined? Are we hard-coding file path. If so, we must consider the aifp project folder name change in user settings. Should just remove the ability to change it if exists.
-All 4 infrastructure directory helpers now use the PROJECT_DB_PATH constant internally instead of taking it as a parameter. Much cleaner API - the  functions just do what they're supposed to do without requiring the caller to know about database paths.
- 
 return_statements for global mutable db (remember to rewrite the reference CRUD for mutable global db file in project language... with reference to that CRUD reference file location)
 
 return statements for aifp_init
@@ -46,6 +42,7 @@ MUST make OOP wrapper examples
 
 docs/directives-json/sync-directives.py
 
+23.30
 =============================
 docs/directives-json/IMPORT_REPORT_2026-01-10.md
 

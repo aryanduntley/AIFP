@@ -88,11 +88,15 @@
         "Step 4: Initialize project.db: load schemas/project.sql, execute, then execute initialization/standard_infrastructure.sql (8 empty entries), then call update_project_root() to populate project_root value",
         "Step 5: Initialize user_preferences.db: load schemas/user_preferences.sql, execute, INSERT default tracking_settings (all disabled)",
         "Step 6: Create .gitkeep files for empty directories",
-        "Step 7: Validate all files and tables exist",
-        "Step 8: Return success - AI continues with Phase 2 intelligent population",
-        "State database creation: After AI populates source_directory in Phase 2, aifp_init includes code to create {source_dir}/.state/runtime.db, README.md, and state_operations.{ext} - this is done as part of the orchestrator's implementation, not as a separate helper call",
-        "State DB templates located at: src/aifp/templates/state_database/ (runtime.db schema, README.md, state_operations.py template)",
-        "All operations are direct file/DB operations - no helper calls except validation"
+        "Step 7: Validate all files and tables exist (call validate_initialization helper)",
+        "Step 8: Return success object",
+        "RETURN STRUCTURE: {success: bool, project_root: str, aifp_dir: str, files_created: ['.aifp-project/', 'project.db', 'user_preferences.db', 'ProjectBlueprint.md'], tables_created: {project_db: [...], user_prefs_db: [...]}, infrastructure_entries: 8, next_phase: 'AI populates infrastructure and blueprint'}",
+        "State database creation: Code lives in aifp_init module. Called after AI populates source_directory (Phase 2). Creates {source_dir}/.state/runtime.db, README.md, state_operations.{ext}",
+        "State DB purpose: FP-compliant mutable global state (key-value store with CRUD reference file)",
+        "State DB templates located at: src/aifp/templates/state_db/ (runtime.db, README.md, state_operations.py)",
+        "ERROR CLEANUP: If any step fails after Step 2, delete .aifp-project/ directory entirely (shutil.rmtree). Partial initialization is worse than no initialization.",
+        "ERROR RETURN: {success: false, error: str, failed_step: int, cleanup_performed: bool}",
+        "All operations are direct file/DB operations - no helper calls except validate_initialization"
       ]
     },
     {
