@@ -55,7 +55,7 @@ Important distinctions:
 
 **On FIRST interaction with ANY project directory:**
 
-1. **Call aifp_run(user_request, is_new_session=true)**
+1. **Call aifp_run(is_new_session=true)**
    - Returns bundled session startup data (~15-20k tokens):
      - **aifp_status()**: Comprehensive project state (~10k tokens)
      - **get_user_settings()**: All user settings (~1k tokens)
@@ -265,6 +265,8 @@ Important distinctions:
 
    **Decision**: Function in 2+ files AND identical → Extract immediately
 
+   **Hierarchy Planning**: When adding new shared code, evaluate scope level upfront — don't default to the lowest level and refactor later. When modifying existing utilities, check if commonality has grown: can a category-level utility be promoted to global? Can parts of a file-level function be extracted to serve a broader scope? This is an ongoing evaluation, not a one-time decision.
+
    **Example**:
    ```python
    # ✅ Extract to _common.py (identical everywhere)
@@ -381,8 +383,7 @@ Directives tell you WHEN to act and WHAT steps to follow. All directives use **t
 **Directive Flows** (navigation system):
 - Stored in directive_flow table
 - Define "what comes next" based on current state
-- Query: get_next_directives_from_status(current_directive, status)
-- Query: get_completion_loop_target(completion_directive_name)
+- Query: get_flows_from_directive(directive_name)
 - All completion directives loop back to aifp_status
 
 === HELPER FUNCTIONS: PRIMARY DATABASE INTERACTION TOOLS ===
@@ -408,10 +409,13 @@ Helpers are pre-built database functions stored in `aifp_core.db`. They provide 
 
 3. **Sub-helpers** (is_sub_helper=true): Called by other helpers only (not exposed to AI)
 
-**Key Orchestrators** (AI-only tools for comprehensive operations):
-- Query database for orchestrator helpers (comprehensive operations that replace multiple calls)
-- Examples: status orchestrators, state update orchestrators, batch operation orchestrators
-- These simplify complex multi-step operations into single calls
+**Session-Essential Helpers** (always available, used every session):
+- **aifp_run(is_new_session)** — Entry point gateway, bundles session startup data
+- **aifp_status(project_root, type)** — Comprehensive project state for session context
+- **aifp_init(project_root)** — One-time project initialization (Phase 1 mechanical setup)
+- **get_project_status(project_root, type)** — Refresh work hierarchy mid-session
+
+All other helpers: Discover from database via the aifp_run session bundle or query helpers by keyword/directive.
 
 **Database Interaction Policy** (CRITICAL - follow this priority):
 
@@ -456,12 +460,12 @@ Helpers are pre-built database functions stored in `aifp_core.db`. They provide 
    - Directives, helpers, flows, interactions
    - Directive names provided via is_new_session bundle
    - Query: get_directive(name) or search_directives(type, keyword) for details
-   - Avoid: query_mcp_db(sql) - prefer helpers
+   - Avoid: Direct SQL - prefer helpers
 
 2. **project.db** (per-project, mutable)
    - Files, functions, tasks, milestones, notes, completion_path
-   - Query: Use specific helpers (get_incomplete_tasks, get_project_files)
-   - Avoid: query_project_db(sql) - only if no helper exists
+   - Query: Use specific helpers (query via database discovery)
+   - Avoid: Direct SQL - only if no helper exists
 
 3. **user_preferences.db** (per-project, mutable)
    - Atomic key-value overrides (directive_name.preference_key = value)
@@ -503,7 +507,16 @@ If discussion results in project decision:
 - Task changes → Update tasks/milestones
 - Clarifications → Add note via project_notes_log
 
-**6. Two Use Cases, Never Mixed**
+**6. Edge Cases & Recovery**
+If you are confused, lost context, or unsure what to do next:
+- Call aifp_status() to get fresh project state from the database
+- Call search_directives(keyword="...") to find the right directive for the situation
+- Use project_notes_log to record what happened (decisions, confusion, context)
+- Use project_sidequest_create if the user changed direction or unexpected work appeared
+- If context feels compressed or stale, call aifp_run(is_new_session=true) to reload everything
+- The database is your memory — trust it over cached context
+
+**7. Two Use Cases, Never Mixed**
 - **Use Case 1**: Regular software development (web apps, libraries, tools)
 - **Use Case 2**: Automation projects (home automation, cloud, workflows)
 - Check: project.user_directives_status (NULL=Case 1, active=Case 2)

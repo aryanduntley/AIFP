@@ -1,8 +1,8 @@
 # Orchestrator Implementation Plan
 
-**Status**: Planning Phase — Decisions Finalized, Pending Code
+**Status**: COMPLETE — All 10 helpers implemented across 4 files + _common.py
 **Date**: 2026-01-28
-**Scope**: 11 helpers across 4 files (reduced from 13)
+**Scope**: 10 helpers across 4 files (reduced from 13; validate_initialization removed — AI responsibility)
 
 ---
 
@@ -86,7 +86,7 @@ Return statements are critical for orchestrators because they chain into AI-driv
 | `entry_points.py` | `aifp_init`, `aifp_run`, `aifp_status` | Top-level entry points called directly by directives |
 | `status.py` | `get_project_status`, `get_work_context` | Project state retrieval (tree logic folded into get_project_status) |
 | `state.py` | `get_current_progress`, `update_project_state`, `batch_update_progress` | Flexible state queries and updates |
-| `query.py` | `query_project_state`, `validate_initialization`, `get_files_by_flow_context` | Advanced queries and validation |
+| `query.py` | `query_project_state`, `get_files_by_flow_context` | Advanced queries (validate_initialization removed — AI responsibility) |
 
 ---
 
@@ -497,46 +497,51 @@ Based on dependency chain:
 
 ## Prerequisites Before Coding
 
-### 1. Update orchestrator JSON (`docs/helpers/json/helpers-orchestrators.json`)
-- Remove `get_status_tree` entry entirely
-- Remove `get_project_context` entry entirely
-- Update `aifp_status` to remove `get_status_tree` from used_by/implementation_notes
-- Change `target_database` values per classification table above
-- Update metadata count from 12 to 10 (11 helpers but validate_initialization is in the count)
-- Fill in missing implementation_notes and return_statements
+### 1. ✅ Update orchestrator JSON (`docs/helpers/json/helpers-orchestrators.json`)
+- ✅ Remove `get_status_tree` entry entirely
+- ✅ Remove `get_project_context` entry entirely
+- ✅ Update `aifp_status` to remove `get_status_tree` from implementation_notes
+- ✅ Change `target_database` values per classification table above
+- ✅ Update metadata count to 11
+- ✅ Fill in implementation_notes and return_statements
+- ✅ Added project_root parameter to helpers missing it
+- ✅ Updated file_path values to match planned file organization
 
-### 2. Update aifp_core.sql schema
-- Change CHECK constraint: `'orchestrator'` → `'multi_db'`, `'system'` → `'no_db'`
+### 2. ✅ Update aifp_core.sql schema
+- ✅ Changed CHECK constraint: `'orchestrator'` → `'multi_db'`, `'system'` → `'no_db'`
 - File: `src/aifp/database/schemas/aifp_core.sql` lines 137-144
 
-### 3. Update validation.py
-- Change validation tuple: `'orchestrator'` → `'multi_db'`, `'system'` → `'no_db'`
+### 3. ✅ Update validation.py
+- ✅ Changed validation tuple: `'orchestrator'` → `'multi_db'`, `'system'` → `'no_db'`
 - File: `src/aifp/helpers/core/validation.py` line 77
 
-### 4. Update HELPER_IMPLEMENTATION_PLAN.md
-- Remove `get_status_tree` and `get_project_context` from Phase 2 orchestrators checklist
-- Update orchestrator count from 13 to 11
+### 4. ✅ Update HELPER_IMPLEMENTATION_PLAN.md
+- ✅ Removed `get_status_tree` and `get_project_context` from Phase 2 orchestrators checklist
+- ✅ Updated orchestrator count from 13 to 11
+- ✅ Updated total helper count from 223 to 221
+- ✅ Updated progress percentages
 
-### 5. Update directive MD files
-- `src/aifp/reference/directives/aifp_status.md` — remove `get_status_tree` references
-- `src/aifp/reference/directives/aifp_run.md` — remove `get_project_context` from available_helpers
+### 5. ✅ Update directive MD files
+- ✅ `src/aifp/reference/directives/aifp_status.md` — replaced `get_status_tree` and `get_project_context` with `get_project_status`
+- ✅ `src/aifp/reference/directives/aifp_run.md` — removed `get_project_context` from available_helpers, replaced with `get_project_status`
 
-### 6. Update README.md
-- Remove `get_project_context` from available_helpers list (line ~324)
+### 6. ✅ Update README.md
+- ✅ Removed `get_project_context` from available_helpers list
 
-### 7. Create `ProjectBlueprint_template.md`
-- Location: `src/aifp/templates/ProjectBlueprint_template.md`
-- Template with placeholder sections matching blueprint structure
-- Used by `aifp_init` step 5
+### 7. ✅ Create `ProjectBlueprint_template.md`
+- ✅ Created at `src/aifp/templates/ProjectBlueprint_template.md`
+- ✅ All 9 sections match production blueprint structure
+- ✅ HTML comment block explains this is a template requiring AI population
+- ✅ All placeholder values marked with [BRACKETS]
+- Used by `aifp_init` step 5 (copy to `.aifp-project/ProjectBlueprint.md`)
 
-### 8. Create `_common.py` for orchestrators module
-- Shared imports and constants
-- DB path resolution shortcuts
-- Common query patterns used across orchestrator files
+### 8. ✅ Create `_common.py` for orchestrators module
+- ✅ Created at `src/aifp/helpers/orchestrators/_common.py`
+- ✅ Shared imports, constants, connection helpers, lookup tables
+- ✅ All orchestrator files import from _common only (DRY hierarchy)
 
-### 9. Verify git helpers target_database
-- Check `docs/helpers/json/helpers-git.json` for any `"target_database": "system"` entries
-- Change to `"no_db"` if found
+### 9. ✅ Verify git helpers target_database
+- ✅ Checked `docs/helpers/json/helpers-git.json` — all entries use `"project"`, no `"system"` values found
 
 ---
 

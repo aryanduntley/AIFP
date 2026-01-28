@@ -15,32 +15,17 @@ src/aifp/database/schemas/user_directives.sql
 src/aifp/database/schemas/aifp_core.sql
 src/aifp/database/schemas/project.sql
 src/aifp/database/schemas/user_preferences.sql
+completed recently:
 docs/HELPER_IMPLEMENTATION_PLAN.md
+docs/ORCHESTRATOR_IMPLEMENTATION_PLAN.md
 
 Do not read or modify notes.txt. That is just for me.                         
-
-We should review the directives they relate to (json for sure, maybe even the related md file). Then we should consider what data will be the most useful for retrival to provide AI with the necessary  context given the directive and it's use. Same with setting, like with init. We need to be sure we are creating the complete init procedure, missing nothing and providing sufficent return statements for AI guidance to keep a steady flow going (I don't want AI to execute the code and then just think things are done, it must act afterwards). Like with the case of init, certain base files will be created like projectBlueprint and certain database entries like infrastructure, but the blueprint file will be a dummy file and will need to be populated after in depth interaction with the user in order to understand the whole scope and goals of the project the user has in mind. Then infrastructure fields created (created with empty values) should be established, etc. etc. Further, Init DIRECTIVE must have AI check for current state. This should happen before init helper is called. If AI determines a project exists, it should act differently. If FP, project should either be created around existing infrastrucure and init should involve logging all that already exists. If project exists and is OOP, AI should inform user that AIFP is meant for FP projects only and is not meant as a tool for refactoring an entire project from OOP to FP, so it's best they do not use the AIFP and should uninstall the MCP server. If not exists shour run init as a clean and new project.
-
-no deep logic, CRUD operations even if somewhat specific or complex for the need. Deep logic is for AI, helpers just preset appropriate data for AI to make good and accurate decisions.
-
-No-dependency helpers first (1-10): 1. validate_initialization — structural validation, needed by init & status 2. get_project_status — work hierarchy counts/records 3. get_status_tree — nested tree from flat tables 4. get_files_by_flow_context — files + embedded functions per flow 5. get_project_context — blueprint/metadata/infrastructure by type 6. get_work_context — full context for resuming a specific work item 7. get_current_progress — flexible scoped status queries 8. query_project_state — SQL-like query interface without raw SQL 9. update_project_state — action-based state transitions (start_task, complete_task, etc.) 10. batch_update_progress — atomic multi-item updates (depends on #9) Entry points last (11-13): 11. aifp_init — Phase 1 mechanical setup (depends on #1) 12. aifp_status — comprehensive status assembly (depends on #1, #2, #3) 13. aifp_run — gateway orchestrator (depends on #12 + helpers from other modules) Key callouts: - aifp_init return statements are critical — they chain AI into Phase 2 (OOP scan, infrastructure detection, user prompting, blueprint population, state DB creation) - Missing prerequisite: ProjectBlueprint_template.md doesn't exist yet — must be created before aifp_init can be coded - The orchestrator JSON needs the same cleanup we did for user_directives — several helpers have null/minimal implementation_notes and missing return_statements - update_project_state and batch_update_progress are the only orchestrators that write data; everything else is read-only 
-
-
-=============================
-
-directives should explicity mention to reserve before file write, file write, then finalize. Do we have batch operations for functions? Very important.
-MUST HAVE batc for functions and file all in one shot, do we have? 
 
 return_statements for global mutable db (remember to rewrite the reference CRUD for mutable global db file in project language... with reference to that CRUD reference file location)
 
 return statements for aifp_init
 
 think out useful return values for certain helper functions, like generic getter/setters should return schema, possibly some helper or directive references useful or relative to current function call and database.
-
-check all directive json and md files for direct queries (select, insert, etc.)
-
-COMPLETED BUT VALUABLE INFO FOR when begin CODING AIFP_RUN
-docs/settings-integration-implementation.md
 
 make sure we add the mutable global db to project src
 
@@ -52,7 +37,9 @@ MUST make OOP wrapper examples
 
 docs/directives-json/sync-directives.py
 
-modify DRY principles in sys prompt to indicate a thoughtful planning mode. "how high should we make primary commonality file, then sub commonality files down to individual files". Should plan for this when possible and when new things are added, should be able to backtrack, find where commonality files or parts within can be granted higher hierachy, move and/or extract and move to higher level for umbrella coverage.
+=============================
+
+Confidence: High for active behavior, moderate for full directive compliance. Here's my honest breakdown: What will work well The system prompt is strong. It's unambiguous about proactive behavior — "Call aifp_run FIRST", "DO NOT wait", "act based on project state." AI models follow system prompts reliably, especially when instructions are this direct. The aifp_run on every interaction pattern will keep the MCP server "alive" as you intended. The session bundle is well-designed. Giving AI everything upfront (status, settings, directive names, FP index) means it doesn't have to figure out what to query. That reduces the chance of it going passive. Reserve→write→finalize is now explicit. With mandatory flags in the workflow, AI won't skip these steps. Where I'd have concerns Directive depth. AI will follow the top-level flow (run → status → init/continue) reliably. But the deeper directive chains (file_write triggers reserve_finalize, which triggers update_db, which checks interactions) — the further down the chain, the more likely AI drops steps or shortcuts. The return_statements on helpers will help here, as they tell AI "you're not done yet, do X next." Context window pressure. The session bundle is ~15-20k tokens. Add the system prompt, conversation history, and code context — on long sessions, older directive context gets compressed or evicted. That's when AI starts "forgetting" to call helpers or skipping finalization steps. The aifp_run(is_new_session=false) lightweight reminder on every interaction mitigates this, but doesn't eliminate it. Novel situations. The directive flows cover the happy path well. When something unexpected happens (partial write failure, user changes mind mid-task, edge cases), AI will fall back to its own judgment rather than consulting directives. That's fine for capable models but less predictable. What would increase confidence 1. Testing with real sessions — the biggest unknown is how a specific AI client (Claude Desktop, Cursor, etc.) handles MCP tool calls in practice. Some clients throttle tool calls or have their own system prompts that compete with yours. 2. The return_statements pattern is your best lever. Every helper that returns data with "AI should do X next" guidance keeps the chain going. You've done this well in the orchestrators. Make sure it carries through to all helpers during MCP implementation. 3. The aifp_run on every interaction is the key insurance policy. Even if AI drifts, it gets pulled back every message. That's a good design. Bottom line: a capable model (Claude, GPT-4 class) will follow this system actively, not sit idle. The risk isn't passivity — it's depth of compliance on multi-step chains during long sessions.
 
 23.30
 =============================

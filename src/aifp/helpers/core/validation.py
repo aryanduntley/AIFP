@@ -74,7 +74,7 @@ def core_allowed_check_constraints(
 
         >>> result = core_allowed_check_constraints("helper_functions", "target_database")
         >>> result.values
-        ('core', 'project', 'user_preferences', 'user_directives', 'orchestrator', 'system')
+        ('core', 'project', 'user_preferences', 'user_directives', 'multi_db', 'no_db')
     """
     try:
         # Effect: open connection to core database

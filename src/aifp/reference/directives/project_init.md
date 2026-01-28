@@ -102,7 +102,14 @@ Keywords that trigger `project_init`:
 
 ### Trunk: `initialize_project`
 
-**Pre-Flight Check: Check Existing Project**
+**Pre-Flight Check: Detect Project State**
+
+AI must determine which scenario applies BEFORE calling any init helpers:
+
+1. **Already initialized** (`.aifp-project/` exists) → Do NOT re-initialize. Inform user and route to `aifp_status`.
+2. **New project** (empty directory or no code files) → Proceed with clean initialization.
+3. **Existing FP-compliant code** (code files present, no OOP patterns) → Initialize AND catalog all existing files/functions into project.db. This is a critical step — without it, AIFP has no awareness of existing code.
+4. **Existing OOP code** (class-based patterns detected) → Reject initialization. Inform user that AIFP is designed for FP projects only and is not a tool for refactoring OOP to FP. Recommend uninstalling the MCP server.
 
 ```python
 # ALWAYS check first - never re-initialize
@@ -303,17 +310,36 @@ add_completion_path(
 # AI can adjust based on user goals
 ```
 
-**Step 6: Initialize State Database (Step 9.5)**
+**Step 6: Catalog Existing FP Code (if applicable)**
+
+If the pre-flight check detected existing FP-compliant code, AI must catalog the entire codebase into project.db before proceeding:
+
+```python
+# Only runs when existing code was detected and passed OOP check
+if existing_fp_code_detected:
+    # 1. Scan all source files
+    # 2. Parse each file for functions, dependencies, exports
+    # 3. Use project helpers to insert into project.db:
+    #    - files table (every source file)
+    #    - functions table (every function in each file)
+    #    - interactions table (function calls between files)
+    # 4. Update ProjectBlueprint.md with discovered structure
+    # 5. Log catalog summary in notes table
+```
+
+**IMPORTANT**: This step is critical for existing projects. Skipping it means project.db has no awareness of existing code, breaking status tracking and task management. While rare today (FP is not standard), this future-proofs AIFP for adoption by existing FP codebases.
+
+---
+
+**Step 7: Initialize State Database**
 
 **Purpose**: Create FP-compliant infrastructure for runtime mutable variables (ALWAYS done, not optional)
 
+**Reference**: See `docs/STATE_DB_IMPLEMENTATION_PLAN.md` for full implementation details.
+
 ```python
-# Call helper to initialize state database
-result = initialize_state_database(
-    project_root=project_root,
-    source_dir=source_directory,
-    language=primary_language
-)
+# AI creates state database infrastructure during Phase 2
+# This is NOT a helper call — AI handles this as part of intelligent population
 
 # Creates:
 # - {source_dir}/.state/runtime.db (SQLite database)
@@ -616,25 +642,12 @@ Your options:
 
 ### Helper Functions
 
-Query `get_helpers_for_directive()` to discover this directive's available helpers.
-See system prompt for usage.
-### Helper Functions Defined by Project Structure
+**Phase 1 (Mechanical Setup):**
+- **`aifp_init(project_root)`** — Atomically creates `.aifp-project/` directory, databases, and templates
 
-**`create_project_blueprint(project_name, project_purpose, goals_json, language, build_tool, existing_structure, use_case)`**
-- Generates ProjectBlueprint.md from template
-- Documents existing code structure for Use Case 1
-- Sets up automation architecture documentation for Use Case 2
-- Returns path to created blueprint
-
-**`scan_existing_files(project_root)`**
-- Scans project directory for existing code files
-- Returns structure map: `{"src/": [...], "lib/": [...], "root": [...]}`
-- Used to document existing project layout in blueprint
-
-**`infer_architecture(project_root)`**
-- Analyzes existing code patterns
-- Detects architectural style (MVC, microservices, monolithic, etc.)
-- Returns architecture description for blueprint
+**Phase 2 (AI-Driven):**
+- AI uses project helpers (infrastructure updates, completion path creation, etc.) as needed during intelligent population
+- Query available helpers via the MCP server for current helper catalog
 
 ---
 
@@ -650,7 +663,6 @@ See system prompt for usage.
 - Inserts project metadata
 - Inserts default completion path
 - Creates `user_preferences.db` with defaults
-- Copies `aifp_core.db` to project
 - Writes `ProjectBlueprint.md`
 
 ---

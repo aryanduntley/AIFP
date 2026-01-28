@@ -38,35 +38,19 @@ Called by other directives:
 
 ### Project Not Initialized
 
-If `.aifp-project/` does not exist, `aifp_status` invokes **`detect_and_init_project`** sub-workflow:
+If `.aifp-project/` does not exist, AI must handle project detection:
 
-**Step 1: Check for `.aifp-project/`**
-```bash
-if [ ! -d ".aifp-project" ]; then
-    # Check for legacy backup in .git/.aifp/
-    if [ -d ".git/.aifp" ]; then
-        prompt_user: "Found archived project state. Restore or initialize new?"
-    else
-        prompt_user: "Project not initialized. Initialize now?"
-    fi
-fi
-```
+**AI Responsibility — Project State Detection:**
 
-**Step 2: Optional Restore from `.git/.aifp/`**
-```bash
-if restore_selected:
-    cp .git/.aifp/ProjectBlueprint.md .aifp-project/
-    cp .git/.aifp/project.db.backup .aifp-project/project.db
-    # Verify restoration
-    call aifp_status again
-```
+1. **Check for `.aifp-project/`** — If found, project is initialized. Proceed with status report.
+2. **Check for `.git/.aifp/` backup** — If found, prompt user: "Found archived project state. Restore or initialize new?"
+   - If restore: Copy backup files to `.aifp-project/`, then call `aifp_status` again
+   - If new: Route to `project_init` directive
+3. **No project found** — Prompt user: "Project not initialized. Initialize now?"
+   - If yes: Route to `project_init` directive (which handles OOP detection and FP cataloging)
+   - If no: Inform user AIFP requires initialization to function
 
-**Step 3: Route to `project_init`**
-```bash
-if initialize_new:
-    call project_init directive
-    # After init completes, call aifp_status again
-```
+**IMPORTANT**: This is AI decision logic, not a helper function. AI evaluates the filesystem state and routes accordingly via the directive flow (`aifp_status → project_init` when `project_initialized=false`).
 
 ---
 
@@ -177,17 +161,13 @@ status_report = {
     ],
     "recent_activity": [
         {"note": "Added matrix operations", "source": "ai", "when": "2 hours ago"}
-    ],
-    "recommendations": [
-        "Continue with task #5: Implement multiply_matrices",
-        "Address sidequest: Fix type hint in add_matrices"
     ]
 }
 ```
 
 **Step 6: Return Status Report**
 
-Returns structured JSON with full context, prioritized focus, and historical awareness.
+Returns structured JSON with full context, prioritized focus, and historical awareness. The helper returns **data only** — AI interprets the data and generates its own recommendations for the user.
 
 ---
 
@@ -201,9 +181,9 @@ Returns structured JSON with full context, prioritized focus, and historical awa
 
 ### Calls
 
-- **`get_project_context()`** - Helper function for structured data
-- **`get_status_tree()`** - Helper function for hierarchical status
-- **`parse_blueprint_section()`** - Parses ProjectBlueprint.md
+- **`aifp_status()`** - Orchestrator helper for comprehensive session-start state
+- **`get_project_status()`** - Helper for work hierarchy data (counts + nested tree)
+- Project helpers for infrastructure, metadata, notes, and git state queries
 
 ### Data Flow
 
@@ -259,14 +239,10 @@ AI uses context to continue work
       {"id": 6, "name": "Add validation for dimensions", "priority": 2}
     ]
   },
-  "recommendations": [
-    "Continue with task #5: Implement multiply_matrices function",
-    "Review completed tasks for patterns before starting task #6"
-  ]
 }
 ```
 
-**AI presents**:
+**AI interprets the data and presents**:
 ```
 📊 Matrix Calculator Status
 
@@ -277,9 +253,7 @@ Open Tasks:
   1. [Priority 1] Implement multiply_matrices
   2. [Priority 2] Add validation for dimensions
 
-Recommendations:
-  • Continue with multiply_matrices function
-  • Review completed patterns before validation
+Shall I continue with multiply_matrices?
 ```
 
 ---
@@ -309,10 +283,6 @@ Recommendations:
   "recent_activity": [
     {"note": "Added hypothesis for property-based testing", "when": "3 hours ago"},
     {"note": "Created test_matrix.py with basic structure", "when": "3 hours ago"}
-  ],
-  "recommendations": [
-    "Resume property-based tests for add_matrices",
-    "Use hypothesis strategies for matrix generation"
   ]
 }
 ```
@@ -351,10 +321,6 @@ Let's continue with the property-based tests using hypothesis strategies.
       "status": "pending"
     }
   ],
-  "recommendations": [
-    "Address sidequest: Fix type hint before continuing",
-    "Type error blocks next task implementation"
-  ]
 }
 ```
 
@@ -415,11 +381,7 @@ Should we fix this first? (Recommended: Yes)
     ],
     "errors_last_24h": 0
   },
-  "focus": "Monitor directive execution, check health, handle errors",
-  "recommendations": [
-    "All directives running healthy",
-    "Check logs if any execution failures occur"
-  ]
+  "focus": "Monitor directive execution, check health, handle errors"
 }
 ```
 
@@ -474,13 +436,8 @@ Errors (24h): 0
   "current_focus": {
     "milestone": "Matrix Operations",
     "progress": "6/6 tasks",
-    "status": "All tasks completed!"
-  },
-  "recommendations": [
-    "Mark milestone as completed",
-    "Move to next milestone: Vector Operations",
-    "Or run project_completion_check to verify stage completion"
-  ]
+    "status": "all_complete"
+  }
 }
 ```
 
@@ -513,22 +470,16 @@ Errors (24h): 0
 
 ### Helper Functions
 
-Query `get_helpers_for_directive()` to discover this directive's available helpers.
-See system prompt for usage.
-### Helper Functions Defined by Project Structure
+**Core helpers used by this directive:**
 
-**`get_status_tree(project_id, context_limit=10)`**
-- Builds hierarchical status tree with historical context
-- Returns priority-based current focus (sidequest → subtask → task)
-- Includes parent context and previous task items
-- Returns: `{"priority": "type", "current": {...}, "parent": {...}, "historical_context": [...]}`
+- **`aifp_status(project_root, type="summary")`** — Session-start orchestrator. Returns comprehensive project state including metadata, infrastructure, work hierarchy, user directives status, recent warnings/errors, and git state. Called at session start to give AI a complete contextual picture.
 
-**`detect_and_init_project()`**
-- Checks for `.aifp-project/` existence
-- Checks for `.git/.aifp/` backup if not found
-- Prompts user for restoration or new initialization
-- Routes to `project_init` if needed
-- Returns status after initialization
+- **`get_project_status(project_root, type="summary")`** — In-session helper. Retrieves work hierarchy data with counts, records, and nested tree in a single pass. Returns priority-based current focus (sidequest → subtask → task). Use this when AI needs fresh state mid-session (e.g., after context compression, after completing work items).
+  - Returns: `{counts{}, completion_paths[], milestones[], tasks[], subtasks[], sidequests[], blocked_items[], tree{}}`
+
+- **`get_work_context(project_root, work_type, work_id)`** — Retrieves complete context for resuming a specific work item, including associated items, flows, files, and functions.
+
+**Note**: Project detection and initialization routing (checking for `.aifp-project/`, `.git/.aifp/` backup, prompting user) is AI decision logic, not a helper function. See "Project Not Initialized" section above.
 
 ---
 
@@ -602,7 +553,7 @@ See system prompt for usage.
 
 1. **Call for every continuation** - Provides essential context
 2. **Use before task decomposition** - Prevents duplicate tasks
-3. **Present recommendations** - AI should follow suggested actions
+3. **AI generates recommendations** - Helper returns data, AI interprets and suggests next steps
 4. **Show hierarchical progress** - Completion path → Milestones → Tasks
 5. **Highlight sidequests** - Address blockers before continuing
 6. **Include recent activity** - Helps AI remember context

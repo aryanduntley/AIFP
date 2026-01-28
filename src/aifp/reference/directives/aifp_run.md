@@ -48,8 +48,9 @@ aifp run "Check project status"
     "available_helpers": [
       "get_directive",
       "search_directives",
-      "get_project_context",
-      "get_project_status"
+      "get_project_status",
+      "get_work_context",
+      "get_flows_from_directive"
     ]
   }
 }
@@ -118,7 +119,7 @@ aifp_run (Level 0)
 User: "Continue"
   ↓
 aifp_run → aifp_status
-  ├─ Calls get_project_context()
+  ├─ Calls get_project_status()
   ├─ Queries project.db for open tasks
   ├─ Reads ProjectBlueprint.md
   └─ Returns status report with recommendations
@@ -142,12 +143,16 @@ AI executes: project_file_write
 ```
 User: "Initialize AIFP for my project"
   ↓
-aifp_run routes to: project_init
-  ├─ Checks get_project_status()
-  ├─ Creates .aifp-project/
-  ├─ Initializes project.db
-  ├─ Sets user_directives_status (NULL for Use Case 1, 'in_progress' for Use Case 2)
-  └─ Creates ProjectBlueprint.md
+aifp_run → aifp_status (checks project state)
+  ├─ aifp_status detects: project_initialized = false
+  └─ Routes to: project_init
+      ├─ AI pre-flight: Detect project state (new/existing FP/existing OOP)
+      ├─ If OOP detected → Reject, inform user AIFP is FP-only
+      ├─ Phase 1: aifp_init helper (mechanical setup)
+      ├─ Phase 2: AI intelligent population
+      │   ├─ If existing FP code → Catalog all files/functions into project.db
+      │   └─ Populate infrastructure, blueprint, completion path
+      └─ Returns success → loops back to aifp_status
 ```
 
 **Pattern 4: User Directive Automation (Use Case 2)**
@@ -278,8 +283,18 @@ aifp_run checks: project.user_directives_status
 
 ### Helper Functions
 
-Query `get_helpers_for_directive()` to discover this directive's available helpers.
-See system prompt for usage.
+**Session start (`is_new_session=true`)** — `aifp_run` bundles data from these helpers:
+- **`aifp_status(project_root)`** — Comprehensive project state (metadata, infrastructure, work hierarchy, warnings, git state)
+- **`get_user_settings()`** — All user preference settings
+- **`get_fp_directive_index()`** — FP directives grouped by category for quick reference
+- **`get_all_directive_names()`** — All directive names for context caching
+- **`get_all_infrastructure(project_root)`** — Infrastructure entries (language, build tool, source dir, etc.)
+
+**Continuation mode (`is_new_session=false`)** — Lightweight guidance only. AI uses cached data from session start bundle. Available helpers for on-demand queries:
+- **`get_project_status(project_root)`** — Refresh work hierarchy data mid-session
+- **`get_work_context(project_root, work_type, work_id)`** — Context for resuming specific work items
+- **`get_flows_from_directive(directive_name)`** — Navigate directive flow graph
+- **`get_directive(name)`** / **`search_directives(keyword)`** — Query directive details
 ---
 
 ## Database Operations

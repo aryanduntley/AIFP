@@ -1,8 +1,8 @@
 # AIFP MCP Server - Project Blueprint
 
-**Version**: 1.0
-**Status**: Prep Phase Complete - Ready for MCP Implementation
-**Last Updated**: 2026-01-07
+**Version**: 1.4
+**Status**: Helper Implementation Complete - MCP Server Implementation Phase
+**Last Updated**: 2026-01-28
 **AIFP Compliance**: Strict
 
 ---
@@ -15,16 +15,17 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 
 ### Current Phase
 
-**Prep Work Complete** - All design, documentation, and specifications finalized:
+**Design & Helpers Complete** - All design, documentation, specifications, and helper functions implemented:
 - ✅ Four-database architecture specified (schemas complete)
-- ✅ Comprehensive directive system designed (125+ directives documented)
-- ✅ Helper function library designed (50+ helpers specified in `docs/helpers/json/`)
+- ✅ Comprehensive directive system designed (directives documented in JSON + MD)
+- ✅ Helper function library fully implemented in `src/aifp/helpers/`
 - ✅ Settings system finalized (v3.1: 12-setting baseline)
 - ✅ All directive JSON files ready in `docs/directives-json/`
 - ✅ All directive MD documentation complete in `src/aifp/reference/directives/`
+- ✅ Orchestrator helpers complete (entry points, status, state, query)
 
-**Next Phase: MCP Server Implementation** - Begin coding production-ready Python implementation:
-- All files will be in `src/aifp/` (production package)
+**Current Phase: MCP Server Implementation** - Wire helpers into production MCP server:
+- All production files in `src/aifp/` (installable package)
 - Use `docs/helpers/json/` and `docs/directives-json/` as staging areas for modifications
 - Import JSON staging files to databases after dev modifications
 - All code must be FP-compliant (pure functions, immutable data, no OOP)
@@ -110,8 +111,8 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
    - Files: src/aifp/database/
 
 2. **Helper Functions**
-   - Purpose: MCP orchestrators, Project management, Git integration, User preferences, User directives
-   - Files: src/aifp/helpers/{mcp,project,git,preferences,user_directives}/
+   - Purpose: Orchestrators, Core utilities, Project management, Git integration, User preferences, User directives, Global operations
+   - Files: src/aifp/helpers/{orchestrators,core,project,git,user_preferences,user_directives,global}/
 
 3. **Directive System**
    - Purpose: FP enforcement + Project management + User preferences + User automation + Git collaboration
@@ -141,76 +142,30 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
 
 ---
 
-## 4. Completion Path
+## 4. End Goal & Vision
 
-### Stage 1: Foundation
+### What Success Looks Like
 
-**Key Milestones**:
-- Project initialization and structure ✅
-- Database schemas and initialization ✅
-- Core type definitions (immutable data structures)
-- Standalone initialization script (init_aifp_project.py)
-- First helper function (get_all_directives) implemented
-- Testing infrastructure established
+A production-ready MCP server installable via `pip install aifp` that:
 
-### Stage 2: Core Helpers
+1. **Enforces FP compliance** — AI writes pure functional code by default, guided by the system prompt and FP directive reference library. No OOP, no mutations, explicit side effect isolation.
 
-**Key Milestones**:
-- MCP database helpers
-- Project database helpers
-- Git integration helpers ✅
-- User preferences helpers
-- User directives helpers
-- Comprehensive test suites (>90% coverage)
-- FP compliance verification
+2. **Manages project lifecycle** — From initialization through completion, every file, function, task, and milestone is tracked in databases. AI has persistent memory across sessions.
 
-### Stage 3: MCP Server
+3. **Supports two use cases** — Regular software development (Use Case 1) and custom directive automation (Use Case 2), never mixed in the same project.
 
-**Key Milestones**:
-- Server initialization and connection handling
-- Tool registration system
-- Prompt system implementation
-- Request handlers with user context extraction
-- Integration tests with MCP protocol
+4. **Is self-reliant** — The MCP server actively drives workflow. It doesn't wait passively for commands. On session start, it bundles comprehensive state and guides AI to the next action.
 
-### Stage 4: Core Directives
+5. **Is cost-conscious** — All tracking/analytics features disabled by default. The system works efficiently without unnecessary token overhead.
 
-**Key Milestones**:
-- aifp_run orchestrator directive
-- aifp_status reporter directive
-- project_init bootstrap directive
-- project_file_write tracking directive
-- End-to-end testing with real AI interactions
+6. **Is language-agnostic** — FP directives adapt to any language. Helper functions handle Python, but the paradigm applies universally.
 
-### Stage 5: Directive System Expansion
+### Delivery Milestones
 
-**Key Milestones**:
-- Complete FP directive library (core + auxiliary)
-- Complete Project directive system (includes completion directives)
-- User preference system
-- User automation directives
-- Git integration directives
-- Directive workflow execution engine
-- Comprehensive directive tests
-
-### Stage 6: User Directive Automation
-
-**Key Milestones**:
-- User directive parsing (YAML/JSON/TXT)
-- Interactive validation with Q&A
-- FP-compliant code generation
-- Real-time execution framework
-- File-based logging system
-
-### Stage 7: Packaging & Distribution
-
-**Key Milestones**:
-- PyPI package preparation
-- Template database creation
-- Documentation finalization
-- Installation testing (Linux, macOS, Windows)
-- Example projects and tutorials
-- v0.1.0 release to PyPI
+- **Foundation**: Database schemas, core types, helper function library (complete)
+- **MCP Server**: Protocol handlers, tool registration, request routing (in progress)
+- **Integration**: Directive execution through MCP tools, end-to-end testing
+- **Distribution**: PyPI package, installation testing, example projects
 
 ---
 
@@ -378,7 +333,6 @@ my-web-app/                          # User's application project
 └── .aifp-project/                   # ← AIFP tracks this application
     ├── project.db                   # Project state, tasks, files
     ├── user_preferences.db          # AI preferences for this project
-    ├── aifp_core.db                 # AIFP directive definitions
     ├── ProjectBlueprint.md          # Application architecture
     └── backups/
 ```
@@ -399,7 +353,6 @@ home-automation/                     # Automation project
     ├── project.db                   # Tracks generated src/ code
     ├── user_preferences.db          # AI preferences
     ├── user_directives.db           # References ../directives/ files
-    ├── aifp_core.db                 # AIFP directive definitions
     ├── ProjectBlueprint.md          # Automation architecture
     └── logs/                        # Execution logs (30/90-day)
         ├── executions/              # Successful runs
@@ -526,7 +479,8 @@ Database stores state and statistics only (not detailed logs). Detailed executio
 - **No OOP Allowed**: Zero classes except frozen dataclasses
 - **FP Compliance Mandatory**: All code must pass purity, immutability, side effect checks
 - **Test Coverage >90%**: Non-negotiable quality gate
-- **Git Integration Complete**: Already implemented ✅
+- **Git Integration**: Helper functions implemented ✅
+- **All Helper Functions**: Fully implemented across all categories ✅
 
 ---
 
@@ -558,4 +512,4 @@ Database stores state and statistics only (not detailed logs). Detailed executio
 
 ---
 
-*Last updated for AIFP MCP Server development on 2025-12-22*
+*Last updated for AIFP MCP Server development on 2026-01-28*

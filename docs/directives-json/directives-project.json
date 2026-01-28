@@ -28,7 +28,7 @@
             "guidance": {
               "cache_bundle": "Cache entire bundle (status, settings, fp_index) in your context to avoid re-fetching",
               "when_to_refresh": "Call aifp_run(is_new_session=true) again after: (1) major state changes (init/milestone complete), (2) long breaks, (3) new conversation",
-              "use_for_navigation": "Use returned state with get_next_directives_from_status() to find appropriate next directives",
+              "use_for_navigation": "Use returned state with get_flows_from_directive() to find appropriate next directives",
               "fp_reference": "Use fp_index for quick FP directive lookup by category. Call search_directives(type='fp') or get_directive_by_name(name) for directive JSON. If more context needed, read MD file directly (path provided in directive object's md_file_path field)",
               "settings_usage": "Apply user_settings preferences during directive execution (code style, task granularity, etc.)"
             }
@@ -51,11 +51,9 @@
               "directive_access": "Call get_all_directives() if you don't have them in memory. Call get_directive(name) or search_directives(keyword, category, type) for specific details.",
               "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
               "assumption": "Always assume AIFP applies unless user explicitly rejects it with 'do not use aifp for this task'.",
-              "status_based_navigation": "If you have status cached, query directive_flow table with get_next_directives_from_status(current_directive, state_object) to find next steps",
+              "status_based_navigation": "If you have status cached, query directive_flow table with get_flows_from_directive(directive_name) to find next steps",
               "directive_flow_queries": [
-                "get_next_directives_from_status(current_directive, state_object)",
-                "get_conditional_work_paths(state_object)",
-                "get_completion_loop_target(completion_directive_name)",
+                "get_flows_from_directive(directive_name) - get all outbound flows from a directive",
                 "get_directive_flows(flow_category='fp') - query FP flows",
                 "get_directive_flows(flow_category='git') - query git flows"
               ],
@@ -64,17 +62,15 @@
                 "get_all_directives",
                 "get_directive",
                 "search_directives",
-                "get_next_directives_from_status",
+                "get_flows_from_directive",
                 "get_user_settings",
                 "get_fp_directive_index",
                 "get_directive_flows",
                 "query_mcp_db",
-                "get_project_context",
                 "get_project_status",
-                "get_project_files",
-                "get_project_functions",
-                "get_project_tasks",
-                "query_project_db"
+                "get_work_context",
+                "get_current_progress",
+                "query_project_state"
               ]
             },
             "ai_decision_flow": [
@@ -82,8 +78,8 @@
               "2. Check project type: Query project.user_directives_status (NULL=Use Case 1, 'in_progress'/'active'/'disabled'=Use Case 2)",
               "3. Evaluate: Is this coding, project management, or user directive automation?",
               "4. Check: Do I have directives in memory?",
-              "5. If no directives: Call get_all_directives() to load 125 directives",
-              "6. If you have cached status: Use directive_flow queries to determine next appropriate directive",
+              "5. If no directives: Call get_all_directives() to load directive names",
+              "6. If you have cached status: Use get_flows_from_directive() to determine next appropriate directive",
               "7. If coding: Apply FP directives (how to code) + project directives (DB updates)",
               "8. If project management: Apply project directives based on status and user intent",
               "9. If user directive task (Use Case 2): Apply user directive system directives (parse/validate/implement/approve/activate pipeline)",
@@ -280,34 +276,11 @@
         },
         {
           "if": "project_data_populated",
-          "then": "initialize_state_database",
+          "then": "catalog_existing_fp_code",
           "details": {
-            "step": "9.5",
-            "purpose": "Create FP-compliant infrastructure for runtime mutable variables",
-            "helper": "initialize_state_database",
-            "parameters": {
-              "project_root": "from context",
-              "source_dir": "from get_source_directory()",
-              "language": "from project_info"
-            },
-            "creates": [
-              "<source-dir>/.state/runtime.db",
-              "<source-dir>/.state/README.md",
-              "<source-dir>/.state/state_operations.{ext}"
-            ],
-            "language_rewrite": "If language != Python, AI rewrites operations file to target language",
-            "blueprint_update": "Add State Management section to ProjectBlueprint.md"
-          }
-        },
-        {
-          "if": "state_database_initialized",
-          "then": "create_initial_completion_path",
-          "details": {
-            "stages": [
-              "Setup",
-              "Core Development",
-              "Finalization"
-            ]
+            "condition": "Only if existing FP-compliant code was detected in pre-flight",
+            "ai_responsibility": "AI must scan all existing files and functions, then catalog them into project.db (files, functions, interactions tables) using project helpers. This ensures full traceability from day one for existing codebases.",
+            "skip_if": "Empty directory or no existing code files"
           }
         },
         {
@@ -611,14 +584,29 @@
       "name": "file_operations",
       "description": "Handles file generation and metadata updates."
     },
-    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, enforces DRY principle by extracting IDENTICAL functions to shared modules at appropriate scope level (avoid forced DRY with god functions), and updates project.db accordingly. Should use project_reserve_finalize BEFORE writing to get database IDs for embedding in filenames/function names. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
+    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, enforces DRY principle by extracting IDENTICAL functions to shared modules at appropriate scope level (avoid forced DRY with god functions), and updates project.db accordingly. MUST use project_reserve_finalize BEFORE writing to get database IDs for embedding, and finalize AFTER writing. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
     "md_file_path": "directives/project_file_write.md",
     "workflow": {
-      "trunk": "check_user_preferences",
+      "trunk": "reserve_before_write",
       "branches": [
         {
-          "if": "directive_preferences_exist",
-          "then": "load_and_apply_preferences",
+          "if": "new_file_or_new_functions",
+          "then": "reserve_entities",
+          "details": {
+            "mandatory": true,
+            "order": "ALWAYS reserve BEFORE writing code",
+            "steps": [
+              "1. reserve_files() or reserve_file() — get file IDs",
+              "2. reserve_functions() or reserve_function() — get function IDs for all planned functions",
+              "3. reserve_types() if applicable — get type IDs"
+            ],
+            "batch_encouraged": "Use batch helpers (reserve_files, reserve_functions) when creating multiple entities",
+            "returns": "Database IDs to embed in code (AIFP:FUNC:42, AIFP:FILE:7)"
+          }
+        },
+        {
+          "if": "entities_reserved",
+          "then": "check_user_preferences",
           "details": {
             "use_helper": "load directive preferences for project_file_write",
             "apply_to": "code_generation_context",
@@ -632,11 +620,12 @@
           }
         },
         {
-          "if": "preferences_applied",
+          "if": "preferences_loaded",
           "then": "generate_file_with_preferences",
           "details": {
             "respect_user_settings": true,
-            "fallback_to_defaults": "if_preference_missing"
+            "fallback_to_defaults": "if_preference_missing",
+            "embed_reserved_ids": "Use reserved IDs in code comments/docstrings"
           }
         },
         {
@@ -662,6 +651,21 @@
           "details": {
             "metadata": true,
             "update_db": true
+          }
+        },
+        {
+          "if": "file_written_successfully",
+          "then": "finalize_reservations",
+          "details": {
+            "mandatory": true,
+            "order": "ALWAYS finalize AFTER writing code",
+            "steps": [
+              "1. finalize_files() or finalize_file() — mark files as implemented",
+              "2. finalize_functions() or finalize_function() — mark functions as implemented",
+              "3. finalize_types() if applicable — mark types as implemented",
+              "4. add_interactions() — batch add all function dependencies"
+            ],
+            "batch_encouraged": "Use batch helpers (finalize_files, finalize_functions, add_interactions) for all entities in one call"
           }
         },
         {

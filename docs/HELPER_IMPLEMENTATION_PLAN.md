@@ -1,6 +1,6 @@
 # AIFP Helper Functions - Complete Implementation Plan
 
-**Total Helpers**: 223 across 15 JSON files (updated 2026-01-27: user prefs refactored +1)
+**Total Helpers**: 220 across 15 JSON files (updated 2026-01-28: removed get_status_tree, get_project_context from orchestrators)
 **Target**: 600-900 lines per Python file (prefer ~600)
 **Estimated**: ~30-50 lines per helper → ~12-20 helpers per file
 
@@ -363,28 +363,25 @@ src/aifp/helpers/
 
 ---
 
-### Phase 2: Orchestrators (13 helpers)
+### Phase 2: Orchestrators (10 helpers) ✅
 
-- [ ] **orchestrators/entry_points.py** - `helpers-orchestrators.json`
-  - [ ] aifp_run (needs update to include infrastructure_data)
-  - [ ] aifp_init (JSON defined, code pending)
-  - [ ] aifp_status
+- [x] **orchestrators/entry_points.py** - `helpers-orchestrators.json` ✅
+  - [x] aifp_run
+  - [x] aifp_init
+  - [x] aifp_status
 
-- [ ] **orchestrators/status.py** - `helpers-orchestrators.json`
-  - [ ] get_project_status (sub-helper)
-  - [ ] get_status_tree (sub-helper)
-  - [ ] get_work_context
+- [x] **orchestrators/status.py** - `helpers-orchestrators.json` ✅
+  - [x] get_project_status (sub-helper, includes tree logic formerly in get_status_tree)
+  - [x] get_work_context
 
-- [ ] **orchestrators/state.py** - `helpers-orchestrators.json`
-  - [ ] get_current_progress
-  - [ ] update_project_state
-  - [ ] batch_update_progress
+- [x] **orchestrators/state.py** - `helpers-orchestrators.json` ✅
+  - [x] get_current_progress
+  - [x] update_project_state
+  - [x] batch_update_progress
 
-- [ ] **orchestrators/query.py** - `helpers-orchestrators.json`
-  - [ ] query_project_state
-  - [ ] validate_initialization
-  - [ ] get_project_context
-  - [ ] get_files_by_flow_context
+- [x] **orchestrators/query.py** - `helpers-orchestrators.json` ✅
+  - [x] query_project_state
+  - [x] get_files_by_flow_context
 
 ---
 
@@ -985,9 +982,9 @@ Each Python file should:
 
 ## Progress Tracking
 
-**Current Status**: Core + Project + Git + User Preferences COMPLETE! - 189 of 223 helpers completed (84.8%)
+**Current Status**: ALL HELPERS COMPLETE! - 220 of 220 helpers completed (100%)
 
-**Completed Modules** (21 of 32 files):
+**Completed Modules** (32 of 32 files):
 
 **Core Database (5 files, 36 helpers)** ✅:
 - ✅ `core/validation.py` - 1 helper
@@ -1014,16 +1011,36 @@ Each Python file should:
 - ✅ `project/subtasks_sidequests.py` - 14 helpers
 - ✅ `project/items_notes.py` - 10 helpers
 
-**Completed Milestones**:
-- ✅ **ALL CORE DATABASE HELPERS COMPLETE!** (36 helpers after refactor)
-- ✅ **ALL PROJECT DATABASE HELPERS COMPLETE!** (119 coded; 2 removed: add_source_directory, initialize_state_database)
+**Git Operations (1 file, 11 helpers)** ✅:
+- ✅ `git/operations.py` - 11 helpers
 
-**Next Up** (recommended order):
-- ✅ Git operations (11 helpers) - COMPLETE
-- ✅ User Preferences (23 helpers) - COMPLETE
-- ⏳ User Directives (20 helpers) - Use Case 2 automation
-- ⏳ Global (1 helper) - trivial
-- ⏳ Orchestrators (12 helpers) - DO LAST, depends on all others
+**User Preferences (3 files, 23 helpers)** ✅:
+- ✅ `user_preferences/settings.py` - helpers
+- ✅ `user_preferences/management.py` - helpers
+- ✅ `user_preferences/tracking.py` - helpers
+
+**User Directives (2 files, 20 helpers)** ✅:
+- ✅ `user_directives/directives.py` - helpers
+- ✅ `user_directives/management.py` - helpers
+
+**Global (1 file, 1 helper)** ✅:
+- ✅ `global/global_helpers.py` - 1 helper
+
+**Orchestrators (4 files + _common.py, 10 helpers)** ✅:
+- ✅ `orchestrators/_common.py` - shared constants, connection helpers, lookup tables
+- ✅ `orchestrators/entry_points.py` - 3 helpers (aifp_run, aifp_init, aifp_status)
+- ✅ `orchestrators/status.py` - 2 helpers (get_project_status, get_work_context)
+- ✅ `orchestrators/state.py` - 3 helpers (get_current_progress, update_project_state, batch_update_progress)
+- ✅ `orchestrators/query.py` - 2 helpers (query_project_state, get_files_by_flow_context)
+
+**Completed Milestones**:
+- ✅ **ALL CORE DATABASE HELPERS COMPLETE** (36 helpers after refactor)
+- ✅ **ALL PROJECT DATABASE HELPERS COMPLETE** (119 coded; 2 removed: add_source_directory, initialize_state_database)
+- ✅ **ALL GIT HELPERS COMPLETE** (11 helpers)
+- ✅ **ALL USER PREFERENCES HELPERS COMPLETE** (23 helpers)
+- ✅ **ALL USER DIRECTIVES HELPERS COMPLETE** (20 helpers)
+- ✅ **ALL GLOBAL HELPERS COMPLETE** (1 helper)
+- ✅ **ALL ORCHESTRATOR HELPERS COMPLETE** (10 helpers across 4 files + _common.py)
 
 Use checkboxes above to track implementation progress as each helper is completed and tested.
 
@@ -1041,13 +1058,13 @@ For detailed helper specifications, see: `docs/COMPLETE_HELPERS_LIST.md`
 **Summary by Category**:
 - Global: 1 helper
 - Core: 36 helpers (refactored 2026-01-27)
-- Orchestrators: 12 helpers
+- Orchestrators: 10 helpers
 - Project: 114 helpers
 - Git: 11 helpers
 - User Preferences: 23 helpers
 - User Directives: 20 helpers
 
-**TOTAL: 217 helpers**
+**TOTAL: 220 helpers**
 
 ---
 
@@ -1067,9 +1084,43 @@ For detailed helper specifications, see: `docs/COMPLETE_HELPERS_LIST.md`
 ---
 
 **Generated**: 2026-01-11
-**Last Updated**: 2026-01-27
-**Status**: Core + Project + Git + User Preferences COMPLETE! - 189/223 helpers complete (84.8%)
-**Next**: User Directives (20), Global (1), Orchestrators (12 - last)
+**Last Updated**: 2026-01-28
+**Status**: ALL COMPLETE! - 220/220 helpers (100%)
+**Next**: Testing, integration, MCP tool registration
+
+---
+
+## Recent Updates (2026-01-28)
+
+### Orchestrators Complete (10 helpers) — ALL 220 HELPERS DONE
+
+**Implemented Files**:
+- `orchestrators/_common.py` — Shared constants, connection helpers, lookup tables (ACTION_STATUS_MAP, JOIN_MAPPINGS, VALID_QUERY_ENTITIES, etc.)
+- `orchestrators/entry_points.py` — 3 helpers: `aifp_init`, `aifp_status`, `aifp_run`
+- `orchestrators/status.py` — 2 helpers: `get_project_status` (with tree), `get_work_context`
+- `orchestrators/state.py` — 3 helpers: `get_current_progress`, `update_project_state`, `batch_update_progress`
+- `orchestrators/query.py` — 2 helpers: `query_project_state`, `get_files_by_flow_context` (validate_initialization removed — AI responsibility)
+
+**Prerequisites completed before coding**:
+1. ✅ Updated `helpers-orchestrators.json` — removed `get_status_tree` + `get_project_context`, fixed `target_database` values (`multi_db` for cross-DB, `project` for single-DB)
+2. ✅ Updated `aifp_core.sql` CHECK constraint — `orchestrator` → `multi_db`, `system` → `no_db`
+3. ✅ Updated `validation.py` tuple to match
+4. ✅ Updated this plan — counts, checklists
+5. ✅ Updated directive MDs — `aifp_status.md`, `aifp_run.md`
+6. ✅ Updated `README.md` — removed `get_project_context` from available_helpers
+7. ✅ Created `ProjectBlueprint_template.md` — used by `aifp_init` step 5
+8. ✅ Verified git helpers — all `"project"`, no `"system"` values
+9. ✅ Created `__init__.py` for orchestrators package
+
+**Design decisions**:
+- `get_status_tree` folded into `get_project_status` (single-pass flat counts + nested tree)
+- `get_project_context` removed (redundant with `get_from_project`, `get_all_infrastructure`, `get_project_status`)
+- `aifp_run` discovers project_root by walking up from cwd looking for `.aifp-project/`
+- `aifp_init` does full shutil.rmtree cleanup if any step fails past directory creation
+- `query_project_state` sanitizes field names + parameterizes all values (SQL injection prevention)
+- Cross-module calls in `entry_points.py` use `_safe` wrappers that return empty results on failure
+
+**Progress**: 220/220 helpers — **100% COMPLETE**
 
 ---
 

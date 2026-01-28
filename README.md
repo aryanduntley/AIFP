@@ -273,8 +273,7 @@ my-web-app/
 ├── tests/                  # Your tests
 └── .aifp-project/          # AIFP tracks your application
     ├── project.db
-    ├── user_preferences.db
-    └── aifp_core.db
+    └── user_preferences.db
 
 # Use Case 2: Custom Directive Automation
 home-automation/
@@ -289,7 +288,6 @@ home-automation/
     ├── project.db          # Tracks generated src/ code
     ├── user_preferences.db
     ├── user_directives.db  # References ../directives/ files
-    ├── aifp_core.db
     └── logs/               # 30/90-day execution logs
 ```
 
@@ -318,13 +316,14 @@ The `aifp_run` command serves as a **gateway and reminder**, not an executor. It
   "success": true,
   "message": "AIFP MCP available",
   "guidance": {
-    "directive_access": "Call get_all_directives() if needed. Call get_directive(name) for specific details.",
+    "directive_access": "Directive names cached from session bundle. Query specific directives by name when needed.",
     "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
-    "assumption": "Always assume AIFP applies unless user explicitly rejects it.",
-    "available_helpers": ["get_all_directives", "get_directive", "get_project_context", "get_project_status"]
+    "assumption": "Always assume AIFP applies unless user explicitly rejects it."
   }
 }
 ```
+
+The MCP server exposes CRUD helper functions for all database operations — tracking files, functions, tasks, project state, user preferences, and (for Use Case 2) automation directives. AI discovers available helpers from the database at runtime.
 
 **AI Decision Flow**:
 1. User prefixes request with `aifp run` (or AI assumes it)
@@ -444,12 +443,9 @@ project_file_write
 ```bash
 cd /path/to/your/project
 aifp init
-
-# This creates:
-# .aifp-project/
-# .aifp-project/project.db
-# .aifp-project/config.json
 ```
+
+This creates an `.aifp-project/` folder in your project root containing databases for project state tracking, user preferences, and a ProjectBlueprint document. You don't need to interact with these files — the MCP server manages them automatically.
 
 ### Configure AI Assistant
 
@@ -494,11 +490,11 @@ Manage project lifecycle:
 
 | Level | Directives | Purpose |
 |-------|------------|---------|
-| **Level 0** | `project_init`, `project_run` | Root orchestration |
-| **Level 1** | `project_task_decomposition`, `project_themes_flows_init` | High-level coordination |
+| **Level 0** | `aifp_run` | Gateway orchestration (every interaction) |
+| **Level 1** | `aifp_status`, `project_init`, `project_task_decomposition` | Status, initialization, high-level coordination |
 | **Level 2** | `project_file_write`, `project_update_db`, `project_task_update` | Operational execution |
 | **Level 3** | `project_compliance_check`, `project_evolution` | State management |
-| **Level 4** | `project_completion_check`, `project_archival` | Validation & completion |
+| **Level 4** | `project_completion_check`, `project_archive` | Validation & completion |
 
 ### User Preference Directives
 
@@ -844,7 +840,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ## Roadmap
 
-### Current (v1.0 - Design & Documentation Phase)
+### Completed
 
 - ✅ Comprehensive directive system designed (FP, Project, User Preference, Git, User Directives)
 - ✅ Four-database architecture specified (aifp_core, project, user_preferences, user_directives)
@@ -852,25 +848,25 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 - ✅ User preference system designed with directive mapping and AI learning
 - ✅ User-defined directives system designed for domain-specific automation
 - ✅ Git integration designed with FP-powered multi-user collaboration
-  - External change detection
-  - Branch-based workflows (`aifp-{user}-{number}`)
-  - FP-powered conflict resolution (auto-resolve >0.8 confidence)
-  - Merge history audit trail
 - ✅ Complete documentation and specifications
 - ✅ Cost-conscious design (all tracking features disabled by default)
 - ✅ Settings system finalized (12-setting baseline, v3.1)
+- ✅ Helper function library implemented (all categories: core, project, git, user preferences, user directives, global, orchestrators)
 
-### Planned (v1.1+)
+### In Progress
 
 - [ ] MCP server implementation (Python)
+- [ ] MCP tool registration and request routing
+- [ ] Integration testing with MCP protocol
 - [ ] Directive sync script (`sync-directives.py`)
 - [ ] Database migration scripts (`migrate.py`)
-- [ ] User preference initialization (`init-user-preferences.py`)
-- [ ] Helper function implementations (Python)
+
+### Planned
+
+- [ ] End-to-end testing with real AI interactions
+- [ ] PyPI package release
 - [ ] VS Code extension for task management
-- [ ] Directive visualization and analytics
 - [ ] Cross-language wrapper generation
-- [ ] AI reasoning trace visualization
 
 ---
 

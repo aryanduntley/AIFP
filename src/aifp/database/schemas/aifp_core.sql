@@ -139,8 +139,8 @@ CREATE TABLE IF NOT EXISTS helper_functions (
         'project',           -- project.db (single-database CRUD operations)
         'user_preferences',  -- user_preferences.db (settings and preferences)
         'user_directives',   -- user_directives.db (user-defined automation)
-        'orchestrator',      -- Multi-database operations (AIFP orchestrators coordinate multiple databases)
-        'system'             -- Non-database operations (git, filesystem, validation utilities)
+        'multi_db',          -- Multi-database operations (orchestrators that coordinate across databases)
+        'no_db'              -- Non-database operations (git, filesystem, validation utilities)
     )) NOT NULL                              -- AI uses get_helpers_by_database(target_database) to find helpers, not custom SQL queries
 );
 
