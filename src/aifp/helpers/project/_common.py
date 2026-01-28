@@ -4,6 +4,12 @@ AIFP Helper Functions - Project Common Utilities
 Shared utilities used across multiple project helper files.
 Extracted to avoid duplication and improve AI efficiency at scale.
 
+This is the CATEGORY level of the DRY hierarchy:
+
+    utils.py (global)              <- Database-agnostic shared code
+        └── project/_common.py     <- THIS FILE: Project-specific shared code
+            └── project/{file}.py  <- Individual project helpers
+
 All functions are pure FP - immutable data, explicit parameters, Result types.
 Database operations isolated as effects with clear naming conventions.
 
@@ -12,8 +18,7 @@ Global constants defined here per AIFP FP methodology:
 - Database schema validation constraints
 - Status/priority enumerations
 
-Common utilities:
-- _open_connection: Database connection with row factory
+Common utilities (project-specific):
 - _check_entity_exists: Generic entity existence check
 - _check_file_exists: File-specific existence check
 - _check_function_exists: Function-specific existence check
@@ -21,10 +26,16 @@ Common utilities:
 - _check_theme_exists: Theme-specific existence check
 - _check_flow_exists: Flow-specific existence check
 - _create_deletion_note: Audit note for deletions
+
+Imported from utils.py (global):
+- _open_connection: Database connection with row factory
 """
 
 import sqlite3
 from typing import Optional, Final
+
+# Import global utilities (DRY - avoid duplication)
+from ..utils import _open_connection  # noqa: F401 - re-exported for convenience
 
 
 # ============================================================================
@@ -143,27 +154,6 @@ def _validate_severity(severity: str) -> bool:
         True if valid, False otherwise
     """
     return severity in VALID_SEVERITY_LEVELS
-
-
-# ============================================================================
-# Database Connection Utilities
-# ============================================================================
-
-def _open_connection(db_path: str) -> sqlite3.Connection:
-    """
-    Effect: Open database connection with row factory.
-
-    Used across all project helpers for consistent database access.
-
-    Args:
-        db_path: Path to project.db
-
-    Returns:
-        Database connection with row factory configured
-    """
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 # ============================================================================

@@ -415,18 +415,19 @@
           "description": "'quick', 'summary', 'detailed' - level of detail to return"
         }
       ],
-      "purpose": "Status orchestrator optimized for directive navigation decision tree. Returns comprehensive project state with completion flags and next-step suggestions designed to feed the `get_next_directives_from_status()` system.",
+      "purpose": "Status orchestrator that retrieves comprehensive project state. Gathers data from multiple tables for AI to determine next steps.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
-        "Returns comprehensive status object with: work_hierarchy, completion_flags, blocked_items[], suggested_next_directives[], progress_metrics, git_state, infrastructure_status",
-        "Calls get_project_status() to analyze work hierarchy",
+        "Returns status object with: work_hierarchy, incomplete_tasks[], incomplete_items[], recent_completions[], blocked_items[], progress_counts, git_state, infrastructure_status",
+        "Calls get_project_status() to retrieve work hierarchy data",
         "Calls get_status_tree() to build hierarchical view",
-        "Type='quick': Basic state only",
-        "Type='summary': Standard detail (default)",
-        "Type='detailed': Full comprehensive analysis"
+        "Type='quick': Counts and current work item only",
+        "Type='summary': Standard detail - incomplete items, recent context (default)",
+        "Type='detailed': Full data including all history",
+        "NO suggestion logic - AI determines appropriate next directive from returned data"
       ],
       "target_database": "orchestrator",
       "used_by_directives": [
@@ -436,7 +437,7 @@
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "aifp_status directive uses aifp_status helper as main orchestrator - retrieves comprehensive project state, builds priority status tree, checks completion flags, provides next-step suggestions"
+          "description": "aifp_status directive uses aifp_status helper to retrieve comprehensive project state - AI determines next steps from returned data"
         },
         {
           "directive_name": "aifp_run",
@@ -457,31 +458,32 @@
           "type": "string",
           "required": false,
           "default": "summary",
-          "description": "'quick', 'summary', 'detailed' - status detail level"
+          "description": "'quick', 'summary', 'detailed' - how much data to retrieve"
         }
       ],
-      "purpose": "Analyze entire work hierarchy and return comprehensive project status",
+      "purpose": "Retrieve work hierarchy data from project database. Returns structured data for AI to understand project state.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": true,
       "return_statements": [],
       "implementation_notes": [
-        "Returns: {completion_path_status, milestones[], tasks[], subtasks[], sidequests[], progress_metrics{}, blocked_items[], unlocked_paths[]}",
-        "Analyzes entire work hierarchy - NOT simple field getter",
-        "Calculates progress percentages, completion dependencies",
-        "Type='quick': Basic counts only",
-        "Type='summary': Standard analysis (default)",
-        "Type='detailed': Full dependency analysis"
+        "Returns: {completion_paths[], milestones[], tasks[], subtasks[], sidequests[], counts{}, blocked_items[]}",
+        "Retrieves data from multiple tables with JOINs for context",
+        "Counts are simple aggregates (COUNT WHERE status != 'completed')",
+        "Type='quick': Counts and current incomplete item only",
+        "Type='summary': Incomplete items + last few completed for context (default)",
+        "Type='detailed': All items including completed history",
+        "NO analysis logic - returns raw data with basic counts, AI interprets meaning"
       ],
       "target_database": "orchestrator",
       "used_by_directives": [
         {
           "directive_name": "aifp_status",
-          "execution_context": "analyze_work_hierarchy",
+          "execution_context": "retrieve_work_hierarchy",
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Sub-helper used by aifp_status to analyze complete work hierarchy (completion paths, milestones, tasks, subtasks, sidequests) and calculate progress metrics"
+          "description": "Sub-helper used by aifp_status to retrieve work hierarchy data (completion paths, milestones, tasks, subtasks, sidequests)"
         }
       ]
     },
@@ -527,16 +529,16 @@
       "name": "get_status_tree",
       "file_path": "TODO_helpers/orchestrator/module.py",
       "parameters": [],
-      "purpose": "Get hierarchical view of all work items with nested structure",
+      "purpose": "Build hierarchical view of work items with nested structure from flat database tables",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": true,
       "return_statements": [],
       "implementation_notes": [
         "Returns: Nested tree structure with work items embedded under parents",
-        "Format: {completion_path{milestones[{tasks[{subtasks[]}]}]}, sidequests[]}",
-        "Maintains parent-child relationships for visualization",
-        "Used for status display, not for queries"
+        "Format: {completion_paths[{milestones[{tasks[{subtasks[]}]}]}], sidequests[]}",
+        "Queries tables and structures data by parent-child relationships",
+        "Pure data transformation - no decision logic"
       ],
       "target_database": "orchestrator",
       "used_by_directives": [
@@ -546,7 +548,7 @@
           "sequence_order": 3,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Sub-helper used by aifp_status to build hierarchical tree view of work items with nested structure - used for priority status display"
+          "description": "Sub-helper used by aifp_status to build hierarchical tree view of work items"
         }
       ]
     },
@@ -591,8 +593,8 @@
   "metadata": {
     "file": "helpers-orchestrators.json",
     "count": 12,
-    "status": "return_statements complete - 0 helpers enhanced",
-    "last_updated": "2026-01-02",
-    "notes": "All helpers are data-gathering/analysis operations or convenience tools - no return_statements needed"
+    "status": "reviewed 2026-01-27 - removed deep logic language",
+    "last_updated": "2026-01-27",
+    "notes": "All helpers are data retrieval operations. NO analysis/suggestion logic - AI interprets returned data and decides next steps."
   }
 }

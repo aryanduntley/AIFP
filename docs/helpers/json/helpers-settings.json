@@ -42,7 +42,7 @@
     },
     {
       "name": "get_settings_tables",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/schema.py",
       "parameters": [],
       "purpose": "List all tables in user settings database",
       "error_handling": "",
@@ -54,7 +54,7 @@
     },
     {
       "name": "get_settings_fields",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/schema.py",
       "parameters": [
         {
           "name": "table",
@@ -74,7 +74,7 @@
     },
     {
       "name": "get_settings_schema",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/schema.py",
       "parameters": [],
       "purpose": "Get complete schema for user settings database",
       "error_handling": "",
@@ -86,7 +86,7 @@
     },
     {
       "name": "get_settings_json_parameters",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/schema.py",
       "parameters": [
         {
           "name": "table",
@@ -106,7 +106,7 @@
     },
     {
       "name": "get_from_settings",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -133,7 +133,7 @@
     },
     {
       "name": "get_from_settings_where",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/crud.py",
       "parameters": [
         {
           "name": "conditions",
@@ -153,7 +153,7 @@
     },
     {
       "name": "query_settings",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -213,7 +213,7 @@
     },
     {
       "name": "add_settings_entry",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -252,7 +252,7 @@
     },
     {
       "name": "update_settings_entry",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -302,7 +302,7 @@
     },
     {
       "name": "delete_settings_entry",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -329,7 +329,7 @@
     },
     {
       "name": "load_directive_preferences",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
           "name": "directive_name",
@@ -360,7 +360,7 @@
     },
     {
       "name": "add_directive_preference",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
           "name": "directive_name",
@@ -421,8 +421,78 @@
       ]
     },
     {
+      "name": "update_directive_preference",
+      "file_path": "helpers/user_preferences/management.py",
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Directive name"
+        },
+        {
+          "name": "preference_key",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Preference key to update (must exist)"
+        },
+        {
+          "name": "preference_value",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New preference value"
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "Update active status"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Update description"
+        }
+      ],
+      "purpose": "Update existing directive preference in directive_preferences table",
+      "error_handling": "Returns error if directive_name + preference_key combination not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Returns: {success: true, directive_name, preference_key, message: 'Preference updated'}",
+        "Error: 'Preference {preference_key} for directive {directive_name} not found'"
+      ],
+      "target_database": "user_preferences",
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_update",
+          "execution_context": "update_existing_preference",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {
+            "directive_name": "workflow.confirmed_directive",
+            "preference_key": "workflow.extracted_key",
+            "preference_value": "workflow.new_value"
+          },
+          "description": "Update existing directive preference value or active status"
+        }
+      ],
+      "implementation_notes": [
+        "UPDATE directive_preferences SET preference_value=?, active=?, description=? WHERE directive_name=? AND preference_key=?",
+        "Only updates fields that are provided (non-null)",
+        "Companion to add_directive_preference - use add for new, update for existing",
+        "Separate from generic update_settings_entry for high-frequency table operations"
+      ]
+    },
+    {
       "name": "get_user_setting",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
           "name": "setting_key",
@@ -432,93 +502,118 @@
           "description": "Setting key to retrieve"
         }
       ],
-      "purpose": "Get project-wide user setting (fairly frequent)",
-      "error_handling": "",
+      "purpose": "Get project-wide user setting by key (fairly frequent)",
+      "error_handling": "Returns null if setting_key not found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Returns: {setting_key, setting_value, description, scope} or null if not found"
+      ],
       "target_database": "user_preferences",
       "used_by_directives": []
     },
     {
-      "name": "update_user_preferences",
-      "file_path": "TODO_helpers/settings/module.py",
+      "name": "add_user_setting",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
-          "name": "user_request",
+          "name": "setting_key",
           "type": "string",
           "required": true,
           "default": null,
-          "description": "User's customization request"
+          "description": "Setting key (must be unique)"
         },
         {
-          "name": "mapped_directive",
+          "name": "setting_value",
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Directive name to apply to"
+          "description": "Setting value"
         },
         {
-          "name": "preferences",
-          "type": "object",
-          "required": true,
+          "name": "description",
+          "type": "string",
+          "required": false,
           "default": null,
-          "description": "Key-value pairs"
+          "description": "Description of the setting"
+        },
+        {
+          "name": "scope",
+          "type": "string",
+          "required": false,
+          "default": "project",
+          "description": "Setting scope (default 'project')"
         }
       ],
-      "purpose": "Map user request to directive preferences (orchestrator)",
-      "error_handling": "",
+      "purpose": "Add new project-wide user setting to user_settings table",
+      "error_handling": "Returns error if setting_key already exists (use update_user_setting instead)",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Returns: {success: true, setting_key, message: 'Setting added'}",
+        "Error: 'Setting with key {setting_key} already exists'"
+      ],
       "target_database": "user_preferences",
-      "used_by_directives": [
-        {
-          "directive_name": "user_preferences_update",
-          "execution_context": "self_implementation",
-          "sequence_order": 1,
-          "is_required": true,
-          "parameters_mapping": {
-            "user_request": "workflow.user_request",
-            "mapped_directive": "workflow.confirmed_directive",
-            "preferences": "workflow.parsed_preferences"
-          },
-          "description": "Orchestrator tool that implements user_preferences_update directive - parses request, finds directive by intent (using find_directive_by_intent from core), extracts key-value preferences, updates directive_preferences table"
-        }
+      "used_by_directives": [],
+      "implementation_notes": [
+        "INSERT INTO user_settings (setting_key, setting_value, description, scope) VALUES (?, ?, ?, ?)",
+        "Companion to update_user_setting - use add for new, update for existing",
+        "Separate from generic add_settings_entry for high-frequency table operations"
       ]
     },
     {
-      "name": "apply_preferences_to_context",
-      "file_path": "TODO_helpers/settings/module.py",
+      "name": "update_user_setting",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
-          "name": "preferences",
-          "type": "object",
+          "name": "setting_key",
+          "type": "string",
           "required": true,
           "default": null,
-          "description": "Preference key-value pairs to apply"
+          "description": "Setting key to update (must exist)"
+        },
+        {
+          "name": "setting_value",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New setting value"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (optional)"
+        },
+        {
+          "name": "scope",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New scope (optional)"
         }
       ],
-      "purpose": "Apply loaded preferences to execution context",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": true,
-      "return_statements": [],
+      "purpose": "Update existing project-wide user setting in user_settings table",
+      "error_handling": "Returns error if setting_key not found (use add_user_setting instead)",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Returns: {success: true, setting_key, message: 'Setting updated'}",
+        "Error: 'Setting with key {setting_key} not found'"
+      ],
       "target_database": "user_preferences",
-      "used_by_directives": [
-        {
-          "directive_name": "user_preferences_sync",
-          "execution_context": "apply_to_context",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {},
-          "description": "Apply loaded directive preferences to execution context before running directive - modifies context with user's customization preferences"
-        }
+      "used_by_directives": [],
+      "implementation_notes": [
+        "UPDATE user_settings SET setting_value=?, description=?, scope=? WHERE setting_key=?",
+        "Only updates fields that are provided (non-null)",
+        "Companion to add_user_setting - use add for new, update for existing",
+        "Separate from generic update_settings_entry for high-frequency table operations"
       ]
     },
     {
       "name": "get_tracking_settings",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [],
       "purpose": "Get all tracking feature flags",
       "error_handling": "",
@@ -547,7 +642,7 @@
     },
     {
       "name": "toggle_tracking_feature",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
           "name": "feature_name",
@@ -586,7 +681,7 @@
     },
     {
       "name": "get_user_settings",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [],
       "purpose": "Get all user settings from user_settings table (complements get_user_setting which gets one setting by key)",
       "error_handling": "Returns empty array if no settings exist",
@@ -614,7 +709,7 @@
     },
     {
       "name": "add_tracking_note",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
           "name": "content",
@@ -683,7 +778,7 @@
     },
     {
       "name": "get_tracking_notes",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
           "name": "note_type",
@@ -731,7 +826,7 @@
     },
     {
       "name": "search_tracking_notes",
-      "file_path": "TODO_helpers/settings/module.py",
+      "file_path": "helpers/user_preferences/management.py",
       "parameters": [
         {
           "name": "search_string",
@@ -773,13 +868,17 @@
   ],
   "metadata": {
     "file": "helpers-settings.json",
-    "count": 22,
+    "count": 23,
     "first_helper": "user_preferences_allowed_check_constraints",
-    "status": "UPDATED - added user_preferences_allowed_check_constraints for CHECK constraint validation",
-    "mapped_helpers": 9,
-    "unmapped_helpers": 12,
-    "note": "12 helpers are generic AI query tools (schema/CRUD operations, CHECK constraint validation) - intentionally empty. 9 helpers mapped to user preference directives (user_preferences_sync, user_preferences_update, user_preferences_learn, user_preferences_import, user_preferences_export, tracking_toggle). Added 3 helpers for tracking_notes table: add_tracking_note, get_tracking_notes, search_tracking_notes.",
-    "total_mappings": 14,
-    "last_updated": "2026-01-10"
+    "status": "COMPLETE - All 23 helpers implemented",
+    "mapped_helpers": 8,
+    "unmapped_helpers": 15,
+    "note": "All helpers implemented in src/aifp/helpers/user_preferences/. Distribution: validation.py (1), schema.py (4), crud.py (6), management.py (12). 8 helpers mapped to user preference directives, 15 are generic AI query tools.",
+    "total_mappings": 12,
+    "last_updated": "2026-01-27",
+    "changes": [
+      "2026-01-27: Removed apply_preferences_to_context, update_user_preferences. Added update_directive_preference, add_user_setting, update_user_setting.",
+      "2026-01-27: All 23 helpers implemented. Phase 5 COMPLETE."
+    ]
   }
 }

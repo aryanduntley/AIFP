@@ -44,7 +44,7 @@
     },
     {
       "name": "get_core_tables",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/schema.py",
       "parameters": [],
       "purpose": "List all tables in core database",
       "error_handling": "",
@@ -56,7 +56,7 @@
     },
     {
       "name": "get_core_fields",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/schema.py",
       "parameters": [
         {
           "name": "table",
@@ -76,7 +76,7 @@
     },
     {
       "name": "get_core_schema",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/schema.py",
       "parameters": [],
       "purpose": "Get complete schema for core database (all tables and fields)",
       "error_handling": "",
@@ -88,7 +88,7 @@
     },
     {
       "name": "get_from_core",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/schema.py",
       "parameters": [
         {
           "name": "table",
@@ -115,7 +115,7 @@
     },
     {
       "name": "get_from_core_where",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/schema.py",
       "parameters": [
         {
           "name": "table",
@@ -156,7 +156,7 @@
     },
     {
       "name": "query_core",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/schema.py",
       "parameters": [
         {
           "name": "table",
@@ -183,7 +183,7 @@
     },
     {
       "name": "get_directive_by_name",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "directive_name",
@@ -218,7 +218,7 @@
     },
     {
       "name": "get_all_directives",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [],
       "purpose": "Load all directives for caching (special orchestrator)",
       "error_handling": "",
@@ -243,7 +243,7 @@
     },
     {
       "name": "search_directives",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "keyword",
@@ -293,7 +293,7 @@
     },
     {
       "name": "find_directive_by_intent",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "user_request",
@@ -332,7 +332,7 @@
     },
     {
       "name": "find_directives_by_intent_keyword",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "keywords",
@@ -359,7 +359,7 @@
     },
     {
       "name": "get_directives_with_intent_keywords",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "keywords",
@@ -420,7 +420,7 @@
     },
     {
       "name": "add_directive_intent_keyword",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "directive_id",
@@ -447,7 +447,7 @@
     },
     {
       "name": "remove_directive_intent_keyword",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "directive_id",
@@ -474,7 +474,7 @@
     },
     {
       "name": "get_directive_keywords",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "directive_id",
@@ -505,7 +505,7 @@
     },
     {
       "name": "get_all_directive_keywords",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [],
       "purpose": "Get list of all unique intent keywords available for searching (simple list)",
       "error_handling": "",
@@ -526,7 +526,7 @@
     },
     {
       "name": "get_all_intent_keywords_with_counts",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [],
       "purpose": "Get all unique intent keywords with usage counts for analytics",
       "error_handling": "",
@@ -546,96 +546,59 @@
       ]
     },
     {
-      "name": "get_next_directives_from_status",
-      "file_path": "TODO_helpers/core/module.py",
+      "name": "get_flows_from_directive",
+      "file_path": "helpers/core/flows.py",
       "parameters": [
         {
           "name": "from_directive",
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Usually 'aifp_status'"
+          "description": "Source directive name"
         }
       ],
-      "purpose": "Get all possible next directives with condition evaluation (sequential workflow flows only, ignores wildcard '*' flows)",
-      "error_handling": "",
+      "purpose": "Get all flows originating from a directive (what comes next?). Returns raw flow data - AI evaluates conditions.",
+      "error_handling": "Returns empty array if no flows found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
-        "Returns: Array of possible next directive objects based on flows, with evaluated conditions",
-        "Implementation MUST retrieve current project status internally using get_project_status() - DO NOT require AI to pass status objects",
-        "This prevents AI from moving data objects around - helper handles status retrieval",
-        "Queries directive_flow WHERE from_directive = parameter (NOT wildcard '*')",
-        "Evaluates condition_key/condition_value against retrieved status",
-        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+        "Simple query: SELECT * FROM directive_flow WHERE from_directive = ? ORDER BY priority",
+        "Returns all flow fields including condition_key, condition_value for AI to evaluate",
+        "Does NOT evaluate conditions - AI determines which path to take based on its knowledge of project state",
+        "Includes wildcard flows if from_directive='*' is queried directly"
       ],
       "target_database": "core",
-      "used_by_directives": [
-        {
-          "directive_name": "aifp_status",
-          "execution_context": "determine_next_steps",
-          "sequence_order": 10,
-          "is_required": true,
-          "parameters_mapping": {
-            "from_directive": "aifp_status"
-          },
-          "description": "Query directive_flow table to determine what directives AI should suggest next based on project state - enables status-driven workflow navigation"
-        },
-        {
-          "directive_name": "project_auto_resume",
-          "execution_context": "determine_resume_point",
-          "sequence_order": 2,
-          "is_required": true,
-          "parameters_mapping": {
-            "from_directive": "last_completed_directive"
-          },
-          "description": "Determine where to resume work after interruption - finds next directive in workflow based on last completed state"
-        }
-      ]
+      "used_by_directives": []
     },
     {
-      "name": "get_matching_next_directives",
-      "file_path": "TODO_helpers/core/module.py",
+      "name": "get_flows_to_directive",
+      "file_path": "helpers/core/flows.py",
       "parameters": [
         {
-          "name": "from_directive",
+          "name": "to_directive",
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Directive name (usually 'aifp_status')"
+          "description": "Target directive name"
         }
       ],
-      "purpose": "Get ONLY directives whose conditions match current state (filtered subset, ignores wildcard '*' flows)",
-      "error_handling": "",
+      "purpose": "Get all flows leading to a directive (what leads here?). Useful for understanding directive prerequisites.",
+      "error_handling": "Returns empty array if no flows found",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
-        "Returns: Array of directive objects whose conditions match current state",
-        "Implementation MUST retrieve current project status internally using get_project_status() - DO NOT require AI to pass status objects",
-        "This prevents AI from moving data objects around - helper handles status retrieval",
-        "Queries directive_flow WHERE from_directive = parameter (NOT wildcard '*')",
-        "Filters flows to only those whose conditions evaluate to true against retrieved status",
-        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
+        "Simple query: SELECT * FROM directive_flow WHERE to_directive = ? ORDER BY priority",
+        "Returns all flow fields",
+        "Useful for: understanding what triggers a directive, finding entry points"
       ],
       "target_database": "core",
-      "used_by_directives": [
-        {
-          "directive_name": "aifp_status",
-          "execution_context": "determine_next_steps",
-          "sequence_order": 11,
-          "is_required": false,
-          "parameters_mapping": {
-            "from_directive": "aifp_status"
-          },
-          "description": "Filter next directives to only those whose conditions match current state - provides refined recommendations to user"
-        }
-      ]
+      "used_by_directives": []
     },
     {
       "name": "get_completion_loop_target",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/flows.py",
       "parameters": [
         {
           "name": "from_directive",
@@ -695,69 +658,8 @@
       ]
     },
     {
-      "name": "get_conditional_work_paths",
-      "file_path": "TODO_helpers/core/module.py",
-      "parameters": [
-        {
-          "name": "from_directive",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Directive name (e.g., 'aifp_status', 'project_file_write')"
-        }
-      ],
-      "purpose": "Query directive_flow table for flow_type='conditional' to determine context-based next directive (ignores wildcard '*' flows, sequential flows only)",
-      "error_handling": "",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [],
-      "implementation_notes": [
-        "Returns: Array of conditional flow objects with evaluated conditions",
-        "Implementation MUST retrieve current work context internally - DO NOT require AI to pass context objects",
-        "For aifp_status: retrieve via get_project_status()",
-        "For project_file_write: retrieve last file write result from project.db",
-        "For project_task_complete: retrieve milestone completion status from project.db",
-        "This prevents AI from moving data objects around - helper handles context retrieval",
-        "Queries directive_flow WHERE from_directive = parameter AND flow_type = 'conditional' (NOT wildcard '*')",
-        "Evaluates condition_key/condition_value against retrieved context"
-      ],
-      "target_database": "core",
-      "used_by_directives": [
-        {
-          "directive_name": "aifp_status",
-          "execution_context": "determine_next_steps",
-          "sequence_order": 12,
-          "is_required": true,
-          "parameters_mapping": {
-            "from_directive": "aifp_status"
-          },
-          "description": "Query conditional flows from aifp_status to route to correct next directive based on project state - handles routing to project_init, task_decomposition, file_write, etc."
-        },
-        {
-          "directive_name": "project_file_write",
-          "execution_context": "post_write_routing",
-          "sequence_order": 10,
-          "is_required": false,
-          "parameters_mapping": {
-            "from_directive": "project_file_write"
-          },
-          "description": "Route to compliance_check if auto-check enabled in user preferences - conditional flow based on preference settings"
-        },
-        {
-          "directive_name": "project_task_complete",
-          "execution_context": "check_milestone_completion",
-          "sequence_order": 5,
-          "is_required": false,
-          "parameters_mapping": {
-            "from_directive": "project_task_complete"
-          },
-          "description": "Route to project_milestone_complete if all milestone tasks complete - conditional flow based on task completion state"
-        }
-      ]
-    },
-    {
       "name": "get_helper_by_name",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [
         {
           "name": "helper_name",
@@ -777,7 +679,7 @@
     },
     {
       "name": "get_helpers_by_database",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [
         {
           "name": "target_database",
@@ -797,7 +699,7 @@
     },
     {
       "name": "get_helpers_are_tool",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [],
       "purpose": "Get all MCP tools (is_tool=true)",
       "error_handling": "",
@@ -809,7 +711,7 @@
     },
     {
       "name": "get_helpers_not_tool_not_sub",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [],
       "purpose": "Get all directive-callable helpers",
       "error_handling": "",
@@ -821,7 +723,7 @@
     },
     {
       "name": "get_helpers_are_sub",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [],
       "purpose": "Get all sub-helpers (is_sub_helper=true)",
       "error_handling": "",
@@ -833,7 +735,7 @@
     },
     {
       "name": "get_helpers_for_directive",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [
         {
           "name": "include_helpers_data",
@@ -864,7 +766,7 @@
     },
     {
       "name": "get_directives_for_helper",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [
         {
           "name": "helper_name",
@@ -895,7 +797,7 @@
     },
     {
       "name": "get_category_by_name",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [
         {
           "name": "category_name",
@@ -926,7 +828,7 @@
     },
     {
       "name": "get_categories",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_2.py",
       "parameters": [],
       "purpose": "Get all directive categories",
       "error_handling": "",
@@ -947,7 +849,7 @@
     },
     {
       "name": "get_directives_by_category",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "category_name",
@@ -982,7 +884,7 @@
     },
     {
       "name": "get_directives_by_type",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "type",
@@ -1025,7 +927,7 @@
     },
     {
       "name": "get_fp_directive_index",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [],
       "purpose": "Get lightweight FP directive index grouped by category (names only, not full definitions)",
       "error_handling": "Returns empty object if no FP directives found",
@@ -1059,7 +961,7 @@
     },
     {
       "name": "get_all_directive_names",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/directives_1.py",
       "parameters": [
         {
           "name": "types",
@@ -1097,7 +999,7 @@
     },
     {
       "name": "get_directive_flows",
-      "file_path": "TODO_helpers/core/module.py",
+      "file_path": "helpers/core/flows.py",
       "parameters": [
         {
           "name": "flow_category",
@@ -1150,93 +1052,28 @@
       "used_by_directives": []
     },
     {
-      "name": "search_fp_references",
-      "file_path": "TODO_helpers/core/module.py",
+      "name": "get_wildcard_flows",
+      "file_path": "helpers/core/flows.py",
       "parameters": [
         {
-          "name": "keyword",
+          "name": "flow_type",
           "type": "string",
           "required": false,
           "default": null,
-          "description": "Keyword to search in directive names, descriptions, and intent_keywords"
-        },
-        {
-          "name": "category",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Category filter (e.g., 'purity', 'error_handling', 'functional_composition')"
-        },
-        {
-          "name": "pattern",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "FP pattern name (e.g., 'monad', 'option', 'curry', 'lazy')"
+          "description": "Optional filter: 'reference_consultation', 'utility', 'conditional', etc."
         }
       ],
-      "purpose": "Get FP directives available for consultation from ANY context. Handles wildcard '*' reference_consultation flows. Returns FP directives AI can consult as reference material DURING any operation.",
-      "error_handling": "Returns empty array if no matches found",
+      "purpose": "Get all flows from wildcard '*' source (available from ANY context). Includes FP references, utilities, cross-cutting concerns.",
+      "error_handling": "Returns empty array if no flows found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [
-        "FP directives are REFERENCE material for when AI is uncertain about implementation details",
-        "These are NOT workflow steps - they're available on-demand for guidance",
-        "AI writes FP code naturally - only consult these when genuinely uncertain about complex patterns"
-      ],
+      "return_statements": [],
       "implementation_notes": [
-        "Returns: Array of FP directive objects with usage descriptions from flows",
-        "Query: SELECT d.*, df.description as usage_hint FROM directives d JOIN directive_flow df ON d.name = df.to_directive WHERE df.from_directive = '*' AND df.flow_type = 'reference_consultation' AND d.type = 'fp'",
-        "Wildcard '*' means: Available from ANY context (not sequential workflow)",
-        "Optional filters: keyword match (directive name, description, intent_keywords), category filter, pattern filter",
-        "Example: search_fp_references(keyword='null') returns ['fp_null_elimination', 'fp_optionals']",
-        "Example: search_fp_references(category='error_handling') returns all error handling FP directives",
-        "Example: search_fp_references(pattern='monad') returns monadic FP directives",
-        "Use when: AI needs FP guidance during coding, uncertain about implementation pattern",
-        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
-      ],
-      "target_database": "core",
-      "used_by_directives": []
-    },
-    {
-      "name": "get_contextual_utilities",
-      "file_path": "TODO_helpers/core/module.py",
-      "parameters": [
-        {
-          "name": "current_directive",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Current directive being executed (optional - if null, returns only wildcard '*' utilities)"
-        },
-        {
-          "name": "condition",
-          "type": "string",
-          "required": false,
-          "default": null,
-          "description": "Condition key to filter by (e.g., 'user_correction_detected')"
-        }
-      ],
-      "purpose": "Get utility directives available in current context. Handles wildcard '*' utility and conditional flows. Returns cross-cutting utilities AI can invoke from any directive.",
-      "error_handling": "Returns empty array if no utilities match filters",
-      "is_tool": true,
-      "is_sub_helper": false,
-      "return_statements": [
-        "Utilities are cross-cutting concerns available across directives",
-        "Wildcard '*' utilities can be called from ANY directive context",
-        "Conditional utilities trigger when specific conditions are met"
-      ],
-      "implementation_notes": [
-        "Returns: Array of utility flow objects with to_directive, condition_key, condition_value, description",
-        "Query: SELECT * FROM directive_flow WHERE (from_directive = '*' OR from_directive = ?) AND flow_type IN ('utility', 'conditional') AND (condition_key = ? OR ? IS NULL)",
-        "Wildcard '*' means: Available from ANY directive (not workflow-specific)",
-        "If current_directive provided: includes both '*' utilities AND directive-specific utilities",
-        "If current_directive NULL: returns only '*' utilities",
-        "If condition provided: filters to utilities matching that condition",
-        "Example: get_contextual_utilities(current_directive='project_file_write', condition='user_correction_detected') returns user_preferences_learn",
-        "Example: get_contextual_utilities(current_directive='project_task_create') returns project_notes_log (available from any context)",
-        "Use when: AI detects condition trigger (user correction, error logging need, etc.)",
-        "Does NOT retrieve current status internally - utilities are context-agnostic or triggered by explicit conditions"
+        "Simple query: SELECT * FROM directive_flow WHERE from_directive = '*' [AND flow_type = ?] ORDER BY flow_type, priority",
+        "Wildcard '*' means: available from ANY directive context (not sequential workflow)",
+        "Common flow_types for wildcards: 'reference_consultation' (FP references), 'utility' (cross-cutting utilities)",
+        "If flow_type not provided, returns ALL wildcard flows",
+        "AI uses this to find what's available regardless of current workflow position"
       ],
       "target_database": "core",
       "used_by_directives": []
@@ -1244,13 +1081,20 @@
   ],
   "metadata": {
     "file": "helpers-core.json",
-    "count": 38,
+    "count": 36,
     "first_helper": "core_allowed_check_constraints",
-    "status": "UPDATED - removed get_directive_content (useless middleman), removed status_object/work_context parameters, added wildcard-aware helpers",
-    "mapped_helpers": 15,
-    "unmapped_helpers": 23,
-    "note": "23 helpers are generic AI query/navigation tools (schema queries, generic helper lookups, CHECK constraint validation, wildcard flow queries) - intentionally empty. 15 helpers mapped to directives (primarily aifp_help for browsing/querying, aifp_status and completion directives for flow navigation, conditional routing helpers). Status-passing helpers fixed to retrieve status internally. get_directive_content removed - AI should read MD files directly.",
-    "total_mappings": 26,
-    "last_updated": "2026-01-10"
+    "status": "JSON updated - code refactor pending",
+    "mapped_helpers": 10,
+    "unmapped_helpers": 26,
+    "note": "Refactored flows.py: Removed deep logic helpers (get_next_directives_from_status, get_matching_next_directives, get_conditional_work_paths, search_fp_references, get_contextual_utilities). Added simple query helpers (get_flows_from_directive, get_flows_to_directive, get_wildcard_flows). MCP server is for data retrieval, AI handles logic/decisions.",
+    "total_mappings": 16,
+    "implementation": {
+      "validation.py": 1,
+      "schema.py": 6,
+      "directives_1.py": 15,
+      "directives_2.py": 9,
+      "flows.py": 5
+    },
+    "last_updated": "2026-01-27"
   }
 }

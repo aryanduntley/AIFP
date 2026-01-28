@@ -19,9 +19,15 @@ docs/HELPER_IMPLEMENTATION_PLAN.md
 
 Do not read or modify notes.txt. That is just for me.                         
 
+review core and project json/code for "deep logic" indications. should be primarily CRUD based. deeper logic for AI
+
+directives should explicity mention to reserve before file write, file write, then finalize. Do we have batch operations for functions? Very important. Maybe even a batch for functions and file all in one shot? 
+
 return_statements for global mutable db (remember to rewrite the reference CRUD for mutable global db file in project language... with reference to that CRUD reference file location)
 
 return statements for aifp_init
+
+think out useful return values for certain helper functions, like generic getter/setters should return schema, possibly some helper or directive references useful or relative to current function call and database.
 
 check all directive json and md files for direct queries (select, insert, etc.)
 
@@ -32,15 +38,13 @@ make sure we add the mutable global db to project src
 
 when coding helpers, if case 2, ensure we make a return value that indicates to AI case 2 active. Probably during status call(s)
 
-think out useful return values for certain helper functions, like generic getter/setters should return schema, possibly some helper or directive references useful or relative to current function call and database.
-
-helpers json file path updates needed. Let's do this as the helper functions are being coded.
-
 MUST make OOP wrapper examples
 
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
 docs/directives-json/sync-directives.py
+
+modify DRY principles in sys prompt to indicate a thoughtful planning mode. "how high should we make primary commonality file, then sub commonality files down to individual files". Should plan for this when possible and when new things are added, should be able to backtrack, find where commonality files or parts within can be granted higher hierachy, move and/or extract and move to higher level for umbrella coverage.
 
 23.30
 =============================

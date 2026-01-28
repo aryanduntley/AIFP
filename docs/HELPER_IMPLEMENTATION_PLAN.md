@@ -1,6 +1,6 @@
 # AIFP Helper Functions - Complete Implementation Plan
 
-**Total Helpers**: 224 across 15 JSON files (updated 2026-01-18: +2 infrastructure/orchestrator helpers)
+**Total Helpers**: 223 across 15 JSON files (updated 2026-01-27: user prefs refactored +1)
 **Target**: 600-900 lines per Python file (prefer ~600)
 **Estimated**: ~30-50 lines per helper → ~12-20 helpers per file
 
@@ -263,8 +263,8 @@ src/aifp/helpers/
 │   ├── validation.py (1 helper)
 │   ├── schema.py (6 helpers)
 │   ├── directives_1.py (15 helpers)
-│   ├── directives_2.py (10 helpers)
-│   └── flows.py (6 helpers)
+│   ├── directives_2.py (9 helpers)
+│   └── flows.py (5 helpers)
 ├── orchestrators/
 │   ├── entry_points.py (2 helpers)
 │   ├── status.py (3 helpers)
@@ -292,8 +292,8 @@ src/aifp/helpers/
 ├── user_preferences/
 │   ├── validation.py (1 helper)
 │   ├── schema.py (4 helpers)
-│   ├── crud.py (8 helpers)
-│   └── management.py (9 helpers)
+│   ├── crud.py (6 helpers)
+│   └── management.py (12 helpers)
 └── user_directives/
     ├── validation.py (1 helper)
     ├── schema.py (4 helpers)
@@ -314,54 +314,52 @@ src/aifp/helpers/
 - [ ] **global/database_info.py** - `helpers-index.json`
   - [ ] get_databases
 
-#### Core Database Operations (38 helpers)
-- [ ] **core/validation.py** - `helpers-core.json`
-  - [ ] core_allowed_check_constraints
+#### Core Database Operations (38 helpers) ✅ COMPLETE
+- [x] **core/validation.py** - `helpers-core.json` ✅
+  - [x] core_allowed_check_constraints
 
-- [ ] **core/schema.py** - `helpers-core.json`
-  - [ ] get_core_tables
-  - [ ] get_core_fields
-  - [ ] get_core_schema
-  - [ ] get_from_core
-  - [ ] get_from_core_where
-  - [ ] query_core
+- [x] **core/schema.py** - `helpers-core.json` ✅
+  - [x] get_core_tables
+  - [x] get_core_fields
+  - [x] get_core_schema
+  - [x] get_from_core
+  - [x] get_from_core_where
+  - [x] query_core
 
-- [ ] **core/directives_1.py** - `helpers-core.json`
-  - [ ] get_directive_by_name
-  - [ ] get_all_directives
-  - [ ] search_directives
-  - [ ] find_directive_by_intent
-  - [ ] find_directives_by_intent_keyword
-  - [ ] get_directives_with_intent_keywords
-  - [ ] add_directive_intent_keyword
-  - [ ] remove_directive_intent_keyword
-  - [ ] get_directive_keywords
-  - [ ] get_all_directive_keywords
-  - [ ] get_all_intent_keywords_with_counts
-  - [ ] get_directives_by_category
-  - [ ] get_directives_by_type
-  - [ ] get_fp_directive_index
-  - [ ] get_all_directive_names
+- [x] **core/directives_1.py** - `helpers-core.json` ✅
+  - [x] get_directive_by_name
+  - [x] get_all_directives
+  - [x] search_directives
+  - [x] find_directive_by_intent
+  - [x] find_directives_by_intent_keyword
+  - [x] get_directives_with_intent_keywords
+  - [x] add_directive_intent_keyword
+  - [x] remove_directive_intent_keyword
+  - [x] get_directive_keywords
+  - [x] get_all_directive_keywords
+  - [x] get_all_intent_keywords_with_counts
+  - [x] get_directives_by_category
+  - [x] get_directives_by_type
+  - [x] get_fp_directive_index
+  - [x] get_all_directive_names
 
-- [ ] **core/directives_2.py** - `helpers-core.json`
-  - [ ] get_helper_by_name
-  - [ ] get_helpers_by_database
-  - [ ] get_helpers_are_tool
-  - [ ] get_helpers_not_tool_not_sub
-  - [ ] get_helpers_are_sub
-  - [ ] get_helpers_for_directive
-  - [ ] get_directives_for_helper
-  - [ ] get_category_by_name
-  - [ ] get_categories
-  - [ ] get_directive_flows
+- [x] **core/directives_2.py** - `helpers-core.json` ✅
+  - [x] get_helper_by_name
+  - [x] get_helpers_by_database
+  - [x] get_helpers_are_tool
+  - [x] get_helpers_not_tool_not_sub
+  - [x] get_helpers_are_sub
+  - [x] get_helpers_for_directive
+  - [x] get_directives_for_helper
+  - [x] get_category_by_name
+  - [x] get_categories
 
-- [ ] **core/flows.py** - `helpers-core.json`
-  - [ ] get_next_directives_from_status
-  - [ ] get_matching_next_directives
-  - [ ] get_completion_loop_target
-  - [ ] get_conditional_work_paths
-  - [ ] search_fp_references
-  - [ ] get_contextual_utilities
+- [x] **core/flows.py** - `helpers-core.json` ✅ (refactored 2026-01-27)
+  - [x] get_flows_from_directive (NEW - replaces get_next_directives_from_status)
+  - [x] get_flows_to_directive (NEW)
+  - [x] get_completion_loop_target
+  - [x] get_directive_flows
+  - [x] get_wildcard_flows (NEW - replaces search_fp_references + get_contextual_utilities)
 
 ---
 
@@ -555,54 +553,64 @@ src/aifp/helpers/
 
 ---
 
-### Phase 4: Git Operations (11 helpers)
+### Phase 4: Git Operations (11 helpers) ✅ COMPLETE
 
-- [ ] **git/operations.py** - `helpers-git.json`
-  - [ ] get_current_commit_hash
-  - [ ] get_current_branch
-  - [ ] get_git_status
-  - [ ] detect_external_changes
-  - [ ] create_user_branch
-  - [ ] get_user_name_for_branch (sub-helper)
-  - [ ] list_active_branches
-  - [ ] detect_conflicts_before_merge
-  - [ ] merge_with_fp_intelligence
-  - [ ] sync_git_state
-  - [ ] project_update_git_status (sub-helper)
+- [x] **git/operations.py** - `helpers-git.json` ✅
+  - [x] get_current_commit_hash
+  - [x] get_current_branch
+  - [x] get_git_status
+  - [x] detect_external_changes
+  - [x] create_user_branch
+  - [x] get_user_name_for_branch (sub-helper)
+  - [x] list_active_branches
+  - [x] detect_conflicts_before_merge
+  - [x] execute_merge (renamed from merge_with_fp_intelligence)
+  - [x] sync_git_state
+  - [x] project_update_git_status (sub-helper)
 
 ---
 
-### Phase 5: User Preferences (22 helpers)
+### Phase 5: User Preferences (23 helpers) ✅ COMPLETE
 
-- [ ] **user_preferences/validation.py** - `helpers-settings.json` (1 helper)
-  - [ ] user_preferences_allowed_check_constraints
+- [x] **user_preferences/validation.py** - `helpers-settings.json` (1 helper) ✅
+  - [x] user_preferences_allowed_check_constraints
 
-- [ ] **user_preferences/schema.py** - `helpers-settings.json` (4 helpers)
-  - [ ] get_settings_tables
-  - [ ] get_settings_fields
-  - [ ] get_settings_schema
-  - [ ] get_settings_json_parameters
+- [x] **user_preferences/schema.py** - `helpers-settings.json` (4 helpers) ✅
+  - [x] get_settings_tables
+  - [x] get_settings_fields
+  - [x] get_settings_schema
+  - [x] get_settings_json_parameters
 
-- [ ] **user_preferences/crud.py** - `helpers-settings.json` (8 helpers)
-  - [ ] get_from_settings
-  - [ ] get_from_settings_where
-  - [ ] query_settings
-  - [ ] add_settings_entry
-  - [ ] update_settings_entry
-  - [ ] delete_settings_entry
-  - [ ] get_all_tracking_features
-  - [ ] get_tracking_status
+- [x] **user_preferences/crud.py** - `helpers-settings.json` (6 helpers) ✅
+  - [x] get_from_settings
+  - [x] get_from_settings_where
+  - [x] query_settings
+  - [x] add_settings_entry
+  - [x] update_settings_entry
+  - [x] delete_settings_entry
 
-- [ ] **user_preferences/management.py** - `helpers-settings.json` (9 helpers)
-  - [ ] get_user_settings
-  - [ ] update_user_setting
-  - [ ] get_directive_preferences
-  - [ ] update_directive_preference
-  - [ ] get_tracking_settings
-  - [ ] update_tracking_setting
-  - [ ] add_tracking_note
-  - [ ] get_tracking_notes
-  - [ ] search_tracking_notes
+- [x] **user_preferences/management.py** - `helpers-settings.json` (12 helpers) ✅
+  - [x] load_directive_preferences
+  - [x] add_directive_preference
+  - [x] update_directive_preference
+  - [x] get_user_setting
+  - [x] add_user_setting
+  - [x] update_user_setting
+  - [x] get_user_settings
+  - [x] get_tracking_settings
+  - [x] toggle_tracking_feature
+  - [x] add_tracking_note
+  - [x] get_tracking_notes
+  - [x] search_tracking_notes
+
+**Refactored 2026-01-27**:
+- Removed: `apply_preferences_to_context` (redundant - load via `load_directive_preferences`, apply is AI work)
+- Removed: `update_user_preferences` (confused orchestrator - AI coordinates CRUD directly)
+- Added: `update_directive_preference` (update existing preference in directive_preferences)
+- Added: `add_user_setting` (add new setting to user_settings)
+- Added: `update_user_setting` (update existing setting in user_settings)
+
+**Implemented 2026-01-27**: All 23 helpers across 4 files.
 
 ---
 
@@ -972,9 +980,18 @@ Each Python file should:
 
 ## Progress Tracking
 
-**Current Status**: Phase 3 COMPLETE! - 119 of 224 helpers completed (53.1%)
+**Current Status**: Core + Project + Git + User Preferences COMPLETE! - 189 of 223 helpers completed (84.8%)
 
-**Completed Modules** (16 of 32 files):
+**Completed Modules** (21 of 32 files):
+
+**Core Database (5 files, 36 helpers)** ✅:
+- ✅ `core/validation.py` - 1 helper
+- ✅ `core/schema.py` - 6 helpers
+- ✅ `core/directives_1.py` - 15 helpers
+- ✅ `core/directives_2.py` - 9 helpers
+- ✅ `core/flows.py` - 5 helpers (refactored: simple queries, no deep logic)
+
+**Project Database (16 files, 119 helpers)** ✅:
 - ✅ `project/validation.py` - 1 helper
 - ✅ `project/schema.py` - 4 helpers
 - ✅ `project/crud.py` - 7 helpers
@@ -993,20 +1010,15 @@ Each Python file should:
 - ✅ `project/items_notes.py` - 10 helpers
 
 **Completed Milestones**:
-- ✅ Schema, CRUD & Metadata module (22 helpers total: 10 coded + 2 removed)
-- ✅ Files module (10 helpers)
-- ✅ Functions module (10 helpers)
-- ✅ Types & Interactions module (13 helpers)
-- ✅ Themes & Flows module (25 helpers)
-- ✅ Tasks module (15 helpers)
-- ✅ Subtasks & Sidequests module (14 helpers)
-- ✅ Items & Notes module (10 helpers)
+- ✅ **ALL CORE DATABASE HELPERS COMPLETE!** (36 helpers after refactor)
 - ✅ **ALL PROJECT DATABASE HELPERS COMPLETE!** (119 coded; 2 removed: add_source_directory, initialize_state_database)
 
-**Next Up**:
-- ⏳ Orchestrators (12 helpers)
-- ⏳ Core database operations (38 helpers)
-- ⏳ Git operations (11 helpers)
+**Next Up** (recommended order):
+- ✅ Git operations (11 helpers) - COMPLETE
+- ✅ User Preferences (23 helpers) - COMPLETE
+- ⏳ User Directives (20 helpers) - Use Case 2 automation
+- ⏳ Global (1 helper) - trivial
+- ⏳ Orchestrators (12 helpers) - DO LAST, depends on all others
 
 Use checkboxes above to track implementation progress as each helper is completed and tested.
 
@@ -1023,14 +1035,14 @@ For detailed helper specifications, see: `docs/COMPLETE_HELPERS_LIST.md`
 
 **Summary by Category**:
 - Global: 1 helper
-- Core: 38 helpers
+- Core: 36 helpers (refactored 2026-01-27)
 - Orchestrators: 12 helpers
 - Project: 114 helpers
 - Git: 11 helpers
-- User Preferences: 22 helpers
+- User Preferences: 23 helpers
 - User Directives: 20 helpers
 
-**TOTAL: 218 helpers**
+**TOTAL: 217 helpers**
 
 ---
 
@@ -1050,9 +1062,120 @@ For detailed helper specifications, see: `docs/COMPLETE_HELPERS_LIST.md`
 ---
 
 **Generated**: 2026-01-11
-**Last Updated**: 2026-01-19
-**Status**: Phase 3 COMPLETE! - 119/224 helpers complete (53.1%) - All project database helpers coded
-**Next**: Implement aifp_init orchestrator, then move to Core database operations or Orchestrators
+**Last Updated**: 2026-01-27
+**Status**: Core + Project + Git + User Preferences COMPLETE! - 189/223 helpers complete (84.8%)
+**Next**: User Directives (20), Global (1), Orchestrators (12 - last)
+
+---
+
+## Recent Updates (2026-01-27)
+
+### Git Operations Complete (11 helpers)
+
+**Implemented**: `src/aifp/helpers/git/operations.py`
+
+All 11 git helpers implemented:
+- `get_current_commit_hash` - git rev-parse HEAD
+- `get_current_branch` - git branch --show-current
+- `get_git_status` - comprehensive status (branch, hash, files, ahead/behind)
+- `detect_external_changes` - compare stored hash with current HEAD
+- `create_user_branch` - aifp-{user}-{number} convention
+- `get_user_name_for_branch` - detect from git config/env/system
+- `list_active_branches` - query work_branches table
+- `detect_conflicts_before_merge` - dry-run merge analysis
+- `execute_merge` - execute merge, return result (renamed from merge_with_fp_intelligence)
+- `sync_git_state` - update project.last_known_git_hash
+- `project_update_git_status` - sub-helper for hash/timestamp update
+
+**Design fixes applied**:
+- Renamed `merge_with_fp_intelligence` to `execute_merge` (no auto-resolution)
+- `detect_conflicts_before_merge` returns raw data (no confidence scores)
+- All helpers follow principle: retrieve data, AI decides
+
+**Progress**: 166/222 helpers (74.8%)
+
+---
+
+### Core Flows Refactored (38 → 36 helpers)
+
+**Problem**: Flow helpers had embedded "deep logic" that evaluated conditions internally.
+This violated the design principle: MCP server retrieves data, AI handles logic/decisions.
+
+**Removed** (5 helpers with deep logic):
+- `get_next_directives_from_status` - evaluated conditions internally
+- `get_matching_next_directives` - filtered by evaluated conditions
+- `get_conditional_work_paths` - evaluated conditions internally
+- `search_fp_references` - specialized wildcard query
+- `get_contextual_utilities` - specialized wildcard query
+
+**Added** (3 simple query helpers):
+- `get_flows_from_directive(from_directive)` - all flows originating from directive
+- `get_flows_to_directive(to_directive)` - all flows leading to directive
+- `get_wildcard_flows(flow_type?)` - flows from `*` (available from any context)
+
+**Kept unchanged**:
+- `get_completion_loop_target` - simple lookup (already clean)
+- `get_directive_flows` - generic filter query (already clean)
+
+**Impact**:
+- Core helpers: 38 → 36
+- Total helpers: 224 → 222
+- Code reduced from 718 lines to 348 lines
+
+**Files updated**:
+- `docs/helpers/json/helpers-core.json` - JSON definitions
+- `src/aifp/helpers/core/flows.py` - Implementation
+- `docs/HELPER_IMPLEMENTATION_PLAN.md` - This file
+
+---
+
+### Core Database Helpers Complete (36 helpers)
+
+**Implemented Files**:
+- `core/_common.py` - Core-specific utilities, record types (DirectiveRecord, HelperRecord, FlowRecord, etc.)
+- `core/validation.py` - 1 helper (CHECK constraint parsing)
+- `core/schema.py` - 6 helpers (schema introspection, generic queries)
+- `core/directives_1.py` - 15 helpers (directive queries, search, intent keywords)
+- `core/directives_2.py` - 9 helpers (helper queries, category operations)
+- `core/flows.py` - 7 helpers (flow navigation, wildcard handling)
+
+**DRY Hierarchy Established**:
+```
+utils.py (global)                    <- Database-agnostic shared code
+├── Database path resolution for all 4 databases
+├── Generic connection management (_open_connection)
+├── Return statements fetching
+├── Schema introspection utilities
+└── Row conversion utilities
+
+{category}/_common.py                <- Category-specific shared code
+├── project/_common.py               <- Project entity checks, validation constants
+└── core/_common.py                  <- DirectiveRecord, HelperRecord, FlowRecord, etc.
+
+{category}/{file}.py                 <- Individual helpers
+└── Import from _common.py which re-exports from utils.py
+```
+
+**Global Utils Updated** (`src/aifp/helpers/utils.py`):
+- Added `get_project_db_path(project_root)` - path to project.db
+- Added `get_user_preferences_db_path(project_root)` - path to user_preferences.db
+- Added `get_user_directives_db_path(project_root)` - path to user_directives.db
+- Moved `_open_connection()` from project/_common.py to utils.py (DRY)
+- Added schema introspection utilities for all database operations
+
+**Flow Helpers Design Note**:
+- `get_next_directives_from_status`, `get_matching_next_directives`, `get_conditional_work_paths` take optional `project_root` parameter
+- AI passes project root (which it knows), helper constructs path and queries project.db internally
+- Conditions evaluated against project status without AI needing to pass status objects
+- If `project_root` not provided, conditions not evaluated (all flows returned)
+
+**JSON Updated**:
+- `docs/helpers/json/helpers-core.json` - All 38 `file_path` entries updated to actual paths
+
+**Progress Impact**:
+- Total: 224 helpers
+- Coded: 157 helpers (Core: 38 + Project: 119)
+- Percentage: 70.1% complete
 
 ---
 

@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "get_current_commit_hash",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [
         {
           "name": "project_root",
@@ -44,7 +44,7 @@
     },
     {
       "name": "get_current_branch",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [
         {
           "name": "project_root",
@@ -87,7 +87,7 @@
     },
     {
       "name": "get_git_status",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [
         {
           "name": "project_root",
@@ -122,7 +122,7 @@
     },
     {
       "name": "detect_external_changes",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [
         {
           "name": "project_root",
@@ -165,7 +165,7 @@
     },
     {
       "name": "create_user_branch",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [
         {
           "name": "user",
@@ -211,7 +211,7 @@
     },
     {
       "name": "get_user_name_for_branch",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [],
       "purpose": "Detect username from git config/environment/system",
       "error_handling": "Fallback to \"user\" if all detection fails",
@@ -237,7 +237,7 @@
     },
     {
       "name": "list_active_branches",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [],
       "purpose": "List all AIFP work branches from work_branches table",
       "error_handling": "Return empty array if table doesn't exist",
@@ -271,7 +271,7 @@
     },
     {
       "name": "detect_conflicts_before_merge",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [
         {
           "name": "source_branch",
@@ -288,17 +288,17 @@
           "description": "Project directory path"
         }
       ],
-      "purpose": "FP-powered conflict analysis before merging (complex orchestrator)",
-      "error_handling": "Fall back to file-level conflicts if DB query fails",
+      "purpose": "Dry-run merge analysis - retrieves potential conflict data for AI to evaluate",
+      "error_handling": "Returns file-level data only if DB query fails",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
-        "Returns object: {file_conflicts[], function_conflicts[], db_conflicts[], auto_resolvable_count, manual_review_count, confidence_scores{}, ai_recommendations{}}",
-        "Uses git diff to identify changed files",
-        "Extracts project.db from both branches, queries functions/interactions/themes for FP analysis",
-        "Applies FP purity rules to assign confidence scores (>0.8 = auto-resolvable)",
-        "Falls back to file-level analysis if database queries fail"
+        "Returns object: {would_conflict: bool, conflicting_files[], affected_functions[], affected_themes[]}",
+        "Uses git merge --no-commit --no-ff then git merge --abort for dry-run",
+        "Queries project.db to map conflicting files to functions/themes",
+        "NO scoring or recommendations - returns raw conflict data for AI to analyze",
+        "Falls back to file-level data only if database queries fail"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -308,7 +308,7 @@
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Tool that implements git_detect_conflicts directive - performs dry-run merge analysis, compares branches at file/function level, queries function metadata (purity, dependencies, tests), classifies conflicts, assigns confidence scores for auto-resolution"
+          "description": "Performs dry-run merge, returns conflict data for AI analysis"
         },
         {
           "directive_name": "git_merge_branch",
@@ -316,13 +316,13 @@
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Called before merge to analyze potential conflicts and determine if auto-resolution possible - prevents merge failures"
+          "description": "Called before merge to gather conflict data"
         }
       ]
     },
     {
-      "name": "merge_with_fp_intelligence",
-      "file_path": "TODO_helpers/project/module.py",
+      "name": "execute_merge",
+      "file_path": "helpers/git/operations.py",
       "parameters": [
         {
           "name": "source_branch",
@@ -339,19 +339,17 @@
           "description": "Project directory path"
         }
       ],
-      "purpose": "Git merge with FP-powered conflict auto-resolution (complex orchestrator)",
-      "error_handling": "Abort merge (git merge --abort) if unresolvable",
+      "purpose": "Execute git merge and return result. Updates work_branches table on success.",
+      "error_handling": "Returns conflict details if merge fails, does NOT auto-abort",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
-        "Returns object: {success, merge_result, conflicts_resolved{auto, manual}, commit_hash, aborted}",
-        "Calls detect_conflicts_before_merge() first to analyze conflicts",
-        "Auto-resolves conflicts >0.8 confidence using FP purity rules",
-        "Presents low-confidence conflicts to user with recommendations",
-        "Logs to merge_history table: {source_branch, conflicts_detected, auto_resolved, manual_resolved, resolution_details_json, merged_by, commit_hash}",
-        "Updates work_branches: {status=merged, merged_at=now}",
-        "Calls git merge --abort if merge fails or conflicts unresolvable"
+        "Returns object: {success, merged: bool, conflicts: bool, conflict_files[], commit_hash?, error?}",
+        "Executes: git merge {source_branch}",
+        "If conflicts: returns conflict_files list, does NOT abort (AI decides next action)",
+        "If success: updates work_branches status='merged', merged_at=now",
+        "NO auto-resolution - AI handles conflict resolution workflow"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -361,13 +359,13 @@
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Tool that implements git_merge_branch directive - validates merge request, calls detect_conflicts_before_merge, auto-resolves high-confidence conflicts (>0.8), presents manual conflicts to user with AI recommendations, logs merge history, updates work_branches status"
+          "description": "Executes merge, returns result data for AI to process"
         }
       ]
     },
     {
       "name": "sync_git_state",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [
         {
           "name": "project_root",
@@ -404,7 +402,7 @@
     },
     {
       "name": "project_update_git_status",
-      "file_path": "TODO_helpers/project/module.py",
+      "file_path": "helpers/git/operations.py",
       "parameters": [],
       "purpose": "Update last_known_git_hash and last_git_sync in project table",
       "error_handling": "",
@@ -449,8 +447,8 @@
   "metadata": {
     "file": "helpers-git.json",
     "count": 11,
-    "status": "return_statements complete - 0 helpers enhanced",
-    "last_updated": "2026-01-02",
-    "notes": "All helpers are Git-specific operations - Git takes care of itself naturally through directives"
+    "status": "COMPLETE - all 11 helpers implemented 2026-01-27",
+    "last_updated": "2026-01-27",
+    "notes": "All helpers are Git operations + data retrieval. NO auto-resolution or scoring logic - AI handles decisions."
   }
 }

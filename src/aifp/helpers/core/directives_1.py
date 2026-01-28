@@ -1,0 +1,1087 @@
+"""
+AIFP Helper Functions - Core Directives (Part 1)
+
+Directive queries, search, and intent keyword operations for aifp_core.db.
+
+Helpers in this file:
+- get_directive_by_name: Get specific directive by name
+- get_all_directives: Load all directives for caching
+- search_directives: Search directives with filters
+- find_directive_by_intent: Map user intent to directives using keyword matching
+- find_directives_by_intent_keyword: Find directive IDs by intent keywords
+- get_directives_with_intent_keywords: Search by keywords with full directive objects
+- add_directive_intent_keyword: Add intent keyword to directive
+- remove_directive_intent_keyword: Remove intent keyword from directive
+- get_directive_keywords: Get all keywords for a directive
+- get_all_directive_keywords: Get list of all unique keywords
+- get_all_intent_keywords_with_counts: Get keywords with usage counts
+- get_all_directive_names: Get list of all directive names
+- get_directives_by_category: Get all directives in a category
+- get_directives_by_type: Get all directives by type
+- get_fp_directive_index: Get lightweight FP directive index grouped by category
+
+All functions are pure FP - immutable data, explicit parameters, Result types.
+Database operations isolated as effects with clear naming conventions.
+"""
+
+from dataclasses import dataclass
+from typing import Optional, Tuple, Dict, Any, List
+
+# Import core utilities
+from ._common import (
+    _get_core_connection,
+    get_return_statements,
+    rows_to_tuple,
+    row_to_dict,
+    DirectiveRecord,
+    row_to_directive,
+    json_to_tuple,
+)
+
+
+# ============================================================================
+# Data Structures (Immutable)
+# ============================================================================
+
+@dataclass(frozen=True)
+class DirectiveResult:
+    """Result of single directive lookup."""
+    success: bool
+    directive: Optional[DirectiveRecord] = None
+    preferences: Tuple[Dict[str, Any], ...] = ()  # Directive-specific preferences
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class DirectivesResult:
+    """Result of multiple directive query."""
+    success: bool
+    directives: Tuple[DirectiveRecord, ...] = ()
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class IntentMatchResult:
+    """Result of intent matching operation."""
+    success: bool
+    matches: Tuple[Dict[str, Any], ...] = ()  # {directive_id, name, confidence, matched_keywords}
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class KeywordsResult:
+    """Result of keyword query operations."""
+    success: bool
+    keywords: Tuple[str, ...] = ()
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class KeywordCountsResult:
+    """Result of keyword counts query."""
+    success: bool
+    keyword_counts: Tuple[Dict[str, Any], ...] = ()  # {keyword, count}
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class DirectiveNamesResult:
+    """Result of directive names query."""
+    success: bool
+    names: Tuple[str, ...] = ()
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class DirectiveIndexResult:
+    """Result of FP directive index query."""
+    success: bool
+    index: Dict[str, Tuple[str, ...]] = None  # {category: [directive_names]}
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+    def __post_init__(self):
+        # Handle None for frozen dataclass
+        if self.index is None:
+            object.__setattr__(self, 'index', {})
+
+
+@dataclass(frozen=True)
+class SimpleResult:
+    """Result of simple operations (add/remove keyword)."""
+    success: bool
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+# ============================================================================
+# Effect Functions (Database Queries)
+# ============================================================================
+
+def _get_directive_preferences(conn, directive_id: int) -> Tuple[Dict[str, Any], ...]:
+    """
+    Effect: Get directive-specific preferences from directive_preferences table.
+
+    Args:
+        conn: Database connection
+        directive_id: Directive ID
+
+    Returns:
+        Tuple of preference dicts
+    """
+    cursor = conn.execute(
+        "SELECT * FROM directive_preferences WHERE directive_id = ?",
+        (directive_id,)
+    )
+    return rows_to_tuple(cursor.fetchall())
+
+
+def _get_directive_categories(conn, directive_id: int) -> Tuple[str, ...]:
+    """
+    Effect: Get category names for a directive.
+
+    Args:
+        conn: Database connection
+        directive_id: Directive ID
+
+    Returns:
+        Tuple of category names
+    """
+    cursor = conn.execute(
+        """
+        SELECT c.name FROM categories c
+        JOIN directive_categories dc ON c.id = dc.category_id
+        WHERE dc.directive_id = ?
+        """,
+        (directive_id,)
+    )
+    return tuple(row['name'] for row in cursor.fetchall())
+
+
+def _get_directive_intent_keywords(conn, directive_id: int) -> Tuple[str, ...]:
+    """
+    Effect: Get intent keywords for a directive.
+
+    Args:
+        conn: Database connection
+        directive_id: Directive ID
+
+    Returns:
+        Tuple of keyword strings
+    """
+    cursor = conn.execute(
+        """
+        SELECT ik.keyword FROM intent_keywords ik
+        JOIN directives_intent_keywords dik ON ik.id = dik.keyword_id
+        WHERE dik.directive_id = ?
+        """,
+        (directive_id,)
+    )
+    return tuple(row['keyword'] for row in cursor.fetchall())
+
+
+# ============================================================================
+# Pure Helper Functions
+# ============================================================================
+
+def _calculate_intent_confidence(
+    user_request: str,
+    directive_name: str,
+    directive_description: Optional[str],
+    intent_keywords: Tuple[str, ...]
+) -> Tuple[float, Tuple[str, ...]]:
+    """
+    Pure: Calculate confidence score for intent matching.
+
+    Uses simple keyword matching (case-insensitive).
+
+    Args:
+        user_request: User's natural language request
+        directive_name: Directive name
+        directive_description: Directive description
+        intent_keywords: Directive's intent keywords
+
+    Returns:
+        Tuple of (confidence_score, matched_keywords)
+    """
+    request_lower = user_request.lower()
+    matched = []
+
+    # Check directive name
+    if directive_name.lower() in request_lower:
+        matched.append(directive_name)
+
+    # Check description words
+    if directive_description:
+        desc_words = directive_description.lower().split()
+        for word in desc_words:
+            if len(word) > 3 and word in request_lower:
+                matched.append(word)
+
+    # Check intent keywords
+    for keyword in intent_keywords:
+        if keyword.lower() in request_lower:
+            matched.append(keyword)
+
+    # Calculate confidence (simple scoring)
+    if not matched:
+        return (0.0, ())
+
+    # Higher confidence for more matches and keyword matches
+    keyword_matches = len([m for m in matched if m in intent_keywords])
+    base_score = min(len(matched) * 0.2, 0.6)
+    keyword_bonus = min(keyword_matches * 0.15, 0.4)
+
+    return (base_score + keyword_bonus, tuple(set(matched)))
+
+
+# ============================================================================
+# Public API Functions (MCP Tools)
+# ============================================================================
+
+def get_directive_by_name(directive_name: str) -> DirectiveResult:
+    """
+    Get specific directive by name (high-frequency operation).
+
+    Includes directive-specific preferences from directive_preferences table.
+
+    Args:
+        directive_name: Directive name to look up
+
+    Returns:
+        DirectiveResult with:
+        - success: True if found
+        - directive: DirectiveRecord if found
+        - preferences: Tuple of preference dicts
+        - error: Error message if not found
+        - return_statements: AI guidance for next steps
+
+    Example:
+        >>> result = get_directive_by_name("fp_purity")
+        >>> result.success
+        True
+        >>> result.directive.type
+        'fp'
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM directives WHERE name = ?",
+                (directive_name,)
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return DirectiveResult(
+                    success=False,
+                    error=f"Directive '{directive_name}' not found"
+                )
+
+            directive = row_to_directive(row)
+            preferences = _get_directive_preferences(conn, directive.id)
+            return_statements = get_return_statements("get_directive_by_name")
+
+            return DirectiveResult(
+                success=True,
+                directive=directive,
+                preferences=preferences,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectiveResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectiveResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_all_directives() -> DirectivesResult:
+    """
+    Load all directives for caching (special orchestrator).
+
+    Returns all directive records. Useful for startup caching.
+
+    Returns:
+        DirectivesResult with:
+        - success: True if query succeeded
+        - directives: Tuple of DirectiveRecord objects
+        - error: Error message if failed
+        - return_statements: AI guidance for next steps
+
+    Example:
+        >>> result = get_all_directives()
+        >>> result.success
+        True
+        >>> len(result.directives)
+        45
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            cursor = conn.execute("SELECT * FROM directives ORDER BY type, name")
+            rows = cursor.fetchall()
+            directives = tuple(row_to_directive(row) for row in rows)
+            return_statements = get_return_statements("get_all_directives")
+
+            return DirectivesResult(
+                success=True,
+                directives=directives,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectivesResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectivesResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def search_directives(
+    keyword: Optional[str] = None,
+    type: Optional[str] = None,
+    category: Optional[str] = None
+) -> DirectivesResult:
+    """
+    Search directives with filters (orchestrator).
+
+    Searches directive names, descriptions, and intent_keywords.
+
+    Args:
+        keyword: Keyword to search in names, descriptions, intent_keywords
+        type: Directive type filter ('fp', 'project', 'git', 'user_system', 'user_preference')
+        category: Directive category filter (e.g., 'purity', 'error_handling')
+
+    Returns:
+        DirectivesResult with:
+        - success: True if query succeeded
+        - directives: Tuple of matching DirectiveRecord objects
+        - error: Error message if failed
+        - return_statements: AI guidance for next steps
+
+    Example:
+        >>> result = search_directives(keyword="purity")
+        >>> result.success
+        True
+        >>> [d.name for d in result.directives]
+        ['fp_purity', ...]
+
+        >>> result = search_directives(type="fp", category="error_handling")
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            # Build query based on filters
+            query = "SELECT DISTINCT d.* FROM directives d"
+            conditions = []
+            params = []
+
+            # Join with categories if category filter
+            if category:
+                query += """
+                    JOIN directive_categories dc ON d.id = dc.directive_id
+                    JOIN categories c ON dc.category_id = c.id
+                """
+                conditions.append("c.name = ?")
+                params.append(category)
+
+            # Join with intent_keywords if keyword filter (for keyword search)
+            if keyword:
+                query += """
+                    LEFT JOIN directives_intent_keywords dik ON d.id = dik.directive_id
+                    LEFT JOIN intent_keywords ik ON dik.keyword_id = ik.id
+                """
+
+            # Add WHERE clause
+            if type:
+                conditions.append("d.type = ?")
+                params.append(type)
+
+            if keyword:
+                keyword_pattern = f"%{keyword}%"
+                conditions.append(
+                    "(d.name LIKE ? OR d.description LIKE ? OR ik.keyword LIKE ?)"
+                )
+                params.extend([keyword_pattern, keyword_pattern, keyword_pattern])
+
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+
+            query += " ORDER BY d.type, d.name"
+
+            cursor = conn.execute(query, tuple(params))
+            rows = cursor.fetchall()
+            directives = tuple(row_to_directive(row) for row in rows)
+            return_statements = get_return_statements("search_directives")
+
+            return DirectivesResult(
+                success=True,
+                directives=directives,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectivesResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectivesResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def find_directive_by_intent(
+    user_request: str,
+    threshold: float = 0.7
+) -> IntentMatchResult:
+    """
+    Map user intent to directives using NLP/keyword matching.
+
+    Analyzes user's natural language request to find matching directives.
+
+    Args:
+        user_request: User's natural language request describing behavior
+        threshold: Confidence threshold (default 0.7)
+
+    Returns:
+        IntentMatchResult with:
+        - success: True if query succeeded
+        - matches: Tuple of match dicts {directive_id, name, confidence, matched_keywords}
+        - error: Error message if failed
+        - return_statements: AI guidance for next steps
+
+    Example:
+        >>> result = find_directive_by_intent("always add docstrings")
+        >>> result.success
+        True
+        >>> result.matches[0]['name']
+        'user_preferences_update'
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            # Get all directives with their keywords
+            cursor = conn.execute("SELECT * FROM directives")
+            directives = cursor.fetchall()
+
+            matches = []
+            for directive in directives:
+                keywords = _get_directive_intent_keywords(conn, directive['id'])
+
+                confidence, matched = _calculate_intent_confidence(
+                    user_request,
+                    directive['name'],
+                    directive['description'],
+                    keywords
+                )
+
+                if confidence >= threshold:
+                    matches.append({
+                        'directive_id': directive['id'],
+                        'name': directive['name'],
+                        'confidence': round(confidence, 2),
+                        'matched_keywords': matched
+                    })
+
+            # Sort by confidence descending
+            matches.sort(key=lambda x: x['confidence'], reverse=True)
+            return_statements = get_return_statements("find_directive_by_intent")
+
+            return IntentMatchResult(
+                success=True,
+                matches=tuple(matches),
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return IntentMatchResult(success=False, error=str(e))
+    except Exception as e:
+        return IntentMatchResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def find_directives_by_intent_keyword(
+    keywords: List[str],
+    match_mode: str = "any"
+) -> DirectiveNamesResult:
+    """
+    Find directive IDs matching one or more intent keywords (direct lookup).
+
+    Args:
+        keywords: Single keyword or array of keywords
+        match_mode: "any" for OR logic, "all" for AND logic
+
+    Returns:
+        DirectiveNamesResult with directive names matching keywords
+
+    Example:
+        >>> result = find_directives_by_intent_keyword(["purity", "immutable"])
+        >>> result.names
+        ('fp_purity', 'fp_immutability', ...)
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            if match_mode == "all":
+                # AND logic - directive must have ALL keywords
+                placeholders = ",".join("?" * len(keywords))
+                cursor = conn.execute(
+                    f"""
+                    SELECT d.name FROM directives d
+                    JOIN directives_intent_keywords dik ON d.id = dik.directive_id
+                    JOIN intent_keywords ik ON dik.keyword_id = ik.id
+                    WHERE ik.keyword IN ({placeholders})
+                    GROUP BY d.id
+                    HAVING COUNT(DISTINCT ik.keyword) = ?
+                    """,
+                    tuple(keywords) + (len(keywords),)
+                )
+            else:
+                # OR logic (any) - directive has ANY of the keywords
+                placeholders = ",".join("?" * len(keywords))
+                cursor = conn.execute(
+                    f"""
+                    SELECT DISTINCT d.name FROM directives d
+                    JOIN directives_intent_keywords dik ON d.id = dik.directive_id
+                    JOIN intent_keywords ik ON dik.keyword_id = ik.id
+                    WHERE ik.keyword IN ({placeholders})
+                    """,
+                    tuple(keywords)
+                )
+
+            names = tuple(row['name'] for row in cursor.fetchall())
+            return_statements = get_return_statements("find_directives_by_intent_keyword")
+
+            return DirectiveNamesResult(
+                success=True,
+                names=names,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectiveNamesResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectiveNamesResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_directives_with_intent_keywords(
+    keywords: List[str],
+    match_mode: str = "any",
+    include_keyword_matches: bool = False
+) -> DirectivesResult:
+    """
+    Search directives by intent keywords and return full directive objects.
+
+    Args:
+        keywords: Single keyword or array of keywords
+        match_mode: "any" for OR logic, "all" for AND logic
+        include_keyword_matches: Include which keywords matched
+
+    Returns:
+        DirectivesResult with full directive objects
+
+    Example:
+        >>> result = get_directives_with_intent_keywords(["purity"], match_mode="any")
+        >>> result.success
+        True
+        >>> len(result.directives)
+        3
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            if match_mode == "all":
+                placeholders = ",".join("?" * len(keywords))
+                cursor = conn.execute(
+                    f"""
+                    SELECT d.* FROM directives d
+                    JOIN directives_intent_keywords dik ON d.id = dik.directive_id
+                    JOIN intent_keywords ik ON dik.keyword_id = ik.id
+                    WHERE ik.keyword IN ({placeholders})
+                    GROUP BY d.id
+                    HAVING COUNT(DISTINCT ik.keyword) = ?
+                    """,
+                    tuple(keywords) + (len(keywords),)
+                )
+            else:
+                placeholders = ",".join("?" * len(keywords))
+                cursor = conn.execute(
+                    f"""
+                    SELECT DISTINCT d.* FROM directives d
+                    JOIN directives_intent_keywords dik ON d.id = dik.directive_id
+                    JOIN intent_keywords ik ON dik.keyword_id = ik.id
+                    WHERE ik.keyword IN ({placeholders})
+                    """,
+                    tuple(keywords)
+                )
+
+            rows = cursor.fetchall()
+            directives = tuple(row_to_directive(row) for row in rows)
+            return_statements = get_return_statements("get_directives_with_intent_keywords")
+
+            return DirectivesResult(
+                success=True,
+                directives=directives,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectivesResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectivesResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def add_directive_intent_keyword(
+    directive_id: int,
+    keyword: str
+) -> SimpleResult:
+    """
+    Add an intent keyword to a directive.
+
+    Note: Core database is typically read-only. This is for admin use.
+
+    Args:
+        directive_id: Directive ID
+        keyword: Intent keyword to add
+
+    Returns:
+        SimpleResult with success status
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            # Check if keyword exists, create if not
+            cursor = conn.execute(
+                "SELECT id FROM intent_keywords WHERE keyword = ?",
+                (keyword,)
+            )
+            row = cursor.fetchone()
+
+            if row:
+                keyword_id = row['id']
+            else:
+                cursor = conn.execute(
+                    "INSERT INTO intent_keywords (keyword) VALUES (?)",
+                    (keyword,)
+                )
+                keyword_id = cursor.lastrowid
+
+            # Add mapping
+            conn.execute(
+                "INSERT OR IGNORE INTO directives_intent_keywords (directive_id, keyword_id) VALUES (?, ?)",
+                (directive_id, keyword_id)
+            )
+            conn.commit()
+
+            return_statements = get_return_statements("add_directive_intent_keyword")
+            return SimpleResult(success=True, return_statements=return_statements)
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return SimpleResult(success=False, error=str(e))
+    except Exception as e:
+        return SimpleResult(success=False, error=f"Operation failed: {str(e)}")
+
+
+def remove_directive_intent_keyword(
+    directive_id: int,
+    keyword: str
+) -> SimpleResult:
+    """
+    Remove an intent keyword from a directive.
+
+    Note: Core database is typically read-only. This is for admin use.
+
+    Args:
+        directive_id: Directive ID
+        keyword: Intent keyword to remove
+
+    Returns:
+        SimpleResult with success status
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            conn.execute(
+                """
+                DELETE FROM directives_intent_keywords
+                WHERE directive_id = ?
+                AND keyword_id = (SELECT id FROM intent_keywords WHERE keyword = ?)
+                """,
+                (directive_id, keyword)
+            )
+            conn.commit()
+
+            return_statements = get_return_statements("remove_directive_intent_keyword")
+            return SimpleResult(success=True, return_statements=return_statements)
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return SimpleResult(success=False, error=str(e))
+    except Exception as e:
+        return SimpleResult(success=False, error=f"Operation failed: {str(e)}")
+
+
+def get_directive_keywords(directive_id: int) -> KeywordsResult:
+    """
+    Get all intent keywords for a specific directive.
+
+    Args:
+        directive_id: Directive ID
+
+    Returns:
+        KeywordsResult with tuple of keyword strings
+
+    Example:
+        >>> result = get_directive_keywords(1)
+        >>> result.keywords
+        ('purity', 'pure function', 'side effects', ...)
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            keywords = _get_directive_intent_keywords(conn, directive_id)
+            return_statements = get_return_statements("get_directive_keywords")
+
+            return KeywordsResult(
+                success=True,
+                keywords=keywords,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return KeywordsResult(success=False, error=str(e))
+    except Exception as e:
+        return KeywordsResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_all_directive_keywords() -> KeywordsResult:
+    """
+    Get list of all unique intent keywords available for searching.
+
+    Returns:
+        KeywordsResult with tuple of all unique keywords
+
+    Example:
+        >>> result = get_all_directive_keywords()
+        >>> result.keywords
+        ('purity', 'immutability', 'error handling', ...)
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            cursor = conn.execute(
+                "SELECT DISTINCT keyword FROM intent_keywords ORDER BY keyword"
+            )
+            keywords = tuple(row['keyword'] for row in cursor.fetchall())
+            return_statements = get_return_statements("get_all_directive_keywords")
+
+            return KeywordsResult(
+                success=True,
+                keywords=keywords,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return KeywordsResult(success=False, error=str(e))
+    except Exception as e:
+        return KeywordsResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_all_intent_keywords_with_counts() -> KeywordCountsResult:
+    """
+    Get all unique intent keywords with usage counts for analytics.
+
+    Returns:
+        KeywordCountsResult with tuple of {keyword, count} dicts
+
+    Example:
+        >>> result = get_all_intent_keywords_with_counts()
+        >>> result.keyword_counts
+        ({'keyword': 'purity', 'count': 5}, ...)
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            cursor = conn.execute(
+                """
+                SELECT ik.keyword, COUNT(dik.directive_id) as count
+                FROM intent_keywords ik
+                LEFT JOIN directives_intent_keywords dik ON ik.id = dik.keyword_id
+                GROUP BY ik.id
+                ORDER BY count DESC, ik.keyword
+                """
+            )
+            counts = tuple(
+                {'keyword': row['keyword'], 'count': row['count']}
+                for row in cursor.fetchall()
+            )
+            return_statements = get_return_statements("get_all_intent_keywords_with_counts")
+
+            return KeywordCountsResult(
+                success=True,
+                keyword_counts=counts,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return KeywordCountsResult(success=False, error=str(e))
+    except Exception as e:
+        return KeywordCountsResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_all_directive_names(
+    types: Optional[List[str]] = None
+) -> DirectiveNamesResult:
+    """
+    Get list of all directive names (or filtered by types).
+
+    Returns names only, NOT full directive data. AI queries by name when needs details.
+
+    Args:
+        types: Optional array of types to filter: ['fp', 'project', 'git', ...]
+               If not provided, returns ALL directive names.
+
+    Returns:
+        DirectiveNamesResult with tuple of directive names
+
+    Example:
+        >>> result = get_all_directive_names()
+        >>> result.names
+        ('aifp_run', 'aifp_status', 'fp_purity', ...)
+
+        >>> result = get_all_directive_names(types=['fp'])
+        >>> result.names
+        ('fp_purity', 'fp_immutability', ...)
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            if types:
+                placeholders = ",".join("?" * len(types))
+                cursor = conn.execute(
+                    f"SELECT name FROM directives WHERE type IN ({placeholders}) ORDER BY type, name",
+                    tuple(types)
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT name FROM directives ORDER BY type, name"
+                )
+
+            names = tuple(row['name'] for row in cursor.fetchall())
+            return_statements = get_return_statements("get_all_directive_names")
+
+            return DirectiveNamesResult(
+                success=True,
+                names=names,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectiveNamesResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectiveNamesResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_directives_by_category(category_name: str) -> DirectivesResult:
+    """
+    Get all directives in a category.
+
+    Args:
+        category_name: Category name (e.g., 'purity', 'error_handling')
+
+    Returns:
+        DirectivesResult with directives in the category
+
+    Example:
+        >>> result = get_directives_by_category("purity")
+        >>> result.success
+        True
+        >>> [d.name for d in result.directives]
+        ['fp_purity', 'fp_immutability', ...]
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            cursor = conn.execute(
+                """
+                SELECT d.* FROM directives d
+                JOIN directive_categories dc ON d.id = dc.directive_id
+                JOIN categories c ON dc.category_id = c.id
+                WHERE c.name = ?
+                ORDER BY d.type, d.name
+                """,
+                (category_name,)
+            )
+            rows = cursor.fetchall()
+            directives = tuple(row_to_directive(row) for row in rows)
+            return_statements = get_return_statements("get_directives_by_category")
+
+            return DirectivesResult(
+                success=True,
+                directives=directives,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectivesResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectivesResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_directives_by_type(
+    type: str,
+    include_md_content: bool = False
+) -> DirectivesResult:
+    """
+    Get all directives filtered by type.
+
+    Args:
+        type: One of: 'fp', 'project', 'git', 'user_system', 'user_preference'
+        include_md_content: Include full MD file content (default False)
+
+    Returns:
+        DirectivesResult with directives of the specified type
+
+    Example:
+        >>> result = get_directives_by_type("fp")
+        >>> result.success
+        True
+        >>> len(result.directives)
+        15
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM directives WHERE type = ? ORDER BY name",
+                (type,)
+            )
+            rows = cursor.fetchall()
+            directives = tuple(row_to_directive(row) for row in rows)
+            return_statements = get_return_statements("get_directives_by_type")
+
+            return DirectivesResult(
+                success=True,
+                directives=directives,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectivesResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectivesResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_fp_directive_index() -> DirectiveIndexResult:
+    """
+    Get lightweight FP directive index grouped by category (names only).
+
+    Returns FP directives organized by category for quick reference.
+    Use search_directives(type='fp') or get_directive_by_name(name) for full details.
+
+    Returns:
+        DirectiveIndexResult with:
+        - success: True if query succeeded
+        - index: Dict of {category_name: (directive_names...)}
+        - return_statements: AI guidance about FP directives being reference material
+
+    Example:
+        >>> result = get_fp_directive_index()
+        >>> result.success
+        True
+        >>> result.index
+        {'error_handling': ('fp_optionals', 'fp_result_types'), 'purity': ('fp_purity', ...)}
+    """
+    try:
+        conn = _get_core_connection()
+
+        try:
+            cursor = conn.execute(
+                """
+                SELECT d.name, c.name as category FROM directives d
+                JOIN directive_categories dc ON d.id = dc.directive_id
+                JOIN categories c ON dc.category_id = c.id
+                WHERE d.type = 'fp'
+                ORDER BY c.name, d.name
+                """
+            )
+
+            # Group by category
+            index: Dict[str, List[str]] = {}
+            for row in cursor.fetchall():
+                category = row['category']
+                if category not in index:
+                    index[category] = []
+                index[category].append(row['name'])
+
+            # Convert lists to tuples for immutability
+            immutable_index = {k: tuple(v) for k, v in index.items()}
+            return_statements = get_return_statements("get_fp_directive_index")
+
+            return DirectiveIndexResult(
+                success=True,
+                index=immutable_index,
+                return_statements=return_statements
+            )
+
+        finally:
+            conn.close()
+
+    except FileNotFoundError as e:
+        return DirectiveIndexResult(success=False, error=str(e))
+    except Exception as e:
+        return DirectiveIndexResult(success=False, error=f"Query failed: {str(e)}")
