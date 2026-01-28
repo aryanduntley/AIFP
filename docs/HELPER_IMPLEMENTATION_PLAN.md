@@ -311,8 +311,8 @@ src/aifp/helpers/
 ### Phase 1: Global & Core (49 helpers)
 
 #### Global Database Operations (1 helper)
-- [ ] **global/database_info.py** - `helpers-index.json`
-  - [ ] get_databases
+- [x] **global/database_info.py** - `helpers-index.json`
+  - [x] get_databases
 
 #### Core Database Operations (38 helpers) ✅ COMPLETE
 - [x] **core/validation.py** - `helpers-core.json` ✅
@@ -614,35 +614,40 @@ src/aifp/helpers/
 
 ---
 
-### Phase 6: User Directives (20 helpers)
+### Phase 6: User Directives (19 helpers) — Refactored 2026-01-28
 
-- [ ] **user_directives/validation.py** - `helpers-user-custom.json` (1 helper)
-  - [ ] user_directives_allowed_check_constraints
+> **Refactored:** Removed 6 orchestrator helpers that contained deep logic (parse_directive_file,
+> validate_directive_config, generate_handler_code, deploy_background_service, get_user_directive_status,
+> monitor_directive_execution). These operations are AI's responsibility guided by directive workflows.
+> Replaced with 5 CRUD-oriented helpers. Removed validate_user_directive (AI handles validation
+> via user_directive_validate directive workflow). See helpers-user-custom.json metadata.changes for details.
 
-- [ ] **user_directives/schema.py** - `helpers-user-custom.json` (4 helpers)
-  - [ ] get_user_custom_tables
-  - [ ] get_user_custom_fields
-  - [ ] get_user_custom_schema
-  - [ ] get_user_custom_json_parameters
+- [x] **user_directives/validation.py** - `helpers-user-custom.json` (1 helper)
+  - [x] user_directives_allowed_check_constraints
 
-- [ ] **user_directives/crud.py** - `helpers-user-custom.json` (8 helpers)
-  - [ ] get_from_user_custom
-  - [ ] get_from_user_custom_where
-  - [ ] query_user_custom
-  - [ ] add_user_custom_entry
-  - [ ] update_user_custom_entry
-  - [ ] delete_user_custom_entry
-  - [ ] get_active_user_directives
-  - [ ] search_user_directives
+- [x] **user_directives/schema.py** - `helpers-user-custom.json` (4 helpers)
+  - [x] get_user_custom_tables
+  - [x] get_user_custom_fields
+  - [x] get_user_custom_schema
+  - [x] get_user_custom_json_parameters
 
-- [ ] **user_directives/management.py** - `helpers-user-custom.json` (7 helpers)
-  - [ ] get_user_directive_by_name
-  - [ ] validate_user_directive
-  - [ ] activate_user_directive
-  - [ ] deactivate_user_directive
-  - [ ] add_user_directive_note
-  - [ ] get_user_directive_notes
-  - [ ] search_user_directive_notes
+- [x] **user_directives/crud.py** - `helpers-user-custom.json` (8 helpers)
+  - [x] get_from_user_custom
+  - [x] get_from_user_custom_where
+  - [x] query_user_custom
+  - [x] add_user_custom_entry
+  - [x] update_user_custom_entry
+  - [x] delete_user_custom_entry
+  - [x] get_active_user_directives
+  - [x] search_user_directives
+
+- [x] **user_directives/management.py** - `helpers-user-custom.json` (6 helpers)
+  - [x] get_user_directive_by_name
+  - [x] activate_user_directive
+  - [x] deactivate_user_directive
+  - [x] add_user_directive_note
+  - [x] get_user_directive_notes
+  - [x] search_user_directive_notes
 
 ---
 
