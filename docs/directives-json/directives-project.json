@@ -68,7 +68,7 @@
                 "get_directive_flows",
                 "query_mcp_db",
                 "get_project_status",
-                "get_work_context",
+                "get_task_context",
                 "get_current_progress",
                 "query_project_state"
               ]

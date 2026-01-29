@@ -212,7 +212,7 @@
    - Purpose: Validate that project initialization is complete and correct. Performs comprehensive structural validation.
    - Target: `TODO_helpers/orchestrator/module.py`
 
-7. **get_work_context** 🔧
+7. **get_task_context** 🔧
    - Purpose: Get complete context for resuming work. Single call retrieves task/subtask/sidequest + flows + files + functions + interactions. Optimized for session resumption.
    - Target: `TODO_helpers/orchestrator/module.py`
 

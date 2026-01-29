@@ -188,16 +188,20 @@
       "error_handling": "Returns error if project.db not found or not accessible.",
       "is_tool": false,
       "is_sub_helper": true,
-      "return_statements": [],
+      "return_statements": [
+        "Files and functions may be reserved (is_reserved=1) but not finalized. Complete the reserve → write with ID in name → finalize flow before continuing."
+      ],
       "implementation_notes": [
-        "Returns: {counts{}, completion_paths[], milestones[], tasks[], subtasks[], sidequests[], blocked_items[], tree{}}",
-        "Tree structure built in same pass: {completion_paths[{milestones[{tasks[{subtasks[]}]}]}], sidequests[]}",
-        "Replaces former get_status_tree - single pass over data returns both flat counts and nested tree",
-        "Counts are simple aggregates (COUNT WHERE status != 'completed')",
+        "Summary returns: {counts{}, hierarchy{active_path, active_milestone, active_tasks[], active_subtasks[], active_sidequests[], current_focus, active_items[], historical{}, recent_files[], reserved_entities{}}, blocked_items[]}",
+        "Hierarchy follows: completion_path → milestone → task/subtask/sidequest → items",
+        "Historical context is positional: last completed task in active milestone + items, last completed milestone if first task or no tasks",
+        "Reserved entities: files/functions with is_reserved=1 (not yet finalized)",
+        "Recent files: last 5 by updated_at",
+        "Detailed returns: full history with all records + nested tree",
         "Type='quick': Counts and current in_progress item only",
-        "Type='summary': Incomplete items + last 5 completed for context (default)",
-        "Type='detailed': All items including completed history + complete tree",
-        "NO analysis logic - returns raw data with basic counts, AI interprets meaning"
+        "Type='summary': Hierarchy-aware context with positional history (default)",
+        "Type='detailed': All records including completed history + complete tree",
+        "NO analysis logic - returns raw data, AI interprets meaning"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -212,7 +216,7 @@
       ]
     },
     {
-      "name": "get_work_context",
+      "name": "get_task_context",
       "file_path": "helpers/orchestrators/status.py",
       "parameters": [
         {
@@ -223,18 +227,18 @@
           "description": "Path to project root directory"
         },
         {
-          "name": "work_item_type",
+          "name": "task_type",
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Type of work item: 'task', 'subtask', 'sidequest'"
+          "description": "Type of task: 'task', 'subtask', 'sidequest'"
         },
         {
-          "name": "work_item_id",
+          "name": "task_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "ID of work item"
+          "description": "ID of the task/subtask/sidequest"
         },
         {
           "name": "include_interactions",
@@ -248,42 +252,42 @@
           "type": "boolean",
           "required": false,
           "default": false,
-          "description": "Include note history for work item"
+          "description": "Include note history for task"
         }
       ],
-      "purpose": "Get complete context for resuming work on a specific item. Single call retrieves task/subtask/sidequest + items + flows + files + functions + optionally interactions and notes.",
-      "error_handling": "Returns error if work item not found or project.db not accessible.",
+      "purpose": "Get complete context for resuming work on a specific task/subtask/sidequest. Single call retrieves item + associated items + flows + files + functions + optionally interactions and notes.",
+      "error_handling": "Returns error if task not found or project.db not accessible.",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Work context loaded. AI should review items to determine where to resume.",
-        "If work item is blocked: check blocked_by field and resolve blockers first."
+        "Task context loaded. AI should review items to determine where to resume.",
+        "If task is blocked: check blocked_by field and resolve blockers first."
       ],
       "implementation_notes": [
-        "Returns: {work_item{}, items[], flows[], files[], functions[], interactions[]?, notes[]?}",
-        "Queries work item by type + id from appropriate table",
-        "Gets associated items from items table",
-        "Gets flows linked to work item's parent or direct associations",
+        "Returns: {task_item{}, items[], flows[], files[], functions[], interactions[]?, notes[]?}",
+        "Queries task/subtask/sidequest by task_type + task_id from appropriate table",
+        "Gets associated items from items table (polymorphic: reference_table + reference_id)",
+        "Gets flows linked to task's items via file_flows",
         "Gets files from file_flows for those flows",
         "Gets functions for those files",
         "If include_interactions=true: gets interactions for those functions",
-        "If include_history=true: gets notes for this work item",
+        "If include_history=true: gets notes for this task",
         "Optimized for session resumption - all context in one call"
       ],
       "target_database": "project",
       "used_by_directives": [
         {
           "directive_name": "project_auto_resume",
-          "execution_context": "load_work_context",
+          "execution_context": "load_task_context",
           "sequence_order": 3,
           "is_required": true,
           "parameters_mapping": {
-            "work_item_type": "detected_work_item_type (task, subtask, sidequest)",
-            "work_item_id": "last_incomplete_work_item_id",
+            "task_type": "detected_task_type (task, subtask, sidequest)",
+            "task_id": "last_incomplete_task_id",
             "include_interactions": "true",
             "include_history": "true"
           },
-          "description": "Load complete work context for resuming interrupted work - retrieves work item details, associated flows, files, functions, interactions, and note history in single optimized query"
+          "description": "Load complete task context for resuming interrupted work - retrieves task details, associated flows, files, functions, interactions, and note history in single optimized query"
         }
       ]
     },
@@ -582,7 +586,10 @@
       "Updated aifp_status implementation_notes to remove get_status_tree reference",
       "Updated aifp_init return_statements per orchestrator implementation plan",
       "Updated file_path values to match planned file organization",
-      "Removed validate_initialization: validation logic belongs to AI, not coded helpers. aifp_init uses inline file-exists check instead"
+      "Removed validate_initialization: validation logic belongs to AI, not coded helpers. aifp_init uses inline file-exists check instead",
+      "Renamed get_work_context → get_task_context, work_item_type → task_type, work_item_id → task_id",
+      "Restructured get_project_status summary mode: hierarchy-aware context (completion_path → milestone → task → items) with positional history, reserved entities, recent files",
+      "Fixed items JOIN_MAPPINGS: items uses polymorphic reference_table + reference_id, not FK columns"
     ],
     "notes": "All helpers are data retrieval/update operations. NO analysis/suggestion logic - AI interprets returned data and decides next steps."
   }

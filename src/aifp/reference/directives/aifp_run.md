@@ -49,7 +49,7 @@ aifp run "Check project status"
       "get_directive",
       "search_directives",
       "get_project_status",
-      "get_work_context",
+      "get_task_context",
       "get_flows_from_directive"
     ]
   }
@@ -292,7 +292,7 @@ aifp_run checks: project.user_directives_status
 
 **Continuation mode (`is_new_session=false`)** — Lightweight guidance only. AI uses cached data from session start bundle. Available helpers for on-demand queries:
 - **`get_project_status(project_root)`** — Refresh work hierarchy data mid-session
-- **`get_work_context(project_root, work_type, work_id)`** — Context for resuming specific work items
+- **`get_task_context(project_root, task_type, task_id)`** — Context for resuming specific tasks
 - **`get_flows_from_directive(directive_name)`** — Navigate directive flow graph
 - **`get_directive(name)`** / **`search_directives(keyword)`** — Query directive details
 ---

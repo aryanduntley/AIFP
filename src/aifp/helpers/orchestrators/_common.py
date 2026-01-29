@@ -87,6 +87,8 @@ __all__ = [
     '_open_project_connection',
     '_open_preferences_connection',
     '_open_directives_connection',
+    'VALID_TASK_TYPES',
+    'TASK_TABLE_MAP',
 ]
 
 
@@ -103,13 +105,13 @@ VALID_STATUS_TYPES: Final[frozenset[str]] = frozenset([
     'quick', 'summary', 'detailed'
 ])
 
-# Valid work item types
-VALID_WORK_ITEM_TYPES: Final[frozenset[str]] = frozenset([
+# Valid task types (task, subtask, sidequest)
+VALID_TASK_TYPES: Final[frozenset[str]] = frozenset([
     'task', 'subtask', 'sidequest'
 ])
 
-# Work item type to table name mapping
-WORK_ITEM_TABLE_MAP: Final[Dict[str, str]] = {
+# Task type to table name mapping
+TASK_TABLE_MAP: Final[Dict[str, str]] = {
     'task': 'tasks',
     'subtask': 'subtasks',
     'sidequest': 'sidequests',
@@ -186,11 +188,9 @@ JOIN_MAPPINGS: Final[Dict[str, Dict[str, str]]] = {
     'functions': {
         'files': 'LEFT JOIN files ON functions.file_id = files.id',
     },
-    'items': {
-        'tasks': 'LEFT JOIN tasks ON items.task_id = tasks.id',
-        'subtasks': 'LEFT JOIN subtasks ON items.subtask_id = subtasks.id',
-        'sidequests': 'LEFT JOIN sidequests ON items.sidequest_id = sidequests.id',
-    },
+    # NOTE: items uses polymorphic reference_table + reference_id (not FK columns).
+    # Standard LEFT JOINs don't apply. Filter by reference_table in WHERE clause instead.
+    # Example: SELECT * FROM items WHERE reference_table='tasks' AND reference_id = ?
 }
 
 # Valid scope values for get_current_progress

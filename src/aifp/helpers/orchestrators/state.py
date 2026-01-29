@@ -26,7 +26,7 @@ from ._common import (
     ACTION_STATUS_MAP,
     ACTION_TARGET_MAP,
     VALID_PROGRESS_SCOPES,
-    WORK_ITEM_TABLE_MAP,
+    TASK_TABLE_MAP,
 )
 
 
@@ -325,7 +325,7 @@ def _create_action_note(
     new_status: str,
 ) -> int:
     """Effect: Create audit note for state change action."""
-    ref_table = WORK_ITEM_TABLE_MAP.get(target_type, target_type + 's')
+    ref_table = TASK_TABLE_MAP.get(target_type, target_type + 's')
     content = f"Action: {action} — status changed to '{new_status}'"
 
     cursor = conn.execute(

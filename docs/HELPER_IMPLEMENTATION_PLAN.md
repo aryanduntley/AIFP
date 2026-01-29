@@ -372,7 +372,7 @@ src/aifp/helpers/
 
 - [x] **orchestrators/status.py** - `helpers-orchestrators.json` ✅
   - [x] get_project_status (sub-helper, includes tree logic formerly in get_status_tree)
-  - [x] get_work_context
+  - [x] get_task_context
 
 - [x] **orchestrators/state.py** - `helpers-orchestrators.json` ✅
   - [x] get_current_progress
@@ -1029,7 +1029,7 @@ Each Python file should:
 **Orchestrators (4 files + _common.py, 10 helpers)** ✅:
 - ✅ `orchestrators/_common.py` - shared constants, connection helpers, lookup tables
 - ✅ `orchestrators/entry_points.py` - 3 helpers (aifp_run, aifp_init, aifp_status)
-- ✅ `orchestrators/status.py` - 2 helpers (get_project_status, get_work_context)
+- ✅ `orchestrators/status.py` - 2 helpers (get_project_status, get_task_context)
 - ✅ `orchestrators/state.py` - 3 helpers (get_current_progress, update_project_state, batch_update_progress)
 - ✅ `orchestrators/query.py` - 2 helpers (query_project_state, get_files_by_flow_context)
 
@@ -1097,7 +1097,7 @@ For detailed helper specifications, see: `docs/COMPLETE_HELPERS_LIST.md`
 **Implemented Files**:
 - `orchestrators/_common.py` — Shared constants, connection helpers, lookup tables (ACTION_STATUS_MAP, JOIN_MAPPINGS, VALID_QUERY_ENTITIES, etc.)
 - `orchestrators/entry_points.py` — 3 helpers: `aifp_init`, `aifp_status`, `aifp_run`
-- `orchestrators/status.py` — 2 helpers: `get_project_status` (with tree), `get_work_context`
+- `orchestrators/status.py` — 2 helpers: `get_project_status` (with tree), `get_task_context`
 - `orchestrators/state.py` — 3 helpers: `get_current_progress`, `update_project_state`, `batch_update_progress`
 - `orchestrators/query.py` — 2 helpers: `query_project_state`, `get_files_by_flow_context` (validate_initialization removed — AI responsibility)
 

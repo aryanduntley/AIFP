@@ -4,8 +4,8 @@ AIFP Helper Functions - Orchestrator Status Helpers
 Read-only status and context retrieval from project.db.
 
 Helpers in this file:
-- get_project_status: Work hierarchy data with counts + nested tree (single pass)
-- get_work_context: Complete context for resuming a specific work item
+- get_project_status: Hierarchy-aware project status with counts, context, files
+- get_task_context: Complete context for resuming a specific task/subtask/sidequest
 
 All helpers target project.db only. No decision logic — AI interprets data.
 """
@@ -21,9 +21,34 @@ from ._common import (
     rows_to_tuple,
     Result,
     VALID_STATUS_TYPES,
-    VALID_WORK_ITEM_TYPES,
-    WORK_ITEM_TABLE_MAP,
+    VALID_TASK_TYPES,
+    TASK_TABLE_MAP,
 )
+
+
+# ============================================================================
+# Query utility helpers (thin wrappers for readability)
+# ============================================================================
+
+def _query_one(
+    conn: sqlite3.Connection,
+    sql: str,
+    params: tuple = (),
+) -> Optional[Dict[str, Any]]:
+    """Effect: Execute query and return first row as dict, or None."""
+    cursor = conn.execute(sql, params)
+    row = cursor.fetchone()
+    return row_to_dict(row) if row else None
+
+
+def _query_all(
+    conn: sqlite3.Connection,
+    sql: str,
+    params: tuple = (),
+) -> Tuple[Dict[str, Any], ...]:
+    """Effect: Execute query and return all rows as tuple of dicts."""
+    cursor = conn.execute(sql, params)
+    return rows_to_tuple(cursor.fetchall())
 
 
 # ============================================================================
@@ -35,30 +60,25 @@ def get_project_status(
     type: str = "summary",
 ) -> Result:
     """
-    Retrieve work hierarchy data from project database.
+    Retrieve hierarchy-aware project status from project database.
 
-    Returns structured counts, flat records, and nested tree in a single pass.
-    Replaces the former separate get_status_tree helper.
+    Returns data following the hierarchy:
+    completion_path → milestone → task/subtask/sidequest → items
+
+    Summary mode returns:
+    - Aggregate counts
+    - Active state (scoped to current position in hierarchy)
+    - Historical context (positional — what just happened)
+    - Files context (recent, active, reserved)
+    - Blocked items
+    - Nested tree
 
     Args:
         project_root: Absolute path to project root directory
         type: 'quick' (counts only), 'summary' (default), or 'detailed' (all history)
 
     Returns:
-        Result with data={
-            counts: {completion_paths, milestones, tasks, subtasks, sidequests,
-                     incomplete_tasks, incomplete_subtasks, incomplete_sidequests,
-                     blocked_items},
-            completion_paths: tuple,
-            milestones: tuple,
-            tasks: tuple,
-            subtasks: tuple,
-            sidequests: tuple,
-            blocked_items: tuple,
-            current_focus: dict or None,
-            tree: {completion_paths: [...{milestones: [...{tasks: [...{subtasks: [...]}]}]}],
-                   sidequests: [...]}
-        }
+        Result with hierarchy-aware status data
     """
     if type not in VALID_STATUS_TYPES:
         return Result(
@@ -84,29 +104,37 @@ def get_project_status(
                     return_statements=get_return_statements("get_project_status"),
                 )
 
-            # Summary or detailed: fetch records
-            include_completed = (type == 'detailed')
-            records = _get_work_records(conn, include_completed)
+            if type == 'detailed':
+                # Detailed: all records including full history
+                records = _get_all_records(conn)
+                tree = _build_tree(records)
+                blocked = _get_blocked_items(conn)
+                current_focus = _get_current_focus(conn)
 
-            # Build nested tree from the fetched records
-            tree = _build_tree(records)
+                return Result(
+                    success=True,
+                    data={
+                        'counts': counts,
+                        'completion_paths': records['completion_paths'],
+                        'milestones': records['milestones'],
+                        'tasks': records['tasks'],
+                        'subtasks': records['subtasks'],
+                        'sidequests': records['sidequests'],
+                        'blocked_items': blocked,
+                        'current_focus': current_focus,
+                        'tree': tree,
+                    },
+                    return_statements=get_return_statements("get_project_status"),
+                )
 
-            # Get blocked items
+            # Summary (default): hierarchy-aware context
+            hierarchy = _get_hierarchy_context(conn)
             blocked = _get_blocked_items(conn)
-
-            # Current focus (priority: sidequest > subtask > task)
-            current_focus = _get_current_focus(conn)
 
             data = {
                 'counts': counts,
-                'completion_paths': records['completion_paths'],
-                'milestones': records['milestones'],
-                'tasks': records['tasks'],
-                'subtasks': records['subtasks'],
-                'sidequests': records['sidequests'],
+                'hierarchy': hierarchy,
                 'blocked_items': blocked,
-                'current_focus': current_focus,
-                'tree': tree,
             }
 
             return Result(
@@ -123,6 +151,215 @@ def get_project_status(
     except Exception as e:
         return Result(success=False, error=f"Failed to get project status: {str(e)}")
 
+
+# ============================================================================
+# Hierarchy-aware context (summary mode)
+# ============================================================================
+
+def _get_hierarchy_context(conn: sqlite3.Connection) -> Dict[str, Any]:
+    """
+    Effect: Get hierarchy-aware project context.
+
+    Follows completion_path → milestone → task/subtask/sidequest → items.
+    Includes positional historical context and files/reserved entities.
+    """
+    # 1. Active completion path (in_progress, or first pending)
+    active_path = _query_one(
+        conn,
+        "SELECT * FROM completion_path WHERE status = 'in_progress' "
+        "ORDER BY order_index LIMIT 1",
+    )
+    if not active_path:
+        active_path = _query_one(
+            conn,
+            "SELECT * FROM completion_path WHERE status = 'pending' "
+            "ORDER BY order_index LIMIT 1",
+        )
+
+    path_id = active_path['id'] if active_path else None
+
+    # 2. Active milestone in that path (in_progress, or first pending)
+    active_milestone = None
+    if path_id:
+        active_milestone = _query_one(
+            conn,
+            "SELECT * FROM milestones "
+            "WHERE completion_path_id = ? AND status = 'in_progress' "
+            "ORDER BY id LIMIT 1",
+            (path_id,),
+        )
+        if not active_milestone:
+            active_milestone = _query_one(
+                conn,
+                "SELECT * FROM milestones "
+                "WHERE completion_path_id = ? AND status = 'pending' "
+                "ORDER BY id LIMIT 1",
+                (path_id,),
+            )
+
+    ms_id = active_milestone['id'] if active_milestone else None
+
+    # 3. Active tasks in that milestone
+    active_tasks = ()
+    if ms_id:
+        active_tasks = _query_all(
+            conn,
+            "SELECT * FROM tasks "
+            "WHERE milestone_id = ? AND status IN ('in_progress', 'pending') "
+            "ORDER BY priority DESC, id",
+            (ms_id,),
+        )
+
+    # 4. Active subtasks for those tasks
+    active_subtasks = ()
+    if active_tasks:
+        task_ids = tuple(t['id'] for t in active_tasks)
+        placeholders = ','.join('?' * len(task_ids))
+        active_subtasks = _query_all(
+            conn,
+            f"SELECT * FROM subtasks "
+            f"WHERE parent_task_id IN ({placeholders}) "
+            f"AND status IN ('in_progress', 'pending') "
+            f"ORDER BY id",
+            task_ids,
+        )
+
+    # 5. All active sidequests (global priority — always included)
+    active_sidequests = _query_all(
+        conn,
+        "SELECT * FROM sidequests "
+        "WHERE status IN ('in_progress', 'pending') "
+        "ORDER BY id",
+    )
+
+    # 6. Current focus + items for it
+    current_focus = _get_current_focus(conn)
+    active_items = ()
+    if current_focus:
+        ref_table = {
+            'task': 'tasks',
+            'subtask': 'subtasks',
+            'sidequest': 'sidequests',
+        }.get(current_focus.get('item_type'))
+        ref_id = current_focus.get('id')
+        if ref_table and ref_id:
+            active_items = _query_all(
+                conn,
+                "SELECT * FROM items "
+                "WHERE reference_table = ? AND reference_id = ? "
+                "ORDER BY id",
+                (ref_table, ref_id),
+            )
+
+    # 7. Historical context (positional)
+    historical = _get_historical_context(conn, ms_id, active_tasks)
+
+    # 8. Files context
+    recent_files = _query_all(
+        conn,
+        "SELECT * FROM files ORDER BY updated_at DESC LIMIT 5",
+    )
+
+    # Reserved entities (not yet finalized — reminder for reserve→finalize flow)
+    reserved_files = _query_all(
+        conn,
+        "SELECT id, path, language FROM files WHERE is_reserved = 1",
+    )
+    reserved_functions = _query_all(
+        conn,
+        "SELECT id, name, file_id FROM functions WHERE is_reserved = 1",
+    )
+
+    return {
+        'active_path': active_path,
+        'active_milestone': active_milestone,
+        'active_tasks': active_tasks,
+        'active_subtasks': active_subtasks,
+        'active_sidequests': active_sidequests,
+        'current_focus': current_focus,
+        'active_items': active_items,
+        'historical': historical,
+        'recent_files': recent_files,
+        'reserved_entities': {
+            'files': reserved_files,
+            'functions': reserved_functions,
+        },
+    }
+
+
+def _get_historical_context(
+    conn: sqlite3.Connection,
+    active_milestone_id: Optional[int],
+    active_tasks: Tuple[Dict[str, Any], ...],
+) -> Dict[str, Any]:
+    """
+    Effect: Get positional historical context.
+
+    Provides:
+    - Last completed task in active milestone + its last 3 items
+    - If first task in milestone or no tasks yet: last completed milestone
+      + last task from that milestone + its last 3 items
+    """
+    result = {}
+
+    if not active_milestone_id:
+        return result
+
+    # Last completed task in active milestone
+    last_task = _query_one(
+        conn,
+        "SELECT * FROM tasks "
+        "WHERE milestone_id = ? AND status = 'completed' "
+        "ORDER BY updated_at DESC LIMIT 1",
+        (active_milestone_id,),
+    )
+
+    if last_task:
+        result['last_completed_task'] = last_task
+        result['last_completed_task_items'] = _query_all(
+            conn,
+            "SELECT * FROM items "
+            "WHERE reference_table = 'tasks' AND reference_id = ? "
+            "ORDER BY id DESC LIMIT 3",
+            (last_task['id'],),
+        )
+
+    # If no completed tasks in milestone (first task) or no active tasks yet:
+    # provide previous milestone context
+    has_completed_tasks = last_task is not None
+    has_no_active_tasks = len(active_tasks) == 0
+
+    if not has_completed_tasks or has_no_active_tasks:
+        last_ms = _query_one(
+            conn,
+            "SELECT * FROM milestones WHERE status = 'completed' "
+            "ORDER BY updated_at DESC LIMIT 1",
+        )
+        if last_ms:
+            result['last_completed_milestone'] = last_ms
+            prev_task = _query_one(
+                conn,
+                "SELECT * FROM tasks "
+                "WHERE milestone_id = ? AND status = 'completed' "
+                "ORDER BY updated_at DESC LIMIT 1",
+                (last_ms['id'],),
+            )
+            if prev_task:
+                result['last_task_in_prev_milestone'] = prev_task
+                result['last_task_in_prev_milestone_items'] = _query_all(
+                    conn,
+                    "SELECT * FROM items "
+                    "WHERE reference_table = 'tasks' AND reference_id = ? "
+                    "ORDER BY id DESC LIMIT 3",
+                    (prev_task['id'],),
+                )
+
+    return result
+
+
+# ============================================================================
+# Shared helpers used by multiple modes
+# ============================================================================
 
 def _get_work_counts(conn: sqlite3.Connection) -> Dict[str, int]:
     """Effect: Get aggregate counts for all work hierarchy levels."""
@@ -177,62 +414,47 @@ def _get_current_focus(conn: sqlite3.Connection) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _get_work_records(
+def _get_blocked_items(conn: sqlite3.Connection) -> Tuple[Dict[str, Any], ...]:
+    """Effect: Get all blocked work items across tables."""
+    blocked = []
+
+    cursor = conn.execute(
+        "SELECT *, 'task' as item_type FROM tasks WHERE status = 'blocked'"
+    )
+    blocked.extend(row_to_dict(row) for row in cursor.fetchall())
+
+    cursor = conn.execute(
+        "SELECT *, 'subtask' as item_type FROM subtasks WHERE status = 'blocked'"
+    )
+    blocked.extend(row_to_dict(row) for row in cursor.fetchall())
+
+    return tuple(blocked)
+
+
+# ============================================================================
+# Detailed mode helpers (full history)
+# ============================================================================
+
+def _get_all_records(
     conn: sqlite3.Connection,
-    include_completed: bool,
 ) -> Dict[str, Tuple[Dict[str, Any], ...]]:
-    """Effect: Get work records. Summary excludes completed (except last 5)."""
+    """Effect: Get all work records including full completed history."""
     records = {}
 
-    # Completion paths (always all)
-    cursor = conn.execute("SELECT * FROM completion_path ORDER BY id")
+    cursor = conn.execute("SELECT * FROM completion_path ORDER BY order_index, id")
     records['completion_paths'] = rows_to_tuple(cursor.fetchall())
 
-    # Milestones
     cursor = conn.execute("SELECT * FROM milestones ORDER BY completion_path_id, id")
     records['milestones'] = rows_to_tuple(cursor.fetchall())
 
-    if include_completed:
-        # Detailed: all records
-        cursor = conn.execute("SELECT * FROM tasks ORDER BY milestone_id, id")
-        records['tasks'] = rows_to_tuple(cursor.fetchall())
+    cursor = conn.execute("SELECT * FROM tasks ORDER BY milestone_id, id")
+    records['tasks'] = rows_to_tuple(cursor.fetchall())
 
-        cursor = conn.execute("SELECT * FROM subtasks ORDER BY task_id, id")
-        records['subtasks'] = rows_to_tuple(cursor.fetchall())
+    cursor = conn.execute("SELECT * FROM subtasks ORDER BY parent_task_id, id")
+    records['subtasks'] = rows_to_tuple(cursor.fetchall())
 
-        cursor = conn.execute("SELECT * FROM sidequests ORDER BY id")
-        records['sidequests'] = rows_to_tuple(cursor.fetchall())
-    else:
-        # Summary: incomplete + last 5 completed for context
-        cursor = conn.execute(
-            "SELECT * FROM tasks WHERE status != 'completed' "
-            "UNION ALL "
-            "SELECT * FROM ("
-            "  SELECT * FROM tasks WHERE status = 'completed' "
-            "  ORDER BY id DESC LIMIT 5"
-            ") ORDER BY milestone_id, id"
-        )
-        records['tasks'] = rows_to_tuple(cursor.fetchall())
-
-        cursor = conn.execute(
-            "SELECT * FROM subtasks WHERE status != 'completed' "
-            "UNION ALL "
-            "SELECT * FROM ("
-            "  SELECT * FROM subtasks WHERE status = 'completed' "
-            "  ORDER BY id DESC LIMIT 5"
-            ") ORDER BY task_id, id"
-        )
-        records['subtasks'] = rows_to_tuple(cursor.fetchall())
-
-        cursor = conn.execute(
-            "SELECT * FROM sidequests WHERE status != 'completed' "
-            "UNION ALL "
-            "SELECT * FROM ("
-            "  SELECT * FROM sidequests WHERE status = 'completed' "
-            "  ORDER BY id DESC LIMIT 5"
-            ") ORDER BY id"
-        )
-        records['sidequests'] = rows_to_tuple(cursor.fetchall())
+    cursor = conn.execute("SELECT * FROM sidequests ORDER BY id")
+    records['sidequests'] = rows_to_tuple(cursor.fetchall())
 
     return records
 
@@ -244,7 +466,7 @@ def _build_tree(
     # Index subtasks by task_id
     subtasks_by_task = {}
     for st in records.get('subtasks', ()):
-        task_id = st.get('task_id')
+        task_id = st.get('parent_task_id')
         if task_id not in subtasks_by_task:
             subtasks_by_task[task_id] = []
         subtasks_by_task[task_id].append(st)
@@ -282,50 +504,33 @@ def _build_tree(
     }
 
 
-def _get_blocked_items(conn: sqlite3.Connection) -> Tuple[Dict[str, Any], ...]:
-    """Effect: Get all blocked work items across tables."""
-    blocked = []
-
-    cursor = conn.execute(
-        "SELECT *, 'task' as item_type FROM tasks WHERE status = 'blocked'"
-    )
-    blocked.extend(row_to_dict(row) for row in cursor.fetchall())
-
-    cursor = conn.execute(
-        "SELECT *, 'subtask' as item_type FROM subtasks WHERE status = 'blocked'"
-    )
-    blocked.extend(row_to_dict(row) for row in cursor.fetchall())
-
-    return tuple(blocked)
-
-
 # ============================================================================
-# get_work_context
+# get_task_context
 # ============================================================================
 
-def get_work_context(
+def get_task_context(
     project_root: str,
-    work_item_type: str,
-    work_item_id: int,
+    task_type: str,
+    task_id: int,
     include_interactions: bool = False,
     include_history: bool = False,
 ) -> Result:
     """
-    Get complete context for resuming work on a specific item.
+    Get complete context for resuming work on a specific task/subtask/sidequest.
 
-    Single call retrieves the work item + associated items + flows + files +
+    Single call retrieves the item + associated items + flows + files +
     functions, and optionally interactions and note history.
 
     Args:
         project_root: Absolute path to project root directory
-        work_item_type: 'task', 'subtask', or 'sidequest'
-        work_item_id: ID of the work item
+        task_type: 'task', 'subtask', or 'sidequest'
+        task_id: ID of the task/subtask/sidequest
         include_interactions: Include function dependency interactions
-        include_history: Include note history for work item
+        include_history: Include note history for task
 
     Returns:
         Result with data={
-            work_item: dict,
+            task_item: dict,
             items: tuple,
             flows: tuple,
             files: tuple,
@@ -334,34 +539,34 @@ def get_work_context(
             notes: tuple (if requested)
         }
     """
-    if work_item_type not in VALID_WORK_ITEM_TYPES:
+    if task_type not in VALID_TASK_TYPES:
         return Result(
             success=False,
-            error=f"Invalid work_item_type '{work_item_type}'. "
-                  f"Valid: {sorted(VALID_WORK_ITEM_TYPES)}",
+            error=f"Invalid task_type '{task_type}'. "
+                  f"Valid: {sorted(VALID_TASK_TYPES)}",
         )
 
-    table = WORK_ITEM_TABLE_MAP[work_item_type]
+    table = TASK_TABLE_MAP[task_type]
 
     try:
         conn = _open_project_connection(project_root)
         try:
-            # Step 1: Get the work item
+            # Step 1: Get the task/subtask/sidequest
             cursor = conn.execute(
-                f"SELECT * FROM {table} WHERE id = ?", (work_item_id,)
+                f"SELECT * FROM {table} WHERE id = ?", (task_id,)
             )
-            work_item_row = cursor.fetchone()
-            if work_item_row is None:
+            task_row = cursor.fetchone()
+            if task_row is None:
                 return Result(
                     success=False,
-                    error=f"{work_item_type} with id {work_item_id} not found",
+                    error=f"{task_type} with id {task_id} not found",
                 )
-            work_item = row_to_dict(work_item_row)
+            task_item = row_to_dict(task_row)
 
             # Step 2: Get associated items
-            items = _get_items_for_work_item(conn, work_item_type, work_item_id)
+            items = _get_items_for_task(conn, task_type, task_id)
 
-            # Step 3: Get flows associated with this work item's items
+            # Step 3: Get flows associated with this task's items
             flow_ids = _get_flow_ids_from_items(conn, items)
             flows = _get_flows_by_ids(conn, flow_ids)
 
@@ -373,7 +578,7 @@ def get_work_context(
             functions = _get_functions_for_files(conn, file_ids)
 
             data = {
-                'work_item': work_item,
+                'task_item': task_item,
                 'items': items,
                 'flows': flows,
                 'files': files,
@@ -387,14 +592,12 @@ def get_work_context(
 
             # Step 7 (optional): Note history
             if include_history:
-                data['notes'] = _get_notes_for_work_item(
-                    conn, work_item_type, work_item_id
-                )
+                data['notes'] = _get_notes_for_task(conn, task_type, task_id)
 
             return Result(
                 success=True,
                 data=data,
-                return_statements=get_return_statements("get_work_context"),
+                return_statements=get_return_statements("get_task_context"),
             )
 
         finally:
@@ -403,26 +606,26 @@ def get_work_context(
     except FileNotFoundError as e:
         return Result(success=False, error=str(e))
     except Exception as e:
-        return Result(success=False, error=f"Failed to get work context: {str(e)}")
+        return Result(success=False, error=f"Failed to get task context: {str(e)}")
 
 
-def _get_items_for_work_item(
+# ============================================================================
+# get_task_context sub-helpers
+# ============================================================================
+
+def _get_items_for_task(
     conn: sqlite3.Connection,
-    work_item_type: str,
-    work_item_id: int,
+    task_type: str,
+    task_id: int,
 ) -> Tuple[Dict[str, Any], ...]:
-    """Effect: Get items linked to a work item."""
-    column_map = {
-        'task': 'task_id',
-        'subtask': 'subtask_id',
-        'sidequest': 'sidequest_id',
-    }
-    column = column_map.get(work_item_type)
-    if column is None:
+    """Effect: Get items linked to a task/subtask/sidequest."""
+    ref_table = TASK_TABLE_MAP.get(task_type)
+    if ref_table is None:
         return ()
 
     cursor = conn.execute(
-        f"SELECT * FROM items WHERE {column} = ?", (work_item_id,)
+        "SELECT * FROM items WHERE reference_table = ? AND reference_id = ?",
+        (ref_table, task_id),
     )
     return rows_to_tuple(cursor.fetchall())
 
@@ -523,20 +726,19 @@ def _get_interactions_for_functions(
     return rows_to_tuple(cursor.fetchall())
 
 
-def _get_notes_for_work_item(
+def _get_notes_for_task(
     conn: sqlite3.Connection,
-    work_item_type: str,
-    work_item_id: int,
+    task_type: str,
+    task_id: int,
 ) -> Tuple[Dict[str, Any], ...]:
-    """Effect: Get notes referencing a work item."""
-    table_map = WORK_ITEM_TABLE_MAP
-    ref_table = table_map.get(work_item_type)
+    """Effect: Get notes referencing a task/subtask/sidequest."""
+    ref_table = TASK_TABLE_MAP.get(task_type)
     if ref_table is None:
         return ()
 
     cursor = conn.execute(
         "SELECT * FROM notes WHERE reference_table = ? AND reference_id = ? "
         "ORDER BY created_at DESC",
-        (ref_table, work_item_id)
+        (ref_table, task_id)
     )
     return rows_to_tuple(cursor.fetchall())

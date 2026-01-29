@@ -70,7 +70,7 @@ Return statements are critical for orchestrators because they chain into AI-driv
 | `aifp_status` | project.db + user_preferences.db + user_directives.db | `multi_db` |
 | `validate_initialization` | project.db + user_preferences.db (checks both) | `multi_db` |
 | `get_project_status` | project.db only | `project` |
-| `get_work_context` | project.db only | `project` |
+| `get_task_context` | project.db only | `project` |
 | `get_current_progress` | project.db only | `project` |
 | `update_project_state` | project.db only | `project` |
 | `batch_update_progress` | project.db only | `project` |
@@ -84,7 +84,7 @@ Return statements are critical for orchestrators because they chain into AI-driv
 | File | Helpers | Purpose |
 |------|---------|---------|
 | `entry_points.py` | `aifp_init`, `aifp_run`, `aifp_status` | Top-level entry points called directly by directives |
-| `status.py` | `get_project_status`, `get_work_context` | Project state retrieval (tree logic folded into get_project_status) |
+| `status.py` | `get_project_status`, `get_task_context` | Project state retrieval (tree logic folded into get_project_status) |
 | `state.py` | `get_current_progress`, `update_project_state`, `batch_update_progress` | Flexible state queries and updates |
 | `query.py` | `query_project_state`, `get_files_by_flow_context` | Advanced queries (validate_initialization removed — AI responsibility) |
 
@@ -290,13 +290,13 @@ class ProjectStatusResult:
 
 ---
 
-### 5. `get_work_context` (status.py) — target_database: `project`
+### 5. `get_task_context` (status.py) — target_database: `project`
 
 **Called by**: `project_auto_resume` directive
 
 **What it does**: Gets full context for a specific work item (task/subtask/sidequest) including associated flows, files, functions, and optionally interactions and history notes. This is a deep dive on ONE work item, unlike `get_project_status` which is a broad overview.
 
-**Parameters**: `project_root: str`, `work_item_type: str`, `work_item_id: int`, `include_interactions: bool = False`, `include_history: bool = False`
+**Parameters**: `project_root: str`, `task_type: str`, `task_id: int`, `include_interactions: bool = False`, `include_history: bool = False`
 
 **Logic**:
 1. Query the work item by type + id (tasks/subtasks/sidequests table)
@@ -484,7 +484,7 @@ Based on dependency chain:
 1. **`validate_initialization`** — No dependencies, needed by aifp_init and aifp_status
 2. **`get_project_status`** — No orchestrator dependencies, queries project.db directly (now includes tree logic)
 3. **`get_files_by_flow_context`** — No orchestrator dependencies, queries project.db directly
-4. **`get_work_context`** — No orchestrator dependencies, queries project.db directly
+4. **`get_task_context`** — No orchestrator dependencies, queries project.db directly
 5. **`get_current_progress`** — No orchestrator dependencies, routes to table queries
 6. **`query_project_state`** — No orchestrator dependencies, flexible query interface
 7. **`update_project_state`** — No orchestrator dependencies, state transition updates
