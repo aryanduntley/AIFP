@@ -275,15 +275,6 @@
           }
         },
         {
-          "if": "project_data_populated",
-          "then": "catalog_existing_fp_code",
-          "details": {
-            "condition": "Only if existing FP-compliant code was detected in pre-flight",
-            "ai_responsibility": "AI must scan all existing files and functions, then catalog them into project.db (files, functions, interactions tables) using project helpers. This ensures full traceability from day one for existing codebases.",
-            "skip_if": "Empty directory or no existing code files"
-          }
-        },
-        {
           "if": "completion_path_created",
           "then": "prompt_user_directives_init",
           "details": {
@@ -317,16 +308,17 @@
         },
         {
           "if": "backup_complete",
-          "then": "report_success",
+          "then": "report_success_and_route_to_discovery",
           "details": {
             "show": [
               "project_name",
               "blueprint_path",
               "databases",
-              "completion_stages",
               "user_directives_status",
               "git_status"
-            ]
+            ],
+            "next_directive": "project_discovery",
+            "note": "Init Phase 1+2 complete. Route to project_discovery for collaborative project shape definition (blueprint, completion path, milestones, themes, flows). If pre-existing FP code exists, discovery will delegate to project_catalog."
           }
         },
         {
@@ -3145,5 +3137,594 @@
       "directive info"
     ],
     "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_discovery",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "project_init",
+    "category": {
+      "name": "initialization",
+      "description": "Guided project discovery and shape definition after initialization."
+    },
+    "description": "Guided project discovery workflow. After project_init creates base files and databases, AI collaborates with user to define the full project shape: detailed blueprint, infrastructure mapping, completion path with stages, milestones, initial themes and flows. For pre-existing FP codebases, delegates to project_catalog before proceeding. This directive bridges the gap between mechanical initialization and active development work.",
+    "md_file_path": "directives/project_discovery.md",
+    "workflow": {
+      "trunk": "assess_project_state",
+      "branches": [
+        {
+          "if": "pre_existing_fp_code_detected",
+          "then": "delegate_to_project_catalog",
+          "details": {
+            "trigger": "project_catalog directive",
+            "condition": "Existing FP-compliant code was detected during project_init pre-flight scan",
+            "action": "Call project_catalog to scan and register all existing code before proceeding with discovery conversation",
+            "resume_after": "project_catalog completion loops back to project_discovery to continue with blueprint discussion"
+          }
+        },
+        {
+          "if": "catalog_complete_or_empty_project",
+          "then": "discuss_project_blueprint",
+          "details": {
+            "action": "Collaborative blueprint population",
+            "steps": [
+              "Review current ProjectBlueprint.md (template or partially filled from init Phase 2)",
+              "Discuss with user: project purpose in detail, goals, scope boundaries, constraints",
+              "Fill out blueprint sections collaboratively — do not assume, ask",
+              "Update ProjectBlueprint.md via project_blueprint_update helper"
+            ],
+            "note": "This is a conversation, not a form fill. AI should ask open-ended questions and refine based on user responses."
+          }
+        },
+        {
+          "if": "blueprint_populated",
+          "then": "map_infrastructure",
+          "details": {
+            "action": "Confirm and refine infrastructure entries",
+            "steps": [
+              "Review infrastructure values detected during init Phase 2",
+              "Discuss with user: language choices and rationale, build tools, testing strategy, deployment targets",
+              "Discuss coding conventions, file organization patterns, naming standards",
+              "Update infrastructure table with confirmed/corrected values"
+            ]
+          }
+        },
+        {
+          "if": "infrastructure_mapped",
+          "then": "define_themes_and_flows",
+          "details": {
+            "action": "Establish organizational structure",
+            "steps": [
+              "Discuss project organization with user",
+              "Identify themes — logical groupings of functionality (e.g., 'Database Operations', 'Authentication', 'API Layer')",
+              "Identify flows — cross-cutting workflows and processes (e.g., 'Request Handling Flow', 'Data Pipeline Flow')",
+              "Create initial theme and flow entries in database via create_theme, create_flow helpers",
+              "Update blueprint section 3 (Project Themes & Flows)"
+            ],
+            "note": "Themes and flows will evolve as the project progresses. These are initial definitions, not final."
+          }
+        },
+        {
+          "if": "themes_flows_defined",
+          "then": "create_completion_path",
+          "details": {
+            "action": "Define project stages",
+            "steps": [
+              "Discuss major project phases with user (what are the stages from start to finish?)",
+              "Replace default completion path placeholder with user-informed path",
+              "Each stage should have: name, description, clear entry criteria, exit criteria",
+              "Stages should reflect the project's natural progression, not arbitrary divisions",
+              "Update completion_path table"
+            ],
+            "example_stages": [
+              "Foundation & Setup",
+              "Core Implementation",
+              "Integration & Testing",
+              "Polish & Documentation",
+              "Release Preparation"
+            ],
+            "note": "Stages are high-level. Milestones provide the detail within each stage."
+          }
+        },
+        {
+          "if": "completion_path_created",
+          "then": "create_milestones",
+          "details": {
+            "action": "Break stages into milestones",
+            "steps": [
+              "For each stage in completion path, discuss concrete milestones with user",
+              "Create milestone entries with: name, description, acceptance criteria, order_index",
+              "Milestones should be achievable and verifiable (not vague)",
+              "Do NOT create tasks yet — tasks are created incrementally during project_progression",
+              "Set first milestone of first stage to status 'in_progress'",
+              "Update milestones table"
+            ],
+            "note": "Tasks will be created one at a time per milestone via project_progression. Discovery defines the roadmap; progression drives execution."
+          }
+        },
+        {
+          "if": "milestones_created",
+          "then": "finalize_discovery",
+          "details": {
+            "action": "Wrap up discovery and prepare for work",
+            "steps": [
+              "Backup blueprint to .aifp-project/backups/",
+              "Log discovery completion in notes (source=directive, directive_name=project_discovery)",
+              "Present summary to user: project shape, stages, milestones, themes, flows",
+              "Inform user: 'Project shape defined. First milestone is open. Ready to begin work.'",
+              "Flow to aifp_status — status will route to project_progression for first task creation"
+            ]
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Ask user for missing information needed to define the project shape"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 2 attempts"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "user_unsure_about_scope",
+        "resolution": "Help user think through goals by asking about target users, key features, and constraints. Start broad, then narrow."
+      },
+      {
+        "issue": "pre_existing_code_too_large_to_catalog",
+        "resolution": "project_catalog handles batching. Discovery waits for catalog completion before proceeding."
+      },
+      {
+        "issue": "user_wants_to_skip_discovery",
+        "resolution": "Allow skip but warn: 'Skipping discovery means default completion path and no milestones. You can run project_discovery later.' Set a note in project.db."
+      }
+    ],
+    "intent_keywords_json": [
+      "discover",
+      "define project",
+      "project shape",
+      "plan project",
+      "blueprint",
+      "milestones",
+      "completion path"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_catalog",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "project_discovery",
+    "category": {
+      "name": "initialization",
+      "description": "Comprehensive cataloging of pre-existing FP codebase into project database."
+    },
+    "description": "Comprehensive cataloging of an existing FP-compliant codebase into project.db. Scans all source files, identifies functions with metadata, maps interactions, and infers organizational structure. Called by project_discovery when pre-existing FP code is detected during initialization. Requires Phase 1 (aifp_init) to be complete — needs database and directory structure before cataloging.",
+    "md_file_path": "directives/project_catalog.md",
+    "workflow": {
+      "trunk": "prepare_catalog_scan",
+      "branches": [
+        {
+          "if": "source_directory_set",
+          "then": "scan_all_source_files",
+          "details": {
+            "action": "Build file inventory",
+            "steps": [
+              "Read source_directory from infrastructure table",
+              "Recursively scan for source files matching primary_language extensions",
+              "Also include other recognized source file types (config, data, script files)",
+              "Exclude: build artifacts, dependencies, generated files, .aifp-project/, node_modules, __pycache__, etc.",
+              "Use same exclusion patterns as watchdog config.py for consistency",
+              "Build file inventory: path, size, last_modified, extension, language"
+            ],
+            "note": "Exclusion patterns match watchdog EXCLUDED_DIRS and EXCLUDED_EXTENSIONS for consistency across the system."
+          }
+        },
+        {
+          "if": "files_scanned",
+          "then": "register_files_in_database",
+          "details": {
+            "action": "Create file entries in project.db",
+            "steps": [
+              "For each source file, use reserve_file helper to get database ID",
+              "Set file metadata: path, purpose (infer from filename and directory location), theme (infer from directory structure)",
+              "Use finalize_file helper to confirm registration",
+              "For large codebases (>100 files): process in batches, report progress to user periodically"
+            ],
+            "use_helpers": ["reserve_file", "finalize_file"]
+          }
+        },
+        {
+          "if": "files_registered",
+          "then": "scan_functions_per_file",
+          "details": {
+            "action": "Identify and register all functions",
+            "steps": [
+              "For each registered file, parse function definitions using language-appropriate patterns",
+              "Use same FUNCTION_PATTERNS as watchdog analyzers for consistency (Python: def, JS/TS: function/arrow, Rust: fn, Go: func, etc.)",
+              "For each function identify: name, parameters, return type (if typed), purity assessment (pure / side effects / uncertain), purpose (infer from name and docstring)",
+              "Use reserve_function and finalize_function helpers to register in database",
+              "Flag impure functions with a note — these are informational, not blockers"
+            ],
+            "purity_assessment": {
+              "pure": "No side effects detected, deterministic based on visible logic",
+              "side_effects": "Contains I/O, mutations, or external calls not wrapped",
+              "uncertain": "Cannot determine purity from static analysis alone"
+            },
+            "use_helpers": ["reserve_function", "finalize_function"]
+          }
+        },
+        {
+          "if": "functions_registered",
+          "then": "map_interactions",
+          "details": {
+            "action": "Build dependency graph",
+            "steps": [
+              "For each function, identify which other project functions it calls",
+              "For each file, identify which other project files it imports from",
+              "Identify external library dependencies per file",
+              "Create interaction entries in database via create_interaction helper",
+              "Build a dependency graph understanding for the project"
+            ],
+            "use_helpers": ["create_interaction"]
+          }
+        },
+        {
+          "if": "interactions_mapped",
+          "then": "infer_themes_and_flows",
+          "details": {
+            "action": "Suggest organizational structure from existing code",
+            "steps": [
+              "Analyze file/directory structure for logical groupings — suggest themes",
+              "Analyze call patterns and data flow for cross-cutting workflows — suggest flows",
+              "Present inferred themes and flows to user for confirmation or adjustment",
+              "These feed into project_discovery's theme/flow definition step (discovery will finalize)"
+            ],
+            "note": "Catalog suggests; discovery confirms. User has final say on themes and flows."
+          }
+        },
+        {
+          "if": "catalog_complete",
+          "then": "report_catalog_summary",
+          "details": {
+            "action": "Summarize cataloging results",
+            "report": [
+              "Total files registered",
+              "Total functions registered",
+              "Total interactions mapped",
+              "Purity assessment summary: N pure, N side effects, N uncertain",
+              "Suggested themes and flows (pending user confirmation in discovery)"
+            ],
+            "steps": [
+              "Log catalog completion in notes (source=directive, directive_name=project_catalog)",
+              "Return to project_discovery flow to continue with blueprint discussion"
+            ]
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Ask user about unrecognized file types or ambiguous code patterns"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_and_continue",
+        "note": "Catalog should not abort on individual file failures. Log errors, skip problematic files, continue with rest."
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "source_directory_not_set",
+        "resolution": "Prompt user to set source_directory in infrastructure table before cataloging"
+      },
+      {
+        "issue": "large_codebase_performance",
+        "resolution": "Process in batches of 20-50 files. Report progress to user between batches."
+      },
+      {
+        "issue": "unrecognized_language",
+        "resolution": "Use generic function patterns (look for common function keywords). Warn user about reduced accuracy."
+      },
+      {
+        "issue": "mixed_fp_and_non_fp_code",
+        "resolution": "Catalog everything but flag non-FP patterns (impure functions, OOP remnants). Discovery will address with user."
+      },
+      {
+        "issue": "no_functions_in_file",
+        "resolution": "Register file without functions. Valid for config files, data files, entry points."
+      }
+    ],
+    "intent_keywords_json": [
+      "catalog",
+      "scan codebase",
+      "register existing code",
+      "index project",
+      "scan files",
+      "import existing"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_progression",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "aifp_status",
+    "category": {
+      "name": "task_management",
+      "description": "Incremental milestone/task state machine for project advancement."
+    },
+    "description": "Codifies the incremental milestone/task/items state machine. Determines what work to create next after task or milestone completions. Ensures tasks are created one at a time per milestone, not in bulk. Handles milestone transitions (close current, open next). Triggers completion path review when themes or flows evolve via project_evolution. Acts as both a reference directive (AI consults for progression rules) and an orchestration point (status routes through it after completions).",
+    "md_file_path": "directives/project_progression.md",
+    "workflow": {
+      "trunk": "assess_progression_state",
+      "branches": [
+        {
+          "if": "discovery_just_completed",
+          "then": "create_first_milestone_task",
+          "details": {
+            "action": "Bootstrap the first task for the project",
+            "steps": [
+              "Identify the first milestone (first in_progress milestone of first stage)",
+              "Review milestone description and acceptance criteria",
+              "Discuss with user or infer: what is the first concrete task for this milestone?",
+              "Create ONE task with items via project_task_create and project_item_create helpers",
+              "This is the entry point from discovery into active development work"
+            ],
+            "note": "Only one task created. Subsequent tasks created after this one completes."
+          }
+        },
+        {
+          "if": "task_just_completed",
+          "then": "evaluate_and_create_next_task",
+          "details": {
+            "action": "Determine and create next task for active milestone",
+            "steps": [
+              "Review active milestone scope, description, and acceptance criteria",
+              "Review what was just completed (context from completed task)",
+              "Review current themes and flows for organizational context",
+              "Assess: is there more work needed for this milestone?",
+              "If yes: create ONE new task with items for the active milestone",
+              "If no (milestone work fully covered): do NOT create more tasks — let project_milestone_complete handle closure",
+              "Log progression decision in notes"
+            ],
+            "key_principle": "Create ONE task at a time. Never batch-create all remaining tasks for a milestone."
+          }
+        },
+        {
+          "if": "milestone_just_completed",
+          "then": "open_next_milestone",
+          "details": {
+            "action": "Transition to next milestone",
+            "steps": [
+              "Identify next milestone in current completion path stage (by order_index)",
+              "If next milestone exists in current stage: set its status to in_progress",
+              "Create FIRST task (with items) for the newly opened milestone",
+              "If no more milestones in current stage: check if more stages exist in completion path",
+              "If next stage exists: set first milestone of next stage to in_progress, create first task",
+              "If no more stages: route to project_completion_check (project may be complete)",
+              "Log milestone transition in notes"
+            ],
+            "use_helpers": ["update_milestone_status", "create_task", "create_item"]
+          }
+        },
+        {
+          "if": "no_active_tasks_in_milestone",
+          "then": "create_first_task_for_milestone",
+          "details": {
+            "action": "Fresh milestone with no tasks yet",
+            "condition": "Active milestone exists but has zero tasks (e.g., milestone just opened or tasks were cleared)",
+            "steps": [
+              "Review milestone description and acceptance criteria",
+              "Discuss with user or infer first task",
+              "Create ONE task with items"
+            ]
+          }
+        },
+        {
+          "if": "themes_or_flows_evolved",
+          "then": "review_completion_path",
+          "details": {
+            "action": "Evolution impact assessment",
+            "trigger": "project_evolution directive has updated themes or flows",
+            "steps": [
+              "Review current completion path stages against new project shape",
+              "Assess: do existing milestones still make sense with evolved themes/flows?",
+              "Assess: does the completion path need new stages or modified stages?",
+              "If changes needed: add/modify milestones, potentially add completion path stages, update blueprint via project_blueprint_update, log evolution impact in notes",
+              "If no changes needed: log 'Evolution reviewed, no completion path changes required'"
+            ],
+            "note": "This is a thoughtful review, not automatic restructuring. AI should consider whether changes are necessary before making them."
+          }
+        },
+        {
+          "fallback": "route_to_status",
+          "details": {
+            "action": "No progression action needed at this time",
+            "return_to": "aifp_status"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "note": "If AI cannot determine next task, ask user for direction rather than guessing"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "unclear_next_task",
+        "resolution": "Ask user what they want to work on next within the current milestone scope. Do not guess."
+      },
+      {
+        "issue": "milestone_scope_exhausted_but_criteria_not_met",
+        "resolution": "Review milestone acceptance criteria with user. Either add tasks to meet criteria or revise criteria."
+      },
+      {
+        "issue": "evolution_invalidates_milestones",
+        "resolution": "Discuss with user: update existing milestones or create new ones? Never silently restructure."
+      },
+      {
+        "issue": "no_milestones_exist",
+        "resolution": "Route to project_discovery to define milestones. Progression requires milestones to operate."
+      },
+      {
+        "issue": "all_stages_complete_unexpectedly",
+        "resolution": "Route to project_completion_check. If completion check fails, create missing work via new milestones."
+      }
+    ],
+    "intent_keywords_json": [
+      "next task",
+      "what's next",
+      "continue work",
+      "next milestone",
+      "progress",
+      "advance"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "aifp_end",
+    "type": "project",
+    "level": 0,
+    "parent_directive": null,
+    "category": {
+      "name": "session_management",
+      "description": "Graceful session termination with comprehensive data audit."
+    },
+    "description": "Graceful session termination directive. Comprehensive audit of all work done during the session, ensuring database state is consistent and up to date. Closes watchdog if running, processes final reminders. Verifies all files and functions are tracked, checks FP compliance of session work, reviews project management state, and generates session summary. Counterpart to aifp_run(is_new_session=true) — bookend pattern for session lifecycle.",
+    "md_file_path": "directives/aifp_end.md",
+    "workflow": {
+      "trunk": "begin_session_audit",
+      "branches": [
+        {
+          "if": "watchdog_running",
+          "then": "stop_watchdog_read_final_reminders",
+          "details": {
+            "action": "Close watchdog and process remaining reminders",
+            "steps": [
+              "Check for .aifp-project/watchdog/watchdog.pid",
+              "If PID file exists and process is alive: read final reminders.json",
+              "Process any outstanding reminders (unregistered files, missing functions, stale timestamps)",
+              "Kill watchdog process",
+              "If watchdog not implemented yet: skip gracefully (check PID file existence, if absent log 'watchdog not active' and continue)"
+            ],
+            "watchdog_note": "Watchdog implementation is pending. aifp_end handles both states: watchdog present (stop it) and watchdog absent (skip gracefully)."
+          }
+        },
+        {
+          "if": "session_has_file_writes",
+          "then": "verify_all_files_tracked",
+          "details": {
+            "action": "Audit file tracking completeness",
+            "steps": [
+              "Identify files written or modified during this session",
+              "Cross-reference with files table in project.db",
+              "If any file missing from DB: register it using reserve_file + finalize_file",
+              "If any file has stale updated_at: correct the timestamp",
+              "Report discrepancies found and actions taken"
+            ]
+          }
+        },
+        {
+          "if": "session_has_code_changes",
+          "then": "verify_all_functions_tracked",
+          "details": {
+            "action": "Audit function tracking completeness",
+            "steps": [
+              "For each file modified during session, scan for function definitions",
+              "Cross-reference with functions table in project.db",
+              "If any function missing from DB: register it using reserve_function + finalize_function",
+              "If any DB function missing from actual file: flag for user review (may have been removed/renamed)",
+              "Report discrepancies found and actions taken"
+            ]
+          }
+        },
+        {
+          "if": "code_verified",
+          "then": "check_fp_compliance",
+          "details": {
+            "action": "Quick FP scan of session work",
+            "steps": [
+              "Review all code written during this session",
+              "Check for: mutations, OOP patterns, unwrapped external calls, missing Result types, hidden state",
+              "Report violations to user (informational — do not auto-fix)",
+              "Log compliance status in notes (source=directive, directive_name=aifp_end, severity=info or warning)"
+            ],
+            "note": "This is a quick scan, not a deep audit. FP compliance should have been maintained during coding. This catches anything that slipped through."
+          }
+        },
+        {
+          "if": "compliance_checked",
+          "then": "review_project_management_state",
+          "details": {
+            "action": "Ensure project management data is current",
+            "steps": [
+              "Check task/item progress: any items worked on but status not updated?",
+              "Check notes: any important discussion points or decisions not logged?",
+              "Check completion path: does current progress match task/milestone state?",
+              "Check themes/flows: any new patterns observed during session that should be captured?",
+              "Check infrastructure: any changes to tools, dependencies, or conventions?",
+              "Update anything that is stale or missing"
+            ]
+          }
+        },
+        {
+          "if": "state_reviewed",
+          "then": "generate_session_summary",
+          "details": {
+            "action": "Compile and present session summary",
+            "steps": [
+              "Compile session summary: files created/modified, functions added/modified, tasks completed/progressed, milestones progressed, discrepancies found and fixed, FP compliance status, outstanding items for next session",
+              "Log session summary in notes (source=directive, directive_name=aifp_end)",
+              "Present summary to user",
+              "If clean session: 'All project data is up to date. Safe to end session.'",
+              "If outstanding issues: list them with severity and recommended next-session actions"
+            ]
+          }
+        },
+        {
+          "fallback": "report_minimal_summary",
+          "details": {
+            "action": "If no work was done this session, report that",
+            "message": "No code changes detected this session. Project state unchanged. Safe to end session."
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "report_partial_audit",
+        "note": "If audit partially fails, report what was checked and what wasn't. Never silently skip the audit."
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "watchdog_process_cannot_be_stopped",
+        "resolution": "Log warning, continue with rest of audit. Watchdog will be killed when parent MCP process exits."
+      },
+      {
+        "issue": "database_locked",
+        "resolution": "Retry with backoff. If persistent, warn user and log the lock issue."
+      },
+      {
+        "issue": "large_session_many_changes",
+        "resolution": "Process audit in batches. Report progress to user."
+      },
+      {
+        "issue": "user_closes_without_aifp_end",
+        "resolution": "Not a blocker — watchdog catches drift during next session. aifp_end is best practice, not mandatory."
+      }
+    ],
+    "intent_keywords_json": [
+      "end session",
+      "wrap up",
+      "done for now",
+      "finish session",
+      "close",
+      "goodbye",
+      "signing off"
+    ],
+    "confidence_threshold": 0.8
   }
 ]

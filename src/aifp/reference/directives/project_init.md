@@ -108,7 +108,7 @@ AI must determine which scenario applies BEFORE calling any init helpers:
 
 1. **Already initialized** (`.aifp-project/` exists) → Do NOT re-initialize. Inform user and route to `aifp_status`.
 2. **New project** (empty directory or no code files) → Proceed with clean initialization.
-3. **Existing FP-compliant code** (code files present, no OOP patterns) → Initialize AND catalog all existing files/functions into project.db. This is a critical step — without it, AIFP has no awareness of existing code.
+3. **Existing FP-compliant code** (code files present, no OOP patterns) → Initialize, then route to `project_discovery` which delegates to `project_catalog` for comprehensive cataloging. Cataloging is handled by its own directive, not inline in init.
 4. **Existing OOP code** (class-based patterns detected) → Reject initialization. Inform user that AIFP is designed for FP projects only and is not a tool for refactoring OOP to FP. Recommend uninstalling the MCP server.
 
 ```python
@@ -310,28 +310,7 @@ add_completion_path(
 # AI can adjust based on user goals
 ```
 
-**Step 6: Catalog Existing FP Code (if applicable)**
-
-If the pre-flight check detected existing FP-compliant code, AI must catalog the entire codebase into project.db before proceeding:
-
-```python
-# Only runs when existing code was detected and passed OOP check
-if existing_fp_code_detected:
-    # 1. Scan all source files
-    # 2. Parse each file for functions, dependencies, exports
-    # 3. Use project helpers to insert into project.db:
-    #    - files table (every source file)
-    #    - functions table (every function in each file)
-    #    - interactions table (function calls between files)
-    # 4. Update ProjectBlueprint.md with discovered structure
-    # 5. Log catalog summary in notes table
-```
-
-**IMPORTANT**: This step is critical for existing projects. Skipping it means project.db has no awareness of existing code, breaking status tracking and task management. While rare today (FP is not standard), this future-proofs AIFP for adoption by existing FP codebases.
-
----
-
-**Step 7: Initialize State Database**
+**Step 6: Initialize State Database**
 
 **Purpose**: Create FP-compliant infrastructure for runtime mutable variables (ALWAYS done, not optional)
 
@@ -372,7 +351,7 @@ After both phases complete:
 - ✅ State database created at `{source}/.state/` (Python CRUD template)
 - ✅ If non-Python: CRUD operations file rewritten to project language by AI
 
-**AI guidance**: Recommend next steps based on project type and goals
+**Next step**: Route to `project_discovery` for collaborative project shape definition (blueprint, completion path, milestones, themes, flows). If pre-existing FP code exists, discovery delegates to `project_catalog`.
 
 ---
 
@@ -408,9 +387,17 @@ aifp_run → project_init
   │   ├─ Updates infrastructure table with detected values
   │   ├─ Populates ProjectBlueprint.md with project data
   │   └─ Creates initial completion path
-  └─ Returns success with next steps
+  └─ Returns success, routes to project_discovery
   ↓
-AI presents: "✅ Project initialized: Calculator. Next: Define themes."
+project_discovery
+  ├─ If existing FP code: project_catalog first
+  ├─ Discuss blueprint with user
+  ├─ Map infrastructure
+  ├─ Define themes and flows
+  ├─ Create completion path and milestones
+  └─ Route to aifp_status → project_progression (first task)
+  ↓
+AI presents: "✅ Project initialized. Let's define the project shape."
 ```
 
 ---
@@ -438,10 +425,8 @@ Created:
   • .aifp-project/ProjectBlueprint.md (populated with project data)
   • Optional: {source}/.state/ (state database infrastructure)
 
-Next steps:
-  1. Define project themes and flows
-  2. Create first milestone
-  3. Start coding with FP compliance
+Next: Proceeding to project discovery to define your project shape
+  (blueprint, themes, flows, completion path, milestones)
 ```
 
 ---
@@ -636,8 +621,8 @@ Your options:
 ### Primary Relationships
 
 - **`aifp_run`** - Routes to this directive
-- **`project_themes_flows_init`** - Next step after initialization
-- **`project_task_decomposition`** - Create initial tasks
+- **`project_discovery`** - Next step after initialization (defines blueprint, themes, flows, completion path, milestones)
+- **`project_catalog`** - Called by discovery for pre-existing FP codebases (cataloging extracted from init)
 - **`get_project_status()`** - Pre-check helper
 
 ### Helper Functions

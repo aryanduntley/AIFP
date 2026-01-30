@@ -90,13 +90,13 @@
     },
     {
       "from_directive": "project_init",
-      "to_directive": "aifp_status",
-      "flow_type": "completion_loop",
+      "to_directive": "project_discovery",
+      "flow_type": "canonical",
       "condition_key": "initialization_successful",
       "condition_value": "true",
-      "condition_description": "Initialization complete successfully",
+      "condition_description": "Initialization complete successfully — proceed to project discovery",
       "priority": 100,
-      "description": "After successful init, loop back to status to determine next action",
+      "description": "After successful init, route to project_discovery for collaborative project shape definition (blueprint, completion path, milestones, themes, flows)",
       "flow_category": "project"
     },
     {
@@ -116,9 +116,9 @@
       "flow_type": "conditional",
       "condition_key": "has_incomplete_tasks",
       "condition_value": "false",
-      "condition_description": "Project initialized but no tasks exist",
-      "priority": 90,
-      "description": "No tasks found - create initial task hierarchy from blueprint",
+      "condition_description": "Project initialized, discovery complete, but no tasks exist and user explicitly requests task decomposition",
+      "priority": 70,
+      "description": "No tasks found and user requests decomposition. Note: for normal flow, project_progression handles first task creation after discovery. This flow is for explicit user-requested decomposition.",
       "flow_category": "project"
     },
     {
@@ -956,14 +956,102 @@
       "priority": 100,
       "description": "User provided decision, continue work",
       "flow_category": "project"
+    },
+    {
+      "from_directive": "project_discovery",
+      "to_directive": "project_catalog",
+      "flow_type": "conditional",
+      "condition_key": "pre_existing_fp_code_detected",
+      "condition_value": "true",
+      "condition_description": "Existing FP-compliant codebase needs cataloging before discovery can proceed",
+      "priority": 100,
+      "description": "Catalog existing code before proceeding with project shape definition",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "project_catalog",
+      "to_directive": "project_discovery",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Cataloging complete, resume discovery workflow",
+      "priority": 100,
+      "description": "Existing code cataloged, continue with blueprint discussion and project shape definition",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "project_discovery",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": "discovery_complete",
+      "condition_value": "true",
+      "condition_description": "Project shape fully defined — blueprint populated, completion path created, milestones created, themes and flows established",
+      "priority": 100,
+      "description": "Discovery complete, status will route to project_progression for first task creation",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_progression",
+      "flow_type": "conditional",
+      "condition_key": "progression_action_needed",
+      "condition_value": "true",
+      "condition_description": "Task or milestone just completed, or active milestone has no tasks, or discovery just completed — progression determines next work item",
+      "priority": 85,
+      "description": "Determine next work item via progression state machine (create next task, open next milestone, or review path after evolution)",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "project_progression",
+      "to_directive": "aifp_status",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Progression action taken — next task created or milestone opened",
+      "priority": 100,
+      "description": "Progression action complete, return to status for work execution",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "project_evolution",
+      "to_directive": "project_progression",
+      "flow_type": "conditional",
+      "condition_key": "themes_or_flows_changed",
+      "condition_value": "true",
+      "condition_description": "Themes or flows evolved — progression should review completion path for needed adjustments",
+      "priority": 90,
+      "description": "Evolution may require completion path and milestone adjustments — progression reviews",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "aifp_end",
+      "flow_type": "conditional",
+      "condition_key": "user_requests_session_end",
+      "condition_value": "true",
+      "condition_description": "User explicitly requests to end the session",
+      "priority": 100,
+      "description": "Graceful session termination — audit work, verify DB state, stop watchdog, generate summary",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_discovery",
+      "flow_type": "conditional",
+      "condition_key": "discovery_not_complete",
+      "condition_value": "true",
+      "condition_description": "Project initialized but discovery not yet done — no completion path, milestones, or themes defined",
+      "priority": 95,
+      "description": "Route to discovery if project was initialized but discovery was skipped or interrupted",
+      "flow_category": "project"
     }
   ],
   "metadata": {
-    "version": "1.2.0",
+    "version": "1.3.0",
     "created": "2025-12-17",
-    "updated": "2025-12-19",
-    "phase": "Phase 2-3 Complete",
-    "total_flows": 89,
+    "updated": "2026-01-30",
+    "phase": "Phase 2-3 Complete + New Directives (discovery, catalog, progression, end)",
+    "total_flows": 95,
     "flow_types": {
       "status_branch": "Flow from status to next directive based on state",
       "completion_loop": "Flow back to aifp_status after state change",
@@ -984,7 +1072,9 @@
       "git_integration": "Git sync and collaboration workflows",
       "user_preferences": "Preference loading integration",
       "completion_loops": "All completion directives loop back to aifp_status",
-      "fp_directives": "Not included - FP directives are reference documentation, not execution flow"
+      "fp_directives": "Not included - FP directives are reference documentation, not execution flow",
+      "project_lifecycle": "Full lifecycle: init → discovery → progression loop → completion → end",
+      "session_management": "aifp_run (start) and aifp_end (termination) bookend the session"
     },
     "notes": [
       "All completion directives (task_complete, subtask_complete, sidequest_complete, milestone_complete) loop back to aifp_status",
@@ -994,7 +1084,13 @@
       "FP directives not in flow - they are reference documentation consulted inline",
       "FP compliance checking is OPT-IN ONLY (default = AI writes FP code automatically)",
       "Performance tracking is OPT-IN ONLY (helper_function_logging_enabled user preference)",
-      "All 38 project directives now have flows (100% coverage)"
+      "All 42 project directives now have flows (100% coverage)",
+      "v1.3.0: project_init now routes to project_discovery (not aifp_status) on success",
+      "v1.3.0: project_discovery delegates to project_catalog for pre-existing FP codebases",
+      "v1.3.0: project_progression handles incremental task/milestone creation after completions and evolution",
+      "v1.3.0: aifp_end is terminal — no loop back to aifp_status (session is over)",
+      "v1.3.0: project_task_decomposition priority lowered to 70 (progression handles normal flow, decomposition for explicit user requests)",
+      "v1.3.0: aifp_status routes to project_discovery at priority 95 if discovery not yet complete"
     ]
   }
 }

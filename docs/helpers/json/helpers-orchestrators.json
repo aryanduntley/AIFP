@@ -570,13 +570,65 @@
           "description": "Get all files implementing a flow with embedded functions - used to build dependency map showing file-flow-function relationships"
         }
       ]
+    },
+    {
+      "name": "aifp_end",
+      "file_path": "helpers/orchestrators/entry_points.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Absolute path to the project root directory containing .aifp-project/"
+        }
+      ],
+      "purpose": "Session termination orchestrator. Gathers session audit data: reads watchdog state and final reminders, queries all files and functions from DB for AI to cross-reference, reads recent notes and task state. Stops watchdog process if running. Returns structured audit data for AI to interpret and act on. No analysis logic — AI determines what is stale or missing.",
+      "error_handling": "Returns {initialized: false} if .aifp-project/ does not exist. Returns partial data if watchdog PID file missing (watchdog not implemented or not running). Never fails hard — always returns what it can gather.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "AI should compare returned file/function lists against session work to identify untracked items.",
+        "AI should review returned task/milestone state for any needed progress updates.",
+        "AI should use returned watchdog reminders (if any) to address outstanding issues.",
+        "AI should generate session summary from returned data and present to user.",
+        "AI handles all FP compliance checking — helper only returns code data for AI to review.",
+        "Once complete, Inform user safe to end session."
+      ],
+      "implementation_notes": [
+        "NO analysis or compliance logic — pure data gathering and process management",
+        "Step 1: Read .aifp-project/watchdog/watchdog.pid — if PID file exists and process alive, read .aifp-project/watchdog/reminders.json, then kill process. If PID file absent, set watchdog_stopped=null (not implemented/not running)",
+        "Step 2: Query files table — SELECT id, path, updated_at, is_reserved FROM files",
+        "Step 3: Query functions table — SELECT id, name, file_id, is_reserved FROM functions",
+        "Step 4: Query active tasks/items — SELECT from tasks, items WHERE status='in_progress'",
+        "Step 5: Query recent notes — SELECT from notes ORDER BY created_at DESC LIMIT 10",
+        "Step 6: Read project metadata — SELECT status, version from project table",
+        "Step 7: Return structured audit data object",
+        "RETURN STRUCTURE: {success: bool, watchdog: {stopped: bool|null, final_reminders: []}, project_state: {files: [], functions: [], active_tasks: [], active_items: [], recent_notes: [], metadata: {}}}",
+        "ERROR RETURN: {success: false, error: str, partial_data: {}|null}",
+        "Watchdog handling is graceful: if watchdog module not yet implemented, PID file won't exist — return watchdog.stopped=null",
+        "All operations are DB reads + one process kill — no writes except clearing reminders.json"
+      ],
+      "target_database": "multi_db",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_end",
+          "execution_context": "session_termination_audit",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "project_root": "from project context or user input"
+          },
+          "description": "aifp_end directive calls aifp_end helper to gather session audit data — AI interprets returned data and performs compliance checks, identifies gaps, generates summary"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-orchestrators.json",
-    "count": 10,
-    "status": "updated 2026-01-28 - removed get_status_tree, get_project_context, validate_initialization. Renamed target_database values. Updated file_paths.",
-    "last_updated": "2026-01-28",
+    "count": 11,
+    "status": "updated 2026-01-30 - added aifp_end session termination orchestrator (JSON definition only, Python implementation pending)",
+    "last_updated": "2026-01-30",
     "changes": [
       "Removed get_status_tree: tree logic folded into get_project_status",
       "Removed get_project_context: redundant with existing helpers (get_from_project, get_all_infrastructure, get_project_status)",

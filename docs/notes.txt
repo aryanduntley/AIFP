@@ -19,6 +19,9 @@ completed recently:
 docs/HELPER_IMPLEMENTATION_PLAN.md
 docs/ORCHESTRATOR_IMPLEMENTATION_PLAN.md
 
+docs/DIRECTIVE_ADDITIONS_IMPLEMENTATION_PLAN.md
+docs/WATCHDOG_IMPLEMENTATION_PLAN.md
+
 Do not read or modify notes.txt. That is just for me.                         
 
 return_statements for global mutable db (remember to rewrite the reference CRUD for mutable global db file in project language... with reference to that CRUD reference file location)
@@ -38,7 +41,14 @@ MUST make OOP wrapper examples
 docs/directives-json/sync-directives.py
 
 Python watchdog in mcp folder. Project source root provider as argument. Writes to project aifp folder sunfolder file.       
+=============================
+Token cost: ~15-20k tokens loaded on every API call. Fora tool that's meant to be cost-conscious (all trackingoff by default), the system prompt itself is the largestfixed cost per interaction.
 
+Diminishing returns: Studies on long system promptssuggest instruction-following degrades past a certainlength. Rules at the end get less attention than rules at the top. The current structure front-loads the criticalstuff (proactive behavior, aifp_run, FP baseline) whichis good, but the behavioral rules at line ~500+ are inthe weaker zone.
+
+Possible optimizations (not urgent, but worth considering later):- The FP coding style section (~lines 110-290) is verydetailed with code examples. Some of that could move tothe FP directive MD files and be referenced rather thaninlined — the AI already has access to those viaget_directive_content().- The Use Case 2 explanation (~lines 525-545) could beshortened since it's also thoroughly covered indirectives.- The DRY principle section with code examples is quitelong for a system prompt rule.
+
+For now at ~650 lines with the additions, it's fine. Ifit grows further, I'd look at extracting the detailed FPcode examples into directive references and keeping onlythe rules in the prompt.    
 =============================
 
 Confidence: High for active behavior, moderate for full directive compliance. Here's my honest breakdown: What will work well The system prompt is strong. It's unambiguous about proactive behavior — "Call aifp_run FIRST", "DO NOT wait", "act based on project state." AI models follow system prompts reliably, especially when instructions are this direct. The aifp_run on every interaction pattern will keep the MCP server "alive" as you intended. The session bundle is well-designed. Giving AI everything upfront (status, settings, directive names, FP index) means it doesn't have to figure out what to query. That reduces the chance of it going passive. Reserve→write→finalize is now explicit. With mandatory flags in the workflow, AI won't skip these steps. Where I'd have concerns Directive depth. AI will follow the top-level flow (run → status → init/continue) reliably. But the deeper directive chains (file_write triggers reserve_finalize, which triggers update_db, which checks interactions) — the further down the chain, the more likely AI drops steps or shortcuts. The return_statements on helpers will help here, as they tell AI "you're not done yet, do X next." Context window pressure. The session bundle is ~15-20k tokens. Add the system prompt, conversation history, and code context — on long sessions, older directive context gets compressed or evicted. That's when AI starts "forgetting" to call helpers or skipping finalization steps. The aifp_run(is_new_session=false) lightweight reminder on every interaction mitigates this, but doesn't eliminate it. Novel situations. The directive flows cover the happy path well. When something unexpected happens (partial write failure, user changes mind mid-task, edge cases), AI will fall back to its own judgment rather than consulting directives. That's fine for capable models but less predictable. What would increase confidence 1. Testing with real sessions — the biggest unknown is how a specific AI client (Claude Desktop, Cursor, etc.) handles MCP tool calls in practice. Some clients throttle tool calls or have their own system prompts that compete with yours. 2. The return_statements pattern is your best lever. Every helper that returns data with "AI should do X next" guidance keeps the chain going. You've done this well in the orchestrators. Make sure it carries through to all helpers during MCP implementation. 3. The aifp_run on every interaction is the key insurance policy. Even if AI drifts, it gets pulled back every message. That's a good design. Bottom line: a capable model (Claude, GPT-4 class) will follow this system actively, not sit idle. The risk isn't passivity — it's depth of compliance on multi-step chains during long sessions.

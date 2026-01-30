@@ -334,3 +334,18 @@ The script:
 - **No detached processes** — Dies with parent. Clean lifecycle.
 - **Language-agnostic where possible** — Pattern-based, not AST-based. ID-prefix convention enables this.
 - **Part of MCP package** — Lives in `src/aifp/watchdog/`. Not user-editable. Will integrate into MCP server when built.
+
+---
+
+## Integration Notes
+
+### `aifp_end` Session Termination
+
+The `aifp_end` helper (`src/aifp/helpers/orchestrators/entry_points.py`) already has watchdog shutdown code stubbed in `_stop_watchdog()`. When watchdog is implemented, verify:
+
+1. **PID file format** — `_stop_watchdog` reads `.aifp-project/watchdog/watchdog.pid` and expects a single integer (PID). Ensure `__main__.py` writes the PID file in this format.
+2. **Signal handling** — `_stop_watchdog` sends `SIGTERM`. Ensure `watcher.py` handles `SIGTERM` for graceful shutdown (flush pending reminders, close observers).
+3. **Reminders file** — `_stop_watchdog` reads `.aifp-project/watchdog/reminders.json` before killing the process. Ensure the file is valid JSON even mid-write (atomic write pattern recommended).
+4. **PID file cleanup** — `_stop_watchdog` removes the PID file after stopping. Ensure `__main__.py` also removes it on clean exit to avoid stale PID files.
+
+Search for `TODO: Watchdog not yet implemented` in `entry_points.py` to find the integration point.

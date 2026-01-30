@@ -7,6 +7,7 @@ Helpers in this file:
 - aifp_init: Phase 1 mechanical setup (creates directories, databases, templates)
 - aifp_status: Comprehensive project state assembly
 - aifp_run: Gateway orchestrator for every AI interaction
+- aifp_end: Session termination audit data gathering
 
 These are the only helpers with target_database='multi_db'.
 All operate across project.db, user_preferences.db, and core.db.
@@ -598,3 +599,108 @@ def _get_infrastructure_safe(project_root: str) -> Tuple[Dict[str, Any], ...]:
         return ()
     except Exception:
         return ()
+
+
+# ============================================================================
+# aifp_end
+# ============================================================================
+
+def aifp_end(project_root: str) -> Result:
+    """
+    Session termination orchestrator.
+
+    Stops watchdog (if running) and delegates to get_project_status for
+    project state. AI uses status data + conversation context to perform
+    session audit, compliance checks, and summary generation.
+
+    Args:
+        project_root: Absolute path to project root directory
+
+    Returns:
+        Result with data={
+            success: bool,
+            watchdog: {stopped: bool|None, final_reminders: list},
+            project_state: dict (from get_project_status)
+        }
+    """
+    aifp_dir = get_aifp_project_dir(project_root)
+    if not os.path.isdir(aifp_dir):
+        return Result(
+            success=False,
+            data={'initialized': False},
+            error="No .aifp-project/ directory found",
+        )
+
+    # Step 1: Watchdog — stop process and read reminders
+    watchdog_data = _stop_watchdog(aifp_dir)
+
+    # Step 2: Project state via existing status helper
+    status_result = get_project_status(project_root, "detailed")
+    project_state = status_result.data if status_result.success else {}
+
+    return Result(
+        success=True,
+        data={
+            'success': True,
+            'watchdog': watchdog_data,
+            'project_state': project_state,
+        },
+        return_statements=get_return_statements("aifp_end"),
+    )
+
+
+def _stop_watchdog(aifp_dir: str) -> Dict[str, Any]:
+    """
+    Effect: Stop watchdog process if running, read final reminders.
+
+    Checks for PID file at .aifp-project/watchdog/watchdog.pid.
+    If found and process alive, kills it and reads reminders.json.
+    If not found, returns stopped=None (watchdog not implemented or not running).
+
+    Args:
+        aifp_dir: Path to .aifp-project/ directory
+
+    Returns:
+        dict with {stopped: bool|None, final_reminders: list}
+    """
+    import json
+    import signal
+
+    watchdog_dir = os.path.join(aifp_dir, "watchdog")
+    pid_file = os.path.join(watchdog_dir, "watchdog.pid")
+    reminders_file = os.path.join(watchdog_dir, "reminders.json")
+
+    # TODO: Watchdog not yet implemented. This code is ready for when it is.
+    # When watchdog module is built, verify PID file format and signal handling
+    # are compatible. See docs/WATCHDOG_IMPLEMENTATION_PLAN.md for details.
+
+    if not os.path.isfile(pid_file):
+        return {'stopped': None, 'final_reminders': []}
+
+    # Read reminders before killing process
+    final_reminders = []
+    if os.path.isfile(reminders_file):
+        try:
+            with open(reminders_file, 'r') as f:
+                final_reminders = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            final_reminders = []
+
+    # Attempt to stop the watchdog process
+    stopped = False
+    try:
+        with open(pid_file, 'r') as f:
+            pid = int(f.read().strip())
+        os.kill(pid, signal.SIGTERM)
+        stopped = True
+    except (ValueError, OSError, ProcessLookupError):
+        # Process already dead or PID invalid — still consider it stopped
+        stopped = True
+
+    # Clean up PID file
+    try:
+        os.remove(pid_file)
+    except OSError:
+        pass
+
+    return {'stopped': stopped, 'final_reminders': final_reminders}
