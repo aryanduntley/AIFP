@@ -245,7 +245,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Returns inserted record with generated ID"
+        "Returns inserted record with generated ID.",
+        "If called during user_directive_parse: all directives parsed \u2192 proceed to user_directive_validate for interactive Q&A validation."
       ],
       "target_database": "user_directives",
       "used_by_directives": [
@@ -317,7 +318,10 @@
       "error_handling": "Return error if table does not exist, ID not found, or invalid fields",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If called during user_directive_implement: all code generated \u2192 proceed to user_directive_approve for user testing and approval.",
+        "If called during user_directive_approve: user approved \u2192 proceed to user_directive_activate to deploy."
+      ],
       "target_database": "user_directives",
       "used_by_directives": [
         {

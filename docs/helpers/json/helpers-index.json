@@ -28,16 +28,48 @@
           "description": "Check database availability and health as part of infrastructure status - verifies all databases are accessible and not corrupted"
         }
       ]
+    },
+    {
+      "name": "get_supportive_context",
+      "file_path": "helpers/global/supportive_context.py",
+      "parameters": [],
+      "purpose": "Returns the full supportive context reference document (FP code examples, DRY patterns, state database usage, Use Case 2 details, behavioral rules, edge case recovery). Loaded automatically by aifp_run(is_new_session=true). Call directly to reload detailed reference material when context feels stale or compressed.",
+      "error_handling": "Returns error if supportive_context.txt not found at expected path. Never fails hard — returns informative error message.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "AI should cache this content for the session. Call again if context feels stale."
+      ],
+      "implementation_notes": [
+        "Reads src/aifp/reference/guides/supportive_context.txt",
+        "Returns: {success: true, content: str (full text), token_estimate: int}",
+        "Path resolved relative to package installation (Path(__file__).parent.parent / 'reference' / 'guides' / 'supportive_context.txt')",
+        "Called internally by aifp_run(is_new_session=true) — content included in session bundle under 'supportive_context' key",
+        "Referenced in aifp_run(is_new_session=false) return so AI knows it can reload",
+        "No database access — pure file read operation",
+        "Estimated ~3-4k tokens for the full document"
+      ],
+      "target_database": "system",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "session_bundle_context",
+          "sequence_order": 6,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "aifp_run bundles supportive context on is_new_session=true for comprehensive session startup"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-index.json",
-    "count": 1,
-    "status": "COMPLETED - used_by_directives review complete",
-    "mapped_helpers": 1,
+    "count": 2,
+    "status": "updated 2026-01-31 - added get_supportive_context for reloadable reference material",
+    "mapped_helpers": 2,
     "unmapped_helpers": 0,
-    "note": "Global cross-database helper. Mapped to aifp_help and aifp_status for infrastructure information.",
-    "total_mappings": 2,
-    "last_updated": "2026-01-01"
+    "note": "Global cross-database and system-level helpers. Not orchestrators — utility functions available to all categories.",
+    "total_mappings": 3,
+    "last_updated": "2026-01-31"
   }
 }

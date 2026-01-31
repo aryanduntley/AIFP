@@ -1,0 +1,424 @@
+AIFP SUPPORTIVE CONTEXT — DETAILED REFERENCE
+==============================================
+
+This file provides detailed context for AIFP behavior that supplements the system prompt.
+Loaded automatically on session start via aifp_run(is_new_session=true).
+Reload anytime via get_supportive_context() if context feels stale or compressed.
+
+Contents:
+1. FP Rules with Code Examples
+2. State Database Usage
+3. DRY Principle — Detailed Patterns
+4. Project Discovery & Progression
+5. Directive Execution Details
+6. Project File Write Workflow
+7. Reserve → Write → Finalize Flow
+8. Use Case 2: Custom Directive Automation
+9. User Preferences System
+10. Git + FP Collaboration
+11. Edge Cases & Recovery Patterns
+12. Session Management
+
+=== 1. FP RULES WITH CODE EXAMPLES ===
+
+--- Pure Functions ---
+
+Same inputs → same outputs. No side effects, no I/O inside logic, no hidden state.
+
+  ✅ Read-only global constants (encouraged):
+  ```python
+  MAX_RETRIES: Final[int] = 3
+  VALID_STATUSES: Final[frozenset] = frozenset(['active', 'paused'])
+  DATABASE_URL: Final[str] = "sqlite:///app.db"
+  ```
+
+  ❌ Mutable globals (use state database instead):
+  ```python
+  # BAD: total = 0; def inc(): global total; total += 1
+  # GOOD: use state database
+  result = set_var('counter', 0)
+  result = increment_var('counter', 1)
+  result = get_var('counter')  # Returns: Result(success=True, data=1)
+  ```
+
+--- Immutability ---
+
+No mutations of data structures. Return new copies.
+
+  ```python
+  from dataclasses import dataclass
+
+  @dataclass(frozen=True)
+  class User:
+      name: str
+      age: int
+
+  def update_age(user: User, new_age: int) -> User:
+      return User(name=user.name, age=new_age)  # New instance, not mutation
+  ```
+
+  Use: frozen dataclasses, tuples, frozenset, NamedTuple.
+  See fp_immutability.md for advanced patterns (nested updates, collections).
+
+--- No OOP ---
+
+No classes with methods, no inheritance, no polymorphism. Frozen dataclass + standalone functions.
+
+  ```python
+  # ✅ FP pattern
+  @dataclass(frozen=True)
+  class Config:
+      host: str
+      port: int
+
+  def connect(config: Config) -> Result:
+      return create_connection(config.host, config.port)
+
+  # ❌ OOP pattern (never do this)
+  # class Database:
+  #     def __init__(self): self.conn = None
+  #     def connect(self): ...
+  ```
+
+  See fp_no_oop.md for OOP → FP refactoring patterns.
+
+--- Wrap All External Libraries ---
+
+Isolate ALL external calls in pure wrappers. Side effects only in wrapper layer.
+
+  ```python
+  import requests
+
+  def fetch_user_data(user_id: int) -> Result[dict, str]:
+      """Pure wrapper — isolates external library side effects."""
+      try:
+          response = requests.get(f"https://api.example.com/users/{user_id}")
+          return Ok(response.json())
+      except Exception as e:
+          return Err(str(e))
+  ```
+
+  See fp_wrapper_generation.md for complex wrapping strategies (stateful clients, context managers, async).
+
+--- Explicit Error Handling ---
+
+Result/Option types, not exceptions for control flow.
+
+  ```python
+  def divide(a: float, b: float) -> Result[float, str]:
+      if b == 0:
+          return Err("Division by zero")
+      return Ok(a / b)
+
+  # ❌ Avoid: raise ValueError() for control flow
+  # ❌ Avoid: try/catch for business logic
+  ```
+
+  See fp_result_types.md for error composition, chaining, and railway-oriented programming.
+
+--- Common FP Purity Edge Cases ---
+
+  DateTime: Pass time as explicit parameter, don't call datetime.now() inside logic.
+  Random: Extract to effect function, pass seed or value as parameter.
+  Database: Separate fetch (effect) from processing (pure logic).
+  Caching: Pure function + external memoization wrapper (not internal state).
+  Logging: Isolate in effect layer, not inside pure business logic.
+
+=== 2. STATE DATABASE USAGE ===
+
+State database auto-created at `<source-dir>/.state/runtime.db`.
+Purpose: Replace mutable globals with database-backed state.
+
+  Operations:
+  - set_var(key, value) — Set a variable
+  - get_var(key) — Get a variable (returns Result)
+  - delete_var(key) — Remove a variable
+  - increment_var(key, amount) — Atomic increment
+
+  Import: from .state.state_operations import set_var, get_var, increment_var
+
+  Use for: counters, toggles, runtime config, application state.
+  Don't use for: sessions, rate limits, job queues (create separate project-specific DB).
+  Extensible: AI can add tables for edge cases.
+
+  See fp_state_elimination.md for detailed state management patterns and edge cases.
+
+=== 3. DRY PRINCIPLE — DETAILED PATTERNS ===
+
+Extract common utilities at the HIGHEST appropriate scope level.
+
+  **Extract When** (GOOD DRY):
+  - Code is IDENTICAL across 2+ files
+  - Function has single responsibility
+  - No conditionals needed for variations
+
+  **Don't Extract When** (FORCED DRY — avoid):
+  - Code is similar but not identical
+  - Would require many parameters/conditionals
+  - Would create "god functions"
+
+  **Scope Levels**:
+  - Global: src/aifp/_common.py (ALL categories use it)
+  - Category: src/aifp/helpers/project/_common.py (one category only)
+  - File: Keep in file (one file only)
+
+  **Decision**: Function in 2+ files AND identical → Extract immediately.
+
+  **Hierarchy Planning**: Evaluate scope level upfront. Promote utilities as commonality grows.
+  When modifying existing utilities, check: can a category-level utility be promoted to global?
+
+  ```python
+  # ✅ Extract to _common.py (identical everywhere)
+  def _open_connection(db_path: str) -> sqlite3.Connection:
+      conn = sqlite3.connect(db_path)
+      conn.row_factory = sqlite3.Row
+      return conn
+
+  # ❌ Don't force extraction (too many parameters = god function)
+  def update_entity(conn, table, entity_id, field_name, new_value,
+                    validate=True, cascade=False, ...):  # God function
+  ```
+
+=== 4. PROJECT DISCOVERY & PROGRESSION ===
+
+**Project Discovery** (after init, before coding):
+Bridge between initialization and active development. Collaborative conversation.
+
+  1. Assess state: Check for pre-existing code, blueprint status
+  2. If pre-existing FP code: Delegate to project_catalog first
+  3. Blueprint: Discuss purpose, goals, scope, constraints with user
+  4. Infrastructure: Confirm detected values, create state database (.state/runtime.db)
+  5. Themes/Flows: Identify logical groupings and workflows
+  6. Completion Path: Define major stages
+  7. Milestones: Break stages into concrete, verifiable milestones (NO tasks yet)
+
+  Key: Ask, don't assume. User knows their project better.
+  Routes to aifp_status → project_progression for first task creation.
+
+**Project Progression** (the work loop):
+  - ONE task (with items) created at a time per milestone
+  - Priority-based work hierarchy: sidequests > subtasks > tasks
+  - Task complete → check if milestone complete → create next task or next milestone
+  - Milestone complete → open next milestone → create first task
+  - Themes/flows evolve → review completion path
+  - Repeat until all stages complete
+
+  State machine: aifp_status detects current state → project_progression determines
+  what to create next → execute → loop back to status.
+
+  Tasks are created incrementally as work progresses, NOT all at once.
+  Each completion triggers the next creation.
+
+=== 5. DIRECTIVE EXECUTION DETAILS ===
+
+**Execution Order** (for ALL directives):
+1. User preferences loaded FIRST (user_preferences_sync auto-called if customizable)
+2. Preferences applied to directive parameters
+3. Directive executes with modified behavior
+4. Results returned
+
+**Trunk → Branches → Fallback Pattern**:
+- trunk: Main analysis step
+- branches: Conditional paths based on analysis results
+- fallback: Default action if no branch matches
+
+**Directive MD Documentation** (reference layer):
+- Location: src/aifp/reference/directives/{category}/{directive_name}.md
+- Contains: Complete workflows, examples, edge cases, FP compliance notes, cross-directive relationships
+- When to read: Complex edge cases, ambiguity in workflow, FP compliance questions, cross-directive relationships
+- NOT for routine usage (directive JSON has workflow steps — use those)
+- Access: get_directive_content(directive_name) returns full MD documentation
+
+**Directive Flows** (navigation system):
+- Stored in directive_flow table
+- Define "what comes next" based on current state
+- Query: get_flows_from_directive(directive_name)
+- All completion directives loop back to aifp_status
+
+=== 6. PROJECT FILE WRITE WORKFLOW ===
+
+When writing any file:
+1. Reserve file/function names via project_reserve_finalize → get database IDs
+2. Write FP-compliant code with IDs embedded in names
+3. Call project_file_write directive → updates project.db (files, functions, interactions tables)
+4. Finalize reserved names via project_reserve_finalize
+
+Never write code without tracking it in project.db.
+
+=== 7. RESERVE → WRITE → FINALIZE FLOW ===
+
+Purpose: Get database IDs BEFORE coding so names are instantly queryable.
+
+  1. **Reserve**: Call reserve helpers to get IDs
+     - Reserve file name → get file_id
+     - Reserve function names → get function_ids
+     - Reserve type names → get type_ids
+
+  2. **Embed IDs**: Use IDs in actual code names
+     - filename_id_42.py
+     - function_name_id_99()
+     - TypeName_id_15
+
+  3. **Write**: Write FP-compliant code with embedded IDs
+
+  4. **Finalize**: Mark reserved names as finalized after successful write
+     - Updates status from 'reserved' to 'finalized'
+     - Records file path, line numbers, dependencies
+
+  Batch helpers available for efficiency (reserve multiple at once).
+
+=== 8. USE CASE 2: CUSTOM DIRECTIVE AUTOMATION ===
+
+**Two Use Cases (never mixed)**:
+- Use Case 1: Regular software development (web apps, libraries, tools)
+- Use Case 2: Automation projects (home automation, cloud, workflows)
+- Check: project.user_directives_status (NULL=Case 1, active=Case 2)
+- One AIFP instance per project, never mix
+
+**Use Case 2 — Two-Stage Process**:
+
+Stage 1: Build Infrastructure (first-time setup):
+- User writes directive files (directives/lights.yaml, directives/thermostat.json)
+- AI parses and validates (user_directive_parse, user_directive_validate)
+- AI generates entire automation codebase (user_directive_implement)
+  - Creates src/ with FP-compliant implementation code
+  - Creates tests/
+  - Tracks in project.db like any software project
+- User approves (user_directive_approve)
+
+Stage 2: Execute Directives (ongoing):
+- Directives activate (user_directive_activate)
+- System monitors and executes using the infrastructure AI built
+- AI only modifies code when directives change or improvements needed
+
+**Key Point**: In Use Case 2, the project IS the automation infrastructure.
+AIFP builds the code that executes user directives, then that code runs the directives.
+
+**What the user provides**: Directive files (YAML/JSON/TXT) describing WHAT they want automated.
+**What AI builds**: Complete automation infrastructure (trigger handlers, action executors, API clients, scheduler).
+
+**Directory Structure** (Use Case 2):
+  home-automation/
+  ├── directives/          ← User writes directive files here
+  │   ├── lights.yaml
+  │   └── security.yaml
+  ├── src/                 ← AIFP GENERATES this code
+  │   ├── lights_controller.py
+  │   └── security_monitor.py
+  ├── tests/               ← AIFP GENERATES tests
+  └── .aifp-project/       ← AI-managed only
+      ├── project.db
+      ├── user_preferences.db
+      ├── user_directives.db
+      └── logs/
+
+=== 9. USER PREFERENCES SYSTEM ===
+
+**User Preferences**: Atomic key-value overrides for directive behavior.
+- Small baseline exists, but settings are created when users express preferences
+- Examples: "Always add docstrings", "Use 2-space indentation", "Break tasks into fine detail"
+- Auto-loaded before customizable directives (user_preferences_sync)
+
+**Creating New Settings**:
+When user says "Always do X" or "I prefer Y":
+1. Call user_preferences_update
+2. Identify target directive (project_file_write, project_task_decomposition, etc.)
+3. Create preference: directive_name.preference_key = value
+4. Confirm to user (persists across sessions)
+
+**Tracking Features**: ALL OFF BY DEFAULT
+- 5 features: fp_flow_tracking, ai_interaction_log, helper_function_logging, issue_reports, compliance_checking
+- All exist for development/debugging only
+- Regular users: Assume tracking always disabled
+- Developer users: Enable via tracking_toggle with token overhead warnings
+- Do not mention tracking features to regular users
+
+=== 10. GIT + FP COLLABORATION ===
+
+Why AIFP FP makes Git superior:
+- Pure functions → Easy to test both versions
+- No class hierarchies → No hierarchy conflicts
+- Immutable data → Fewer state conflicts
+- Isolated side effects → Easy conflict identification
+- FP purity levels guide auto-resolution (>0.8 confidence)
+
+Git directives: git_init, git_detect_external_changes, git_create_branch, git_detect_conflicts, git_merge_branch
+Branch naming: aifp-{user}-{number}
+
+=== 11. EDGE CASES & RECOVERY PATTERNS ===
+
+If confused, lost context, or unsure what to do next:
+- Call aifp_status() → fresh project state + supportive context from database
+- Call get_supportive_context() → reload this reference material only
+- Call search_directives(keyword="...") → find the right directive
+- Use project_notes_log → record decisions, confusion, context
+- Use project_sidequest_create → track unexpected work or user change of direction
+- Call aifp_run(is_new_session=true) → full reload of everything
+
+The database is your memory — trust it over cached context.
+
+**Non-FP Projects**: If you detect an existing OOP codebase:
+1. STOP immediately
+2. Inform user: AIFP is designed for FP codebases only
+3. Offer options: Convert to FP (major refactor), disable AIFP, or start new FP project
+4. DO NOT proceed with managing non-FP projects
+5. DO NOT try to convert unless explicitly requested
+
+=== 12. SESSION MANAGEMENT ===
+
+**Startup** (no context exists — first interaction or context completely lost):
+- Call aifp_run(is_new_session=true) → full bundle (~15-20k tokens):
+  - aifp_status(): project metadata, infrastructure, work hierarchy, warnings, git state
+  - get_user_settings(): all user preference overrides
+  - get_fp_directive_index(): FP directives grouped by category
+  - get_all_directive_names(): complete directive name list (project, fp, git, user)
+  - get_supportive_context(): this reference document
+  - Guidance: static behavioral reminders
+- Cache the bundle as session context
+- Check project state from bundle:
+  - .aifp-project/ missing → check for .git/.aifp/ backup
+    - Backup exists → offer to restore
+    - No backup → offer project_init, explain what it creates
+    - User declines → wait for explicit request
+  - .aifp-project/ exists → read ProjectBlueprint.md for project shape
+    - Present status: current focus, open items, recent context, next actions
+    - If project_continue_on_start=true → continue work automatically
+    - Otherwise → present options, await user direction
+- Directive names from bundle are cached — query get_directive(name) for details as needed
+- search_directives(type, keyword) for finding directives by category/keyword
+
+**Continuation** (every interaction after startup):
+- aifp_run(is_new_session=false) → lightweight guidance (~2k tokens)
+- Execute task → update DB → loop
+- User asks "status"/"where are we" → answer from existing context, no DB call needed
+- After making changes (code written, tasks completed) → DB already updated via helpers
+- Don't try to track changes mentally — the database handles state
+
+**Mid-session context refresh** (AI-initiated, not user-triggered):
+- aifp_status() → project state + supportive context from DB
+- Call when AI detects its own context is stale or compressed
+- Lighter than is_new_session=true (no directive names, settings, or FP index reload)
+- get_supportive_context() alone if you only need this reference material reloaded
+
+**Session End**:
+When user says "end session", "wrap up", "I'm done":
+- Call aifp_end for comprehensive session audit
+- Verifies all files/functions tracked in DB
+- Stops watchdog if running
+- Reviews task/milestone progress, logs session summary
+- Confirms to user: safe to close
+- If user closes without aifp_end: watchdog catches drift next session
+
+**Helper Categories** (three types):
+1. Directive-used helpers: Called BY directives (has used_by_directives entries)
+2. AI-only tools (is_tool=true): Direct AI database tools (schema, query, batch, delete)
+3. Sub-helpers (is_sub_helper=true): Called by other helpers only (not exposed to AI)
+
+**Database Interaction Policy**:
+1. ✅ Use helpers FIRST (99% of cases) — validation, formatting, error handling
+2. ✅ Use orchestrators — for complex multi-step operations
+3. ✅ Use directives — for tracked writes
+4. ⚠️ Direct SQL last resort — reads only, confirm no helper exists first
+Exception: user_directives.db allows free SQL (AI-managed)
+
+=== END SUPPORTIVE CONTEXT ===

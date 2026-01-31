@@ -466,7 +466,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If called during project_completion_check: no incomplete sidequests + all milestones complete = route to project_archive. Otherwise, report gaps to user."
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -653,7 +655,7 @@
       ],
       "implementation_notes": [
         "Returns: Array of file objects",
-        "Chains: retrieve sidequest flows → get file IDs from flows → retrieve file details"
+        "Chains: retrieve sidequest flows \u2192 get file IDs from flows \u2192 retrieve file details"
       ]
     },
     {

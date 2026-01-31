@@ -1,6 +1,7 @@
 Read:
 README.md
 sys-prompt/aifp_system_prompt.txt
+src/aifp/reference/guides/supportive_context.txt
 .aifp/ProjectBlueprint.md
 
 directives json are in docs/directives-json/
@@ -15,22 +16,18 @@ src/aifp/database/schemas/user_directives.sql
 src/aifp/database/schemas/aifp_core.sql
 src/aifp/database/schemas/project.sql
 src/aifp/database/schemas/user_preferences.sql
-completed recently:
-docs/HELPER_IMPLEMENTATION_PLAN.md
-docs/ORCHESTRATOR_IMPLEMENTATION_PLAN.md
 
-docs/DIRECTIVE_ADDITIONS_IMPLEMENTATION_PLAN.md
-docs/WATCHDOG_IMPLEMENTATION_PLAN.md
+docs/proposals/use-case-2-routing-fix.md
+
+system prompt:
+ **is_new_session=true**: First interaction, after breaks, user asks status
+ not when user asks status. Is new is only new session when no context exists. Use get_project_status instead. Should return the same general information. Must add supportive context to get_project_status
 
 Do not read or modify notes.txt. That is just for me.                         
-
-return_statements for global mutable db (remember to rewrite the reference CRUD for mutable global db file in project language... with reference to that CRUD reference file location)
 
 return statements for aifp_init
 
 think out useful return values for certain helper functions, like generic getter/setters should return schema, possibly some helper or directive references useful or relative to current function call and database.
-
-make sure we add the mutable global db to project src
 
 when coding helpers, if case 2, ensure we make a return value that indicates to AI case 2 active. Probably during status call(s)
 
@@ -39,6 +36,8 @@ MUST make OOP wrapper examples
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
 docs/directives-json/sync-directives.py
+
+Use Case 2, need very expliting paths to use case 2 directives when found that use case 2 exists. AI should be FORCED to read those directives at new session when valid.
 
 next: import json to db. re-create project db if needed. Begin populating project db with mcp codebase we have now. after done, prep for full mcp implementation. Helpers is_tool=true to be made as actual mcp tools. 
 
@@ -56,6 +55,11 @@ Confidence: High for active behavior, moderate for full directive compliance. He
 
 23.30
 =============================
+docs/HELPER_IMPLEMENTATION_PLAN.md
+docs/ORCHESTRATOR_IMPLEMENTATION_PLAN.md
+docs/DIRECTIVE_ADDITIONS_IMPLEMENTATION_PLAN.md
+docs/WATCHDOG_IMPLEMENTATION_PLAN.md
+
 docs/directives-json/IMPORT_REPORT_2026-01-10.md
 
 docs/HELPER_AUDIT_REPORT.md

@@ -151,7 +151,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Do any type-function relationships need to be added in types_functions table?"
+        "Do any type-function relationships need to be added in types_functions table?",
+        "If called during project_reserve_finalize: proceed to project_update_db to sync type registrations."
       ],
       "implementation_notes": [
         "Returns: {success: true, type_id: int, file_id: int}",

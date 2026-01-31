@@ -374,6 +374,9 @@ def aifp_status(
                 except Exception:
                     user_directives_data = {'error': 'Could not access user_directives.db'}
 
+        # Supportive context (detailed FP examples, DRY, state DB, etc.)
+        supportive_context = _get_supportive_context_safe()
+
         data = {
             'initialized': True,
             'project_metadata': project_metadata,
@@ -383,6 +386,7 @@ def aifp_status(
             'user_directives_data': user_directives_data,
             'recent_warnings': recent_warnings,
             'git_state': git_state,
+            'supportive_context': supportive_context,
         }
 
         return Result(
@@ -420,22 +424,23 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 fp_directive_index: dict,
                 all_directive_names: tuple,
                 infrastructure_data: tuple,
+                supportive_context: str (detailed FP examples, DRY, state DB, etc.),
                 guidance: dict
             }
 
         If is_new_session=False:
             Result with data={
                 guidance: dict,
-                common_starting_points: tuple
+                common_starting_points: tuple (includes get_supportive_context() reference)
             }
     """
     try:
         if not is_new_session:
             # Lightweight response — still read watchdog reminders if project exists
             project_root = _discover_project_root()
-            watchdog_reminders = ()
+            watchdog_data = {'status': 'no_project', 'reminders': (), 'notice': None}
             if project_root is not None:
-                watchdog_reminders = _read_and_clear_reminders(project_root)
+                watchdog_data = _read_and_clear_reminders(project_root)
 
             return Result(
                 success=True,
@@ -452,6 +457,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
                     ),
                     'common_starting_points': (
                         'aifp_status() — Get fresh project state and determine next action',
+                        'get_supportive_context() — Reload detailed FP examples, DRY patterns, state DB usage, behavioral rules',
                         'project_task_create — Create new task from user request',
                         'project_sidequest_create — Track unexpected work or user change of plans',
                         'project_notes_log — Log decisions, clarifications, or context',
@@ -461,7 +467,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
                         'If context feels stale or compressed, call aifp_run(is_new_session=true) '
                         'to reload full project state from database.'
                     ),
-                    'watchdog_reminders': watchdog_reminders,
+                    'watchdog': watchdog_data,
                 },
                 return_statements=get_return_statements("aifp_run"),
             )
@@ -482,8 +488,15 @@ def aifp_run(is_new_session: bool = False) -> Result:
             )
 
         # Watchdog: kill previous, start fresh, read any accumulated reminders
-        _start_watchdog(project_root)
-        watchdog_reminders = _read_and_clear_reminders(project_root)
+        watchdog_start = _start_watchdog(project_root)
+        watchdog_read = _read_and_clear_reminders(project_root)
+        watchdog_data = {
+            'started': watchdog_start.get('started', False),
+            'start_error': watchdog_start.get('error'),
+            'status': watchdog_read.get('status', 'unknown'),
+            'reminders': watchdog_read.get('reminders', ()),
+            'notice': watchdog_read.get('notice'),
+        }
 
         # Bundle: status
         status_result = aifp_status(project_root, type="summary")
@@ -501,6 +514,9 @@ def aifp_run(is_new_session: bool = False) -> Result:
         # Bundle: infrastructure
         infrastructure_data = _get_infrastructure_safe(project_root)
 
+        # Bundle: supportive context (detailed FP examples, DRY, state DB, etc.)
+        supportive_context = _get_supportive_context_safe()
+
         return Result(
             success=True,
             data={
@@ -510,8 +526,9 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 'fp_directive_index': fp_directive_index,
                 'all_directive_names': all_directive_names,
                 'infrastructure_data': infrastructure_data,
+                'supportive_context': supportive_context,
                 'guidance': _get_guidance(),
-                'watchdog_reminders': watchdog_reminders,
+                'watchdog': watchdog_data,
             },
             return_statements=get_return_statements("aifp_run"),
         )
@@ -520,12 +537,15 @@ def aifp_run(is_new_session: bool = False) -> Result:
         return Result(success=False, error=f"aifp_run failed: {str(e)}")
 
 
-def _start_watchdog(project_root: str) -> None:
+def _start_watchdog(project_root: str) -> Dict[str, Any]:
     """
     Effect: Start watchdog subprocess for the project.
 
     Kills any existing watchdog process, clears old reminders,
     then starts a new watchdog subprocess.
+
+    Returns:
+        dict with {started: bool, error: str or None}
     """
     import signal
     import subprocess
@@ -562,25 +582,60 @@ def _start_watchdog(project_root: str) -> None:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-    except (OSError, subprocess.SubprocessError):
-        pass  # Watchdog is best-effort — don't break aifp_run if it fails
+        return {'started': True, 'error': None}
+    except (OSError, subprocess.SubprocessError) as e:
+        return {
+            'started': False,
+            'error': f"Watchdog failed to start: {str(e)}. "
+                     "Verify the watchdog module is installed (aifp.watchdog package).",
+        }
 
 
-def _read_and_clear_reminders(project_root: str) -> Tuple[Dict[str, Any], ...]:
+def _read_and_clear_reminders(project_root: str) -> Dict[str, Any]:
     """
     Effect: Read watchdog reminders and clear the file.
 
-    Returns tuple of reminder dicts. Returns empty tuple if no reminders
-    or if watchdog directory doesn't exist.
+    Returns:
+        dict with {
+            status: 'ok' | 'not_running' | 'no_reminders_file',
+            reminders: tuple of reminder dicts,
+            notice: str or None
+        }
     """
-    from ...watchdog.config import get_reminders_path
+    from ...watchdog.config import get_reminders_path, get_pid_path
     from ...watchdog.reminders import _effect_read_reminders, _effect_clear_reminders
 
+    pid_path = get_pid_path(project_root)
     reminders_path = get_reminders_path(project_root)
+
+    # Check if watchdog is running (PID file exists)
+    if not os.path.isfile(pid_path):
+        return {
+            'status': 'not_running',
+            'reminders': (),
+            'notice': "Watchdog process is not running. File change monitoring is inactive. "
+                      "Call aifp_run(is_new_session=true) to restart, or verify the "
+                      "watchdog module is installed.",
+        }
+
+    # Check if reminders file exists
+    if not os.path.isfile(reminders_path):
+        return {
+            'status': 'no_reminders_file',
+            'reminders': (),
+            'notice': "Watchdog PID file exists but reminders file is missing. "
+                      "Watchdog may have failed to initialize. Check "
+                      ".aifp-project/watchdog/ directory.",
+        }
+
     reminders = _effect_read_reminders(reminders_path)
     if reminders:
         _effect_clear_reminders(reminders_path)
-    return reminders
+    return {
+        'status': 'ok',
+        'reminders': reminders,
+        'notice': None,
+    }
 
 
 def _discover_project_root() -> Optional[str]:
@@ -660,6 +715,18 @@ def _get_all_directive_names_safe() -> Tuple[str, ...]:
         return ()
     except Exception:
         return ()
+
+
+def _get_supportive_context_safe() -> str:
+    """Effect: Get supportive context content, returning empty string on failure."""
+    try:
+        from ..global.supportive_context import get_supportive_context
+        result = get_supportive_context()
+        if result.success and result.data:
+            return result.data.get('content', '')
+        return ''
+    except Exception:
+        return ''
 
 
 def _get_infrastructure_safe(project_root: str) -> Tuple[Dict[str, Any], ...]:

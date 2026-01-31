@@ -151,7 +151,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Do any database interactions need to be added for this function?"
+        "Do any database interactions need to be added for this function?",
+        "If called during project_reserve_finalize: proceed to project_update_db to sync function dependencies."
       ],
       "target_database": "project",
       "used_by_directives": [

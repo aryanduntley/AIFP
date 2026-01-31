@@ -102,6 +102,7 @@ This is a **conversation**, not a form fill. AI should ask open-ended questions 
 4. Update infrastructure table with confirmed/corrected values
 5. **Create state database**: Once `source_directory` is confirmed, call `create_state_database(source_directory)` to create `<source-dir>/.state/runtime.db`. This provides FP-compliant replacement for mutable global variables.
 6. **Create state operations entry point**: Using the template at `src/aifp/templates/state_db/state_operations.py` as reference, create language-appropriate state operations file in the project's source directory (e.g., `<source-dir>/.state/state_operations.{ext}`). Adapt the template to match the project's primary language.
+7. **Register state files in project.db**: After creating state DB and state_operations file, register them in project.db files table via the standard reserve → finalize flow. The `.state/` directory contents are project files that should be tracked.
 
 ---
 

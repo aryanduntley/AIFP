@@ -612,7 +612,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Route to the returned target directive. For task/subtask/sidequest completion, target is typically aifp_status which then routes to project_progression for next task creation. For milestone completion, target is aifp_status which routes to project_progression to open next milestone.",
+        "If project_task_complete: check if all tasks in milestone are done \u2014 if yes, trigger project_milestone_complete before routing to target."
+      ],
       "target_database": "core",
       "used_by_directives": [
         {

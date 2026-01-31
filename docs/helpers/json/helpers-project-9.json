@@ -559,7 +559,7 @@
       "return_statements": [
         "If not exists, AI should now create language-appropriate state_operations entry point using template at src/aifp/templates/state_db/state_operations.py as reference."
       ],
-      "target_database": "state",
+      "target_database": "project",
       "used_by_directives": [
         {
           "directive_name": "project_discovery",
@@ -576,7 +576,8 @@
         "Creates <source-dir>/.state/ directory and runtime.db using SQL schema at database/initialization/state_db.sql",
         "Returns Result with data={created: bool, db_path: str, state_dir: str, template_reference: str}",
         "After creation, AI must create language-specific state_operations file using template as reference",
-        "Schema includes: variables table (key-value with type), update trigger, schema_version table"
+        "Schema includes: variables table (key-value with type), update trigger, schema_version table",
+        "After state DB and state_operations files are created, AI should register them in project.db files table via the standard reserve → finalize flow. The .state/ directory and its contents are project files that should be tracked."
       ]
     }
   ],

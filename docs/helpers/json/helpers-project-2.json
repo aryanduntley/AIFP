@@ -123,7 +123,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Verify flows are added in file_flows table"
+        "Verify flows are added in file_flows table.",
+        "If called during project_reserve_finalize: proceed to project_update_db to sync reserved IDs with database."
       ],
       "target_database": "project",
       "used_by_directives": [

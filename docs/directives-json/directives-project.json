@@ -3187,7 +3187,8 @@
               "Discuss coding conventions, file organization patterns, naming standards",
               "Update infrastructure table with confirmed/corrected values",
               "Create state database: Once source_directory is confirmed, call create_state_database(source_directory) to create <source-dir>/.state/runtime.db — FP-compliant replacement for mutable global variables",
-              "Create state operations entry point: Using template at src/aifp/templates/state_db/state_operations.py as reference, create language-appropriate state operations file in <source-dir>/.state/state_operations.{ext}"
+              "Create state operations entry point: Using template at src/aifp/templates/state_db/state_operations.py as reference, create language-appropriate state operations file in <source-dir>/.state/state_operations.{ext}",
+              "Register state files in project.db: After creating state DB and state_operations file, register them in project.db files table via reserve → finalize flow. The .state/ directory contents are project files that should be tracked."
             ]
           }
         },
