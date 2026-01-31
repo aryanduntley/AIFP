@@ -20,7 +20,7 @@ from typing import Optional, Tuple, Dict, Any, List
 
 # Import core utilities
 from ._common import (
-    _get_core_connection,
+    _open_core_connection,
     _get_table_names,
     _get_table_info,
     get_return_statements,
@@ -191,7 +191,7 @@ def get_core_tables() -> TablesResult:
         ('categories', 'directive_categories', 'directive_flow', ...)
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             tables = _get_table_names(conn)
@@ -243,7 +243,7 @@ def get_core_fields(table: str) -> FieldsResult:
         )
 
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             # Get table info
@@ -296,7 +296,7 @@ def get_core_schema() -> SchemaResult:
         ['categories', 'directive_categories', 'directive_flow', ...]
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             # Get all table names
@@ -365,7 +365,7 @@ def get_from_core(
         )
 
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             if not id_array:
@@ -452,7 +452,7 @@ def get_from_core_where(
         )
 
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             # Verify fields exist in table
@@ -544,7 +544,7 @@ def query_core(
         )
 
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             # Build and execute query

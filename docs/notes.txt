@@ -40,7 +40,17 @@ MUST make OOP wrapper examples
 
 docs/directives-json/sync-directives.py
 
-Python watchdog in mcp folder. Project source root provider as argument. Writes to project aifp folder sunfolder file.       
+delete effect functions had issues in 
+src/aifp/helpers/project/functions_2.py
+src/aifp/helpers/project/interactions.py
+src/aifp/helpers/project/types_1.py
+should review. review files for integrity and any errors
+review watchdog implementation and review global db connection code, imports and use.
+
+mutable global database created, internal helper functions for it??? Should have examples for this for project already. 
+
+next: import json to db. re-create project db if needed. Begin populating project db with mcp codebase we have now. after done, prep for full mcp implementation. Helpers is_tool=true to be made as actual mcp tools. 
+
 =============================
 Token cost: ~15-20k tokens loaded on every API call. Fora tool that's meant to be cost-conscious (all trackingoff by default), the system prompt itself is the largestfixed cost per interaction.
 

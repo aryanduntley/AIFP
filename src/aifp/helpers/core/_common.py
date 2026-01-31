@@ -15,7 +15,7 @@ Core database characteristics:
 - Contains: directives, helpers, flows, categories, intent_keywords
 
 Common utilities (core-specific):
-- _get_core_connection: Open connection to core database
+- _open_core_connection: Open connection to core database
 - Directive record conversion utilities
 - Helper record conversion utilities
 - Flow record conversion utilities
@@ -47,6 +47,7 @@ from ..utils import (
     rows_to_tuple,
     parse_json_field,
     json_to_tuple,
+    _open_core_connection,
 )
 
 # Re-export for convenience
@@ -63,7 +64,7 @@ __all__ = [
     'rows_to_tuple',
     'parse_json_field',
     'json_to_tuple',
-    '_get_core_connection',
+    '_open_core_connection',
     'DirectiveRecord',
     'HelperRecord',
     'FlowRecord',
@@ -79,28 +80,6 @@ __all__ = [
 # Core Database Connection
 # ============================================================================
 
-def _get_core_connection() -> sqlite3.Connection:
-    """
-    Effect: Open connection to core database.
-
-    Convenience wrapper that combines get_core_db_path() and _open_connection().
-
-    Returns:
-        Database connection with row factory configured
-
-    Raises:
-        FileNotFoundError: If core database does not exist
-
-    Example:
-        >>> conn = _get_core_connection()
-        >>> cursor = conn.execute("SELECT * FROM directives")
-    """
-    core_db = get_core_db_path()
-
-    if not database_exists(core_db):
-        raise FileNotFoundError(f"Core database not found: {core_db}")
-
-    return _open_connection(core_db)
 
 
 # ============================================================================

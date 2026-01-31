@@ -1,0 +1,113 @@
+"""
+AIFP Watchdog - Reminder Generation and JSON Management
+
+Pure functions for creating reminder data structures,
+effect functions for reading/writing the reminders JSON file.
+"""
+
+import time
+from typing import Any, Dict, Optional, Tuple
+
+from ..wrappers.file_ops import (
+    _effect_read_json,
+    _effect_write_json_atomic,
+)
+
+
+# ============================================================================
+# Pure Functions
+# ============================================================================
+
+def create_reminder(
+    reminder_type: str,
+    severity: str,
+    file_path: str,
+    message: str,
+) -> Dict[str, str]:
+    """Pure: Create a single reminder dict."""
+    return {
+        'type': reminder_type,
+        'severity': severity,
+        'file': file_path,
+        'message': message,
+        'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+    }
+
+
+def build_reminders_document(
+    reminders: Tuple[Dict[str, str], ...],
+) -> Dict[str, Any]:
+    """Pure: Build the full reminders JSON document structure."""
+    return {
+        'generated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'reminders': list(reminders),
+    }
+
+
+def build_empty_document() -> Dict[str, Any]:
+    """Pure: Build an empty reminders document."""
+    return build_reminders_document(())
+
+
+def merge_reminders(
+    existing: Tuple[Dict[str, str], ...],
+    new: Tuple[Dict[str, str], ...],
+) -> Tuple[Dict[str, str], ...]:
+    """Pure: Merge existing reminders with new ones."""
+    return existing + new
+
+
+# ============================================================================
+# Effect Functions
+# ============================================================================
+
+def _effect_read_reminders(reminders_path: str) -> Tuple[Dict[str, str], ...]:
+    """
+    Effect: Read reminders from JSON file.
+
+    Returns empty tuple if file doesn't exist or is invalid.
+    """
+    data = _effect_read_json(reminders_path)
+    if data is None:
+        return ()
+    raw_reminders = data.get('reminders', [])
+    if not isinstance(raw_reminders, list):
+        return ()
+    return tuple(raw_reminders)
+
+
+def _effect_write_reminders(
+    reminders_path: str,
+    reminders: Tuple[Dict[str, str], ...],
+) -> bool:
+    """
+    Effect: Write reminders to JSON file atomically.
+
+    Returns True on success.
+    """
+    doc = build_reminders_document(reminders)
+    return _effect_write_json_atomic(reminders_path, doc)
+
+
+def _effect_clear_reminders(reminders_path: str) -> bool:
+    """
+    Effect: Clear the reminders file (write empty document).
+
+    Returns True on success.
+    """
+    doc = build_empty_document()
+    return _effect_write_json_atomic(reminders_path, doc)
+
+
+def _effect_append_reminders(
+    reminders_path: str,
+    new_reminders: Tuple[Dict[str, str], ...],
+) -> bool:
+    """
+    Effect: Read existing reminders, append new ones, write back atomically.
+
+    Returns True on success.
+    """
+    existing = _effect_read_reminders(reminders_path)
+    merged = merge_reminders(existing, new_reminders)
+    return _effect_write_reminders(reminders_path, merged)

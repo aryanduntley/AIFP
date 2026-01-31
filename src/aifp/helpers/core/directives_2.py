@@ -23,7 +23,7 @@ from typing import Optional, Tuple, Dict, Any, List
 
 # Import core utilities
 from ._common import (
-    _get_core_connection,
+    _open_core_connection,
     get_return_statements,
     rows_to_tuple,
     HelperRecord,
@@ -119,7 +119,7 @@ def get_helper_by_name(helper_name: str) -> HelperResult:
         'Reserve file ID for naming before creation'
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -170,7 +170,7 @@ def get_helpers_by_database(target_database: str) -> HelpersResult:
         119
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -213,7 +213,7 @@ def get_helpers_are_tool() -> HelpersResult:
         150  # Approximate MCP tool count
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -254,7 +254,7 @@ def get_helpers_not_tool_not_sub() -> HelpersResult:
         True
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -299,7 +299,7 @@ def get_helpers_are_sub() -> HelpersResult:
         True
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -346,7 +346,7 @@ def get_helpers_for_directive(
         'reserve_file'
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             if include_helpers_data:
@@ -421,7 +421,7 @@ def get_directives_for_helper(helper_name: str) -> DirectivesResult:
         ['project_file_write', 'project_reserve_finalize', ...]
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -475,7 +475,7 @@ def get_category_by_name(category_name: str) -> CategoryResult:
         'Pure function principles and side effect management'
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -523,7 +523,7 @@ def get_categories() -> CategoriesResult:
         ['error_handling', 'functional_composition', 'purity', ...]
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(

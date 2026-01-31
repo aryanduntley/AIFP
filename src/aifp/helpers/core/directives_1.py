@@ -29,7 +29,7 @@ from typing import Optional, Tuple, Dict, Any, List
 
 # Import core utilities
 from ._common import (
-    _get_core_connection,
+    _open_core_connection,
     get_return_statements,
     rows_to_tuple,
     row_to_dict,
@@ -270,7 +270,7 @@ def get_directive_by_name(directive_name: str) -> DirectiveResult:
         'fp'
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -326,7 +326,7 @@ def get_all_directives() -> DirectivesResult:
         45
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute("SELECT * FROM directives ORDER BY type, name")
@@ -381,7 +381,7 @@ def search_directives(
         >>> result = search_directives(type="fp", category="error_handling")
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             # Build query based on filters
@@ -470,7 +470,7 @@ def find_directive_by_intent(
         'user_preferences_update'
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             # Get all directives with their keywords
@@ -535,7 +535,7 @@ def find_directives_by_intent_keyword(
         ('fp_purity', 'fp_immutability', ...)
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             if match_mode == "all":
@@ -607,7 +607,7 @@ def get_directives_with_intent_keywords(
         3
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             if match_mode == "all":
@@ -671,7 +671,7 @@ def add_directive_intent_keyword(
         SimpleResult with success status
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             # Check if keyword exists, create if not
@@ -726,7 +726,7 @@ def remove_directive_intent_keyword(
         SimpleResult with success status
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             conn.execute(
@@ -767,7 +767,7 @@ def get_directive_keywords(directive_id: int) -> KeywordsResult:
         ('purity', 'pure function', 'side effects', ...)
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             keywords = _get_directive_intent_keywords(conn, directive_id)
@@ -801,7 +801,7 @@ def get_all_directive_keywords() -> KeywordsResult:
         ('purity', 'immutability', 'error handling', ...)
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -838,7 +838,7 @@ def get_all_intent_keywords_with_counts() -> KeywordCountsResult:
         ({'keyword': 'purity', 'count': 5}, ...)
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -896,7 +896,7 @@ def get_all_directive_names(
         ('fp_purity', 'fp_immutability', ...)
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             if types:
@@ -946,7 +946,7 @@ def get_directives_by_category(category_name: str) -> DirectivesResult:
         ['fp_purity', 'fp_immutability', ...]
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -1000,7 +1000,7 @@ def get_directives_by_type(
         15
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -1047,7 +1047,7 @@ def get_fp_directive_index() -> DirectiveIndexResult:
         {'error_handling': ('fp_optionals', 'fp_result_types'), 'purity': ('fp_purity', ...)}
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(

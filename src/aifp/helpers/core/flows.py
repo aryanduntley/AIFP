@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 from ._common import (
-    _get_core_connection,
+    _open_core_connection,
     get_return_statements,
     FlowRecord,
     row_to_flow,
@@ -75,7 +75,7 @@ def get_flows_from_directive(from_directive: str) -> FlowsResult:
         ['project_init', 'project_task_select', ...]
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -125,7 +125,7 @@ def get_flows_to_directive(to_directive: str) -> FlowsResult:
         ['aifp_status', 'project_task_select', ...]
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -175,7 +175,7 @@ def get_completion_loop_target(from_directive: str) -> FlowResult:
         'aifp_status'
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             cursor = conn.execute(
@@ -240,7 +240,7 @@ def get_directive_flows(
         >>> result = get_directive_flows(flow_category="git", flow_type="conditional")
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             query = "SELECT * FROM directive_flow WHERE 1=1"
@@ -307,7 +307,7 @@ def get_wildcard_flows(flow_type: Optional[str] = None) -> FlowsResult:
         >>> # Returns cross-cutting utilities
     """
     try:
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             if flow_type:

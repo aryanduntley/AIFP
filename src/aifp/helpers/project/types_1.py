@@ -492,6 +492,11 @@ def _get_function_relationships(
     return relationships
 
 
+def _delete_type_effect(
+    conn: sqlite3.Connection,
+    type_id: int,
+) -> None:
+    """
     Effect: Delete type from database.
 
     Args:
@@ -599,7 +604,7 @@ def reserve_types(
 
     Returns:
         ReserveBatchResult with success status and reserved IDs
-        IDs correspond to input indices: types[0] → ids[0], types[1] → ids[1]
+        IDs correspond to input indices: types[0] -> ids[0], types[1] -> ids[1]
 
     Example:
         >>> types = [

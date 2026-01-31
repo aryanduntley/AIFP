@@ -431,7 +431,12 @@ def aifp_run(is_new_session: bool = False) -> Result:
     """
     try:
         if not is_new_session:
-            # Lightweight but directive response
+            # Lightweight response — still read watchdog reminders if project exists
+            project_root = _discover_project_root()
+            watchdog_reminders = ()
+            if project_root is not None:
+                watchdog_reminders = _read_and_clear_reminders(project_root)
+
             return Result(
                 success=True,
                 data={
@@ -456,6 +461,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
                         'If context feels stale or compressed, call aifp_run(is_new_session=true) '
                         'to reload full project state from database.'
                     ),
+                    'watchdog_reminders': watchdog_reminders,
                 },
                 return_statements=get_return_statements("aifp_run"),
             )
@@ -474,6 +480,10 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 },
                 return_statements=get_return_statements("aifp_run"),
             )
+
+        # Watchdog: kill previous, start fresh, read any accumulated reminders
+        _start_watchdog(project_root)
+        watchdog_reminders = _read_and_clear_reminders(project_root)
 
         # Bundle: status
         status_result = aifp_status(project_root, type="summary")
@@ -501,12 +511,76 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 'all_directive_names': all_directive_names,
                 'infrastructure_data': infrastructure_data,
                 'guidance': _get_guidance(),
+                'watchdog_reminders': watchdog_reminders,
             },
             return_statements=get_return_statements("aifp_run"),
         )
 
     except Exception as e:
         return Result(success=False, error=f"aifp_run failed: {str(e)}")
+
+
+def _start_watchdog(project_root: str) -> None:
+    """
+    Effect: Start watchdog subprocess for the project.
+
+    Kills any existing watchdog process, clears old reminders,
+    then starts a new watchdog subprocess.
+    """
+    import signal
+    import subprocess
+    import sys
+
+    from ...watchdog.config import get_watchdog_dir, get_pid_path, get_reminders_path
+    from ...watchdog.reminders import _effect_clear_reminders
+
+    watchdog_dir = get_watchdog_dir(project_root)
+    pid_path = get_pid_path(project_root)
+    reminders_path = get_reminders_path(project_root)
+
+    # Kill existing watchdog if running
+    if os.path.isfile(pid_path):
+        try:
+            with open(pid_path, 'r') as f:
+                old_pid = int(f.read().strip())
+            os.kill(old_pid, signal.SIGTERM)
+        except (ValueError, OSError, ProcessLookupError):
+            pass
+        try:
+            os.remove(pid_path)
+        except OSError:
+            pass
+
+    # Clear old reminders
+    _effect_clear_reminders(reminders_path)
+
+    # Start new watchdog subprocess (inherits parent lifecycle)
+    try:
+        os.makedirs(watchdog_dir, exist_ok=True)
+        subprocess.Popen(
+            [sys.executable, '-m', 'aifp.watchdog', project_root],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.SubprocessError):
+        pass  # Watchdog is best-effort — don't break aifp_run if it fails
+
+
+def _read_and_clear_reminders(project_root: str) -> Tuple[Dict[str, Any], ...]:
+    """
+    Effect: Read watchdog reminders and clear the file.
+
+    Returns tuple of reminder dicts. Returns empty tuple if no reminders
+    or if watchdog directory doesn't exist.
+    """
+    from ...watchdog.config import get_reminders_path
+    from ...watchdog.reminders import _effect_read_reminders, _effect_clear_reminders
+
+    reminders_path = get_reminders_path(project_root)
+    reminders = _effect_read_reminders(reminders_path)
+    if reminders:
+        _effect_clear_reminders(reminders_path)
+    return reminders
 
 
 def _discover_project_root() -> Optional[str]:
@@ -655,36 +729,27 @@ def _stop_watchdog(aifp_dir: str) -> Dict[str, Any]:
 
     Checks for PID file at .aifp-project/watchdog/watchdog.pid.
     If found and process alive, kills it and reads reminders.json.
-    If not found, returns stopped=None (watchdog not implemented or not running).
+    If not found, returns stopped=None (watchdog not running).
 
     Args:
         aifp_dir: Path to .aifp-project/ directory
 
     Returns:
-        dict with {stopped: bool|None, final_reminders: list}
+        dict with {stopped: bool|None, final_reminders: tuple}
     """
-    import json
     import signal
+
+    from ...watchdog.reminders import _effect_read_reminders, _effect_clear_reminders
 
     watchdog_dir = os.path.join(aifp_dir, "watchdog")
     pid_file = os.path.join(watchdog_dir, "watchdog.pid")
     reminders_file = os.path.join(watchdog_dir, "reminders.json")
 
-    # TODO: Watchdog not yet implemented. This code is ready for when it is.
-    # When watchdog module is built, verify PID file format and signal handling
-    # are compatible. See docs/WATCHDOG_IMPLEMENTATION_PLAN.md for details.
-
     if not os.path.isfile(pid_file):
-        return {'stopped': None, 'final_reminders': []}
+        return {'stopped': None, 'final_reminders': ()}
 
     # Read reminders before killing process
-    final_reminders = []
-    if os.path.isfile(reminders_file):
-        try:
-            with open(reminders_file, 'r') as f:
-                final_reminders = json.load(f)
-        except (json.JSONDecodeError, OSError):
-            final_reminders = []
+    final_reminders = _effect_read_reminders(reminders_file)
 
     # Attempt to stop the watchdog process
     stopped = False
@@ -694,13 +759,13 @@ def _stop_watchdog(aifp_dir: str) -> Dict[str, Any]:
         os.kill(pid, signal.SIGTERM)
         stopped = True
     except (ValueError, OSError, ProcessLookupError):
-        # Process already dead or PID invalid — still consider it stopped
         stopped = True
 
-    # Clean up PID file
+    # Clean up PID file and reminders
     try:
         os.remove(pid_file)
     except OSError:
         pass
+    _effect_clear_reminders(reminders_file)
 
     return {'stopped': stopped, 'final_reminders': final_reminders}

@@ -15,7 +15,7 @@ from typing import Optional, Tuple
 
 # Import core utilities
 from ._common import (
-    _get_core_connection,
+    _open_core_connection,
     _get_table_sql,
     _get_table_info,
     _parse_check_constraint,
@@ -78,7 +78,7 @@ def core_allowed_check_constraints(
     """
     try:
         # Effect: open connection to core database
-        conn = _get_core_connection()
+        conn = _open_core_connection()
 
         try:
             # Effect: get CREATE TABLE SQL for the table

@@ -250,6 +250,11 @@ def _update_interaction_effect(conn: sqlite3.Connection, sql: str, params: Tuple
     conn.commit()
 
 
+def _delete_interaction_effect(
+    conn: sqlite3.Connection,
+    interaction_id: int,
+) -> None:
+    """
     Effect: Delete interaction from database.
 
     Args:

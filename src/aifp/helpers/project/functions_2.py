@@ -422,6 +422,11 @@ def _get_type_relationships(
     return relationships
 
 
+def _delete_function_effect(
+    conn: sqlite3.Connection,
+    function_id: int,
+) -> None:
+    """
     Effect: Delete function from database.
 
     Args:

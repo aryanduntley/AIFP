@@ -3,11 +3,11 @@ AIFP Helper Functions - Orchestrators Common Utilities
 
 Shared utilities used across orchestrator helper files.
 
-This is the CATEGORY level of the DRY hierarchy:
-
-    utils.py (global)                   <- Database-agnostic shared code
-        └── orchestrators/_common.py    <- THIS FILE: Orchestrator-specific shared code
-            └── orchestrators/{file}.py <- Individual orchestrator helpers
+DRY hierarchy:
+    database/connection.py  (foundation — source of truth)
+        └── helpers/utils.py (re-exports)
+            └── orchestrators/_common.py (THIS FILE — orchestrator constants + re-exports)
+                └── orchestrators/{file}.py (individual orchestrator helpers)
 
 Orchestrator characteristics:
 - Aggregate data from multiple tables (and sometimes multiple databases)
@@ -15,23 +15,15 @@ Orchestrator characteristics:
 - Entry points (aifp_init, aifp_run, aifp_status) coordinate across databases
 - Status/query helpers work within project.db only
 
-Common utilities (orchestrator-specific):
-- Result types for orchestrator operations
-- Shared constants (expected table counts, infrastructure entries)
-- Connection helpers for multi-database access
-
-Imported from utils.py (global):
-- _open_connection: Database connection with row factory
-- Database path resolution functions
-- Return statements fetching
-- Row conversion utilities
+This file provides:
+- Re-exports from utils.py (which re-exports from database/connection.py)
+- Orchestrator-specific constants (action maps, valid types, JOIN mappings)
 """
 
 import sqlite3
-from dataclasses import dataclass
-from typing import Optional, Tuple, Dict, Any, Final
+from typing import Dict, Final
 
-# Import global utilities (DRY - avoid duplication)
+# Import from utils.py (which re-exports from database/connection.py)
 from ..utils import (
     _open_connection,
     _close_connection,
@@ -54,11 +46,15 @@ from ..utils import (
     PROJECT_DB_NAME,
     USER_PREFERENCES_DB_NAME,
     USER_DIRECTIVES_DB_NAME,
+    # Connection openers now come from foundation layer
+    _open_project_connection,
+    _open_preferences_connection,
+    _open_directives_connection,
 )
 
 # Re-export for convenience — orchestrator files import from _common only
 __all__ = [
-    # Global utilities
+    # Global utilities (from database/connection.py via utils.py)
     '_open_connection',
     '_close_connection',
     'get_core_db_path',
@@ -83,12 +79,20 @@ __all__ = [
     'USER_DIRECTIVES_DB_NAME',
     'BLUEPRINT_FILENAME',
     'BACKUPS_DIR_NAME',
-    # Orchestrator-specific
+    # Connection openers (from foundation layer)
     '_open_project_connection',
     '_open_preferences_connection',
     '_open_directives_connection',
+    # Orchestrator-specific constants
+    'VALID_STATUS_TYPES',
     'VALID_TASK_TYPES',
     'TASK_TABLE_MAP',
+    'VALID_STATE_ACTIONS',
+    'ACTION_STATUS_MAP',
+    'ACTION_TARGET_MAP',
+    'VALID_QUERY_ENTITIES',
+    'JOIN_MAPPINGS',
+    'VALID_PROGRESS_SCOPES',
 ]
 
 
@@ -198,70 +202,3 @@ VALID_PROGRESS_SCOPES: Final[frozenset[str]] = frozenset([
     'tasks', 'milestones', 'completion_paths', 'files', 'functions',
     'flows', 'themes', 'infrastructure', 'all',
 ])
-
-
-# ============================================================================
-# Database Connection Helpers
-# ============================================================================
-
-def _open_project_connection(project_root: str) -> sqlite3.Connection:
-    """
-    Effect: Open connection to project.db.
-
-    Args:
-        project_root: Absolute path to project root directory
-
-    Returns:
-        Database connection with row factory configured
-
-    Raises:
-        FileNotFoundError: If project.db does not exist
-    """
-    db_path = get_project_db_path(project_root)
-
-    if not database_exists(db_path):
-        raise FileNotFoundError(f"Project database not found: {db_path}")
-
-    return _open_connection(db_path)
-
-
-def _open_preferences_connection(project_root: str) -> sqlite3.Connection:
-    """
-    Effect: Open connection to user_preferences.db.
-
-    Args:
-        project_root: Absolute path to project root directory
-
-    Returns:
-        Database connection with row factory configured
-
-    Raises:
-        FileNotFoundError: If user_preferences.db does not exist
-    """
-    db_path = get_user_preferences_db_path(project_root)
-
-    if not database_exists(db_path):
-        raise FileNotFoundError(f"User preferences database not found: {db_path}")
-
-    return _open_connection(db_path)
-
-
-def _open_directives_connection(project_root: str) -> sqlite3.Connection:
-    """
-    Effect: Open connection to user_directives.db.
-
-    Args:
-        project_root: Absolute path to project root directory
-
-    Returns:
-        Database connection with row factory configured
-
-    Raises:
-        FileNotFoundError: If user_directives.db does not exist
-    """
-    db_path = get_user_directives_db_path(project_root)
-
-    if not database_exists(db_path):
-        raise FileNotFoundError(f"User directives database not found: {db_path}")
-
-    return _open_connection(db_path)

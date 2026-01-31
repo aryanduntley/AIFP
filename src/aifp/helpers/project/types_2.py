@@ -202,6 +202,11 @@ def _update_relationship_role_effect(
     conn.commit()
 
 
+def _delete_relationship_effect(
+    conn: sqlite3.Connection,
+    relationship_id: int,
+) -> None:
+    """
     Effect: Delete type-function relationship from database.
 
     Args:
