@@ -66,7 +66,7 @@
         "Phase 1 complete. AI must now execute Phase 2: scan for OOP patterns (if existing code), detect infrastructure (language, build tool, source directory), and prompt user for project name/purpose/goals.",
         "Empty infrastructure entries created: project_root (populated), source_directory, primary_language, build_tool, package_manager, test_framework, runtime_version, main_branch. AI must detect and populate these values.",
         "ProjectBlueprint.md is a template with placeholders. AI must populate with real project data after user interaction.",
-        "After source_directory is populated: AI must create state database at {source_dir}/.state/ using templates/state_db/ files.",
+        "After source_directory is populated: AI must call create_state_database(source_directory) to create {source_dir}/.state/runtime.db from SQL schema, then create language-appropriate state_operations entry point using template at src/aifp/templates/state_db/state_operations.py.",
         "After all population complete: create initial completion_path, prompt for Use Case 2 (user directives), initialize git if needed, backup blueprint."
       ],
       "implementation_notes": [
@@ -82,7 +82,7 @@
         "RETURN STRUCTURE: {success: bool, project_root: str, aifp_dir: str, files_created: ['.aifp-project/', 'project.db', 'user_preferences.db', 'ProjectBlueprint.md'], tables_created: {project_db: [...], user_prefs_db: [...]}, infrastructure_entries: 8, next_phase: 'AI populates infrastructure and blueprint'}",
         "State database creation: Code lives in aifp_init module. Called after AI populates source_directory (Phase 2). Creates {source_dir}/.state/runtime.db, README.md, state_operations.{ext}",
         "State DB purpose: FP-compliant mutable global state (key-value store with CRUD reference file)",
-        "State DB templates located at: src/aifp/templates/state_db/ (runtime.db, README.md, state_operations.py)",
+        "State DB: SQL schema at src/aifp/database/initialization/state_db.sql, template at src/aifp/templates/state_db/state_operations.py, helper at helpers/project/state_db.py",
         "ERROR CLEANUP: If any step fails after Step 2, delete .aifp-project/ directory entirely (shutil.rmtree). Partial initialization is worse than no initialization.",
         "ERROR RETURN: {success: false, error: str, failed_step: int, cleanup_performed: bool}",
         "All operations are direct file/DB operations - no external helper calls"

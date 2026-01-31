@@ -22,16 +22,11 @@ from dataclasses import dataclass
 from typing import Optional, List, Tuple, Dict, Any
 
 # Import global utilities
-import sys
-from pathlib import Path
-# Add parent directory to path to import from helpers.utils
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements
+from ..utils import get_return_statements
 
 # Import update_file_timestamp from files_2
-sys.path.insert(0, str(Path(__file__).parent))
 from ._common import _open_connection, _check_file_exists, _check_type_exists, _create_deletion_note
-from files_2 import update_file_timestamp
+from .files_2 import update_file_timestamp
 
 
 # ============================================================================
@@ -1098,8 +1093,6 @@ def delete_type(
         # Delete type
         _delete_type_effect(conn, type_id)
 
-        conn.close()
-
         # Success - fetch return statements from core database
         return_statements = get_return_statements("delete_type")
 
@@ -1117,5 +1110,4 @@ def delete_type(
         )
 
     finally:
-        # Connection already closed
-        pass
+        conn.close()

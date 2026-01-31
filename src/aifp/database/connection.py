@@ -124,6 +124,7 @@ def get_user_directives_db_path(project_root: str) -> str:
     return str(Path(project_root) / AIFP_PROJECT_DIR / USER_DIRECTIVES_DB_NAME)
 
 
+
 def database_exists(db_path: str) -> bool:
     """Pure: Check if database file exists."""
     return os.path.exists(db_path)
@@ -211,6 +212,7 @@ def _open_mcp_runtime_connection() -> sqlite3.Connection:
     """
     db_path = get_mcp_runtime_db_path()
     return _open_connection(db_path)
+
 
 
 # ============================================================================

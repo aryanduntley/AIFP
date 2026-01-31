@@ -539,17 +539,56 @@
       "return_statements": [],
       "target_database": "project",
       "used_by_directives": []
+    },
+    {
+      "name": "create_state_database",
+      "file_path": "helpers/project/state_db.py",
+      "parameters": [
+        {
+          "name": "source_directory",
+          "type": "str",
+          "required": true,
+          "default": null,
+          "description": "Absolute path to project source directory (from infrastructure.source_directory)"
+        }
+      ],
+      "purpose": "Create per-project state database (.state/runtime.db) from SQL schema. FP-compliant replacement for mutable global variables.",
+      "error_handling": "Returns Result(success=False, error=...) if schema file missing or creation fails. Idempotent — returns success if database already exists.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If not exists, AI should now create language-appropriate state_operations entry point using template at src/aifp/templates/state_db/state_operations.py as reference."
+      ],
+      "target_database": "state",
+      "used_by_directives": [
+        {
+          "directive_name": "project_discovery",
+          "execution_context": "map_infrastructure",
+          "sequence_order": 5,
+          "is_required": true,
+          "parameters_mapping": {
+            "source_directory": "infrastructure.source_directory"
+          },
+          "description": "Create state database after source_directory is confirmed during infrastructure mapping"
+        }
+      ],
+      "implementation_notes": [
+        "Creates <source-dir>/.state/ directory and runtime.db using SQL schema at database/initialization/state_db.sql",
+        "Returns Result with data={created: bool, db_path: str, state_dir: str, template_reference: str}",
+        "After creation, AI must create language-specific state_operations file using template as reference",
+        "Schema includes: variables table (key-value with type), update trigger, schema_version table"
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-project-9.json",
-    "count": 10,
-    "range": "helpers 103-112 of 112",
-    "description": "Item and note management operations (add, get, update, delete, search)",
+    "count": 11,
+    "range": "helpers 103-113 of 113",
+    "description": "Item and note management operations, state database creation",
     "first_helper": "get_items_for_task",
-    "last_helper": "delete_note",
-    "status": "return_statements complete - 0 helpers enhanced",
-    "last_updated": "2026-01-02",
-    "notes": "All helpers are straightforward CRUD operations for items and notes - no return_statements needed"
+    "last_helper": "create_state_database",
+    "status": "return_statements complete",
+    "last_updated": "2026-01-31",
+    "notes": "Added create_state_database helper for FP-compliant state management"
   }
 }

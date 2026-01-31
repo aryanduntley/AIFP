@@ -19,11 +19,7 @@ from dataclasses import dataclass
 from typing import Optional, List, Tuple
 
 # Import global utilities
-import sys
-from pathlib import Path
-# Add parent directory to path to import from helpers.utils
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements
+from ..utils import get_return_statements
 from ._common import _open_connection, _check_function_exists, _create_deletion_note
 
 
@@ -273,7 +269,7 @@ def add_interaction(
     db_path: str,
     source: str,
     target: str,
-    type: str
+    interaction_type: str
 ) -> AddInteractionResult:
     """
     Add function dependency/interaction (by function names).
@@ -285,7 +281,7 @@ def add_interaction(
         db_path: Path to project.db
         source: Source function name (the function making the call/reference)
         target: Target function name (the function being called/referenced)
-        type: Interaction type ('call', 'chain', 'borrow', 'compose', 'pipe')
+        interaction_type: Interaction type ('call', 'chain', 'borrow', 'compose', 'pipe')
 
     Returns:
         AddInteractionResult with success status and new interaction ID
@@ -296,7 +292,7 @@ def add_interaction(
         ...     "project.db",
         ...     source="process_data_id_42",
         ...     target="validate_input_id_15",
-        ...     type="call"
+        ...     interaction_type="call"
         ... )
         >>> result.success
         True
@@ -304,10 +300,10 @@ def add_interaction(
         1
     """
     # Validate interaction type
-    if not validate_interaction_type(type):
+    if not validate_interaction_type(interaction_type):
         return AddInteractionResult(
             success=False,
-            error=f"Invalid interaction type: {type}. Must be one of: call, chain, borrow, compose, pipe"
+            error=f"Invalid interaction type: {interaction_type}. Must be one of: call, chain, borrow, compose, pipe"
         )
 
     # Effect: open connection
@@ -330,11 +326,11 @@ def add_interaction(
             )
 
         # Effect: add interaction
-        interaction_id = _add_interaction_effect(
+        new_interaction_id = _add_interaction_effect(
             conn,
             source_function_id,
             target_function_id,
-            type
+            interaction_type
         )
 
         # Success - fetch return statements from core database
@@ -342,7 +338,7 @@ def add_interaction(
 
         return AddInteractionResult(
             success=True,
-            id=interaction_id,
+            id=new_interaction_id,
             return_statements=return_statements
         )
 
@@ -444,7 +440,7 @@ def add_interactions(
 
 def update_interaction(
     db_path: str,
-    id: int,
+    interaction_id: int,
     source_function_id: Optional[int] = None,
     target_function_id: Optional[int] = None,
     interaction_type: Optional[str] = None,
@@ -457,7 +453,7 @@ def update_interaction(
 
     Args:
         db_path: Path to project.db
-        id: Interaction ID to update
+        interaction_id: Interaction ID to update
         source_function_id: New source function ID (None = don't update)
         target_function_id: New target function ID (None = don't update)
         interaction_type: New interaction type (None = don't update)
@@ -500,10 +496,10 @@ def update_interaction(
 
     try:
         # Check if interaction exists
-        if not _check_interaction_exists(conn, id):
+        if not _check_interaction_exists(conn, interaction_id):
             return UpdateInteractionResult(
                 success=False,
-                error=f"Interaction with ID {id} not found"
+                error=f"Interaction with ID {interaction_id} not found"
             )
 
         # Validate new function IDs if provided
@@ -520,7 +516,7 @@ def update_interaction(
             )
 
         # Pure: build update query
-        sql, params = build_update_query(id, source_function_id, target_function_id, interaction_type, description)
+        sql, params = build_update_query(interaction_id, source_function_id, target_function_id, interaction_type, description)
 
         # Effect: execute update
         _update_interaction_effect(conn, sql, params)
@@ -545,7 +541,7 @@ def update_interaction(
 
 def delete_interaction(
     db_path: str,
-    id: int,
+    interaction_id: int,
     note_reason: str,
     note_severity: str,
     note_source: str,
@@ -558,7 +554,7 @@ def delete_interaction(
 
     Args:
         db_path: Path to project.db
-        id: Interaction ID to delete
+        interaction_id: Interaction ID to delete
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
         note_source: 'ai' or 'user'
@@ -583,17 +579,17 @@ def delete_interaction(
 
     try:
         # Check if interaction exists
-        if not _check_interaction_exists(conn, id):
+        if not _check_interaction_exists(conn, interaction_id):
             return DeleteInteractionResult(
                 success=False,
-                error=f"Interaction with ID {id} not found"
+                error=f"Interaction with ID {interaction_id} not found"
             )
 
         # Create note entry
         _create_deletion_note(
             conn,
             "interactions",
-            id,
+            interaction_id,
             note_reason,
             note_severity,
             note_source,
@@ -601,7 +597,7 @@ def delete_interaction(
         )
 
         # Delete interaction
-        _delete_interaction_effect(conn, id)
+        _delete_interaction_effect(conn, interaction_id)
 
         # Success - fetch return statements from core database
         return_statements = get_return_statements("delete_interaction")

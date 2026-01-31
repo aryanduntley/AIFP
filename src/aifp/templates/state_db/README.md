@@ -34,21 +34,25 @@ result = state.delete_var('counter')
 
 ## Files
 
-- **runtime.db**: SQLite database storing variable state
+- **state_operations.py**: Template CRUD helper functions (adapt to project language)
 - **README.md**: This file
-- **state_operations.{ext}**: CRUD helper functions for this database
+
+The database is created by the `create_state_database` helper using the SQL schema
+at `src/aifp/database/initialization/state_db.sql`. The binary `runtime.db` is NOT
+shipped as a template — it is created from SQL at runtime.
 
 ## Schema
 
-The database has a simple key-value structure:
+See `src/aifp/database/initialization/state_db.sql` for the authoritative schema.
+Summary:
 
 ```sql
 CREATE TABLE variables (
     var_name TEXT PRIMARY KEY,
     var_value TEXT NOT NULL,
-    var_type TEXT,
-    created_at DATETIME,
-    updated_at DATETIME
+    var_type TEXT CHECK(var_type IN ('int', 'float', 'str', 'bool', 'dict', 'list')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
 

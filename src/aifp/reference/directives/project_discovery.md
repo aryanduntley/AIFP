@@ -100,6 +100,8 @@ This is a **conversation**, not a form fill. AI should ask open-ended questions 
    - Naming standards
    - Module boundaries
 4. Update infrastructure table with confirmed/corrected values
+5. **Create state database**: Once `source_directory` is confirmed, call `create_state_database(source_directory)` to create `<source-dir>/.state/runtime.db`. This provides FP-compliant replacement for mutable global variables.
+6. **Create state operations entry point**: Using the template at `src/aifp/templates/state_db/state_operations.py` as reference, create language-appropriate state operations file in the project's source directory (e.g., `<source-dir>/.state/state_operations.{ext}`). Adapt the template to match the project's primary language.
 
 ---
 
@@ -202,7 +204,7 @@ Ask user for missing information needed to define the project shape. If user wan
 
 - **`project_catalog`** — Delegates to catalog for pre-existing FP codebases
 - **`project_blueprint_update`** — Updates ProjectBlueprint.md
-- **Helpers**: `create_theme`, `create_flow`, `create_completion_path`, `create_milestone`, `update_infrastructure_entry`, `project_notes_log`
+- **Helpers**: `create_theme`, `create_flow`, `create_completion_path`, `create_milestone`, `update_infrastructure_entry`, `project_notes_log`, `create_state_database`
 
 ### Flows To
 

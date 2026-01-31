@@ -505,11 +505,11 @@
           "description": "Target function name"
         },
         {
-          "name": "type",
+          "name": "interaction_type",
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Interaction type"
+          "description": "Interaction type ('call', 'chain', 'borrow', 'compose', 'pipe')"
         }
       ],
       "purpose": "Add function dependency/interaction",
@@ -573,11 +573,11 @@
       "file_path": "helpers/project/interactions.py",
       "parameters": [
         {
-          "name": "id",
+          "name": "interaction_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Interaction ID"
+          "description": "Interaction ID to update"
         },
         {
           "name": "source_function_id",
@@ -637,11 +637,11 @@
       "file_path": "helpers/project/interactions.py",
       "parameters": [
         {
-          "name": "id",
+          "name": "interaction_id",
           "type": "integer",
           "required": true,
           "default": null,
-          "description": "Interaction ID"
+          "description": "Interaction ID to delete"
         },
         {
           "name": "note_reason",

@@ -21,15 +21,10 @@ from dataclasses import dataclass
 from typing import Optional, List, Tuple, Dict, Any
 
 # Import global utilities
-import sys
-from pathlib import Path
-# Add parent directory to path to import from helpers.utils
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements
+from ..utils import get_return_statements
 
 # Import update_file_timestamp from files_2
-sys.path.insert(0, str(Path(__file__).parent))
-from files_2 import update_file_timestamp
+from .files_2 import update_file_timestamp
 from ._common import _open_connection, _check_file_exists, _check_function_exists, _create_deletion_note
 
 
@@ -922,8 +917,6 @@ def delete_function(
         # Delete function (interactions cascade automatically)
         _delete_function_effect(conn, function_id)
 
-        conn.close()
-
         # Success - fetch return statements from core database
         return_statements = get_return_statements("delete_function")
 
@@ -941,5 +934,4 @@ def delete_function(
         )
 
     finally:
-        # Connection already closed
-        pass
+        conn.close()
