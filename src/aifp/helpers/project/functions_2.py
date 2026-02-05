@@ -43,6 +43,9 @@ class FunctionRecord:
     returns: Optional[str]  # JSON string
     purity_score: Optional[float]
     is_reserved: bool
+    id_in_name: bool
+    file_name: Optional[str]  # From JOIN with files table
+    file_path: Optional[str]  # From JOIN with files table
     created_at: str
     updated_at: str
 
@@ -211,7 +214,8 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
     """
     Convert database row to immutable FunctionRecord.
 
-    Pure function - deterministic mapping.
+    Pure function - deterministic mapping. Handles optional file_name/file_path
+    fields that are present when query includes JOIN with files table.
 
     Args:
         row: SQLite row object
@@ -219,6 +223,7 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
     Returns:
         Immutable FunctionRecord
     """
+    keys = row.keys()
     return FunctionRecord(
         id=row["id"],
         name=row["name"],
@@ -228,6 +233,9 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
         returns=row["returns"],
         purity_score=row["purity_score"],
         is_reserved=bool(row["is_reserved"]),
+        id_in_name=bool(row["id_in_name"]),
+        file_name=row["file_name"] if "file_name" in keys else None,
+        file_path=row["file_path"] if "file_path" in keys else None,
         created_at=row["created_at"],
         updated_at=row["updated_at"]
     )
@@ -283,7 +291,7 @@ def _get_functions_by_file_effect(
     file_id: int
 ) -> List[sqlite3.Row]:
     """
-    Effect: Query all functions in a file.
+    Effect: Query all functions in a file with file data via JOIN.
 
     Args:
         conn: Database connection
@@ -293,7 +301,11 @@ def _get_functions_by_file_effect(
         List of row objects (empty if no functions)
     """
     cursor = conn.execute(
-        "SELECT * FROM functions WHERE file_id = ? ORDER BY created_at",
+        """SELECT f.*, fi.name AS file_name, fi.path AS file_path
+        FROM functions f
+        LEFT JOIN files fi ON f.file_id = fi.id
+        WHERE f.file_id = ?
+        ORDER BY f.created_at""",
         (file_id,)
     )
     return cursor.fetchall()
@@ -541,13 +553,6 @@ def update_function(
             error="At least one parameter (name, purpose, parameters, returns) must be provided"
         )
 
-    # Validate name pattern if name is being updated
-    if name is not None and not validate_function_id_pattern(name, function_id):
-        return UpdateResult(
-            success=False,
-            error=f"Function name must contain '_id_{function_id}' pattern"
-        )
-
     # Effect: open connection
     conn = _open_connection(db_path)
 
@@ -558,6 +563,16 @@ def update_function(
                 success=False,
                 error=f"Function with ID {function_id} not found"
             )
+
+        # Validate name pattern if name is being updated and entity uses id_in_name
+        if name is not None:
+            cursor = conn.execute("SELECT id_in_name FROM functions WHERE id = ?", (function_id,))
+            row = cursor.fetchone()
+            if row and bool(row["id_in_name"]) and not validate_function_id_pattern(name, function_id):
+                return UpdateResult(
+                    success=False,
+                    error=f"Function name must contain '_id_{function_id}' pattern"
+                )
 
         # Get file_id before update
         file_id = _get_function_file_id(conn, function_id)
@@ -784,6 +799,17 @@ def update_function_file_location(
             return LocationUpdateResult(
                 success=False,
                 error=f"Function {function_id} does not belong to file {old_file_id}"
+            )
+
+        # Check for name conflict at destination file
+        cursor = conn.execute(
+            "SELECT id FROM functions WHERE name = (SELECT name FROM functions WHERE id = ?) AND file_id = ?",
+            (function_id, new_file_id)
+        )
+        if cursor.fetchone():
+            return LocationUpdateResult(
+                success=False,
+                error="Name conflict at destination file — a function with the same name already exists there"
             )
 
         # Effect: update function's file_id

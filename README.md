@@ -425,11 +425,19 @@ project_file_write
 
 ## Getting Started
 
+### Prerequisites
+
+- **Python 3.11+** (required for type hint syntax used throughout)
+- **MCP Python SDK**: `pip install mcp` (v1.26.0+) — required runtime dependency for the MCP server
+
 ### Installation
 
 ```bash
 # Download/clone AIFP MCP server to your preferred location
 # Example: ~/mcp-servers/aifp/ or /path/to/your/mcp-servers/aifp/
+
+# Install the MCP Python SDK dependency
+pip install mcp
 
 # The MCP server installation contains:
 # aifp_core.db (directive definitions)
@@ -455,17 +463,15 @@ Add to Claude Desktop config (`claude_desktop_config.json`):
 {
   "mcpServers": {
     "aifp": {
-      "command": "python",
-      "args": ["/path/to/your/aifp-mcp-server/src/main.py"],
-      "env": {
-        "AIFP_SERVER_ROOT": "/path/to/your/aifp-mcp-server"
-      }
+      "command": "python3",
+      "args": ["-m", "aifp"],
+      "env": {}
     }
   }
 }
 ```
 
-**Note**: Replace `/path/to/your/aifp-mcp-server` with the actual path where you installed/cloned the AIFP MCP server.
+The server resolves the path to `aifp_core.db` relative to its own installation directory — no environment variables needed.
 
 ---
 

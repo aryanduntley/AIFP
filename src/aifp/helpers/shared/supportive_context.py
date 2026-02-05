@@ -15,9 +15,7 @@ from pathlib import Path
 from typing import Tuple
 
 # Import global utilities
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements, Result
+from ..utils import get_return_statements, Result
 
 
 # ============================================================================

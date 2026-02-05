@@ -2,8 +2,16 @@
   "helpers": [
     {
       "name": "get_databases",
-      "file_path": "TODO_helpers/global/database_info.py",
-      "parameters": [],
+      "file_path": "helpers/shared/database_info.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Absolute path to project root directory"
+        }
+      ],
       "purpose": "Get list of all available databases with metadata",
       "error_handling": "Return empty array if none found",
       "is_tool": true,
@@ -31,7 +39,7 @@
     },
     {
       "name": "get_supportive_context",
-      "file_path": "helpers/global/supportive_context.py",
+      "file_path": "helpers/shared/supportive_context.py",
       "parameters": [],
       "purpose": "Returns the full supportive context reference document (FP code examples, DRY patterns, state database usage, Use Case 2 details, behavioral rules, edge case recovery). Loaded automatically by aifp_run(is_new_session=true). Call directly to reload detailed reference material when context feels stale or compressed.",
       "error_handling": "Returns error if supportive_context.txt not found at expected path. Never fails hard — returns informative error message.",

@@ -381,6 +381,49 @@
       ]
     },
     {
+      "name": "get_type_by_name",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "type_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Type name to look up"
+        }
+      ],
+      "purpose": "Get types by name (returns list with file data)",
+      "error_handling": "Return error if no types found with that name",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Look up types by name during DB-filesystem sync - verifies type entries exist before syncing"
+        },
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query types by name for dependency graph generation - maps type relationships"
+        }
+      ],
+      "implementation_notes": [
+        "Returns array of type objects with file data (multiple types can share same name across files)",
+        "SQL: SELECT t.*, fi.name AS file_name, fi.path AS file_path FROM types t LEFT JOIN files fi ON t.file_id = fi.id WHERE t.name = ?",
+        "Returns: {success, types: [{id, name, file_id, file_name, file_path, definition_json, description, links, is_reserved, id_in_name, created_at, updated_at}, ...]}",
+        "Returns TypeQueryResult with types tuple"
+      ]
+    },
+    {
       "name": "add_types_functions",
       "file_path": "helpers/project/types_2.py",
       "parameters": [
@@ -541,7 +584,9 @@
       "implementation_notes": [
         "Returns: {success: true, id: int} - new interaction ID",
         "Inserts into interactions table",
-        "Source/target are function names - resolved to IDs internally"
+        "Source/target are function names - resolved to IDs internally via JOIN with files table",
+        "DISAMBIGUATION: If function name matches multiple functions, returns error with list of matches [{id, name, file_name, file_path}] — AI should choose the correct one and call add_interactions with specific function IDs instead",
+        "If exactly 1 match: proceeds normally. If 0 matches: returns 'not found' error"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -711,8 +756,8 @@
   ],
   "metadata": {
     "file": "helpers-project-4.json",
-    "count": 13,
-    "range": "helpers 36-48 of 112",
+    "count": 14,
+    "range": "helpers 36-49 of 113",
     "description": "Type reservation/finalization, type-function relationships, and interaction management",
     "first_helper": "reserve_type",
     "last_helper": "delete_interaction",

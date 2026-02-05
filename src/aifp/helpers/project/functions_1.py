@@ -51,6 +51,8 @@ class FunctionRecord:
     purity_score: Optional[float]
     is_reserved: bool
     id_in_name: bool
+    file_name: Optional[str]  # From JOIN with files table
+    file_path: Optional[str]  # From JOIN with files table
     created_at: str
     updated_at: str
 
@@ -95,9 +97,9 @@ class FinalizeBatchResult:
 
 @dataclass(frozen=True)
 class FunctionQueryResult:
-    """Result of function lookup operation."""
+    """Result of function lookup that may return multiple matches (e.g. by name)."""
     success: bool
-    function: Optional[FunctionRecord] = None
+    functions: Tuple[FunctionRecord, ...] = ()
     error: Optional[str] = None
 
 
@@ -166,7 +168,8 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
     """
     Convert database row to immutable FunctionRecord.
 
-    Pure function - deterministic mapping.
+    Pure function - deterministic mapping. Handles optional file_name/file_path
+    fields that are present when query includes JOIN with files table.
 
     Args:
         row: SQLite row object
@@ -174,6 +177,7 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
     Returns:
         Immutable FunctionRecord
     """
+    keys = row.keys()
     return FunctionRecord(
         id=row["id"],
         name=row["name"],
@@ -184,6 +188,8 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
         purity_score=row["purity_score"],
         is_reserved=bool(row["is_reserved"]),
         id_in_name=bool(row["id_in_name"]),
+        file_name=row["file_name"] if "file_name" in keys else None,
+        file_path=row["file_path"] if "file_path" in keys else None,
         created_at=row["created_at"],
         updated_at=row["updated_at"]
     )
@@ -357,22 +363,28 @@ def _finalize_functions_batch_effect(
 def _get_function_by_name_effect(
     conn: sqlite3.Connection,
     function_name: str
-) -> Optional[sqlite3.Row]:
+) -> List[sqlite3.Row]:
     """
-    Effect: Query function by name.
+    Effect: Query functions by name with file data via JOIN.
+
+    Multiple functions can share the same name across different files
+    (e.g., main() in multiple __main__.py files).
 
     Args:
         conn: Database connection
         function_name: Function name to look up
 
     Returns:
-        Row object or None if not found
+        List of row objects (empty if none found)
     """
     cursor = conn.execute(
-        "SELECT * FROM functions WHERE name = ? LIMIT 1",
+        """SELECT f.*, fi.name AS file_name, fi.path AS file_path
+        FROM functions f
+        LEFT JOIN files fi ON f.file_id = fi.id
+        WHERE f.name = ?""",
         (function_name,)
     )
-    return cursor.fetchone()
+    return cursor.fetchall()
 
 
 # ============================================================================
@@ -770,45 +782,42 @@ def get_function_by_name(
     function_name: str
 ) -> FunctionQueryResult:
     """
-    Get function by name (very high-frequency lookup).
+    Get functions by name (very high-frequency lookup).
 
-    Queries functions table for exact name match.
-    Returns full function record with metadata.
+    Queries functions table for exact name match with file data via JOIN.
+    Returns all matches since multiple functions can share the same name
+    across different files (e.g., main() in multiple __main__.py files).
 
     Args:
         db_path: Path to project.db
-        function_name: Function name to look up (e.g., 'calculate_sum_id_42')
+        function_name: Function name to look up (e.g., 'calculate_sum_id_42' or 'main')
 
     Returns:
-        FunctionQueryResult with function record or None if not found
+        FunctionQueryResult with tuple of function records including file_name and file_path
 
     Example:
-        >>> result = get_function_by_name("project.db", "calculate_sum_id_42")
+        >>> result = get_function_by_name("project.db", "main")
         >>> result.success
         True
-        >>> result.function.id
-        42
-        >>> result.function.file_id
-        15
+        >>> len(result.functions)
+        2
+        >>> result.functions[0].file_path
+        'src/aifp/watchdog/__main__.py'
+        >>> result.functions[1].file_path
+        'src/aifp/__main__.py'
     """
     # Effect: open connection and query
     conn = _open_connection(db_path)
 
     try:
-        row = _get_function_by_name_effect(conn, function_name)
+        rows = _get_function_by_name_effect(conn, function_name)
 
-        if row is None:
-            return FunctionQueryResult(
-                success=True,
-                function=None
-            )
-
-        # Pure: convert row to immutable record
-        function_record = row_to_function_record(row)
+        # Pure: convert rows to immutable records
+        function_records = tuple(row_to_function_record(row) for row in rows)
 
         return FunctionQueryResult(
             success=True,
-            function=function_record
+            functions=function_records
         )
 
     except Exception as e:

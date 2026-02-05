@@ -222,8 +222,8 @@
           "description": "File name to look up (e.g., 'calculator_id_42.py')"
         }
       ],
-      "purpose": "Get file by name (high-frequency lookup)",
-      "error_handling": "Return null if not found",
+      "purpose": "Get files by name (high-frequency lookup, returns list)",
+      "error_handling": "Return error if no files found with that name",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
@@ -247,9 +247,10 @@
         }
       ],
       "implementation_notes": [
-        "Returns file object or null if not found",
-        "SQL: SELECT * FROM files WHERE name=? LIMIT 1",
-        "Returns: {id, name, path, language, is_reserved, created_at, updated_at}"
+        "Returns array of file objects (multiple files can share same name, e.g. __init__.py)",
+        "SQL: SELECT * FROM files WHERE name=?",
+        "Returns: {success, files: [{id, name, path, language, is_reserved, id_in_name, created_at, updated_at}, ...]}",
+        "Returns FilesQueryResult (not FileQueryResult) — uses files tuple, not single file"
       ]
     },
     {

@@ -413,13 +413,6 @@ def update_file(
             error="At least one parameter (name, path, language) must be provided"
         )
 
-    # Validate name pattern if name is being updated
-    if name is not None and not validate_file_id_pattern(name, file_id):
-        return UpdateResult(
-            success=False,
-            error=f"File name must contain '_id_{file_id}' pattern"
-        )
-
     # Effect: open connection
     conn = _open_connection(db_path)
 
@@ -430,6 +423,16 @@ def update_file(
                 success=False,
                 error=f"File with ID {file_id} not found"
             )
+
+        # Validate name pattern if name is being updated and entity uses id_in_name
+        if name is not None:
+            cursor = conn.execute("SELECT id_in_name FROM files WHERE id = ?", (file_id,))
+            row = cursor.fetchone()
+            if row and bool(row["id_in_name"]) and not validate_file_id_pattern(name, file_id):
+                return UpdateResult(
+                    success=False,
+                    error=f"File name must contain '_id_{file_id}' pattern"
+                )
 
         # Pure: build update query
         sql, params = build_update_query(file_id, name, path, language)

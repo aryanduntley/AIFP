@@ -9,13 +9,15 @@ directives json are in dev/directives-json/
 helpers json is in dev/helpers-json/
 Everything above src/aifp/ is dev.
 directive flows are in dev/directives-json/directive_flow_(project,user-preferences,fp).json
+All directives and helpers are now also in the database: src/aifp/database/aifp_core.db
+project database is in .aifp/project.db
 
 src/aifp/database/schemas/user_directives.sql
 src/aifp/database/schemas/aifp_core.sql
 src/aifp/database/schemas/project.sql
 src/aifp/database/schemas/user_preferences.sql
 
-docs/implementation-plans/MCP_IMPLEMENTATION_PLAN.md
+docs/MCP/MCP_IMPLEMENTATION_PLAN.md
 
 Do not read or modify notes.txt. That is just for me.                         
 
@@ -34,7 +36,7 @@ Token cost: ~15-20k tokens loaded on every API call. Fora tool that's meant to b
 
 Diminishing returns: Studies on long system promptssuggest instruction-following degrades past a certainlength. Rules at the end get less attention than rules at the top. The current structure front-loads the criticalstuff (proactive behavior, aifp_run, FP baseline) whichis good, but the behavioral rules at line ~500+ are inthe weaker zone.
 
-Possible optimizations (not urgent, but worth considering later):- The FP coding style section (~lines 110-290) is verydetailed with code examples. Some of that could move tothe FP directive MD files and be referenced rather thaninlined — the AI already has access to those viaget_directive_content().- The Use Case 2 explanation (~lines 525-545) could beshortened since it's also thoroughly covered indirectives.- The DRY principle section with code examples is quitelong for a system prompt rule.
+Possible optimizations (not urgent, but worth considering later):- The FP coding style section (~lines 110-290) is very detailed with code examples. Some of that could move tothe FP directive MD files and be referenced rather thaninlined — the AI already has access to those viaget_directive_content().- The Use Case 2 explanation (~lines 525-545) could beshortened since it's also thoroughly covered indirectives.- The DRY principle section with code examples is quitelong for a system prompt rule.
 
 For now at ~650 lines with the additions, it's fine. Ifit grows further, I'd look at extracting the detailed FPcode examples into directive references and keeping onlythe rules in the prompt.    
 =============================

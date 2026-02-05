@@ -1,6 +1,11 @@
 -- project.db Schema
--- Version: 1.4
+-- Version: 1.5
 -- Purpose: Track project-specific data, including files, functions, themes, flows, and completion paths
+-- Changelog v1.5:
+--   - Removed UNIQUE constraint on name from functions and types tables
+--   - Language already enforces per-file name uniqueness; DB constraint was redundant
+--   - Allows same function/type name in different files (e.g., main() in multiple __main__.py)
+--   - get_function_by_name now returns list of results with file data
 -- Changelog v1.4:
 --   - Added id_in_name BOOLEAN field to files, functions, types tables
 --   - Tracks whether entity name contains _id_XX pattern or skipped ID naming
@@ -62,7 +67,7 @@ CREATE TABLE IF NOT EXISTS files (
 -- Functions Table: Per-file details with reservation system
 CREATE TABLE IF NOT EXISTS functions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,              -- Unique across entire project (FP flat namespace)
+    name TEXT NOT NULL,                     -- Function name (not unique — language enforces per-file uniqueness)
     file_id INTEGER NOT NULL,
     purpose TEXT,
     parameters JSON,                        -- e.g., '["param1: str", "param2: int"]'
@@ -77,7 +82,7 @@ CREATE TABLE IF NOT EXISTS functions (
 -- Types Table: For algebraic data types (directive_fp_adt) with reservation system
 CREATE TABLE IF NOT EXISTS types (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     file_id INTEGER,                            -- File where type is defined
     definition_json TEXT NOT NULL,              -- JSON schema for ADT (e.g., {"type": "enum", "variants": ["A", "B"]})
     description TEXT,
@@ -447,4 +452,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.4');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.5');

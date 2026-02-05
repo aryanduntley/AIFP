@@ -16,7 +16,7 @@ Helpers in this file:
 
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 
 # Import global utilities
 from ..utils import get_return_statements
@@ -59,6 +59,15 @@ class DeleteInteractionResult:
     success: bool
     error: Optional[str] = None
     return_statements: Tuple[str, ...] = ()  # AI guidance for next steps
+
+
+@dataclass(frozen=True)
+class FunctionMatch:
+    """A function match for disambiguation."""
+    id: int
+    name: str
+    file_name: Optional[str]
+    file_path: Optional[str]
 
 
 # ============================================================================
@@ -150,20 +159,44 @@ def _check_interaction_exists(conn: sqlite3.Connection, interaction_id: int) -> 
     return cursor.fetchone() is not None
 
 
-def _get_function_id_by_name(conn: sqlite3.Connection, function_name: str) -> Optional[int]:
+def _resolve_function_by_name(conn: sqlite3.Connection, function_name: str) -> Tuple[Optional[int], Tuple[FunctionMatch, ...]]:
     """
-    Effect: Get function ID by name.
+    Effect: Resolve function name to ID, with disambiguation for duplicates.
 
     Args:
         conn: Database connection
         function_name: Function name to look up
 
     Returns:
-        Function ID or None if not found
+        Tuple of (function_id_or_None, matches):
+        - If exactly 1 match: (id, ())
+        - If >1 matches: (None, tuple_of_FunctionMatch)
+        - If 0 matches: (None, ())
     """
-    cursor = conn.execute("SELECT id FROM functions WHERE name = ? LIMIT 1", (function_name,))
-    row = cursor.fetchone()
-    return row["id"] if row else None
+    cursor = conn.execute(
+        """SELECT f.id, f.name, fi.name AS file_name, fi.path AS file_path
+        FROM functions f
+        LEFT JOIN files fi ON f.file_id = fi.id
+        WHERE f.name = ?""",
+        (function_name,)
+    )
+    rows = cursor.fetchall()
+
+    if len(rows) == 0:
+        return (None, ())
+    elif len(rows) == 1:
+        return (rows[0]["id"], ())
+    else:
+        matches = tuple(
+            FunctionMatch(
+                id=row["id"],
+                name=row["name"],
+                file_name=row["file_name"],
+                file_path=row["file_path"]
+            )
+            for row in rows
+        )
+        return (None, matches)
 
 
 def _add_interaction_effect(
@@ -310,19 +343,38 @@ def add_interaction(
     conn = _open_connection(db_path)
 
     try:
-        # Resolve function names to IDs
-        source_function_id = _get_function_id_by_name(conn, source)
-        if source_function_id is None:
+        # Resolve source function name to ID
+        source_function_id, source_matches = _resolve_function_by_name(conn, source)
+        if source_function_id is None and not source_matches:
             return AddInteractionResult(
                 success=False,
                 error=f"Source function not found: {source}"
             )
+        if source_function_id is None and source_matches:
+            match_list = ", ".join(
+                f"[id={m.id}, file={m.file_path or 'unknown'}]" for m in source_matches
+            )
+            return AddInteractionResult(
+                success=False,
+                error=f"Ambiguous source function '{source}' — multiple matches found: {match_list}. "
+                      f"Call again with the specific function ID using add_interactions instead."
+            )
 
-        target_function_id = _get_function_id_by_name(conn, target)
-        if target_function_id is None:
+        # Resolve target function name to ID
+        target_function_id, target_matches = _resolve_function_by_name(conn, target)
+        if target_function_id is None and not target_matches:
             return AddInteractionResult(
                 success=False,
                 error=f"Target function not found: {target}"
+            )
+        if target_function_id is None and target_matches:
+            match_list = ", ".join(
+                f"[id={m.id}, file={m.file_path or 'unknown'}]" for m in target_matches
+            )
+            return AddInteractionResult(
+                success=False,
+                error=f"Ambiguous target function '{target}' — multiple matches found: {match_list}. "
+                      f"Call again with the specific function ID using add_interactions instead."
             )
 
         # Effect: add interaction

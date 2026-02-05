@@ -777,7 +777,7 @@ def _get_all_directive_names_safe() -> Tuple[str, ...]:
 def _get_supportive_context_safe() -> str:
     """Effect: Get supportive context content, returning empty string on failure."""
     try:
-        from ..global.supportive_context import get_supportive_context
+        from ..shared.supportive_context import get_supportive_context
         result = get_supportive_context()
         if result.success and result.data:
             return result.data.get('content', '')

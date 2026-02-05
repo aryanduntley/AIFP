@@ -88,9 +88,17 @@ class FinalizeBatchResult:
 
 @dataclass(frozen=True)
 class FileQueryResult:
-    """Result of file lookup operation."""
+    """Result of file lookup operation (single file, e.g. by path)."""
     success: bool
     file: Optional[FileRecord] = None
+    error: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class FilesQueryResult:
+    """Result of file lookup that may return multiple matches (e.g. by name)."""
+    success: bool
+    files: Tuple[FileRecord, ...] = ()
     error: Optional[str] = None
 
 
@@ -286,22 +294,22 @@ def _finalize_files_batch_effect(
 def _get_file_by_name_effect(
     conn: sqlite3.Connection,
     file_name: str
-) -> Optional[sqlite3.Row]:
+) -> List[sqlite3.Row]:
     """
-    Effect: Query file by name.
+    Effect: Query files by name (multiple files can share same name, e.g. __init__.py).
 
     Args:
         conn: Database connection
         file_name: File name to look up
 
     Returns:
-        Row object or None if not found
+        List of row objects (empty if none found)
     """
     cursor = conn.execute(
-        "SELECT * FROM files WHERE name = ? LIMIT 1",
+        "SELECT * FROM files WHERE name = ?",
         (file_name,)
     )
-    return cursor.fetchone()
+    return cursor.fetchall()
 
 
 def _get_file_by_path_effect(
@@ -627,51 +635,45 @@ def finalize_files(
 def get_file_by_name(
     db_path: str,
     file_name: str
-) -> FileQueryResult:
+) -> FilesQueryResult:
     """
-    Get file by name (high-frequency lookup).
+    Get files by name (high-frequency lookup).
 
-    Queries files table for exact name match.
-    Returns full file record with metadata.
+    Queries files table for exact name match. Returns all matches since
+    multiple files can share the same name (e.g., __init__.py in different directories).
 
     Args:
         db_path: Path to project.db
-        file_name: File name to look up (e.g., 'calculator_id_42.py')
+        file_name: File name to look up (e.g., 'calculator_id_42.py' or '__init__.py')
 
     Returns:
-        FileQueryResult with file record or None if not found
+        FilesQueryResult with tuple of file records (empty if none found)
 
     Example:
-        >>> result = get_file_by_name("project.db", "calculator_id_42.py")
+        >>> result = get_file_by_name("project.db", "__init__.py")
         >>> result.success
         True
-        >>> result.file.id
-        42
-        >>> result.file.path
-        'src/calculator_id_42.py'
+        >>> len(result.files)
+        3
+        >>> result.files[0].path
+        'src/aifp/__init__.py'
     """
     # Effect: open connection and query
     conn = _open_connection(db_path)
 
     try:
-        row = _get_file_by_name_effect(conn, file_name)
+        rows = _get_file_by_name_effect(conn, file_name)
 
-        if row is None:
-            return FileQueryResult(
-                success=True,
-                file=None
-            )
+        # Pure: convert rows to immutable records
+        file_records = tuple(row_to_file_record(row) for row in rows)
 
-        # Pure: convert row to immutable record
-        file_record = row_to_file_record(row)
-
-        return FileQueryResult(
+        return FilesQueryResult(
             success=True,
-            file=file_record
+            files=file_records
         )
 
     except Exception as e:
-        return FileQueryResult(
+        return FilesQueryResult(
             success=False,
             error=f"Query failed: {str(e)}"
         )

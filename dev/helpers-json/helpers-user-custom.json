@@ -2,7 +2,7 @@
   "helpers": [
     {
       "name": "user_directives_allowed_check_constraints",
-      "file_path": "TODO_helpers/user_directives/validation.py",
+      "file_path": "helpers/user_directives/validation.py",
       "parameters": [
         {
           "name": "table",
@@ -39,7 +39,7 @@
     },
     {
       "name": "get_user_custom_tables",
-      "file_path": "TODO_helpers/user_directives/schema.py",
+      "file_path": "helpers/user_directives/schema.py",
       "parameters": [],
       "purpose": "List all tables in user directives database",
       "error_handling": "",
@@ -56,7 +56,7 @@
     },
     {
       "name": "get_user_custom_fields",
-      "file_path": "TODO_helpers/user_directives/schema.py",
+      "file_path": "helpers/user_directives/schema.py",
       "parameters": [
         {
           "name": "table",
@@ -81,7 +81,7 @@
     },
     {
       "name": "get_user_custom_schema",
-      "file_path": "TODO_helpers/user_directives/schema.py",
+      "file_path": "helpers/user_directives/schema.py",
       "parameters": [],
       "purpose": "Get complete schema SQL for user directives database",
       "error_handling": "",
@@ -98,7 +98,7 @@
     },
     {
       "name": "get_user_custom_json_parameters",
-      "file_path": "TODO_helpers/user_directives/schema.py",
+      "file_path": "helpers/user_directives/schema.py",
       "parameters": [
         {
           "name": "table",
@@ -124,7 +124,7 @@
     },
     {
       "name": "get_from_user_custom",
-      "file_path": "TODO_helpers/user_directives/crud.py",
+      "file_path": "helpers/user_directives/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -157,7 +157,7 @@
     },
     {
       "name": "get_from_user_custom_where",
-      "file_path": "TODO_helpers/user_directives/crud.py",
+      "file_path": "helpers/user_directives/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -190,7 +190,7 @@
     },
     {
       "name": "query_user_custom",
-      "file_path": "TODO_helpers/user_directives/crud.py",
+      "file_path": "helpers/user_directives/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -223,7 +223,7 @@
     },
     {
       "name": "add_user_custom_entry",
-      "file_path": "TODO_helpers/user_directives/crud.py",
+      "file_path": "helpers/user_directives/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -290,7 +290,7 @@
     },
     {
       "name": "update_user_custom_entry",
-      "file_path": "TODO_helpers/user_directives/crud.py",
+      "file_path": "helpers/user_directives/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -379,7 +379,7 @@
     },
     {
       "name": "delete_user_custom_entry",
-      "file_path": "TODO_helpers/user_directives/crud.py",
+      "file_path": "helpers/user_directives/crud.py",
       "parameters": [
         {
           "name": "table",
@@ -423,7 +423,7 @@
     },
     {
       "name": "get_active_user_directives",
-      "file_path": "TODO_helpers/user_directives/crud.py",
+      "file_path": "helpers/user_directives/crud.py",
       "parameters": [],
       "purpose": "Get all user directives with status='active'. Convenience query for checking active directive count.",
       "error_handling": "Returns empty array if no active directives",
@@ -465,7 +465,7 @@
     },
     {
       "name": "search_user_directives",
-      "file_path": "TODO_helpers/user_directives/crud.py",
+      "file_path": "helpers/user_directives/crud.py",
       "parameters": [
         {
           "name": "name",
@@ -529,7 +529,7 @@
     },
     {
       "name": "get_user_directive_by_name",
-      "file_path": "TODO_helpers/user_directives/management.py",
+      "file_path": "helpers/user_directives/management.py",
       "parameters": [
         {
           "name": "name",
@@ -579,7 +579,7 @@
     },
     {
       "name": "activate_user_directive",
-      "file_path": "TODO_helpers/user_directives/management.py",
+      "file_path": "helpers/user_directives/management.py",
       "parameters": [
         {
           "name": "directive_id",
@@ -618,7 +618,7 @@
     },
     {
       "name": "deactivate_user_directive",
-      "file_path": "TODO_helpers/user_directives/management.py",
+      "file_path": "helpers/user_directives/management.py",
       "parameters": [
         {
           "name": "directive_id",
@@ -665,7 +665,7 @@
     },
     {
       "name": "add_user_directive_note",
-      "file_path": "TODO_helpers/user_directives/management.py",
+      "file_path": "helpers/user_directives/management.py",
       "parameters": [
         {
           "name": "content",
@@ -733,7 +733,7 @@
     },
     {
       "name": "get_user_directive_notes",
-      "file_path": "TODO_helpers/user_directives/management.py",
+      "file_path": "helpers/user_directives/management.py",
       "parameters": [
         {
           "name": "note_type",
@@ -795,7 +795,7 @@
     },
     {
       "name": "search_user_directive_notes",
-      "file_path": "TODO_helpers/user_directives/management.py",
+      "file_path": "helpers/user_directives/management.py",
       "parameters": [
         {
           "name": "search_string",

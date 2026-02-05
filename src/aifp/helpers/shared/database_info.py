@@ -16,10 +16,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 # Import global utilities
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import (
+from ..utils import (
     get_return_statements,
     get_core_db_path,
     get_project_db_path,
@@ -27,7 +24,7 @@ from utils import (
     get_user_directives_db_path,
     database_exists,
     _open_connection,
-    _close_connection
+    _close_connection,
 )
 
 

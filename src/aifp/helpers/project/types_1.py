@@ -44,6 +44,8 @@ class TypeRecord:
     links: Optional[str]  # JSON string
     is_reserved: bool
     id_in_name: bool
+    file_name: Optional[str]  # From JOIN with files table
+    file_path: Optional[str]  # From JOIN with files table
     created_at: str
     updated_at: str
 
@@ -102,6 +104,14 @@ class FunctionRelationship:
     function_id: int
     function_name: str
     role: str
+
+
+@dataclass(frozen=True)
+class TypeQueryResult:
+    """Result of type lookup that may return multiple matches (e.g. by name)."""
+    success: bool
+    types: Tuple[TypeRecord, ...] = ()
+    error: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -229,7 +239,8 @@ def row_to_type_record(row: sqlite3.Row) -> TypeRecord:
     """
     Convert database row to immutable TypeRecord.
 
-    Pure function - deterministic mapping.
+    Pure function - deterministic mapping. Handles optional file_name/file_path
+    fields that are present when query includes JOIN with files table.
 
     Args:
         row: SQLite row object
@@ -237,6 +248,7 @@ def row_to_type_record(row: sqlite3.Row) -> TypeRecord:
     Returns:
         Immutable TypeRecord
     """
+    keys = row.keys()
     return TypeRecord(
         id=row["id"],
         name=row["name"],
@@ -246,6 +258,8 @@ def row_to_type_record(row: sqlite3.Row) -> TypeRecord:
         links=row["links"],
         is_reserved=bool(row["is_reserved"]),
         id_in_name=bool(row["id_in_name"]),
+        file_name=row["file_name"] if "file_name" in keys else None,
+        file_path=row["file_path"] if "file_path" in keys else None,
         created_at=row["created_at"],
         updated_at=row["updated_at"]
     )
@@ -947,13 +961,6 @@ def update_type(
             error="At least one parameter (name, file_id, definition_json, description) must be provided"
         )
 
-    # Validate name pattern if name is being updated
-    if name is not None and not validate_type_id_in_name(name, type_id):
-        return UpdateResult(
-            success=False,
-            error=f"Type name must contain '_id_{type_id}' pattern"
-        )
-
     # Effect: open connection
     conn = _open_connection(db_path)
 
@@ -964,6 +971,16 @@ def update_type(
                 success=False,
                 error=f"Type with ID {type_id} not found"
             )
+
+        # Validate name pattern if name is being updated and entity uses id_in_name
+        if name is not None:
+            cursor = conn.execute("SELECT id_in_name FROM types WHERE id = ?", (type_id,))
+            row = cursor.fetchone()
+            if row and bool(row["id_in_name"]) and not validate_type_id_in_name(name, type_id):
+                return UpdateResult(
+                    success=False,
+                    error=f"Type name must contain '_id_{type_id}' pattern"
+                )
 
         # Validate new file_id if provided
         if file_id is not None and not _check_file_exists(conn, file_id):
@@ -1121,6 +1138,88 @@ def delete_type(
         return DeleteResult(
             success=False,
             error=f"Database deletion failed: {str(e)}"
+        )
+
+    finally:
+        conn.close()
+
+
+# ============================================================================
+# Type Lookup by Name
+# ============================================================================
+
+def _get_type_by_name_effect(conn: sqlite3.Connection, type_name: str) -> List[sqlite3.Row]:
+    """
+    Effect: Query types by name with file data via JOIN.
+
+    Args:
+        conn: Database connection
+        type_name: Type name to search for
+
+    Returns:
+        List of matching rows (may be empty, one, or many)
+    """
+    cursor = conn.execute(
+        """SELECT t.*, fi.name AS file_name, fi.path AS file_path
+        FROM types t
+        LEFT JOIN files fi ON t.file_id = fi.id
+        WHERE t.name = ?""",
+        (type_name,)
+    )
+    return cursor.fetchall()
+
+
+def get_type_by_name(
+    db_path: str,
+    type_name: str
+) -> TypeQueryResult:
+    """
+    Look up types by name.
+
+    Returns all types matching the given name, with file metadata (name, path)
+    included via JOIN. Multiple types may share a name across different files.
+
+    Args:
+        db_path: Path to project.db
+        type_name: Type name to search for
+
+    Returns:
+        TypeQueryResult with tuple of matching TypeRecords
+
+    Example:
+        >>> result = get_type_by_name("project.db", "Maybe_id_7")
+        >>> result.success
+        True
+        >>> len(result.types)
+        1
+        >>> result.types[0].file_path
+        'src/types.py'
+    """
+    # Effect: open connection
+    conn = _open_connection(db_path)
+
+    try:
+        # Effect: query types by name
+        rows = _get_type_by_name_effect(conn, type_name)
+
+        if not rows:
+            return TypeQueryResult(
+                success=False,
+                error=f"No types found with name: {type_name}"
+            )
+
+        # Pure: convert rows to records
+        type_records = tuple(row_to_type_record(row) for row in rows)
+
+        return TypeQueryResult(
+            success=True,
+            types=type_records
+        )
+
+    except Exception as e:
+        return TypeQueryResult(
+            success=False,
+            error=f"Database query failed: {str(e)}"
         )
 
     finally:
