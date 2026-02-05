@@ -32,7 +32,7 @@
           "description": "Check if theme exists before mapping file - validates theme name from file metadata"
         },
         {
-          "directive_name": "project_init",
+          "directive_name": "aifp_init",
           "execution_context": "create_project_structure",
           "sequence_order": 3,
           "is_required": false,
@@ -73,7 +73,7 @@
           "description": "Check if flow exists before mapping file - validates flow name from file metadata"
         },
         {
-          "directive_name": "project_init",
+          "directive_name": "aifp_init",
           "execution_context": "create_project_structure",
           "sequence_order": 4,
           "is_required": false,
@@ -210,7 +210,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_init",
+          "directive_name": "aifp_init",
           "execution_context": "create_project_structure",
           "sequence_order": 5,
           "is_required": true,
@@ -383,7 +383,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_init",
+          "directive_name": "aifp_init",
           "execution_context": "create_project_structure",
           "sequence_order": 6,
           "is_required": true,

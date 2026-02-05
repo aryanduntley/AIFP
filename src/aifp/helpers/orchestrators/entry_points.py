@@ -353,7 +353,7 @@ def aifp_status(
             finally:
                 conn.close()
 
-        # If Use Case 2 + active: query user_directives.db for counts
+        # If Use Case 2 + active/in_progress: query user_directives.db for counts
         user_directives_data = None
         if user_directives_status in ('in_progress', 'active'):
             directives_db_path = get_user_directives_db_path(project_root)
@@ -374,6 +374,16 @@ def aifp_status(
                 except Exception:
                     user_directives_data = {'error': 'Could not access user_directives.db'}
 
+        # Case 2 routing: determine next action based on status
+        case_2_routing = None
+        if user_directives_status is not None:
+            case_2_routing = {
+                'is_case_2': True,
+                'status': user_directives_status,
+                'phase': _get_case_2_phase(user_directives_status),
+                'next_action': _get_case_2_next_action(user_directives_status),
+            }
+
         # Supportive context (detailed FP examples, DRY, state DB, etc.)
         supportive_context = _get_supportive_context_safe()
 
@@ -384,6 +394,7 @@ def aifp_status(
             'work_hierarchy': work_hierarchy,
             'user_directives_status': user_directives_status,
             'user_directives_data': user_directives_data,
+            'case_2_routing': case_2_routing,
             'recent_warnings': recent_warnings,
             'git_state': git_state,
             'supportive_context': supportive_context,
@@ -517,6 +528,27 @@ def aifp_run(is_new_session: bool = False) -> Result:
         # Bundle: supportive context (detailed FP examples, DRY, state DB, etc.)
         supportive_context = _get_supportive_context_safe()
 
+        # Bundle: Case 2 context (if this is a Case 2 project)
+        case_2_context = None
+        user_directives_status = status_data.get('user_directives_status')
+        if user_directives_status is not None:
+            case_2_context = {
+                'is_case_2': True,
+                'status': user_directives_status,
+                'phase': _get_case_2_phase(user_directives_status),
+                'next_action': _get_case_2_next_action(user_directives_status),
+                'pipeline': 'parse → validate → implement → approve → activate',
+                'note': 'Implementation phase uses standard Case 1 development (file tracking, tasks, milestones)',
+                'user_directive_names': (
+                    'user_directive_parse', 'user_directive_validate',
+                    'user_directive_implement', 'user_directive_approve',
+                    'user_directive_activate', 'user_directive_monitor',
+                    'user_directive_update', 'user_directive_deactivate',
+                    'user_directive_status'
+                ),
+                'routing': status_data.get('case_2_routing'),
+            }
+
         return Result(
             success=True,
             data={
@@ -529,6 +561,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 'supportive_context': supportive_context,
                 'guidance': _get_guidance(),
                 'watchdog': watchdog_data,
+                'case_2_context': case_2_context,
             },
             return_statements=get_return_statements("aifp_run"),
         )
@@ -657,6 +690,30 @@ def _discover_project_root() -> Optional[str]:
             break
         current = parent
     return None
+
+
+def _get_case_2_phase(status: str) -> str:
+    """Pure: Get human-readable phase name for Case 2 status."""
+    phases = {
+        'pending_discovery': 'Discovery (Case 2 selected, defining project shape)',
+        'pending_parse': 'Onboarding (waiting for directive files)',
+        'in_progress': 'Implementation (building automation code)',
+        'active': 'Execution (directives running)',
+        'disabled': 'Paused (directives stopped)',
+    }
+    return phases.get(status, f'Unknown ({status})')
+
+
+def _get_case_2_next_action(status: str) -> str:
+    """Pure: Get recommended next action for Case 2 status."""
+    actions = {
+        'pending_discovery': 'Complete project discovery with automation context',
+        'pending_parse': 'Discuss directive files with user - where are they or help create them',
+        'in_progress': 'Continue building automation code or complete pending tasks',
+        'active': 'Monitor execution, check health, handle any updates',
+        'disabled': 'Offer to reactivate directives or discuss modifications',
+    }
+    return actions.get(status, 'Check status and determine next step')
 
 
 def _get_guidance() -> Dict[str, Any]:

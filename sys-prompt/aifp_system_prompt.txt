@@ -16,7 +16,7 @@ AIFP is NOT optional. When this MCP server is active, you MUST act proactively:
    - **aifp_status()**: Call when AI detects its own context is stale or compressed and needs a fresh database pull. Returns project state + supportive context. If a user asks "where are we" or "status", answer from what you already know — only call aifp_status() if your context is actually stale.
 
 2. **Check project state** (from bundle or cached context):
-   - .aifp-project/ missing → check for .git/.aifp/ backup → offer restore or project_init
+   - .aifp-project/ missing → check for .git/.aifp/ backup → offer restore or aifp_init
    - .aifp-project/ exists → read ProjectBlueprint.md, identify next action from status
    - If project_continue_on_start=true → continue work automatically
 3. **Act or present options**:
@@ -42,7 +42,7 @@ Important distinctions:
 
   init → discovery → [progression loop] → completion → end
 
-1. **project_init**: Creates databases, templates, base files
+1. **aifp_init**: Creates databases, templates, base files
 2. **project_discovery**: Collaborate with user to define project shape (blueprint, infrastructure, themes, completion path)
 3. **project_progression** (loop): ONE task at a time per milestone. Task complete → next task. Milestone complete → next milestone.
 4. **project_completion_check** → **project_archive**: Validate and archive
@@ -73,7 +73,7 @@ All directives use **trunk → branches → fallback** pattern. User preferences
 
 **Key Directives**:
 - **aifp_run / aifp_status**: Entry points (every interaction)
-- **project_init / project_discovery**: Setup and planning
+- **aifp_init / project_discovery**: Setup and planning
 - **project_file_write**: Write file + update project.db
 - **project_reserve_finalize**: Reserve IDs before writing, embed in names, finalize after
 - **project_task_decomposition / project_task_complete / project_milestone_complete**: Work management
@@ -115,6 +115,7 @@ All directives use **trunk → branches → fallback** pattern. User preferences
    **Staleness check**: If you cannot recall the current milestone name and active task, your context is stale — call aifp_status().
 6. **Session End**: "done"/"wrap up" → aifp_end for audit
 7. **Two Use Cases, Never Mixed**: Case 1 (software dev) or Case 2 (automation). Check project.user_directives_status.
+8. **Case 2 Detection**: During project_discovery, if user describes automation BEHAVIOR (not software to build), present Case 1/2 choice. Query user_directive_* directives for workflow details.
 
 === BEHAVIOR LOOP ===
 

@@ -84,16 +84,23 @@ completion_path = parse_section(blueprint_content, "4. Completion Path")
 # Check if this is a Use Case 2 project (automation-based)
 if project.user_directives_status is not None:
     # This is a Use Case 2 project
-    # Call user_directive_status for comprehensive directive reporting
-    user_directive_report = call_directive("user_directive_status")
 
     # Determine project phase based on status
-    if project.user_directives_status == 'in_progress':
-        project_phase = "DEVELOPMENT MODE - Directives being set up"
-        focus = "Complete directive setup pipeline (parse → validate → implement → approve → activate)"
+    if project.user_directives_status == 'pending_discovery':
+        project_phase = "DISCOVERY MODE - Case 2 selected, defining project shape"
+        focus = "Complete project_discovery with automation context"
+    elif project.user_directives_status == 'pending_parse':
+        project_phase = "ONBOARDING MODE - Discussing directive files with user"
+        focus = "Discuss directive files with user, help create/improve them, then parse"
+    elif project.user_directives_status == 'in_progress':
+        project_phase = "DEVELOPMENT MODE - Building automation code"
+        focus = "Complete directive pipeline (validate → implement → approve → activate)"
+        # Call user_directive_status for comprehensive directive reporting
+        user_directive_report = call_directive("user_directive_status")
     elif project.user_directives_status == 'active':
         project_phase = "RUN MODE - Directives executing"
         focus = "Monitor directive execution, check health, handle errors"
+        user_directive_report = call_directive("user_directive_status")
     elif project.user_directives_status == 'disabled':
         project_phase = "PAUSED - Directives deactivated"
         focus = "Resume directives when ready or debug issues"
@@ -101,8 +108,10 @@ if project.user_directives_status is not None:
 
 **User Directive Status Values**:
 - **NULL** (default): Use Case 1 project (regular software development)
-- **'in_progress'**: Use Case 2 project, directives being developed (setup phase)
-- **'active'**: Use Case 2 project, directives deployed and running (production phase)
+- **'pending_discovery'**: Case 2 selected during project_discovery, discovery still in progress
+- **'pending_parse'**: Discovery complete, AI discussing directive files with user
+- **'in_progress'**: Use Case 2 project, AI building automation code (implementation phase)
+- **'active'**: Use Case 2 project, directives deployed and running (execution phase)
 - **'disabled'**: Use Case 2 project, directives temporarily paused
 
 **Step 4: Build Priority-Based Status Tree**

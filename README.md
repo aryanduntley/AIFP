@@ -345,9 +345,9 @@ aifp run "Initialize project for calculator"
 2. Evaluates: "Project initialization = project management action"
 3. Checks memory: "Do I have directives? No."
 4. Calls directive loading → receives comprehensive directive library
-5. Reviews directives: "This matches `project_init`"
+5. Reviews directives: "This matches `aifp_init`"
 6. Checks prerequisites: "Should run `project_status` first?"
-7. Executes `project_init` directive workflow:
+7. Executes `aifp_init` directive workflow:
    - Creates `.aifp-project/` directory
    - Initializes `project.db` with schema
    - Inserts project metadata
@@ -491,7 +491,7 @@ Manage project lifecycle:
 | Level | Directives | Purpose |
 |-------|------------|---------|
 | **Level 0** | `aifp_run` | Gateway orchestration (every interaction) |
-| **Level 1** | `aifp_status`, `project_init`, `project_task_decomposition` | Status, initialization, high-level coordination |
+| **Level 1** | `aifp_status`, `aifp_init`, `project_task_decomposition` | Status, initialization, high-level coordination |
 | **Level 2** | `project_file_write`, `project_update_db`, `project_task_update` | Operational execution |
 | **Level 3** | `project_compliance_check`, `project_evolution` | State management |
 | **Level 4** | `project_completion_check`, `project_archive` | Validation & completion |
@@ -634,7 +634,7 @@ See [Git Integration Blueprint](docs/blueprints/blueprint_git.md) for complete m
 
 ```mermaid
 graph TD
-    A[project_init] --> B[project_themes_flows_init]
+    A[aifp_init] --> B[project_themes_flows_init]
     B --> C[project_task_decomposition]
     C --> D[project_file_write]
     D --> E[FP Compliance Checks]
@@ -661,9 +661,9 @@ AI → aifp_run("Initialize AIFP for my matrix calculator")
     → Checks: "No directives in memory"
     → Calls: get_all_directives()
     → Receives: Complete directive library + self-assessment questions
-    → Matches: project_init directive
+    → Matches: aifp_init directive
     → Checks: project_status first (no existing project)
-    → Executes: project_init workflow
+    → Executes: aifp_init workflow
         → Creates .aifp-project/project.db
         → Inserts project metadata
         → Sets up completion path

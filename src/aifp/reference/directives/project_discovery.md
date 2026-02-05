@@ -84,6 +84,57 @@ This is a **conversation**, not a form fill. AI should ask open-ended questions 
 
 ---
 
+### Branch 2.5: Determine Project Type (Case 1 vs Case 2)
+
+**Condition**: During blueprint discussion, evaluate user's project description.
+
+**Action**: Detect if user describes automation BEHAVIOR vs SOFTWARE to build.
+
+**Detection Signals for Case 2 (Automation Behavior)**:
+- User describes WHAT to automate, not software to build:
+  - "Turn off lights at 5pm"
+  - "Scale EC2 when CPU > 80%"
+  - "Send notification when X happens"
+  - "Every Monday generate a report"
+  - "When the garage door opens after 10pm, alert me"
+- Key phrases: "automate", "when X then Y", "schedule", "trigger", "monitor"
+- User wants AI to build everything, not code together
+
+**Detection Signals for Case 1 (Software Development)**:
+- User describes SOFTWARE to build:
+  - "A web server for..."
+  - "A library that does..."
+  - "A CLI tool for..."
+  - "An automation tool" (they want to BUILD the tool, not USE automation)
+
+**Steps**:
+1. During blueprint discussion, evaluate user's project description
+2. If Case 2 candidate detected, present explicit choice:
+   ```
+   "It sounds like you want to define automation rules and have the system
+   execute them. Would you like AIFP to:
+
+   A) Build the automation infrastructure from directive files you provide
+      (Use Case 2 — you define WHAT to automate, AI builds everything)
+
+   B) Help you build an automation application as a software project
+      (Use Case 1 — you code together with AI assistance)"
+   ```
+3. **On Case 2 selection**:
+   - Set `project.user_directives_status = 'pending_discovery'`
+   - Adapt remaining discovery branches for automation context (see below)
+   - Continue with Branch 3 using automation-aware settings
+
+**Case 2 Adaptations for Downstream Branches**:
+- **Infrastructure (Branch 3)**: Default Python, note scheduler/API client needs
+- **Themes (Branch 4)**: Default to automation themes:
+  - Trigger Handlers, Action Executors, Scheduling, Monitoring, Error Handling
+- **Completion Path (Branch 5)**: Default automation stages:
+  - Directive Setup, Implementation, Testing, Activation, Monitoring
+- **Milestones (Branch 6)**: Derived from user's automation goals, not software features
+
+---
+
 ### Branch 3: Map Infrastructure
 
 **Action**: Confirm and refine infrastructure entries from init Phase 2 detection.
@@ -185,6 +236,42 @@ This is a **conversation**, not a form fill. AI should ask open-ended questions 
    - First milestone is open
 4. Inform user: "Project shape defined. First milestone is open. Ready to begin work."
 5. Flow to `aifp_status` — status routes to `project_progression` for first task creation
+
+---
+
+### Branch 7.5: Case 2 Onboarding (if Case 2 selected)
+
+**Condition**: `project.user_directives_status = 'pending_discovery'` (set in Branch 2.5)
+
+**Action**: Complete Case 2 setup and begin directive discussion with user.
+
+**Steps**:
+1. Update `project.user_directives_status = 'pending_parse'`
+2. Begin conversational onboarding:
+   ```
+   "Project configured for automation. Now let's set up your directives.
+
+   Do you already have directive files written?
+   - If yes: Tell me where they are (e.g., 'directives/lights.yaml')
+   - If no: Describe what you want to automate and I'll help you write them
+
+   Supported formats: YAML, JSON, or plain text descriptions.
+   I'll review your directives with you to make sure I understand exactly
+   what you want before we start building."
+   ```
+3. **If user has files**:
+   - Ask for file path
+   - Read and review the file with user
+   - Discuss any ambiguities or improvements
+   - Route to `user_directive_parse` when ready
+4. **If user needs help creating files**:
+   - Discuss what they want to automate
+   - Help them structure their requirements
+   - Collaboratively create directive file(s)
+   - Then route to `user_directive_parse`
+5. Route to `aifp_status` when directive discussion complete
+
+**Key principle**: This is a **conversation**, not automatic processing. AI must understand user's intent fully before adding anything to the database. The raw user file is a starting point, not something to store verbatim.
 
 ---
 

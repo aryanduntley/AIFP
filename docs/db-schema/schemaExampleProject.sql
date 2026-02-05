@@ -11,8 +11,10 @@ CREATE TABLE project (
     status TEXT DEFAULT 'active',           -- active, paused, completed, abandoned
     version INTEGER DEFAULT 1,              -- Tracks idea evolution
     blueprint_checksum TEXT,                -- MD5/SHA256 checksum of ProjectBlueprint.md for sync validation
-    user_directives_status TEXT DEFAULT NULL CHECK (user_directives_status IN (NULL, 'in_progress', 'active', 'disabled')),
-                                            -- NULL: no user directives, 'in_progress': being set up, 'active': running, 'disabled': paused
+    user_directives_status TEXT DEFAULT NULL CHECK (user_directives_status IN (NULL, 'pending_discovery', 'pending_parse', 'in_progress', 'active', 'disabled')),
+                                            -- NULL: Case 1 (no user directives), 'pending_discovery': Case 2 selected during discovery,
+                                            -- 'pending_parse': waiting for directive files, 'in_progress': building automation code,
+                                            -- 'active': directives running, 'disabled': paused
     last_known_git_hash TEXT,               -- Last Git commit hash processed by AIFP (for external change detection)
     last_git_sync DATETIME,                 -- Last time Git state was synchronized
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

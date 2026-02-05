@@ -272,27 +272,51 @@ Purpose: Get database IDs BEFORE coding so names are instantly queryable.
 **Two Use Cases (never mixed)**:
 - Use Case 1: Regular software development (web apps, libraries, tools)
 - Use Case 2: Automation projects (home automation, cloud, workflows)
-- Check: project.user_directives_status (NULL=Case 1, active=Case 2)
+- Check: project.user_directives_status (NULL=Case 1, not NULL=Case 2)
 - One AIFP instance per project, never mix
+
+**Case 2 Detection During Discovery**:
+During project_discovery blueprint discussion, evaluate if user describes:
+- **Case 2 signals** (automation BEHAVIOR): "Turn off lights at 5pm", "Scale EC2 when CPU > 80%", "Send notification when X happens", keywords: automate, when/then, trigger, schedule, monitor
+- **Case 1 signals** (SOFTWARE to build): "A web server for...", "A library that does...", "An automation tool" (building the tool itself)
+
+If Case 2 detected: Present explicit A/B choice to user. On Case 2 selection, set user_directives_status='pending_discovery' and adapt discovery branches for automation context.
+
+**Status Progression**:
+  NULL → pending_discovery → pending_parse → in_progress → active → (disabled)
+         ↑ Case 2 selected   ↑ Onboarding    ↑ Building    ↑ Running
+
+- **NULL**: Use Case 1 (regular software development)
+- **pending_discovery**: Case 2 selected, discovery in progress with automation context
+- **pending_parse**: Discovery complete, AI discussing directive files with user (conversational onboarding)
+- **in_progress**: AI building/modifying automation infrastructure code
+- **active**: User approved, directives running
+- **disabled**: Directives paused but implementation preserved
+
+**Conversational Onboarding (pending_parse phase)**:
+This is NOT file scanning. AI discusses with user:
+1. "Do you have directive files? If yes, where? If no, describe what you want to automate."
+2. Discuss format options (YAML/JSON/plain text)
+3. If user has files: Read, review together, discuss improvements
+4. If user needs help: Collaboratively create directive file(s)
+5. AI understands intent fully BEFORE parsing — raw user file is starting point for discussion, not verbatim storage
 
 **Use Case 2 — Two-Stage Process**:
 
-Stage 1: Build Infrastructure (first-time setup):
-- User writes directive files (directives/lights.yaml, directives/thermostat.json)
-- AI parses and validates (user_directive_parse, user_directive_validate)
+Stage 1: Build Infrastructure (implementation phase, status=in_progress):
+- AI parses and validates directives (user_directive_parse, user_directive_validate)
 - AI generates entire automation codebase (user_directive_implement)
   - Creates src/ with FP-compliant implementation code
   - Creates tests/
-  - Tracks in project.db like any software project
-- User approves (user_directive_approve)
+  - Tracks in project.db like any software project (THIS IS CASE 1 DEVELOPMENT)
+- User tests and approves (user_directive_approve)
 
-Stage 2: Execute Directives (ongoing):
+Stage 2: Execute Directives (execution phase, status=active):
 - Directives activate (user_directive_activate)
 - System monitors and executes using the infrastructure AI built
 - AI only modifies code when directives change or improvements needed
 
-**Key Point**: In Use Case 2, the project IS the automation infrastructure.
-AIFP builds the code that executes user directives, then that code runs the directives.
+**Key Point**: Implementation phase IS Case 1 development. AI builds software project to execute user directives.
 
 **What the user provides**: Directive files (YAML/JSON/TXT) describing WHAT they want automated.
 **What AI builds**: Complete automation infrastructure (trigger handlers, action executors, API clients, scheduler).
@@ -378,7 +402,7 @@ The database is your memory — trust it over cached context.
 - Check project state from bundle:
   - .aifp-project/ missing → check for .git/.aifp/ backup
     - Backup exists → offer to restore
-    - No backup → offer project_init, explain what it creates
+    - No backup → offer aifp_init, explain what it creates
     - User declines → wait for explicit request
   - .aifp-project/ exists → read ProjectBlueprint.md for project shape
     - Present status: current focus, open items, recent context, next actions

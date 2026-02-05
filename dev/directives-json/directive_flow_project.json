@@ -13,17 +13,6 @@
     },
     {
       "from_directive": "aifp_run",
-      "to_directive": "user_preferences_sync",
-      "flow_type": "conditional",
-      "condition_key": "directive_is_customizable",
-      "condition_value": "true",
-      "condition_description": "Load user preferences before any customizable directive execution",
-      "priority": 100,
-      "description": "Preferences loaded before executing directives that can be customized",
-      "flow_category": "project"
-    },
-    {
-      "from_directive": "aifp_run",
       "to_directive": "aifp_help",
       "flow_type": "conditional",
       "condition_key": "user_requests_help",
@@ -68,9 +57,9 @@
     },
     {
       "from_directive": "aifp_status",
-      "to_directive": "project_init",
+      "to_directive": "aifp_init",
       "flow_type": "conditional",
-      "condition_key": "project_initialized",
+      "condition_key": "aifp_initialized",
       "condition_value": "false",
       "condition_description": "No .aifp-project/ folder found and no git backup",
       "priority": 100,
@@ -82,14 +71,25 @@
       "to_directive": "user_directive_parse",
       "flow_type": "conditional",
       "condition_key": "user_directives_status",
-      "condition_value": "null_and_directive_files_exist",
-      "condition_description": "Use Case 2: User provided directive files but not yet parsed",
+      "condition_value": "pending_parse_and_user_ready",
+      "condition_description": "Use Case 2: Status is pending_parse AND user has discussed directive files with AI and is ready to parse",
       "priority": 100,
-      "description": "Detect Use Case 2 - parse user directive files",
+      "description": "After conversational onboarding complete, parse directive files",
       "flow_category": "project"
     },
     {
-      "from_directive": "project_init",
+      "from_directive": "project_discovery",
+      "to_directive": "aifp_status",
+      "flow_type": "conditional",
+      "condition_key": "case_2_selected",
+      "condition_value": "true",
+      "condition_description": "User selected Case 2 during discovery, status set to pending_discovery then pending_parse after finalization",
+      "priority": 100,
+      "description": "Case 2 project discovery complete - route to status for onboarding",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "aifp_init",
       "to_directive": "project_discovery",
       "flow_type": "canonical",
       "condition_key": "initialization_successful",
@@ -100,7 +100,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "project_init",
+      "from_directive": "aifp_init",
       "to_directive": "aifp_status",
       "flow_type": "error_handler",
       "condition_key": "oop_detected_in_existing_code",
@@ -1085,7 +1085,7 @@
       "FP compliance checking is OPT-IN ONLY (default = AI writes FP code automatically)",
       "Performance tracking is OPT-IN ONLY (helper_function_logging_enabled user preference)",
       "All 42 project directives now have flows (100% coverage)",
-      "v1.3.0: project_init now routes to project_discovery (not aifp_status) on success",
+      "v1.3.0: aifp_init now routes to project_discovery (not aifp_status) on success",
       "v1.3.0: project_discovery delegates to project_catalog for pre-existing FP codebases",
       "v1.3.0: project_progression handles incremental task/milestone creation after completions and evolution",
       "v1.3.0: aifp_end is terminal — no loop back to aifp_status (session is over)",

@@ -59,7 +59,7 @@ VALID_PROJECT_STATUSES: Final[frozenset[str]] = frozenset([
 
 # User directives statuses
 VALID_USER_DIRECTIVES_STATUSES: Final[frozenset[str]] = frozenset([
-    'in_progress', 'active', 'disabled'
+    'pending_discovery', 'pending_parse', 'in_progress', 'active', 'disabled'
 ])
 
 

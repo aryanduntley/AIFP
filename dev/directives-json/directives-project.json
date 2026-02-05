@@ -42,7 +42,7 @@
             "message": "AIFP MCP available (continuation mode)",
             "common_starting_points": [
               "aifp_status - Get comprehensive project state (if not cached)",
-              "project_init - Initialize new AIFP project",
+              "aifp_init - Initialize new AIFP project",
               "project_file_write - Write code and update database",
               "project_task_create - Create new tasks",
               "project_task_complete - Mark task as complete and loop back to status"
@@ -122,7 +122,7 @@
     "confidence_threshold": 1.0
   },
   {
-    "name": "project_init",
+    "name": "aifp_init",
     "type": "project",
     "level": 1,
     "parent_directive": "aifp_run",
@@ -131,7 +131,7 @@
       "description": "Handles creation and setup of new AIFP projects with ProjectBlueprint.md creation."
     },
     "description": "Initializes a new AIFP project using a two-phase approach: Phase 1 (Mechanical Setup) calls aifp_init helper to atomically create folders, databases, and templates. Phase 2 (Intelligent Population) uses AI to detect language/tools, prompt user for metadata, and populate ProjectBlueprint and infrastructure. Checks for existing .aifp-project/ or .git/.aifp/ folders before initialization. Scans existing codebase for OOP patterns and aborts if OOP detected (AIFP is FP-only). Offers restoration from .git/.aifp/ backup if found.",
-    "md_file_path": "directives/project_init.md",
+    "md_file_path": "directives/aifp_init.md",
     "workflow": {
       "trunk": "check_existing_state",
       "branches": [
@@ -1859,7 +1859,7 @@
           "if": "no_backups",
           "then": "prompt_init_new_project",
           "details": {
-            "suggest_project_init": true
+            "suggest_aifp_init": true
           }
         },
         {
@@ -3142,12 +3142,12 @@
     "name": "project_discovery",
     "type": "project",
     "level": 1,
-    "parent_directive": "project_init",
+    "parent_directive": "aifp_init",
     "category": {
       "name": "initialization",
       "description": "Guided project discovery and shape definition after initialization."
     },
-    "description": "Guided project discovery workflow. After project_init creates base files and databases, AI collaborates with user to define the full project shape: detailed blueprint, infrastructure mapping, completion path with stages, milestones, initial themes and flows. For pre-existing FP codebases, delegates to project_catalog before proceeding. This directive bridges the gap between mechanical initialization and active development work.",
+    "description": "Guided project discovery workflow. After aifp_init creates base files and databases, AI collaborates with user to define the full project shape: detailed blueprint, infrastructure mapping, completion path with stages, milestones, initial themes and flows. For pre-existing FP codebases, delegates to project_catalog before proceeding. This directive bridges the gap between mechanical initialization and active development work.",
     "md_file_path": "directives/project_discovery.md",
     "workflow": {
       "trunk": "assess_project_state",
@@ -3157,7 +3157,7 @@
           "then": "delegate_to_project_catalog",
           "details": {
             "trigger": "project_catalog directive",
-            "condition": "Existing FP-compliant code was detected during project_init pre-flight scan",
+            "condition": "Existing FP-compliant code was detected during aifp_init pre-flight scan",
             "action": "Call project_catalog to scan and register all existing code before proceeding with discovery conversation",
             "resume_after": "project_catalog completion loops back to project_discovery to continue with blueprint discussion"
           }
@@ -3174,6 +3174,30 @@
               "Update ProjectBlueprint.md via project_blueprint_update helper"
             ],
             "note": "This is a conversation, not a form fill. AI should ask open-ended questions and refine based on user responses."
+          }
+        },
+        {
+          "if": "automation_behavior_detected",
+          "then": "determine_project_type",
+          "details": {
+            "trigger": "During blueprint discussion, evaluate if user describes automation BEHAVIOR vs SOFTWARE to build",
+            "case_2_signals": [
+              "User describes WHAT to automate: 'Turn off lights at 5pm', 'Scale EC2 when CPU > 80%', 'Send notification when X happens'",
+              "Key phrases: automate, when X then Y, schedule, trigger, monitor",
+              "User wants AI to build everything, not code together"
+            ],
+            "case_1_signals": [
+              "User describes SOFTWARE to build: 'A web server for...', 'A library that does...', 'An automation tool' (building the tool itself)"
+            ],
+            "action": "Present explicit Case 1 vs Case 2 choice to user",
+            "on_case_2_selection": [
+              "Set project.user_directives_status = 'pending_discovery'",
+              "Adapt remaining discovery branches for automation context",
+              "Infrastructure: default Python, note scheduler/API client needs",
+              "Themes: default to Trigger Handlers, Action Executors, Scheduling, Monitoring",
+              "Completion Path: default to Directive Setup, Implementation, Testing, Activation stages",
+              "Milestones: derived from user's automation goals"
+            ]
           }
         },
         {
@@ -3257,6 +3281,24 @@
               "Inform user: 'Project shape defined. First milestone is open. Ready to begin work.'",
               "Flow to aifp_status — status will route to project_progression for first task creation"
             ]
+          }
+        },
+        {
+          "if": "case_2_selected_during_discovery",
+          "then": "case_2_onboarding",
+          "details": {
+            "condition": "project.user_directives_status = 'pending_discovery' (set in determine_project_type branch)",
+            "action": "Complete Case 2 setup and begin directive discussion with user",
+            "steps": [
+              "Update project.user_directives_status = 'pending_parse'",
+              "Begin conversational onboarding with user about their directive files",
+              "Ask: 'Do you already have directive files written? If yes, tell me where. If no, describe what you want to automate and I'll help you write them.'",
+              "Discuss format options (YAML/JSON/plain text)",
+              "If user has files: Ask for path, read and review with user, discuss improvements",
+              "If user needs help: Collaboratively create directive file(s) through discussion",
+              "Route to user_directive_parse when directive discussion complete"
+            ],
+            "note": "This is CONVERSATIONAL - AI must understand user's intent fully before parsing. Raw user file is a starting point for discussion, not something to store verbatim."
           }
         },
         {

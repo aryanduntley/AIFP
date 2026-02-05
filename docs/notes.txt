@@ -4,24 +4,16 @@ sys-prompt/aifp_system_prompt.txt
 src/aifp/reference/guides/supportive_context.txt
 .aifp/ProjectBlueprint.md
 
-directives json are in docs/directives-json/
 directives md are in src/aifp/resource/directives/
-helpers json is in docs/helpers/json/
+directives json are in dev/directives-json/
+helpers json is in dev/helpers-json/
 Everything above src/aifp/ is dev.
-helpers are in docs/json/helpers/
-directive flows are in docs/directives-json/directive_flow_(project,user-preferences,fp).json
-helper functions are AI tools for  repeated operations. State DB creation for example is one-time during init, so it's internal to aifp_init code, not a helper.  
+directive flows are in dev/directives-json/directive_flow_(project,user-preferences,fp).json
 
 src/aifp/database/schemas/user_directives.sql
 src/aifp/database/schemas/aifp_core.sql
 src/aifp/database/schemas/project.sql
 src/aifp/database/schemas/user_preferences.sql
-
-docs/proposals/use-case-2-routing-fix.md
-
-system prompt:
- **is_new_session=true**: First interaction, after breaks, user asks status
- not when user asks status. Is new is only new session when no context exists. Use get_project_status instead. Should return the same general information. Must add supportive context to get_project_status
 
 Do not read or modify notes.txt. That is just for me.                         
 
@@ -29,15 +21,11 @@ return statements for aifp_init
 
 think out useful return values for certain helper functions, like generic getter/setters should return schema, possibly some helper or directive references useful or relative to current function call and database.
 
-when coding helpers, if case 2, ensure we make a return value that indicates to AI case 2 active. Probably during status call(s)
-
 MUST make OOP wrapper examples
 
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
-docs/directives-json/sync-directives.py
-
-Use Case 2, need very expliting paths to use case 2 directives when found that use case 2 exists. AI should be FORCED to read those directives at new session when valid.
+dev/sync-directives.py
 
 next: import json to db. re-create project db if needed. Begin populating project db with mcp codebase we have now. after done, prep for full mcp implementation. Helpers is_tool=true to be made as actual mcp tools. 
 

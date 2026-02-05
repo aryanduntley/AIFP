@@ -1,4 +1,4 @@
-# project_init - Project Initialization Directive
+# aifp_init - Project Initialization Directive
 
 **Type**: Project Management
 **Level**: 1

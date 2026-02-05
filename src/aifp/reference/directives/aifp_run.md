@@ -77,7 +77,8 @@ After receiving guidance, AI evaluates:
 3. **Check project type (Use Case 1 vs Use Case 2)**
    - Query: `SELECT user_directives_status FROM project WHERE id = 1`
    - **NULL** → Use Case 1 (regular software development)
-   - **'in_progress', 'active', 'disabled'** → Use Case 2 (automation project)
+   - **'pending_discovery', 'pending_parse', 'in_progress', 'active', 'disabled'** → Use Case 2 (automation project)
+   - When `is_new_session=true` and Case 2: Include `case_2_context` in bundle with phase, next_action, pipeline reminder, and user_directive_* directive names
 
 4. **What type of task is this?**
    - **Coding** → Write FP-compliant code (consult FP directives only if uncertain)

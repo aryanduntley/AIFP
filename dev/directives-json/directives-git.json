@@ -3,7 +3,7 @@
     "name": "git_init",
     "type": "git",
     "level": 1,
-    "parent_directive": "project_init",
+    "parent_directive": "aifp_init",
     "category": {
       "name": "git_setup",
       "description": "Initialize or integrate with Git repository for version control and collaboration."

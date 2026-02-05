@@ -137,7 +137,7 @@ Build a Model Context Protocol (MCP) server that provides AI assistants with dat
    - Related Themes: Directive System, Helper Functions
 
 3. **Project Management Flow**
-   - Steps: project_init → Task decomposition → File tracking → Completion checking
+   - Steps: aifp_init → Task decomposition → File tracking → Completion checking
    - Related Themes: Helper Functions, Database Operations
 
 ---

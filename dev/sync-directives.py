@@ -5,24 +5,23 @@ AIFP Directive Sync Manager — Schema v2.0
 Synchronizes all directive JSON definitions, helper functions, and directive flows
 with the aifp_core.db database.
 
+Location: dev/sync-directives.py
+Run from project root or dev/ directory.
+
 Handles:
 - Directives (FP Core + FP Aux + Project + User Preferences + User System + Git)
 - Categories (from directive JSON) → categories table → directive_categories junction
 - Intent Keywords (from directive JSON) → intent_keywords table → directives_intent_keywords junction
-- Helper Functions (from docs/helpers/json/*.json) → helper_functions table
+- Helper Functions (from dev/helpers-json/*.json) → helper_functions table
 - Directive-Helper Mappings (from helper's used_by_directives field) → directive_helpers junction
 - Directive Flows (from directive_flow_*.json) → directive_flow table
 - Parent relationships
 - Integrity Validation (post-sync verification)
 
-Updated: 2026-01-10
-- Updated to schema v2.0 (removed intent_keywords_json from directives table)
-- Added proper category extraction and linking via directive_categories
-- Added proper intent keyword extraction and linking via directives_intent_keywords
-- Added helper function import from multiple JSON files in docs/helpers/json/
-- Added directive_helpers population from helper's used_by_directives field
-- Added directive flow import from directive_flow_*.json files
-- Removed directives_interactions (no longer in schema v2.0)
+Updated: 2026-02-04
+- Relocated to dev/ directory (permanent dev staging area)
+- Updated paths: dev/directives-json/, dev/helpers-json/, dev/logs/
+- All paths now use __file__ based resolution for reliability
 
 Total Directives: 125+ (30 FP Core + 36 FP Aux + 36 Project + 7 User Pref + 9 User System + 6 Git + ...)
 
@@ -36,13 +35,27 @@ from typing import List, Dict, Any, Set, Tuple
 from pathlib import Path
 
 # ===================================
+# PATH RESOLUTION (based on script location)
+# ===================================
+
+# Script location: dev/sync-directives.py
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)  # One level up from dev/
+
+# ===================================
 # CONFIGURATION
 # ===================================
 
 # Database path - configurable via environment variable
-# Default: ../../src/aifp/database/aifp_core.db (production location)
+# Default: src/aifp/database/aifp_core.db (production location)
 # Override with AIFP_CORE_DB_PATH environment variable if needed
-DB_PATH = os.environ.get("AIFP_CORE_DB_PATH", "../../src/aifp/database/aifp_core.db")
+DB_PATH = os.environ.get(
+    "AIFP_CORE_DB_PATH",
+    os.path.join(PROJECT_ROOT, "src", "aifp", "database", "aifp_core.db")
+)
+
+# Directive JSON files are in dev/directives-json/
+DIRECTIVES_JSON_DIR = os.path.join(SCRIPT_DIR, "directives-json")
 
 FP_DIRECTIVE_FILES = [
     "directives-fp-core.json",
@@ -65,18 +78,21 @@ GIT_DIRECTIVE_FILES = [
     "directives-git.json"
 ]
 
-# Helpers are in docs/helpers/json/
-HELPERS_DIR = "../helpers/json"
+# Helpers are in dev/helpers-json/
+HELPERS_DIR = os.path.join(SCRIPT_DIR, "helpers-json")
 
-# Directive flows are in docs/directives-json/
+# Directive flows are in dev/directives-json/
 DIRECTIVE_FLOW_FILES = [
     "directive_flow_fp.json",
     "directive_flow_project.json",
     "directive_flow_user_preferences.json"
 ]
 
-MIGRATIONS_DIR = "migrations"
-SYNC_REPORT_FILE = "logs/sync_report.json"
+# Migrations in dev/migrations/
+MIGRATIONS_DIR = os.path.join(SCRIPT_DIR, "migrations")
+
+# Sync report in dev/logs/
+SYNC_REPORT_FILE = os.path.join(SCRIPT_DIR, "logs", "sync_report.json")
 
 CURRENT_SCHEMA_VERSION = "2.0"
 DRY_RUN = False
@@ -94,9 +110,7 @@ def get_conn(db_path: str) -> sqlite3.Connection:
 
 def ensure_schema(conn: sqlite3.Connection):
     """Load and execute schema from external SQL file (source of truth)."""
-    # Path to schema file relative to this script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    schema_path = os.path.join(script_dir, '..', '..', 'src', 'aifp', 'database', 'schemas', 'aifp_core.sql')
+    schema_path = os.path.join(PROJECT_ROOT, 'src', 'aifp', 'database', 'schemas', 'aifp_core.sql')
 
     if not os.path.exists(schema_path):
         print(f"❌ Schema file not found: {schema_path}")
@@ -499,20 +513,17 @@ def upsert_directive(conn, entry: Dict[str, Any]) -> str:
 
 def load_all_helper_files() -> List[Dict[str, Any]]:
     """
-    Load all helper JSON files from docs/helpers/json/ directory.
+    Load all helper JSON files from dev/helpers-json/ directory.
     Returns combined list of all helpers.
     """
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    helpers_dir = os.path.join(script_dir, '..', 'helpers', 'json')
-
-    if not os.path.exists(helpers_dir):
-        print(f"⚠️  Helpers directory not found: {helpers_dir}")
+    if not os.path.exists(HELPERS_DIR):
+        print(f"⚠️  Helpers directory not found: {HELPERS_DIR}")
         return []
 
     all_helpers = []
-    helper_files = sorted(Path(helpers_dir).glob("helpers-*.json"))
+    helper_files = sorted(Path(HELPERS_DIR).glob("helpers-*.json"))
 
-    print(f"\n📚 Loading helper files from {helpers_dir}")
+    print(f"\n📚 Loading helper files from {HELPERS_DIR}")
     for helper_file in helper_files:
         helpers = load_json_file(str(helper_file))
         if helpers:
@@ -524,7 +535,7 @@ def load_all_helper_files() -> List[Dict[str, Any]]:
 
 def sync_helper_functions(conn: sqlite3.Connection) -> int:
     """
-    Load helper functions from all JSON files in docs/helpers/json/ and populate helper_functions table.
+    Load helper functions from all JSON files in dev/helpers-json/ and populate helper_functions table.
 
     Populates table with complete helper data:
     - name, file_path, parameters, purpose, error_handling
@@ -533,7 +544,7 @@ def sync_helper_functions(conn: sqlite3.Connection) -> int:
     - target_database: Read from JSON
     - return_statements: Read from JSON
 
-    Source: docs/helpers/json/helpers-*.json
+    Source: dev/helpers-json/helpers-*.json
     """
     print("\n🔧 Syncing helper functions from JSON files...")
 
@@ -794,9 +805,17 @@ def sync_directive_flows(conn: sqlite3.Connection):
     """
     print("\n🔄 Syncing directive flows from JSON files...")
 
+    # Always fresh - delete all existing flows before inserting
+    cur = conn.cursor()
+    cur.execute("DELETE FROM directive_flow")
+    deleted_count = cur.rowcount
+    if deleted_count > 0:
+        print(f"   🗑️  Cleared {deleted_count} existing flows (fresh sync)")
+
     all_flows = []
     for flow_file in DIRECTIVE_FLOW_FILES:
-        flows = load_json_file(flow_file)
+        flow_path = os.path.join(DIRECTIVES_JSON_DIR, flow_file)
+        flows = load_json_file(flow_path)
         if flows:
             all_flows.extend(flows)
             print(f"   📘 Loaded {len(flows)} flows from {flow_file}")
@@ -807,9 +826,7 @@ def sync_directive_flows(conn: sqlite3.Connection):
 
     print(f"📋 Processing {len(all_flows)} directive flows")
 
-    cur = conn.cursor()
     inserted = 0
-    updated = 0
     errors = 0
 
     for flow in all_flows:
@@ -861,55 +878,27 @@ def sync_directive_flows(conn: sqlite3.Connection):
         priority = flow.get('priority', 0)
         description = flow.get('description', '')
 
-        # Check if flow already exists
+        # Insert flow (table was cleared at start for fresh sync)
         cur.execute("""
-            SELECT id FROM directive_flow
-            WHERE from_directive=? AND to_directive=? AND flow_type=? AND condition_key=?
-        """, (from_directive, to_directive, flow_type, condition_key))
-
-        existing = cur.fetchone()
-
-        if existing:
-            # Update existing flow
-            cur.execute("""
-                UPDATE directive_flow
-                SET flow_category = ?,
-                    condition_value = ?,
-                    condition_description = ?,
-                    priority = ?,
-                    description = ?
-                WHERE id = ?
-            """, (
-                flow_category,
-                condition_value,
-                condition_description,
-                priority,
-                description,
-                existing['id']
-            ))
-            updated += 1
-        else:
-            # Insert new flow
-            cur.execute("""
-                INSERT INTO directive_flow
-                (from_directive, to_directive, flow_category, flow_type,
-                 condition_key, condition_value, condition_description, priority, description)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                from_directive,
-                to_directive,
-                flow_category,
-                flow_type,
-                condition_key,
-                condition_value,
-                condition_description,
-                priority,
-                description
-            ))
-            inserted += 1
+            INSERT INTO directive_flow
+            (from_directive, to_directive, flow_category, flow_type,
+             condition_key, condition_value, condition_description, priority, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            from_directive,
+            to_directive,
+            flow_category,
+            flow_type,
+            condition_key,
+            condition_value,
+            condition_description,
+            priority,
+            description
+        ))
+        inserted += 1
 
     conn.commit()
-    print(f"✅ Directive flows synced: {inserted} new, {updated} updated")
+    print(f"✅ Directive flows synced: {inserted} inserted (fresh sync)")
     if errors > 0:
         print(f"   ⚠️  {errors} flows had errors (missing directives or fields)")
 
@@ -959,7 +948,8 @@ def sync_directives():
 
     all_entries = []
     for file in all_directive_files:
-        entries = load_json_file(file)
+        file_path = os.path.join(DIRECTIVES_JSON_DIR, file)
+        entries = load_json_file(file_path)
         all_entries.extend(entries)
         print(f"📘 Loaded {len(entries)} directives from {file}")
 
@@ -1103,10 +1093,8 @@ def validate_integrity(conn):
     cur.execute("SELECT name, md_file_path FROM directives WHERE md_file_path IS NOT NULL;")
     md_files_checked = 0
 
-    # Use absolute path resolution
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.join(script_dir, '..', '..')  # Two levels up: directives-json -> docs -> project root
-    reference_dir = os.path.join(project_root, 'src', 'aifp', 'reference')
+    # Use PROJECT_ROOT for reference directory
+    reference_dir = os.path.join(PROJECT_ROOT, 'src', 'aifp', 'reference')
 
     for row in cur.fetchall():
         # Construct absolute path
@@ -1176,7 +1164,7 @@ if __name__ == "__main__":
 # MIGRATION GUIDE
 # ==================================
 # To create a new migration:
-# 1. Create file: directives-json/migrations/migration_1.5_to_2.0.sql
+# 1. Create file: dev/migrations/migration_1.5_to_2.0.sql
 # 2. Include schema changes (ALTER TABLE, CREATE TABLE, etc.)
 # 3. Update CURRENT_SCHEMA_VERSION at top of this file
 # 4. Run sync script - migrations apply automatically
@@ -1189,4 +1177,13 @@ if __name__ == "__main__":
 # CREATE INDEX IF NOT EXISTS idx_new_field ON directives(new_field);
 #
 # -- Update version (handled automatically by run_migrations)
+#
+# File Locations (permanent dev staging area):
+# - Script:     dev/sync-directives.py
+# - Directives: dev/directives-json/*.json
+# - Helpers:    dev/helpers-json/*.json
+# - Flows:      dev/directives-json/directive_flow_*.json
+# - Migrations: dev/migrations/*.sql
+# - Logs:       dev/logs/sync_report.json
+# - Target DB:  src/aifp/database/aifp_core.db
 # ==================================

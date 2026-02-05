@@ -1,12 +1,14 @@
 {
   "directive_set": "user_system",
   "version": "1.0",
-  "description": "Directives for managing user-defined domain-specific directives (home automation, cloud infrastructure, etc.). When user directives are initialized, the AIFP project's purpose becomes implementing and executing those directives. The AI builds all necessary code, dependencies, helpers, cron jobs, and automations to fulfill the user directives. Status progression: parse → validate → implement (in_progress) → user testing → user approval (active) → modifications trigger return to in_progress.",
+  "description": "Directives for managing user-defined domain-specific directives (home automation, cloud infrastructure, etc.). When user directives are initialized, the AIFP project's purpose becomes implementing and executing those directives. The AI builds all necessary code, dependencies, helpers, cron jobs, and automations to fulfill the user directives. Status progression: discovery (pending_discovery) → onboarding (pending_parse) → parse → validate → implement (in_progress) → user testing → user approval → activate (active) → modifications trigger return to in_progress.",
   "purpose_when_active": "The AIFP project serves as the execution engine for user directives. All project development focuses on meeting user directive requirements.",
   "status_semantics": {
-    "NULL": "No user directives initialized",
-    "in_progress": "AI is building/modifying the project to implement directives, OR user is testing implementation before approval",
-    "active": "User has approved implementation, directives are successfully running",
+    "NULL": "No user directives initialized (Use Case 1)",
+    "pending_discovery": "Case 2 selected during project_discovery, discovery still in progress with automation context",
+    "pending_parse": "Discovery complete, AI discussing directive files with user (conversational onboarding)",
+    "in_progress": "AI is building/modifying the project to implement directives (implementation phase)",
+    "active": "User has approved implementation, directives are successfully running (execution phase)",
     "disabled": "All directives paused but implementation preserved"
   },
   "directives": [

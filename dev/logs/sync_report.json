@@ -1,5 +1,6 @@
 {
-  "added": [
+  "added": [],
+  "updated": [
     "fp_purity",
     "fp_state_elimination",
     "fp_side_effect_detection",
@@ -66,7 +67,7 @@
     "fp_documentation",
     "fp_naming_conventions",
     "aifp_run",
-    "project_init",
+    "aifp_init",
     "project_task_decomposition",
     "project_add_path",
     "project_file_write",
@@ -103,6 +104,10 @@
     "project_sidequest_complete",
     "project_milestone_complete",
     "aifp_help",
+    "project_discovery",
+    "project_catalog",
+    "project_progression",
+    "aifp_end",
     "user_preferences_sync",
     "user_preferences_update",
     "user_preferences_learn",
@@ -125,6 +130,5 @@
     "git_detect_conflicts",
     "git_merge_branch",
     "git_sync_state"
-  ],
-  "updated": []
+  ]
 }

@@ -90,14 +90,14 @@
       "target_database": "multi_db",
       "used_by_directives": [
         {
-          "directive_name": "project_init",
+          "directive_name": "aifp_init",
           "execution_context": "phase_1_mechanical_setup",
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {
             "project_root": "from current working directory or user input"
           },
-          "description": "project_init directive calls aifp_init for Phase 1 mechanical setup"
+          "description": "aifp_init directive calls aifp_init for Phase 1 mechanical setup"
         }
       ]
     },

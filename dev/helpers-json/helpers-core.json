@@ -980,7 +980,7 @@
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
-        "Returns: Array of directive names as strings ['aifp_run', 'aifp_status', 'project_init', 'fp_purity', ...]",
+        "Returns: Array of directive names as strings ['aifp_run', 'aifp_status', 'aifp_init', 'fp_purity', ...]",
         "If types provided: Filters to only those types (e.g., types=['fp', 'project'] returns only FP and project directives)",
         "If types=null: Returns ALL directive names across all types",
         "Query: SELECT name FROM directives WHERE type IN (types) ORDER BY type, name",

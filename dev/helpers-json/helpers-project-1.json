@@ -490,7 +490,7 @@
           "type": "string",
           "required": false,
           "default": null,
-          "description": "NULL (no user directives), 'in_progress', 'active', 'disabled'"
+          "description": "NULL (Case 1), 'pending_discovery', 'pending_parse', 'in_progress', 'active', 'disabled'"
         }
       ],
       "purpose": "Initialize project entry (one per database)",
@@ -501,7 +501,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_init",
+          "directive_name": "aifp_init",
           "execution_context": "create_project_structure",
           "sequence_order": 1,
           "is_required": true,
@@ -618,7 +618,7 @@
           "type": "string",
           "required": false,
           "default": null,
-          "description": "NULL, 'in_progress', 'active', 'disabled' (NULL = don't update)"
+          "description": "NULL, 'pending_discovery', 'pending_parse', 'in_progress', 'active', 'disabled' (NULL = don't update)"
         }
       ],
       "purpose": "Update project metadata",
@@ -742,7 +742,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_init",
+          "directive_name": "aifp_init",
           "execution_context": "create_project_structure",
           "sequence_order": 2,
           "is_required": true,
@@ -777,7 +777,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "project_init",
+          "directive_name": "aifp_init",
           "execution_context": "state_db_initialization",
           "sequence_order": 9.5,
           "is_required": true,
