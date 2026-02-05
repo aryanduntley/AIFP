@@ -44,6 +44,7 @@ class FileRecord:
     path: str
     language: str
     is_reserved: bool
+    id_in_name: bool
     created_at: str
     updated_at: str
 
@@ -138,6 +139,7 @@ def row_to_file_record(row: sqlite3.Row) -> FileRecord:
         path=row["path"],
         language=row["language"],
         is_reserved=bool(row["is_reserved"]),
+        id_in_name=bool(row["id_in_name"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"]
     )
@@ -151,7 +153,8 @@ def _reserve_file_effect(
     conn: sqlite3.Connection,
     name: str,
     path: str,
-    language: str
+    language: str,
+    id_in_name: bool = True
 ) -> int:
     """
     Effect: Insert reserved file into database.
@@ -161,16 +164,17 @@ def _reserve_file_effect(
         name: Preliminary file name
         path: File path relative to project root
         language: Programming language
+        id_in_name: Whether filename will contain _id_XX pattern (default True)
 
     Returns:
         Reserved file ID
     """
     cursor = conn.execute(
         """
-        INSERT INTO files (name, path, language, is_reserved)
-        VALUES (?, ?, ?, 1)
+        INSERT INTO files (name, path, language, is_reserved, id_in_name)
+        VALUES (?, ?, ?, 1, ?)
         """,
-        (name, path, language)
+        (name, path, language, 1 if id_in_name else 0)
     )
     conn.commit()
     return cursor.lastrowid
@@ -178,14 +182,14 @@ def _reserve_file_effect(
 
 def _reserve_files_batch_effect(
     conn: sqlite3.Connection,
-    files: List[Tuple[str, str, str]]
+    files: List[Tuple[str, str, str, bool]]
 ) -> Tuple[int, ...]:
     """
     Effect: Insert multiple reserved files in transaction.
 
     Args:
         conn: Database connection
-        files: List of (name, path, language) tuples
+        files: List of (name, path, language, id_in_name) tuples
 
     Returns:
         Tuple of reserved file IDs in same order
@@ -194,13 +198,13 @@ def _reserve_files_batch_effect(
     ids = []
 
     try:
-        for name, path, language in files:
+        for name, path, language, id_in_name in files:
             cursor.execute(
                 """
-                INSERT INTO files (name, path, language, is_reserved)
-                VALUES (?, ?, ?, 1)
+                INSERT INTO files (name, path, language, is_reserved, id_in_name)
+                VALUES (?, ?, ?, 1, ?)
                 """,
-                (name, path, language)
+                (name, path, language, 1 if id_in_name else 0)
             )
             ids.append(cursor.lastrowid)
 
@@ -329,7 +333,8 @@ def reserve_file(
     db_path: str,
     name: str,
     path: str,
-    language: str
+    language: str,
+    skip_id_naming: bool = False
 ) -> ReserveResult:
     """
     Reserve file ID for naming before creation.
@@ -339,9 +344,10 @@ def reserve_file(
 
     Args:
         db_path: Path to project.db
-        name: Preliminary file name (will have _id_xxx appended)
+        name: Preliminary file name (will have _id_xxx appended unless skip_id_naming=True)
         path: File path relative to project root
         language: Programming language (e.g., 'python', 'javascript')
+        skip_id_naming: If True, skip ID embedding (for __init__.py, .db files, MCP tools)
 
     Returns:
         ReserveResult with success status and reserved ID
@@ -352,7 +358,7 @@ def reserve_file(
         True
         >>> result.id
         42
-        # Use result.id to create: calculator_id_42.py
+        # Use result.id to create: calculator_id_42.py (unless skip_id_naming=True)
     """
     # Effect: open connection
     conn = _open_connection(db_path)
@@ -366,8 +372,8 @@ def reserve_file(
                 error=f"File path already exists: {path}"
             )
 
-        # Effect: reserve file
-        reserved_id = _reserve_file_effect(conn, name, path, language)
+        # Effect: reserve file with id_in_name flag
+        reserved_id = _reserve_file_effect(conn, name, path, language, not skip_id_naming)
 
         # Success - fetch return statements from core database
         return_statements = get_return_statements("reserve_file")
@@ -385,7 +391,7 @@ def reserve_file(
 
 def reserve_files(
     db_path: str,
-    files: List[Tuple[str, str, str]]
+    files: List[Tuple[str, str, str, bool]]
 ) -> ReserveBatchResult:
     """
     Reserve multiple file IDs at once.
@@ -395,7 +401,8 @@ def reserve_files(
 
     Args:
         db_path: Path to project.db
-        files: List of (name, path, language) tuples
+        files: List of (name, path, language, skip_id_naming) tuples
+               skip_id_naming: If True for item, skip ID embedding for that file
 
     Returns:
         ReserveBatchResult with success status and reserved IDs
@@ -403,8 +410,8 @@ def reserve_files(
 
     Example:
         >>> files = [
-        ...     ("calculator", "src/calc.py", "python"),
-        ...     ("utils", "src/utils.py", "python")
+        ...     ("calculator", "src/calc.py", "python", False),
+        ...     ("__init__", "src/__init__.py", "python", True)  # skip ID for __init__
         ... ]
         >>> result = reserve_files("project.db", files)
         >>> result.success
@@ -424,7 +431,7 @@ def reserve_files(
 
     try:
         # Check if any paths already exist
-        for name, path, language in files:
+        for name, path, language, skip_id_naming in files:
             existing = _get_file_by_path_effect(conn, path)
             if existing is not None:
                 return ReserveBatchResult(
@@ -432,8 +439,14 @@ def reserve_files(
                     error=f"File path already exists: {path}"
                 )
 
+        # Convert skip_id_naming to id_in_name for effect function
+        files_with_id_in_name = [
+            (name, path, language, not skip_id_naming)
+            for name, path, language, skip_id_naming in files
+        ]
+
         # Effect: reserve all files in transaction
-        reserved_ids = _reserve_files_batch_effect(conn, files)
+        reserved_ids = _reserve_files_batch_effect(conn, files_with_id_in_name)
 
         # Success - fetch return statements from core database
         return_statements = get_return_statements("reserve_files")
@@ -459,7 +472,8 @@ def finalize_file(
     file_id: int,
     name: str,
     path: str,
-    language: str
+    language: str,
+    skip_id_naming: bool = False
 ) -> FinalizeResult:
     """
     Finalize reserved file after creation.
@@ -470,9 +484,10 @@ def finalize_file(
     Args:
         db_path: Path to project.db
         file_id: Reserved file ID
-        name: Final file name with _id_xx suffix
+        name: Final file name with _id_xx suffix (unless skip_id_naming=True)
         path: File path (must exist on filesystem)
         language: Programming language
+        skip_id_naming: If True, skip ID pattern validation (for __init__.py, .db files, MCP tools)
 
     Returns:
         FinalizeResult with success status and file_id
@@ -489,8 +504,8 @@ def finalize_file(
         >>> result.success
         True
     """
-    # Validate name contains _id_{file_id} pattern
-    if not validate_file_id_in_name(name, file_id):
+    # Validate name contains _id_{file_id} pattern (unless skipped)
+    if not skip_id_naming and not validate_file_id_in_name(name, file_id):
         return FinalizeResult(
             success=False,
             error=f"File name must contain '_id_{file_id}' pattern"
@@ -530,7 +545,7 @@ def finalize_file(
 
 def finalize_files(
     db_path: str,
-    files: List[Tuple[int, str, str, str]]
+    files: List[Tuple[int, str, str, str, bool]]
 ) -> FinalizeBatchResult:
     """
     Finalize multiple reserved files.
@@ -540,15 +555,16 @@ def finalize_files(
 
     Args:
         db_path: Path to project.db
-        files: List of (file_id, name, path, language) tuples
+        files: List of (file_id, name, path, language, skip_id_naming) tuples
+               skip_id_naming: If True for item, skip ID pattern validation for that file
 
     Returns:
         FinalizeBatchResult with success status and finalized IDs
 
     Example:
         >>> files = [
-        ...     (42, "calculator_id_42.py", "src/calc_id_42.py", "python"),
-        ...     (43, "utils_id_43.py", "src/utils_id_43.py", "python")
+        ...     (42, "calculator_id_42.py", "src/calc_id_42.py", "python", False),
+        ...     (43, "__init__.py", "src/__init__.py", "python", True)  # skip validation
         ... ]
         >>> result = finalize_files("project.db", files)
         >>> result.success
@@ -566,9 +582,9 @@ def finalize_files(
     # Validate all names and check file existence
     finalizations = []
 
-    for file_id, name, path, language in files:
-        # Validate name pattern
-        if not validate_file_id_in_name(name, file_id):
+    for file_id, name, path, language, skip_id_naming in files:
+        # Validate name pattern (unless skipped for this item)
+        if not skip_id_naming and not validate_file_id_in_name(name, file_id):
             return FinalizeBatchResult(
                 success=False,
                 error=f"File name '{name}' must contain '_id_{file_id}' pattern"

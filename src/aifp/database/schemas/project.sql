@@ -1,6 +1,10 @@
 -- project.db Schema
--- Version: 1.3
+-- Version: 1.4
 -- Purpose: Track project-specific data, including files, functions, themes, flows, and completion paths
+-- Changelog v1.4:
+--   - Added id_in_name BOOLEAN field to files, functions, types tables
+--   - Tracks whether entity name contains _id_XX pattern or skipped ID naming
+--   - Enables reserve/finalize workflow with optional ID embedding
 -- Changelog v1.3:
 --   - Added reservation system: is_reserved field to files, functions, types
 --   - Added file_name to files table
@@ -46,10 +50,11 @@ CREATE TABLE IF NOT EXISTS infrastructure (
 -- Files Table: Project file inventory with reservation system
 CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,                              -- File name (e.g., 'calculator-ID_42.py')
+    name TEXT,                              -- File name (e.g., 'calculator_id_42.py' or 'calculator.py' if id_in_name=0)
     path TEXT NOT NULL UNIQUE,              -- Full file path
     language TEXT,                          -- Guessed or set (e.g., 'Python')
     is_reserved BOOLEAN DEFAULT 0,          -- TRUE during reservation, FALSE after finalization
+    id_in_name BOOLEAN DEFAULT 1,           -- TRUE if name contains _id_XX pattern, FALSE if ID naming skipped
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -63,6 +68,7 @@ CREATE TABLE IF NOT EXISTS functions (
     parameters JSON,                        -- e.g., '["param1: str", "param2: int"]'
     returns JSON,                           -- e.g., '{"type": "int", "description": "Sum of inputs"}'
     is_reserved BOOLEAN DEFAULT 0,          -- TRUE during reservation, FALSE after finalization
+    id_in_name BOOLEAN DEFAULT 1,           -- TRUE if name contains _id_XX pattern, FALSE if ID naming skipped
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
@@ -76,6 +82,7 @@ CREATE TABLE IF NOT EXISTS types (
     definition_json TEXT NOT NULL,              -- JSON schema for ADT (e.g., {"type": "enum", "variants": ["A", "B"]})
     description TEXT,
     is_reserved BOOLEAN DEFAULT 0,              -- TRUE during reservation, FALSE after finalization
+    id_in_name BOOLEAN DEFAULT 1,               -- TRUE if name contains _id_XX pattern, FALSE if ID naming skipped
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
@@ -424,7 +431,7 @@ END;
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_files_path ON files(path);
 CREATE INDEX IF NOT EXISTS idx_functions_file_id ON functions(file_id);
-CREATE INDEX IF NOT EXISTS idx_completion_path_project_id ON completion_path(project_id);
+CREATE INDEX IF NOT EXISTS idx_completion_path_order ON completion_path(order_index);
 CREATE INDEX IF NOT EXISTS idx_items_reference ON items(reference_table, reference_id);
 CREATE INDEX IF NOT EXISTS idx_notes_directive ON notes(directive_name);
 CREATE INDEX IF NOT EXISTS idx_notes_severity ON notes(severity);
@@ -440,4 +447,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.3');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.4');

@@ -38,6 +38,13 @@
           "required": false,
           "default": null,
           "description": "File ID where type is defined"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip ID embedding in name. Sets id_in_name=0 in database."
         }
       ],
       "purpose": "Reserve type ID for naming before creation",
@@ -67,9 +74,10 @@
         }
       ],
       "implementation_notes": [
-        "Returns {success: true, id: reserved_id, is_reserved: true}",
-        "SQL: INSERT INTO types (name, definition_json, description, links, file_id, is_reserved) VALUES (?, ?, ?, ?, ?, 1) RETURNING id",
-        "Type name pattern: {TypeName}_id_{id} (e.g., Maybe_id_7, Result_id_23, User_id_42)"
+        "Returns {success: true, id: reserved_id, is_reserved: true, id_in_name: !skip_id_naming}",
+        "SQL: INSERT INTO types (name, definition_json, description, links, file_id, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) RETURNING id",
+        "Type name pattern: {TypeName}_id_{id} (e.g., Maybe_id_7) unless skip_id_naming=true",
+        "If skip_id_naming=true: id_in_name=0, name stays as-is"
       ]
     },
     {
@@ -81,7 +89,7 @@
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of type objects [{name, definition_json, description, links, file_id}, ...]"
+          "description": "Array of type objects [{name, definition_json, description, links, file_id, skip_id_naming?}, ...]"
         }
       ],
       "purpose": "Reserve multiple type IDs",
@@ -95,8 +103,10 @@
       "used_by_directives": [],
       "implementation_notes": [
         "Returns {success: true, ids: [id1, id2, ...]} in same order as input types array",
-        "SQL: Multiple INSERT INTO types ... RETURNING id (in transaction)",
-        "IDs correspond to types array indices: types[0] gets ids[0], types[1] gets ids[1], etc."
+        "SQL: Multiple INSERT INTO types (name, definition_json, description, links, file_id, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) (in transaction)",
+        "IDs correspond to types array indices: types[0] gets ids[0], types[1] gets ids[1], etc.",
+        "Each item has its own skip_id_naming flag - allows mixed batch with some types having IDs, some not",
+        "id_in_name is set to !skip_id_naming for each type individually"
       ]
     },
     {
@@ -144,6 +154,13 @@
           "required": false,
           "default": null,
           "description": "File ID where type is defined"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip _id_XX pattern validation (for types where ID naming was skipped during reservation)"
         }
       ],
       "purpose": "Finalize reserved type after creation",
@@ -158,7 +175,8 @@
         "Returns: {success: true, type_id: int, file_id: int}",
         "Sets is_reserved=0 in types table",
         "Calls update_file_timestamp(file_id) automatically",
-        "Definition_json stores ADT structure for FP analysis"
+        "Definition_json stores ADT structure for FP analysis",
+        "Name validation: must contain '_id_{type_id}' pattern UNLESS skip_id_naming=true"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -197,7 +215,7 @@
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of type objects [{type_id, name, definition_json, description, links, file_id}, ...]"
+          "description": "Array of type objects [{type_id, name, definition_json, description, links, file_id, skip_id_naming?}, ...]"
         }
       ],
       "purpose": "Finalize multiple reserved types",
@@ -210,7 +228,9 @@
       "implementation_notes": [
         "Returns: {success: true, finalized_ids: [int, ...]}",
         "Groups types by file_id for efficient timestamp updates",
-        "Sets is_reserved=0 for all types in batch"
+        "Sets is_reserved=0 for all types in batch",
+        "Each item has its own skip_id_naming flag - validation is per-item, not global",
+        "If skip_id_naming=true for an item, skip _id_XX pattern validation for that specific type"
       ],
       "target_database": "project",
       "used_by_directives": []

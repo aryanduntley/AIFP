@@ -38,6 +38,13 @@
           "required": false,
           "default": null,
           "description": "Return value specification"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip ID embedding in name (for MCP tools, private functions excluded). Sets id_in_name=0 in database."
         }
       ],
       "purpose": "Reserve function ID for naming before creation",
@@ -67,9 +74,10 @@
         }
       ],
       "implementation_notes": [
-        "Returns {success: true, id: reserved_id, is_reserved: true}",
-        "SQL: INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved) VALUES (?, ?, ?, ?, ?, 1) RETURNING id",
-        "Function name pattern: {name}_id_{id} (e.g., calculate_sum_id_42, parse_input_id_15)"
+        "Returns {success: true, id: reserved_id, is_reserved: true, id_in_name: !skip_id_naming}",
+        "SQL: INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) RETURNING id",
+        "Function name pattern: {name}_id_{id} (e.g., calculate_sum_id_42) unless skip_id_naming=true",
+        "If skip_id_naming=true: id_in_name=0, name stays as-is (for MCP tools that need clean names)"
       ]
     },
     {
@@ -81,7 +89,7 @@
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of function objects [{name, file_id, purpose, params, returns}, ...]"
+          "description": "Array of function objects [{name, file_id, purpose, params, returns, skip_id_naming?}, ...]"
         }
       ],
       "purpose": "Reserve multiple function IDs",
@@ -95,8 +103,10 @@
       "used_by_directives": [],
       "implementation_notes": [
         "Returns {success: true, ids: [id1, id2, ...]} in same order as input functions array",
-        "SQL: Multiple INSERT INTO functions ... RETURNING id (in transaction)",
-        "IDs correspond to functions array indices: functions[0] gets ids[0], functions[1] gets ids[1], etc."
+        "SQL: Multiple INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) (in transaction)",
+        "IDs correspond to functions array indices: functions[0] gets ids[0], functions[1] gets ids[1], etc.",
+        "Each item has its own skip_id_naming flag - allows mixed batch with some functions having IDs, some not",
+        "id_in_name is set to !skip_id_naming for each function individually"
       ]
     },
     {
@@ -144,6 +154,13 @@
           "required": false,
           "default": null,
           "description": "Return value specification"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip _id_XX pattern validation (for functions where ID naming was skipped during reservation)"
         }
       ],
       "purpose": "Finalize reserved function after creation",
@@ -185,7 +202,8 @@
         "Returns {success: true, function_id: function_id, file_id: file_id}",
         "Sets is_reserved=0, automatically calls update_file_timestamp(file_id)",
         "SQL: UPDATE functions SET is_reserved=0, name=?, purpose=?, params=?, returns=? WHERE id=?",
-        "Name validation: must contain '_id_{function_id}' pattern"
+        "Name validation: must contain '_id_{function_id}' pattern UNLESS skip_id_naming=true",
+        "If skip_id_naming=true: skip _id_XX validation, function was reserved with id_in_name=0"
       ]
     },
     {
@@ -197,7 +215,7 @@
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of function objects [{function_id, name, file_id, purpose, params, returns}, ...]"
+          "description": "Array of function objects [{function_id, name, file_id, purpose, params, returns, skip_id_naming?}, ...]"
         }
       ],
       "purpose": "Finalize multiple reserved functions",
@@ -213,7 +231,9 @@
         "Returns {success: true, finalized_ids: [...]} confirming which IDs were finalized",
         "Calls update_file_timestamp() once per unique file_id (not once per function)",
         "SQL: Multiple UPDATE functions SET is_reserved=0 WHERE id=? (in transaction)",
-        "All operations succeed or all fail - no partial finalization"
+        "All operations succeed or all fail - no partial finalization",
+        "Each item has its own skip_id_naming flag - validation is per-item, not global",
+        "If skip_id_naming=true for an item, skip _id_XX pattern validation for that specific function"
       ]
     },
     {

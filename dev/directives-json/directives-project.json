@@ -708,7 +708,7 @@
       "name": "database_operations",
       "description": "Reservation and finalization workflow for files, functions, and types."
     },
-    "description": "Manages reservation and finalization of files, functions, and types in project database. AI reserves names BEFORE writing code to receive database IDs, embeds IDs in code for instant lookups (filename_id_42.py, function_name_id_99), and finalizes reservations after implementation. Prevents naming collisions, enables rename-proof references, and dramatically reduces API query costs by using integer lookups instead of string matching.",
+    "description": "Manages reservation and finalization of files, functions, and types in project database. AI reserves names BEFORE writing code to receive database IDs, embeds IDs in code for instant lookups (filename_id_42.py, function_name_id_99), and finalizes reservations after implementation. Prevents naming collisions, enables rename-proof references, and dramatically reduces API query costs by using integer lookups instead of string matching. Use skip_id_naming=True parameter to track entities without ID embedding - database field id_in_name=0 indicates clean names. EXCEPTIONS: (1) Files with required naming (__init__.py, .db files, config files) use skip_id_naming=True. (2) MCP tool functions use skip_id_naming=True to maintain clean callable names. (3) Private functions (underscore prefix like _helper) are NOT tracked - only public functions get reserve/finalize treatment.",
     "md_file_path": "directives/project_reserve_finalize.md",
     "workflow": {
       "trunk": "reserve_entities",
@@ -717,24 +717,63 @@
           "if": "reserving_file",
           "then": "reserve_file_name",
           "details": {
-            "helper": "reserve_file(name, path, language)",
-            "returns": "file_id for embedding"
+            "helper": "reserve_file(name, path, language, skip_id_naming=False)",
+            "returns": "file_id for embedding",
+            "skip_id_naming": "If True, sets id_in_name=0 in database - name won't contain _id_XX",
+            "batch_helper": "reserve_files([(name, path, language, skip_id_naming), ...]) - per-item control"
           }
         },
         {
           "if": "reserving_function",
           "then": "reserve_function_name",
           "details": {
-            "helper": "reserve_function(name, file_id, purpose)",
-            "returns": "function_id for embedding"
+            "helper": "reserve_function(name, file_id, purpose, skip_id_naming=False)",
+            "returns": "function_id for embedding",
+            "skip_id_naming": "If True, sets id_in_name=0 in database - name won't contain _id_XX",
+            "batch_helper": "reserve_functions([{name, file_id, skip_id_naming, ...}, ...]) - per-item control"
           }
         },
         {
           "if": "reserving_type",
           "then": "reserve_type_name",
           "details": {
-            "helper": "reserve_type(name, file_id, purpose)",
-            "returns": "type_id for embedding"
+            "helper": "reserve_type(name, definition_json, file_id, skip_id_naming=False)",
+            "returns": "type_id for embedding",
+            "skip_id_naming": "If True, sets id_in_name=0 in database - name won't contain _id_XX",
+            "batch_helper": "reserve_types([{name, definition_json, file_id, skip_id_naming, ...}, ...]) - per-item control"
+          }
+        },
+        {
+          "if": "reserved_successfully_with_naming_exception",
+          "then": "write_without_embedded_id",
+          "details": {
+            "file_exceptions": ["__init__.py", ".db files", "pyproject.toml", "setup.py", "conftest.py", "requirements.txt"],
+            "file_reason": "These files require specific names for Python/tooling conventions",
+            "action": "Reserve with skip_id_naming=True, finalize with skip_id_naming=True - name preserved without ID suffix",
+            "database_field": "id_in_name=0 indicates entity name does NOT contain _id_XX pattern",
+            "user_defined": "Additional exclusions via user_preferences.project_reserve_finalize.exclude_patterns"
+          }
+        },
+        {
+          "if": "function_is_mcp_tool",
+          "then": "reserve_without_id_embedding",
+          "details": {
+            "reason": "MCP tool functions must have clean names for external tool calls",
+            "action": "Reserve with skip_id_naming=True - function tracked but name stays clean",
+            "database_field": "id_in_name=0 for all MCP tools",
+            "examples": ["reserve_file", "finalize_function", "get_file_by_path"],
+            "helper_flag": "is_tool=true in helper JSON"
+          }
+        },
+        {
+          "if": "function_is_private",
+          "then": "skip_function_tracking",
+          "details": {
+            "pattern": "Functions starting with underscore (_)",
+            "examples": ["_open_connection", "_reserve_file_effect", "_validate_input"],
+            "reason": "Private/internal functions are implementation details, not public API",
+            "action": "Do NOT reserve or track - only parent file is tracked",
+            "track_instead": "Public functions (no underscore prefix) get full reserve/finalize treatment"
           }
         },
         {
@@ -749,9 +788,11 @@
           "if": "code_written",
           "then": "finalize_reservation",
           "details": {
-            "helpers": "finalize_file(file_id), finalize_function(function_id), finalize_type(type_id)",
-            "updates": "name field with embedded ID (e.g., calculate_sum -> calculate_sum_id_99)",
-            "sets": "is_reserved=FALSE"
+            "helpers": "finalize_file(file_id, skip_id_naming), finalize_function(function_id, skip_id_naming), finalize_type(type_id, skip_id_naming)",
+            "updates": "name field with embedded ID (e.g., calculate_sum -> calculate_sum_id_99) unless skip_id_naming=True",
+            "sets": "is_reserved=FALSE",
+            "skip_id_naming": "If True, skip _id_XX pattern validation - use for naming exceptions and MCP tools",
+            "batch_helpers": "finalize_files/functions/types accept per-item skip_id_naming in array"
           }
         },
         {

@@ -43,6 +43,7 @@ class TypeRecord:
     description: Optional[str]
     links: Optional[str]  # JSON string
     is_reserved: bool
+    id_in_name: bool
     created_at: str
     updated_at: str
 
@@ -244,6 +245,7 @@ def row_to_type_record(row: sqlite3.Row) -> TypeRecord:
         description=row["description"],
         links=row["links"],
         is_reserved=bool(row["is_reserved"]),
+        id_in_name=bool(row["id_in_name"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"]
     )
@@ -300,7 +302,8 @@ def _reserve_type_effect(
     definition_json: str,
     description: Optional[str],
     links_json: Optional[str],
-    file_id: Optional[int]
+    file_id: Optional[int],
+    id_in_name: bool = True
 ) -> int:
     """
     Effect: Insert reserved type into database.
@@ -312,16 +315,17 @@ def _reserve_type_effect(
         description: Type description
         links_json: Links JSON string
         file_id: File ID where type is defined
+        id_in_name: Whether type name will contain _id_XX pattern (default True)
 
     Returns:
         Reserved type ID
     """
     cursor = conn.execute(
         """
-        INSERT INTO types (name, definition_json, description, links, file_id, is_reserved)
-        VALUES (?, ?, ?, ?, ?, 1)
+        INSERT INTO types (name, definition_json, description, links, file_id, is_reserved, id_in_name)
+        VALUES (?, ?, ?, ?, ?, 1, ?)
         """,
-        (name, definition_json, description, links_json, file_id)
+        (name, definition_json, description, links_json, file_id, 1 if id_in_name else 0)
     )
     conn.commit()
     return cursor.lastrowid
@@ -329,14 +333,14 @@ def _reserve_type_effect(
 
 def _reserve_types_batch_effect(
     conn: sqlite3.Connection,
-    types: List[Tuple[str, str, Optional[str], Optional[str], Optional[int]]]
+    types: List[Tuple[str, str, Optional[str], Optional[str], Optional[int], bool]]
 ) -> Tuple[int, ...]:
     """
     Effect: Insert multiple reserved types in transaction.
 
     Args:
         conn: Database connection
-        types: List of (name, definition_json, description, links_json, file_id) tuples
+        types: List of (name, definition_json, description, links_json, file_id, id_in_name) tuples
 
     Returns:
         Tuple of reserved type IDs in same order
@@ -345,13 +349,13 @@ def _reserve_types_batch_effect(
     ids = []
 
     try:
-        for name, definition_json, description, links_json, file_id in types:
+        for name, definition_json, description, links_json, file_id, id_in_name in types:
             cursor.execute(
                 """
-                INSERT INTO types (name, definition_json, description, links, file_id, is_reserved)
-                VALUES (?, ?, ?, ?, ?, 1)
+                INSERT INTO types (name, definition_json, description, links, file_id, is_reserved, id_in_name)
+                VALUES (?, ?, ?, ?, ?, 1, ?)
                 """,
-                (name, definition_json, description, links_json, file_id)
+                (name, definition_json, description, links_json, file_id, 1 if id_in_name else 0)
             )
             ids.append(cursor.lastrowid)
 
@@ -512,7 +516,8 @@ def reserve_type(
     definition_json: Dict[str, Any],
     description: Optional[str] = None,
     links: Optional[Dict[str, Any]] = None,
-    file_id: Optional[int] = None
+    file_id: Optional[int] = None,
+    skip_id_naming: bool = False
 ) -> ReserveResult:
     """
     Reserve type ID for naming before creation.
@@ -522,11 +527,12 @@ def reserve_type(
 
     Args:
         db_path: Path to project.db
-        name: Preliminary type name (will have _id_xxx appended)
+        name: Preliminary type name (will have _id_xxx appended unless skip_id_naming=True)
         definition_json: ADT definition (e.g., {'type': 'enum', 'variants': ['A', 'B']})
         description: Type description (optional)
         links: Links to related functions (optional)
         file_id: File ID where type is defined (optional)
+        skip_id_naming: If True, skip ID embedding (for MCP tools that must have clean names)
 
     Returns:
         ReserveResult with success status and reserved ID
@@ -542,7 +548,7 @@ def reserve_type(
         True
         >>> result.id
         7
-        # Use result.id to create: Maybe_id_7
+        # Use result.id to create: Maybe_id_7 (unless skip_id_naming=True)
     """
     # Effect: open connection
     conn = _open_connection(db_path)
@@ -559,14 +565,15 @@ def reserve_type(
         definition_str = serialize_definition(definition_json)
         links_str = serialize_links(links)
 
-        # Effect: reserve type
+        # Effect: reserve type with id_in_name flag
         reserved_id = _reserve_type_effect(
             conn,
             name,
             definition_str,
             description,
             links_str,
-            file_id
+            file_id,
+            not skip_id_naming
         )
 
         # Success - fetch return statements from core database
@@ -595,7 +602,8 @@ def reserve_types(
 
     Args:
         db_path: Path to project.db
-        types: List of type objects with keys: name, definition_json, description, links, file_id
+        types: List of type objects with keys: name, definition_json, description, links, file_id, skip_id_naming
+               skip_id_naming is optional (defaults to False) and controls per-type ID embedding
 
     Returns:
         ReserveBatchResult with success status and reserved IDs
@@ -604,7 +612,7 @@ def reserve_types(
     Example:
         >>> types = [
         ...     {"name": "Maybe", "definition_json": {"type": "enum", "variants": ["Just", "Nothing"]}},
-        ...     {"name": "Result", "definition_json": {"type": "enum", "variants": ["Ok", "Err"]}}
+        ...     {"name": "ReserveResult", "definition_json": {...}, "skip_id_naming": True}  # MCP type
         ... ]
         >>> result = reserve_types("project.db", types)
         >>> result.success
@@ -632,7 +640,7 @@ def reserve_types(
                     error=f"File with ID {file_id} not found"
                 )
 
-        # Pure: prepare data for batch insert
+        # Pure: prepare data for batch insert (with per-item skip_id_naming)
         batch_data = []
         for typ in types:
             name = typ.get("name", "")
@@ -640,11 +648,13 @@ def reserve_types(
             description = typ.get("description")
             links = typ.get("links")
             file_id = typ.get("file_id")
+            skip_id_naming = typ.get("skip_id_naming", False)
+            id_in_name = not skip_id_naming
 
             definition_str = serialize_definition(definition_json)
             links_str = serialize_links(links)
 
-            batch_data.append((name, definition_str, description, links_str, file_id))
+            batch_data.append((name, definition_str, description, links_str, file_id, id_in_name))
 
         # Effect: reserve all types in transaction
         reserved_ids = _reserve_types_batch_effect(conn, batch_data)
@@ -675,7 +685,8 @@ def finalize_type(
     definition_json: Dict[str, Any],
     description: Optional[str] = None,
     links: Optional[Dict[str, Any]] = None,
-    file_id: Optional[int] = None
+    file_id: Optional[int] = None,
+    skip_id_naming: bool = False
 ) -> FinalizeResult:
     """
     Finalize reserved type after creation.
@@ -686,11 +697,12 @@ def finalize_type(
     Args:
         db_path: Path to project.db
         type_id: Reserved type ID
-        name: Final type name with _id_xx suffix
+        name: Final type name with _id_xx suffix (unless skip_id_naming=True)
         definition_json: ADT definition
         description: Type description (optional)
         links: Links to related functions (optional)
         file_id: File ID where type is defined (optional)
+        skip_id_naming: If True, skip ID pattern validation (for MCP tools)
 
     Returns:
         FinalizeResult with success status and type_id
@@ -707,8 +719,8 @@ def finalize_type(
         >>> result.success
         True
     """
-    # Validate name contains _id_{type_id} pattern
-    if not validate_type_id_in_name(name, type_id):
+    # Validate name contains _id_{type_id} pattern (unless skipped)
+    if not skip_id_naming and not validate_type_id_in_name(name, type_id):
         return FinalizeResult(
             success=False,
             error=f"Type name must contain '_id_{type_id}' pattern"
@@ -784,7 +796,8 @@ def finalize_types(
 
     Args:
         db_path: Path to project.db
-        types: List of type objects with keys: type_id, name, definition_json, description, links, file_id
+        types: List of type objects with keys: type_id, name, definition_json, description, links, file_id, skip_id_naming
+               skip_id_naming is optional (defaults to False) and controls per-type validation
 
     Returns:
         FinalizeBatchResult with success status and finalized IDs
@@ -792,7 +805,7 @@ def finalize_types(
     Example:
         >>> types = [
         ...     {"type_id": 7, "name": "Maybe_id_7", "definition_json": {...}, "file_id": 42},
-        ...     {"type_id": 8, "name": "Result_id_8", "definition_json": {...}, "file_id": 42}
+        ...     {"type_id": 8, "name": "ReserveResult", "definition_json": {...}, "file_id": 42, "skip_id_naming": True}
         ... ]
         >>> result = finalize_types("project.db", types)
         >>> result.success
@@ -815,6 +828,7 @@ def finalize_types(
         type_id = typ.get("type_id")
         name = typ.get("name", "")
         file_id = typ.get("file_id")
+        skip_id_naming = typ.get("skip_id_naming", False)
 
         if type_id is None:
             return FinalizeBatchResult(
@@ -822,8 +836,8 @@ def finalize_types(
                 error="All types must have type_id"
             )
 
-        # Validate name pattern
-        if not validate_type_id_in_name(name, type_id):
+        # Validate name pattern (unless skipped for this item)
+        if not skip_id_naming and not validate_type_id_in_name(name, type_id):
             return FinalizeBatchResult(
                 success=False,
                 error=f"Type name '{name}' must contain '_id_{type_id}' pattern"

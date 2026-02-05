@@ -251,7 +251,7 @@ Purpose: Get database IDs BEFORE coding so names are instantly queryable.
 
   1. **Reserve**: Call reserve helpers to get IDs
      - Reserve file name → get file_id
-     - Reserve function names → get function_ids
+     - Reserve function names → get function_ids (PUBLIC functions only)
      - Reserve type names → get type_ids
 
   2. **Embed IDs**: Use IDs in actual code names
@@ -266,6 +266,13 @@ Purpose: Get database IDs BEFORE coding so names are instantly queryable.
      - Records file path, line numbers, dependencies
 
   Batch helpers available for efficiency (reserve multiple at once).
+
+  **EXCEPTIONS - Skip ID Embedding**:
+  - Files: `__init__.py`, `.db` files, `pyproject.toml`, `setup.py`, `conftest.py`
+    → Reserve and finalize normally, but preserve original name (no _id_XX suffix)
+  - Private functions (underscore prefix like `_helper`, `_effect_query`):
+    → Do NOT reserve or track — only parent file is tracked
+    → Only PUBLIC functions (no underscore) get reserve/finalize treatment
 
 === 8. USE CASE 2: CUSTOM DIRECTIVE AUTOMATION ===
 

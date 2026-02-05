@@ -419,60 +419,6 @@
       ]
     },
     {
-      "name": "add_directive_intent_keyword",
-      "file_path": "helpers/core/directives_1.py",
-      "parameters": [
-        {
-          "name": "directive_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Directive ID"
-        },
-        {
-          "name": "keyword",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Intent keyword to add"
-        }
-      ],
-      "purpose": "Add an intent keyword to a directive",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [],
-      "target_database": "core",
-      "used_by_directives": []
-    },
-    {
-      "name": "remove_directive_intent_keyword",
-      "file_path": "helpers/core/directives_1.py",
-      "parameters": [
-        {
-          "name": "directive_id",
-          "type": "integer",
-          "required": true,
-          "default": null,
-          "description": "Directive ID"
-        },
-        {
-          "name": "keyword",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Intent keyword to remove"
-        }
-      ],
-      "purpose": "Remove an intent keyword from a directive",
-      "error_handling": "",
-      "is_tool": false,
-      "is_sub_helper": false,
-      "return_statements": [],
-      "target_database": "core",
-      "used_by_directives": []
-    },
-    {
       "name": "get_directive_keywords",
       "file_path": "helpers/core/directives_1.py",
       "parameters": [
@@ -1084,7 +1030,7 @@
   ],
   "metadata": {
     "file": "helpers-core.json",
-    "count": 36,
+    "count": 34,
     "first_helper": "core_allowed_check_constraints",
     "status": "JSON updated - code refactor pending",
     "mapped_helpers": 10,

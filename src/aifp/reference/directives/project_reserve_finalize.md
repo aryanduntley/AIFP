@@ -21,20 +21,23 @@ The `project_reserve_finalize` directive manages the reservation and finalizatio
 1. **`reserving_file`** → **`reserve_file_name`**
    - **Condition**: Planning to create new file
    - **Action**: Reserve file name in database
-   - **Details**: Call reserve_file(name, path, language)
-   - **Output**: Returns file_id for embedding in filename
+   - **Details**: Call `reserve_file(name, path, language, skip_id_naming=False)`
+   - **Parameter**: `skip_id_naming=True` to track without ID embedding (sets `id_in_name=0`)
+   - **Output**: Returns file_id for embedding in filename (unless skip_id_naming)
 
 2. **`reserving_function`** → **`reserve_function_name`**
    - **Condition**: Planning to create new function
    - **Action**: Reserve function name in database
-   - **Details**: Call reserve_function(name, file_id, purpose)
-   - **Output**: Returns function_id for embedding in function name
+   - **Details**: Call `reserve_function(name, file_id, purpose, skip_id_naming=False)`
+   - **Parameter**: `skip_id_naming=True` for MCP tools and naming exceptions (sets `id_in_name=0`)
+   - **Output**: Returns function_id for embedding in function name (unless skip_id_naming)
 
 3. **`reserving_type`** → **`reserve_type_name`**
    - **Condition**: Planning to create new type/ADT
    - **Action**: Reserve type name in database
-   - **Details**: Call reserve_type(name, file_id, purpose)
-   - **Output**: Returns type_id for embedding in type name
+   - **Details**: Call `reserve_type(name, definition_json, file_id, skip_id_naming=False)`
+   - **Parameter**: `skip_id_naming=True` to track without ID embedding (sets `id_in_name=0`)
+   - **Output**: Returns type_id for embedding in type name (unless skip_id_naming)
 
 4. **`reserved_successfully`** → **`write_with_embedded_id`**
    - **Condition**: Reservation returned ID
@@ -49,10 +52,11 @@ The `project_reserve_finalize` directive manages the reservation and finalizatio
 5. **`code_written`** → **`finalize_reservation`**
    - **Condition**: Code successfully written to filesystem
    - **Action**: Finalize reservation in database
-   - **Details**: Call finalize_file(file_id), finalize_function(function_id), or finalize_type(type_id)
-   - Updates name field to include embedded ID (e.g., `calculate_sum` → `calculate_sum_id_99`)
+   - **Details**: Call `finalize_file(file_id, skip_id_naming)`, `finalize_function(function_id, skip_id_naming)`, or `finalize_type(type_id, skip_id_naming)`
+   - **Parameter**: `skip_id_naming=True` skips _id_XX pattern validation (use for naming exceptions and MCP tools)
+   - Updates name field to include embedded ID (e.g., `calculate_sum` → `calculate_sum_id_99`) unless skip_id_naming=True
    - Sets is_reserved=FALSE
-   - **Output**: Entity marked as implemented in database with ID in name
+   - **Output**: Entity marked as implemented in database (with ID in name unless skip_id_naming)
 
 6. **Fallback** → **`prompt_user`**
    - **Condition**: Reservation failed or unclear
@@ -364,6 +368,84 @@ See system prompt for usage.
 
 ---
 
+## Naming Exceptions
+
+Certain files and functions follow the reserve → finalize pattern but **skip the ID embedding step**. Use `skip_id_naming=True` parameter and database tracks this via `id_in_name=0`.
+
+### Database Field: `id_in_name`
+
+- `id_in_name=1` (default): Entity name contains `_id_XX` pattern
+- `id_in_name=0`: Entity tracked without ID in name (clean name preserved)
+- Set automatically based on `skip_id_naming` parameter
+
+### Files That Skip ID Embedding
+
+1. **`__init__.py` files** - Python package initialization files must be named exactly `__init__.py`
+   - Reserve with `skip_id_naming=True`, finalize with `skip_id_naming=True`
+   - Database: `id_in_name=0`, name field stores `__init__.py`
+
+2. **Database files (`.db`)** - SQLite database files are data stores, not source code
+   - Examples: `project.db`, `aifp_core.db`, `user_preferences.db`
+   - Use `skip_id_naming=True` - do not embed IDs in database filenames
+
+3. **Other required naming** - Files where external tools or language conventions require specific names
+   - Examples: `pyproject.toml`, `setup.py`, `conftest.py`
+   - Reserve/finalize with `skip_id_naming=True`, preserve required name
+
+### Functions That Skip ID Embedding (But ARE Tracked)
+
+1. **MCP tool functions** - Functions exposed as MCP tools must have clean callable names
+   - Examples: `reserve_file`, `finalize_function`, `get_file_by_path`
+   - These ARE tracked in database with `id_in_name=0`
+   - Use `skip_id_naming=True` when reserving and finalizing
+   - Identified by `is_tool=true` in helper JSON
+
+### Functions That Skip Tracking Entirely
+
+1. **Private/internal functions (underscore prefix)** - Functions starting with `_` are implementation details
+   - Examples: `_open_connection`, `_reserve_file_effect`, `_validate_input`
+   - These are internal helpers, not part of the public API
+   - **Do NOT reserve or track** - only their parent file is tracked
+   - Public functions that call them are tracked normally
+
+### User-Defined Exclusions
+
+Users can add custom exclusions via `user_preferences.db`:
+- `project_reserve_finalize.exclude_patterns` - glob patterns to exclude from ID embedding
+- `project_reserve_finalize.exclude_folders` - folders to skip entirely
+
+### Workflow for Exceptions
+
+```python
+# For __init__.py files:
+file_id = reserve_file(name='__init__', path='src/helpers/__init__.py', language='python', skip_id_naming=True)
+# Returns: 55, sets id_in_name=0
+
+# Write file (NO ID in filename - it stays __init__.py)
+write_file(path='src/helpers/__init__.py', content="...")
+
+# Finalize (skip validation, name remains __init__)
+finalize_file(55, skip_id_naming=True)
+# Database: name='__init__', path='src/helpers/__init__.py', is_reserved=0, id_in_name=0
+
+# For MCP tool functions:
+func_id = reserve_function(name='reserve_file', file_id=55, purpose='Reserve file ID', skip_id_naming=True)
+# Returns: 88, sets id_in_name=0
+
+# Write function with clean name (NO ID suffix)
+# def reserve_file(db_path, name, path, language): ...
+
+# Finalize (skip _id_XX validation)
+finalize_function(88, skip_id_naming=True)
+# Database: name='reserve_file', is_reserved=0, id_in_name=0
+
+# For private functions - DON'T track at all:
+# ✗ Skip: _open_connection, _reserve_file_effect, _get_file_by_path_effect
+# These are not reserved, not finalized, not in database
+```
+
+---
+
 ## Notes
 
 - Reservation workflow prevents naming collisions during multi-step implementations
@@ -375,3 +457,4 @@ See system prompt for usage.
 - Reservation enables batch operations: reserve multiple entities, write all, finalize all
 - Database IDs save API costs: single integer lookup vs multiple string queries
 - Benefits compound in large codebases with hundreds of functions/types
+- **Exception files** (`__init__.py`, `.db`, required naming) follow reserve → finalize but skip ID embedding

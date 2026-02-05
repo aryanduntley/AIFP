@@ -24,6 +24,13 @@
           "required": true,
           "default": null,
           "description": "Programming language (e.g., 'python', 'javascript', 'typescript')"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip ID embedding in name (for __init__.py, .db files, MCP tools, or user preference). Sets id_in_name=0 in database."
         }
       ],
       "purpose": "Reserve file ID for naming before creation",
@@ -53,9 +60,10 @@
         }
       ],
       "implementation_notes": [
-        "Returns {success: true, id: reserved_id, is_reserved: true}",
-        "SQL: INSERT INTO files (name, path, language, is_reserved) VALUES (?, ?, ?, 1) RETURNING id",
-        "Filename pattern: {name}_id_{id}.{extension} (e.g., calculator_id_42.py, utils_id_15.js)"
+        "Returns {success: true, id: reserved_id, is_reserved: true, id_in_name: !skip_id_naming}",
+        "SQL: INSERT INTO files (name, path, language, is_reserved, id_in_name) VALUES (?, ?, ?, 1, ?) RETURNING id",
+        "Filename pattern: {name}_id_{id}.{extension} (e.g., calculator_id_42.py) unless skip_id_naming=true",
+        "If skip_id_naming=true: id_in_name=0, name stays as-is (for __init__.py, .db files, MCP tools)"
       ]
     },
     {
@@ -67,7 +75,7 @@
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of file objects [{name, path, language}, ...]"
+          "description": "Array of file objects [{name, path, language, skip_id_naming?}, ...]"
         }
       ],
       "purpose": "Reserve multiple file IDs at once",
@@ -81,8 +89,10 @@
       "used_by_directives": [],
       "implementation_notes": [
         "Returns {success: true, ids: [id1, id2, ...]} in same order as input files array",
-        "SQL: Multiple INSERT INTO files ... RETURNING id (in transaction)",
-        "IDs correspond to files array indices: files[0] gets ids[0], files[1] gets ids[1], etc."
+        "SQL: Multiple INSERT INTO files (name, path, language, is_reserved, id_in_name) VALUES (?, ?, ?, 1, ?) (in transaction)",
+        "IDs correspond to files array indices: files[0] gets ids[0], files[1] gets ids[1], etc.",
+        "Each item has its own skip_id_naming flag - allows mixed batch with some files having IDs, some not",
+        "id_in_name is set to !skip_id_naming for each file individually"
       ]
     },
     {
@@ -116,6 +126,13 @@
           "required": true,
           "default": null,
           "description": "Language"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip _id_XX pattern validation (for files where ID naming was skipped during reservation)"
         }
       ],
       "purpose": "Finalize reserved file after creation",
@@ -157,7 +174,8 @@
         "Returns {success: true, file_id: file_id}",
         "Verifies file exists at path using os.path.exists()",
         "SQL: UPDATE files SET is_reserved=0, name=?, path=?, language=? WHERE id=?",
-        "Name validation: must contain '_id_{file_id}' pattern",
+        "Name validation: must contain '_id_{file_id}' pattern UNLESS skip_id_naming=true",
+        "If skip_id_naming=true: skip _id_XX validation, file was reserved with id_in_name=0",
         "Note: File change tracking uses Git, not database checksums"
       ]
     },
@@ -170,7 +188,7 @@
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of file objects [{file_id, name, path, language}, ...]"
+          "description": "Array of file objects [{file_id, name, path, language, skip_id_naming?}, ...]"
         }
       ],
       "purpose": "Finalize multiple reserved files",
@@ -187,6 +205,8 @@
         "Verifies each file exists on filesystem",
         "SQL: Multiple UPDATE files SET is_reserved=0, name=?, path=?, language=? WHERE id=? (in transaction)",
         "All operations succeed or all fail - no partial finalization",
+        "Each item has its own skip_id_naming flag - validation is per-item, not global",
+        "If skip_id_naming=true for an item, skip _id_XX pattern validation for that specific file",
         "Note: File change tracking uses Git, not database checksums"
       ]
     },

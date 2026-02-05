@@ -50,6 +50,7 @@ class FunctionRecord:
     returns: Optional[str]  # JSON string
     purity_score: Optional[float]
     is_reserved: bool
+    id_in_name: bool
     created_at: str
     updated_at: str
 
@@ -182,6 +183,7 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
         returns=row["returns"],
         purity_score=row["purity_score"],
         is_reserved=bool(row["is_reserved"]),
+        id_in_name=bool(row["id_in_name"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"]
     )
@@ -197,7 +199,8 @@ def _reserve_function_effect(
     file_id: int,
     purpose: Optional[str],
     params_json: Optional[str],
-    returns_json: Optional[str]
+    returns_json: Optional[str],
+    id_in_name: bool = True
 ) -> int:
     """
     Effect: Insert reserved function into database.
@@ -209,16 +212,17 @@ def _reserve_function_effect(
         purpose: Function purpose
         params_json: Parameters JSON string
         returns_json: Returns JSON string
+        id_in_name: Whether function name will contain _id_XX pattern (default True)
 
     Returns:
         Reserved function ID
     """
     cursor = conn.execute(
         """
-        INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved)
-        VALUES (?, ?, ?, ?, ?, 1)
+        INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved, id_in_name)
+        VALUES (?, ?, ?, ?, ?, 1, ?)
         """,
-        (name, file_id, purpose, params_json, returns_json)
+        (name, file_id, purpose, params_json, returns_json, 1 if id_in_name else 0)
     )
     conn.commit()
     return cursor.lastrowid
@@ -226,14 +230,14 @@ def _reserve_function_effect(
 
 def _reserve_functions_batch_effect(
     conn: sqlite3.Connection,
-    functions: List[Tuple[str, int, Optional[str], Optional[str], Optional[str]]]
+    functions: List[Tuple[str, int, Optional[str], Optional[str], Optional[str], bool]]
 ) -> Tuple[int, ...]:
     """
     Effect: Insert multiple reserved functions in transaction.
 
     Args:
         conn: Database connection
-        functions: List of (name, file_id, purpose, params_json, returns_json) tuples
+        functions: List of (name, file_id, purpose, params_json, returns_json, id_in_name) tuples
 
     Returns:
         Tuple of reserved function IDs in same order
@@ -242,13 +246,13 @@ def _reserve_functions_batch_effect(
     ids = []
 
     try:
-        for name, file_id, purpose, params_json, returns_json in functions:
+        for name, file_id, purpose, params_json, returns_json, id_in_name in functions:
             cursor.execute(
                 """
-                INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved)
-                VALUES (?, ?, ?, ?, ?, 1)
+                INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved, id_in_name)
+                VALUES (?, ?, ?, ?, ?, 1, ?)
                 """,
-                (name, file_id, purpose, params_json, returns_json)
+                (name, file_id, purpose, params_json, returns_json, 1 if id_in_name else 0)
             )
             ids.append(cursor.lastrowid)
 
@@ -381,7 +385,8 @@ def reserve_function(
     file_id: int,
     purpose: Optional[str] = None,
     params: Optional[List[Dict[str, Any]]] = None,
-    returns: Optional[Dict[str, Any]] = None
+    returns: Optional[Dict[str, Any]] = None,
+    skip_id_naming: bool = False
 ) -> ReserveResult:
     """
     Reserve function ID for naming before creation.
@@ -391,11 +396,12 @@ def reserve_function(
 
     Args:
         db_path: Path to project.db
-        name: Preliminary function name (will have _id_xxx appended)
+        name: Preliminary function name (will have _id_xxx appended unless skip_id_naming=True)
         file_id: File ID where function will be defined
         purpose: Function purpose (optional)
         params: Function parameters (optional)
         returns: Return value specification (optional)
+        skip_id_naming: If True, skip ID embedding (for MCP tools that must have clean names)
 
     Returns:
         ReserveResult with success status and reserved ID
@@ -411,7 +417,7 @@ def reserve_function(
         True
         >>> result.id
         99
-        # Use result.id to create: calculate_sum_id_99
+        # Use result.id to create: calculate_sum_id_99 (unless skip_id_naming=True)
     """
     # Effect: open connection
     conn = _open_connection(db_path)
@@ -428,14 +434,15 @@ def reserve_function(
         params_json = serialize_params(params)
         returns_json = serialize_returns(returns)
 
-        # Effect: reserve function
+        # Effect: reserve function with id_in_name flag
         reserved_id = _reserve_function_effect(
             conn,
             name,
             file_id,
             purpose,
             params_json,
-            returns_json
+            returns_json,
+            not skip_id_naming
         )
 
         # Success - fetch return statements from core database
@@ -464,7 +471,8 @@ def reserve_functions(
 
     Args:
         db_path: Path to project.db
-        functions: List of function objects with keys: name, file_id, purpose, params, returns
+        functions: List of function objects with keys: name, file_id, purpose, params, returns, skip_id_naming
+                   skip_id_naming is optional (defaults to False) and controls per-function ID embedding
 
     Returns:
         ReserveBatchResult with success status and reserved IDs
@@ -473,7 +481,7 @@ def reserve_functions(
     Example:
         >>> functions = [
         ...     {"name": "add", "file_id": 42, "purpose": "Add numbers"},
-        ...     {"name": "subtract", "file_id": 42, "purpose": "Subtract numbers"}
+        ...     {"name": "reserve_file", "file_id": 42, "skip_id_naming": True}  # MCP tool
         ... ]
         >>> result = reserve_functions("project.db", functions)
         >>> result.success
@@ -506,7 +514,7 @@ def reserve_functions(
                     error=f"File with ID {file_id} not found"
                 )
 
-        # Pure: prepare data for batch insert
+        # Pure: prepare data for batch insert (with per-item skip_id_naming)
         batch_data = []
         for func in functions:
             name = func.get("name", "")
@@ -514,7 +522,9 @@ def reserve_functions(
             purpose = func.get("purpose")
             params_json = serialize_params(func.get("params"))
             returns_json = serialize_returns(func.get("returns"))
-            batch_data.append((name, file_id, purpose, params_json, returns_json))
+            skip_id_naming = func.get("skip_id_naming", False)
+            id_in_name = not skip_id_naming
+            batch_data.append((name, file_id, purpose, params_json, returns_json, id_in_name))
 
         # Effect: reserve all functions in transaction
         reserved_ids = _reserve_functions_batch_effect(conn, batch_data)
@@ -545,7 +555,8 @@ def finalize_function(
     file_id: int,
     purpose: Optional[str] = None,
     params: Optional[List[Dict[str, Any]]] = None,
-    returns: Optional[Dict[str, Any]] = None
+    returns: Optional[Dict[str, Any]] = None,
+    skip_id_naming: bool = False
 ) -> FinalizeResult:
     """
     Finalize reserved function after creation.
@@ -556,11 +567,12 @@ def finalize_function(
     Args:
         db_path: Path to project.db
         function_id: Reserved function ID
-        name: Final function name with _id_xx suffix
+        name: Final function name with _id_xx suffix (unless skip_id_naming=True)
         file_id: File ID
         purpose: Function purpose (optional)
         params: Function parameters (optional)
         returns: Return value specification (optional)
+        skip_id_naming: If True, skip ID pattern validation (for MCP tools)
 
     Returns:
         FinalizeResult with success status and function_id
@@ -577,8 +589,8 @@ def finalize_function(
         >>> result.success
         True
     """
-    # Validate name contains _id_{function_id} pattern
-    if not validate_function_id_in_name(name, function_id):
+    # Validate name contains _id_{function_id} pattern (unless skipped)
+    if not skip_id_naming and not validate_function_id_in_name(name, function_id):
         return FinalizeResult(
             success=False,
             error=f"Function name must contain '_id_{function_id}' pattern"
@@ -652,7 +664,8 @@ def finalize_functions(
 
     Args:
         db_path: Path to project.db
-        functions: List of function objects with keys: function_id, name, file_id, purpose, params, returns
+        functions: List of function objects with keys: function_id, name, file_id, purpose, params, returns, skip_id_naming
+                   skip_id_naming is optional (defaults to False) and controls per-function validation
 
     Returns:
         FinalizeBatchResult with success status and finalized IDs
@@ -660,7 +673,7 @@ def finalize_functions(
     Example:
         >>> functions = [
         ...     {"function_id": 99, "name": "add_id_99", "file_id": 42},
-        ...     {"function_id": 100, "name": "subtract_id_100", "file_id": 42}
+        ...     {"function_id": 100, "name": "reserve_file", "file_id": 42, "skip_id_naming": True}
         ... ]
         >>> result = finalize_functions("project.db", functions)
         >>> result.success
@@ -683,6 +696,7 @@ def finalize_functions(
         function_id = func.get("function_id")
         name = func.get("name", "")
         file_id = func.get("file_id")
+        skip_id_naming = func.get("skip_id_naming", False)
 
         if function_id is None or file_id is None:
             return FinalizeBatchResult(
@@ -690,8 +704,8 @@ def finalize_functions(
                 error="All functions must have function_id and file_id"
             )
 
-        # Validate name pattern
-        if not validate_function_id_in_name(name, function_id):
+        # Validate name pattern (unless skipped for this item)
+        if not skip_id_naming and not validate_function_id_in_name(name, function_id):
             return FinalizeBatchResult(
                 success=False,
                 error=f"Function name '{name}' must contain '_id_{function_id}' pattern"
