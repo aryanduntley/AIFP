@@ -169,6 +169,26 @@ Parses user's natural language preference request.
   - Preference active immediately (next sync loads it)
 - **Result**: User informed of successful update
 
+**Branch 7: If helper_context_applicable**
+- **Then**: `offer_custom_return_statement`
+- **Details**: After saving a preference, check if it should also propagate as custom return statements to specific helper functions
+  - Evaluate: does this preference affect the output/behavior of specific helpers?
+  - Example: "no IDs in names" → affects `reserve_file_name`, `reserve_function_name`, `reserve_type_name`
+  - If applicable, offer to add custom return statements:
+    ```
+    This preference may also affect these helper functions:
+    • reserve_file_name
+    • reserve_function_name
+    • reserve_type_name
+
+    Would you like me to add custom guidance to these helpers?
+    This ensures the preference is reflected in their output context.
+    ```
+  - If user confirms: call `set_custom_return_statement` for each helper
+  - Custom return statements are merged with core statements at runtime
+  - To modify later: delete and recreate (no in-place update)
+- **Result**: Related helpers now include user-defined guidance in their return statements
+
 **Fallback**: `prompt_user`
 - **Details**: Unable to determine preference or directive
   - Clarify what user wants:
@@ -617,6 +637,54 @@ How to verify this directive is working:
 ### Roadblock 3: preference_conflict
 **Issue**: New preference contradicts existing one
 **Resolution**: Show existing preference, ask user to confirm override or merge
+
+---
+
+## Custom Return Statements
+
+### What Are Custom Return Statements?
+
+Custom return statements are user-defined extensions to helper function return statements. While core return_statements in `aifp_core.db` are immutable, custom return statements in `user_preferences.db` allow users to add forward-thinking context, notes, and guidance that gets merged with core statements at runtime.
+
+### When to Use
+
+When a preference should influence the guidance returned by specific helper functions:
+- **Naming conventions**: "No IDs in names" → add to reserve_file_name, reserve_function_name, reserve_type_name
+- **Code style**: "Always use snake_case" → add to relevant file/function creation helpers
+- **Project context**: Any user-specific note that should be returned alongside a helper's standard guidance
+
+### Management Pattern
+
+- **Add**: `set_custom_return_statement(db_path, helper_name, statement, description)`
+- **Read**: `get_custom_return_statements(db_path, helper_name)` (sub-helper, also called automatically)
+- **Delete**: `delete_custom_return_statement(db_path, helper_name, statement=..., statement_id=...)`
+- **Modify**: Delete the old statement, then set the new one (no in-place update)
+
+### Example Workflow
+
+```python
+# User: "I don't want any IDs in file or function names"
+#
+# 1. Set directive preference (standard flow):
+#    add_directive_preference("project_reserve_finalize", "skip_id_embedding", "true")
+#
+# 2. Offer custom return statements for related helpers:
+#    set_custom_return_statement(
+#        db_path,
+#        "reserve_file_name",
+#        "User requests no IDs in names for all files, functions, types",
+#        description="User preference for clean naming"
+#    )
+#    set_custom_return_statement(
+#        db_path,
+#        "reserve_function_name",
+#        "User requests no IDs in names for all files, functions, types",
+#        description="User preference for clean naming"
+#    )
+#
+# 3. Now when any helper calls get_return_statements("reserve_file_name"),
+#    the custom statement is appended to the core return statements.
+```
 
 ---
 

@@ -82,7 +82,7 @@
       "name": "user_customization",
       "description": "Updates user preferences based on explicit user requests."
     },
-    "description": "Handles explicit user requests to modify behavior preferences. Uses find_directive_by_intent helper to map user requests to specific directives by searching name, description, and intent_keywords. Creates or updates directive_preferences entries with chosen directive name. Validates preference changes and confirms with user before applying.",
+    "description": "Handles explicit user requests to modify behavior preferences. Uses find_directive_by_intent helper to map user requests to specific directives by searching name, description, and intent_keywords. Creates or updates directive_preferences entries with chosen directive name. Validates preference changes and confirms with user before applying. When a preference affects helper function outputs, offers to add custom return statements for related helpers via set_custom_return_statement.",
     "md_file_path": "directives/user_preferences_update.md",
     "workflow": {
       "trunk": "parse_preference_request",
@@ -145,6 +145,19 @@
           }
         },
         {
+          "if": "helper_context_applicable",
+          "then": "offer_custom_return_statement",
+          "details": {
+            "check": "Does the preference affect specific helper function outputs?",
+            "action": "Offer to add custom return statements for related helpers",
+            "use_helper": "set_custom_return_statement",
+            "examples": [
+              "User sets 'no IDs in names' → add custom return statement to reserve_file_name, reserve_function_name, reserve_type_name",
+              "User sets 'always use snake_case' → add custom return statement to relevant file/function creation helpers"
+            ]
+          }
+        },
+        {
           "fallback": "prompt_user",
           "details": {
             "clarify": "Could you specify which behavior you want to change?"
@@ -174,7 +187,10 @@
       "change behavior",
       "always do",
       "never do",
-      "prefer"
+      "prefer",
+      "return statement",
+      "helper guidance",
+      "custom guidance"
     ],
     "confidence_threshold": 0.6
   },

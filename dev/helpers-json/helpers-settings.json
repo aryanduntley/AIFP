@@ -864,19 +864,140 @@
       "return_statements": [],
       "target_database": "user_preferences",
       "used_by_directives": []
+    },
+    {
+      "name": "set_custom_return_statement",
+      "file_path": "helpers/user_preferences/management.py",
+      "parameters": [
+        {
+          "name": "helper_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Helper function name (should match aifp_core.db helper_functions.name)"
+        },
+        {
+          "name": "statement",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Custom return statement text"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Why this was added (optional context)"
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Whether statement is active (default true)"
+        }
+      ],
+      "purpose": "Add a custom return statement for a helper function. Extends core return_statements with user-defined guidance, context, or preferences. To modify: delete first, then set new statement.",
+      "error_handling": "Returns error if helper_name or statement is empty",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Custom return statement added — will be merged with core return statements at runtime",
+        "Verify helper_name matches an existing helper in aifp_core.db for consistency",
+        "To modify an existing statement: delete it first with delete_custom_return_statement, then set the new one"
+      ],
+      "target_database": "user_preferences",
+      "used_by_directives": [
+        {
+          "directive_name": "user_preferences_update",
+          "execution_context": "set_custom_return_statement",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {
+            "helper_name": "workflow.related_helper",
+            "statement": "workflow.custom_guidance",
+            "description": "workflow.preference_context"
+          },
+          "description": "Optionally add custom return statements for helpers related to the updated preference"
+        }
+      ],
+      "implementation_notes": [
+        "INSERT OR IGNORE using UNIQUE(helper_name, statement) constraint",
+        "Merged with core return_statements via get_return_statements(helper_name, user_preferences_db_path)",
+        "Custom statements appended AFTER core statements in the returned tuple"
+      ]
+    },
+    {
+      "name": "delete_custom_return_statement",
+      "file_path": "helpers/user_preferences/management.py",
+      "parameters": [
+        {
+          "name": "helper_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Helper function name"
+        },
+        {
+          "name": "statement",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Specific statement text to delete (optional)"
+        },
+        {
+          "name": "statement_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Specific row ID to delete (optional)"
+        }
+      ],
+      "purpose": "Delete custom return statement(s) for a helper function. By ID, by text, or all for a helper.",
+      "error_handling": "Returns error if helper_name is empty",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Custom return statement(s) deleted — changes take effect on next helper call",
+        "To add a replacement statement, use set_custom_return_statement"
+      ],
+      "target_database": "user_preferences",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_custom_return_statements",
+      "file_path": "helpers/user_preferences/management.py",
+      "parameters": [
+        {
+          "name": "helper_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Helper function name to get custom statements for"
+        }
+      ],
+      "purpose": "Get all active custom return statements for a helper function. Sub-helper called by get_return_statements for merging. Also available for AI to inspect existing custom statements.",
+      "error_handling": "Returns empty statements array if helper_name not found or no custom statements exist",
+      "is_tool": false,
+      "is_sub_helper": true,
+      "return_statements": [],
+      "target_database": "user_preferences",
+      "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-settings.json",
-    "count": 23,
+    "count": 26,
     "first_helper": "user_preferences_allowed_check_constraints",
-    "status": "COMPLETE - All 23 helpers implemented",
-    "mapped_helpers": 8,
-    "unmapped_helpers": 15,
-    "note": "All helpers implemented in src/aifp/helpers/user_preferences/. Distribution: validation.py (1), schema.py (4), crud.py (6), management.py (12). 8 helpers mapped to user preference directives, 15 are generic AI query tools.",
-    "total_mappings": 12,
-    "last_updated": "2026-01-27",
+    "status": "COMPLETE - All 26 helpers implemented",
+    "mapped_helpers": 9,
+    "unmapped_helpers": 17,
+    "note": "All helpers implemented in src/aifp/helpers/user_preferences/. Distribution: validation.py (1), schema.py (4), crud.py (6), management.py (15). 9 helpers mapped to user preference directives, 17 are generic AI query tools. Includes 1 sub-helper (get_custom_return_statements).",
+    "total_mappings": 13,
+    "last_updated": "2026-02-06",
     "changes": [
+      "2026-02-06: Added set_custom_return_statement (tool), delete_custom_return_statement (tool), get_custom_return_statements (sub-helper). Custom return statements feature.",
       "2026-01-27: Removed apply_preferences_to_context, update_user_preferences. Added update_directive_preference, add_user_setting, update_user_setting.",
       "2026-01-27: All 23 helpers implemented. Phase 5 COMPLETE."
     ]

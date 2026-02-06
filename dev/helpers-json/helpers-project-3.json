@@ -26,7 +26,7 @@
           "description": "Function purpose"
         },
         {
-          "name": "params",
+          "name": "parameters",
           "type": "array",
           "required": false,
           "default": null,
@@ -75,7 +75,7 @@
       ],
       "implementation_notes": [
         "Returns {success: true, id: reserved_id, is_reserved: true, id_in_name: !skip_id_naming}",
-        "SQL: INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) RETURNING id",
+        "SQL: INSERT INTO functions (name, file_id, purpose, parameters, returns, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) RETURNING id",
         "Function name pattern: {name}_id_{id} (e.g., calculate_sum_id_42) unless skip_id_naming=true",
         "If skip_id_naming=true: id_in_name=0, name stays as-is (for MCP tools that need clean names)"
       ]
@@ -89,7 +89,7 @@
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of function objects [{name, file_id, purpose, params, returns, skip_id_naming?}, ...]"
+          "description": "Array of function objects [{name, file_id, purpose, parameters, returns, skip_id_naming?}, ...]"
         }
       ],
       "purpose": "Reserve multiple function IDs",
@@ -103,7 +103,7 @@
       "used_by_directives": [],
       "implementation_notes": [
         "Returns {success: true, ids: [id1, id2, ...]} in same order as input functions array",
-        "SQL: Multiple INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) (in transaction)",
+        "SQL: Multiple INSERT INTO functions (name, file_id, purpose, parameters, returns, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) (in transaction)",
         "IDs correspond to functions array indices: functions[0] gets ids[0], functions[1] gets ids[1], etc.",
         "Each item has its own skip_id_naming flag - allows mixed batch with some functions having IDs, some not",
         "id_in_name is set to !skip_id_naming for each function individually"
@@ -142,7 +142,7 @@
           "description": "Function purpose"
         },
         {
-          "name": "params",
+          "name": "parameters",
           "type": "array",
           "required": false,
           "default": null,
@@ -201,7 +201,7 @@
       "implementation_notes": [
         "Returns {success: true, function_id: function_id, file_id: file_id}",
         "Sets is_reserved=0, automatically calls update_file_timestamp(file_id)",
-        "SQL: UPDATE functions SET is_reserved=0, name=?, purpose=?, params=?, returns=? WHERE id=?",
+        "SQL: UPDATE functions SET is_reserved=0, name=?, purpose=?, parameters=?, returns=? WHERE id=?",
         "Name validation: must contain '_id_{function_id}' pattern UNLESS skip_id_naming=true",
         "If skip_id_naming=true: skip _id_XX validation, function was reserved with id_in_name=0"
       ]
@@ -215,7 +215,7 @@
           "type": "array",
           "required": true,
           "default": null,
-          "description": "Array of function objects [{function_id, name, file_id, purpose, params, returns, skip_id_naming?}, ...]"
+          "description": "Array of function objects [{function_id, name, file_id, purpose, parameters, returns, skip_id_naming?}, ...]"
         }
       ],
       "purpose": "Finalize multiple reserved functions",
@@ -283,7 +283,7 @@
       "implementation_notes": [
         "Returns array of function objects with file data (multiple functions can share same name across files)",
         "SQL: SELECT f.*, fi.name AS file_name, fi.path AS file_path FROM functions f LEFT JOIN files fi ON f.file_id = fi.id WHERE f.name = ?",
-        "Returns: {success, functions: [{id, name, file_id, file_name, file_path, purpose, params, returns, purity_score, is_reserved, id_in_name, created_at, updated_at}, ...]}",
+        "Returns: {success, functions: [{id, name, file_id, file_name, file_path, purpose, parameters, returns, is_reserved, id_in_name, created_at, updated_at}, ...]}",
         "Returns FunctionQueryResult with functions tuple (not single function)"
       ]
     },

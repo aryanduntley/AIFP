@@ -6,11 +6,11 @@ Helpers for querying the aifp_core.db database (read-only, global).
 This package contains:
 - validation.py: CHECK constraint parsing (1 helper)
 - schema.py: Schema introspection and generic queries (6 helpers)
-- directives_1.py: Directive queries, search, and intent keywords (15 helpers)
+- directives_1.py: Directive queries, search, and intent keywords (13 helpers)
 - directives_2.py: Helper queries and category operations (9 helpers)
-- flows.py: Directive flow navigation and routing (7 helpers)
+- flows.py: Directive flow navigation and routing (5 helpers)
 
-Total: 38 helpers
+Total: 34 helpers
 
 All helpers follow FP principles:
 - Pure functions where possible
@@ -49,8 +49,6 @@ from .directives_1 import (
     find_directive_by_intent,
     find_directives_by_intent_keyword,
     get_directives_with_intent_keywords,
-    add_directive_intent_keyword,
-    remove_directive_intent_keyword,
     get_directive_keywords,
     get_all_directive_keywords,
     get_all_intent_keywords_with_counts,
@@ -87,17 +85,13 @@ from .directives_2 import (
 
 # Flows
 from .flows import (
-    get_next_directives_from_status,
-    get_matching_next_directives,
+    get_flows_from_directive,
+    get_flows_to_directive,
     get_completion_loop_target,
-    get_conditional_work_paths,
     get_directive_flows,
-    search_fp_references,
-    get_contextual_utilities,
+    get_wildcard_flows,
     FlowResult,
     FlowsResult,
-    NextDirectivesResult,
-    UtilitiesResult,
 )
 
 # Common utilities and data structures
@@ -135,8 +129,6 @@ __all__ = [
     'find_directive_by_intent',
     'find_directives_by_intent_keyword',
     'get_directives_with_intent_keywords',
-    'add_directive_intent_keyword',
-    'remove_directive_intent_keyword',
     'get_directive_keywords',
     'get_all_directive_keywords',
     'get_all_intent_keywords_with_counts',
@@ -169,17 +161,13 @@ __all__ = [
     'DirectiveHelpersResult',
 
     # Flows
-    'get_next_directives_from_status',
-    'get_matching_next_directives',
+    'get_flows_from_directive',
+    'get_flows_to_directive',
     'get_completion_loop_target',
-    'get_conditional_work_paths',
     'get_directive_flows',
-    'search_fp_references',
-    'get_contextual_utilities',
+    'get_wildcard_flows',
     'FlowResult',
     'FlowsResult',
-    'NextDirectivesResult',
-    'UtilitiesResult',
 
     # Common data structures
     'DirectiveRecord',

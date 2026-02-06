@@ -20,19 +20,12 @@ import json
 from dataclasses import dataclass
 from typing import Optional, List, Tuple, Dict, Any
 
-# Import global utilities
-import sys
-from pathlib import Path
-# Add parent directory to path to import from helpers.utils
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements
+from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
 from ._common import _open_connection, _check_file_exists
 
-# Import update_file_timestamp from files_2
-sys.path.insert(0, str(Path(__file__).parent))
-from files_2 import update_file_timestamp
+from .files_2 import update_file_timestamp
 
 
 # ============================================================================
@@ -46,9 +39,8 @@ class FunctionRecord:
     name: str
     file_id: int
     purpose: Optional[str]
-    params: Optional[str]  # JSON string
+    parameters: Optional[str]  # JSON string
     returns: Optional[str]  # JSON string
-    purity_score: Optional[float]
     is_reserved: bool
     id_in_name: bool
     file_name: Optional[str]  # From JOIN with files table
@@ -183,9 +175,8 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
         name=row["name"],
         file_id=row["file_id"],
         purpose=row["purpose"],
-        params=row["params"],
+        parameters=row["parameters"],
         returns=row["returns"],
-        purity_score=row["purity_score"],
         is_reserved=bool(row["is_reserved"]),
         id_in_name=bool(row["id_in_name"]),
         file_name=row["file_name"] if "file_name" in keys else None,
@@ -225,7 +216,7 @@ def _reserve_function_effect(
     """
     cursor = conn.execute(
         """
-        INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved, id_in_name)
+        INSERT INTO functions (name, file_id, purpose, parameters, returns, is_reserved, id_in_name)
         VALUES (?, ?, ?, ?, ?, 1, ?)
         """,
         (name, file_id, purpose, params_json, returns_json, 1 if id_in_name else 0)
@@ -255,7 +246,7 @@ def _reserve_functions_batch_effect(
         for name, file_id, purpose, params_json, returns_json, id_in_name in functions:
             cursor.execute(
                 """
-                INSERT INTO functions (name, file_id, purpose, params, returns, is_reserved, id_in_name)
+                INSERT INTO functions (name, file_id, purpose, parameters, returns, is_reserved, id_in_name)
                 VALUES (?, ?, ?, ?, ?, 1, ?)
                 """,
                 (name, file_id, purpose, params_json, returns_json, 1 if id_in_name else 0)
@@ -314,7 +305,7 @@ def _finalize_function_effect(
         SET is_reserved = 0,
             name = ?,
             purpose = ?,
-            params = ?,
+            parameters = ?,
             returns = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
@@ -345,7 +336,7 @@ def _finalize_functions_batch_effect(
                 SET is_reserved = 0,
                     name = ?,
                     purpose = ?,
-                    params = ?,
+                    parameters = ?,
                     returns = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
@@ -396,7 +387,7 @@ def reserve_function(
     name: str,
     file_id: int,
     purpose: Optional[str] = None,
-    params: Optional[List[Dict[str, Any]]] = None,
+    parameters: Optional[List[Dict[str, Any]]] = None,
     returns: Optional[Dict[str, Any]] = None,
     skip_id_naming: bool = False
 ) -> ReserveResult:
@@ -411,7 +402,7 @@ def reserve_function(
         name: Preliminary function name (will have _id_xxx appended unless skip_id_naming=True)
         file_id: File ID where function will be defined
         purpose: Function purpose (optional)
-        params: Function parameters (optional)
+        parameters: Function parameters (optional)
         returns: Return value specification (optional)
         skip_id_naming: If True, skip ID embedding (for MCP tools that must have clean names)
 
@@ -442,8 +433,8 @@ def reserve_function(
                 error=f"File with ID {file_id} not found"
             )
 
-        # Pure: serialize params and returns
-        params_json = serialize_params(params)
+        # Pure: serialize parameters and returns
+        params_json = serialize_params(parameters)
         returns_json = serialize_returns(returns)
 
         # Effect: reserve function with id_in_name flag
@@ -483,7 +474,7 @@ def reserve_functions(
 
     Args:
         db_path: Path to project.db
-        functions: List of function objects with keys: name, file_id, purpose, params, returns, skip_id_naming
+        functions: List of function objects with keys: name, file_id, purpose, parameters, returns, skip_id_naming
                    skip_id_naming is optional (defaults to False) and controls per-function ID embedding
 
     Returns:
@@ -532,7 +523,7 @@ def reserve_functions(
             name = func.get("name", "")
             file_id = func.get("file_id")
             purpose = func.get("purpose")
-            params_json = serialize_params(func.get("params"))
+            params_json = serialize_params(func.get("parameters"))
             returns_json = serialize_returns(func.get("returns"))
             skip_id_naming = func.get("skip_id_naming", False)
             id_in_name = not skip_id_naming
@@ -566,7 +557,7 @@ def finalize_function(
     name: str,
     file_id: int,
     purpose: Optional[str] = None,
-    params: Optional[List[Dict[str, Any]]] = None,
+    parameters: Optional[List[Dict[str, Any]]] = None,
     returns: Optional[Dict[str, Any]] = None,
     skip_id_naming: bool = False
 ) -> FinalizeResult:
@@ -582,7 +573,7 @@ def finalize_function(
         name: Final function name with _id_xx suffix (unless skip_id_naming=True)
         file_id: File ID
         purpose: Function purpose (optional)
-        params: Function parameters (optional)
+        parameters: Function parameters (optional)
         returns: Return value specification (optional)
         skip_id_naming: If True, skip ID pattern validation (for MCP tools)
 
@@ -619,8 +610,8 @@ def finalize_function(
                 error=f"File with ID {file_id} not found"
             )
 
-        # Pure: serialize params and returns
-        params_json = serialize_params(params)
+        # Pure: serialize parameters and returns
+        params_json = serialize_params(parameters)
         returns_json = serialize_returns(returns)
 
         # Effect: finalize function
@@ -676,7 +667,7 @@ def finalize_functions(
 
     Args:
         db_path: Path to project.db
-        functions: List of function objects with keys: function_id, name, file_id, purpose, params, returns, skip_id_naming
+        functions: List of function objects with keys: function_id, name, file_id, purpose, parameters, returns, skip_id_naming
                    skip_id_naming is optional (defaults to False) and controls per-function validation
 
     Returns:
@@ -723,8 +714,8 @@ def finalize_functions(
                 error=f"Function name '{name}' must contain '_id_{function_id}' pattern"
             )
 
-        # Pure: serialize params and returns
-        params_json = serialize_params(func.get("params"))
+        # Pure: serialize parameters and returns
+        params_json = serialize_params(func.get("parameters"))
         returns_json = serialize_returns(func.get("returns"))
         purpose = func.get("purpose")
 

@@ -23,8 +23,9 @@ Imported from utils.py (global):
 - get_user_preferences_db_path: Path resolution
 """
 
+import os
 import sqlite3
-from typing import Final
+from typing import Final, Tuple
 
 # Import global utilities (DRY - avoid duplication)
 from ..utils import _open_connection  # noqa: F401 - re-exported for convenience
@@ -205,3 +206,40 @@ def _is_tracking_enabled(conn: sqlite3.Connection, feature_name: str) -> bool:
     )
     row = cursor.fetchone()
     return bool(row['enabled']) if row else False
+
+
+# ============================================================================
+# Custom Return Statements Sub-Helper
+# ============================================================================
+
+def _get_custom_return_statements(db_path: str, helper_name: str) -> Tuple[str, ...]:
+    """
+    Effect: Get active custom return statements for a helper from user_preferences.db.
+
+    Called internally by get_return_statements() in connection.py to merge
+    user-defined return statements with core statements from aifp_core.db.
+
+    Args:
+        db_path: Path to user_preferences.db
+        helper_name: Helper function name to get custom statements for
+
+    Returns:
+        Tuple of custom return statement strings, or empty tuple on any error.
+        Graceful degradation: never raises, always returns a tuple.
+    """
+    try:
+        if not os.path.exists(db_path):
+            return ()
+        conn = _open_connection(db_path)
+        try:
+            cursor = conn.execute(
+                "SELECT statement FROM custom_return_statements "
+                "WHERE helper_name = ? AND active = 1 ORDER BY id",
+                (helper_name,)
+            )
+            rows = cursor.fetchall()
+            return tuple(row['statement'] for row in rows)
+        finally:
+            conn.close()
+    except Exception:
+        return ()

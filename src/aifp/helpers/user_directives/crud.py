@@ -22,11 +22,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Optional, Tuple, Dict, Any, List
 
-# Import global utilities
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements, rows_to_tuple
+from ..utils import get_return_statements, rows_to_tuple
 
 # Import common user_directives utilities (DRY principle)
 from ._common import _open_connection, _table_exists, _record_exists

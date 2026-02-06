@@ -26,12 +26,7 @@ import json
 from dataclasses import dataclass
 from typing import Optional, List, Tuple
 
-# Import global utilities
-import sys
-from pathlib import Path
-# Add parent directory to path to import from helpers.utils
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements
+from ..utils import get_return_statements
 from ._common import _open_connection, _check_theme_exists, _check_flow_exists, _create_deletion_note
 
 

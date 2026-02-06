@@ -19,17 +19,16 @@ Helpers in this file:
 - add_tracking_note: Add tracking note (when tracking enabled)
 - get_tracking_notes: Get tracking notes with optional filters
 - search_tracking_notes: Search tracking note content
+- set_custom_return_statement: Add custom return statement for a helper (tool)
+- delete_custom_return_statement: Delete custom return statement(s) (tool)
+- get_custom_return_statements: Get custom return statements for a helper (sub-helper)
 """
 
 import sqlite3
 from dataclasses import dataclass
 from typing import Optional, Tuple, Dict, Any
 
-# Import global utilities
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements, rows_to_tuple
+from ..utils import get_return_statements, rows_to_tuple
 
 # Import common user_preferences utilities (DRY principle)
 from ._common import (
@@ -1035,6 +1034,252 @@ def search_tracking_notes(
     except Exception as e:
         conn.close()
         return TrackingNotesResult(
+            success=False,
+            error=f"Database error: {str(e)}"
+        )
+
+
+# ============================================================================
+# Custom Return Statements — Data Structures
+# ============================================================================
+
+@dataclass(frozen=True)
+class CustomReturnStatement:
+    """Immutable custom return statement record."""
+    id: int
+    helper_name: str
+    statement: str
+    active: bool
+    description: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class CustomReturnStatementsResult:
+    """Result of get_custom_return_statements."""
+    success: bool
+    statements: Tuple[CustomReturnStatement, ...] = ()
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+# ============================================================================
+# Custom Return Statements Helpers
+# ============================================================================
+
+def set_custom_return_statement(
+    db_path: str,
+    helper_name: str,
+    statement: str,
+    description: Optional[str] = None,
+    active: bool = True
+) -> MutationResult:
+    """
+    Add a custom return statement for a helper function (MCP tool).
+
+    Custom return statements extend the core return_statements from aifp_core.db
+    with user-defined guidance, context, notes, or preferences. They are merged
+    with core statements at runtime via get_return_statements().
+
+    To modify an existing statement: delete it first, then set the new one.
+
+    Args:
+        db_path: Path to user_preferences.db
+        helper_name: Helper function name (should match aifp_core.db helper_functions.name)
+        statement: Custom return statement text
+        description: Why this was added (optional context)
+        active: Whether statement is active (default True)
+
+    Returns:
+        MutationResult with success/error
+
+    Example:
+        >>> set_custom_return_statement(
+        ...     "/path/to/user_preferences.db",
+        ...     "reserve_file_name",
+        ...     "User requests no IDs in names for files, functions, types",
+        ...     description="User preference for clean naming"
+        ... )
+    """
+    if not helper_name or not helper_name.strip():
+        return MutationResult(
+            success=False,
+            error="helper_name is required and cannot be empty"
+        )
+
+    if not statement or not statement.strip():
+        return MutationResult(
+            success=False,
+            error="statement is required and cannot be empty"
+        )
+
+    conn = _open_connection(db_path)
+
+    try:
+        cursor = conn.execute(
+            """
+            INSERT OR IGNORE INTO custom_return_statements
+                (helper_name, statement, active, description)
+            VALUES (?, ?, ?, ?)
+            """,
+            (helper_name.strip(), statement.strip(), 1 if active else 0, description)
+        )
+        conn.commit()
+        new_id = cursor.lastrowid
+        inserted = cursor.rowcount > 0
+        conn.close()
+
+        if inserted:
+            return_stmts = get_return_statements("set_custom_return_statement")
+            return MutationResult(
+                success=True,
+                id=new_id,
+                message=f"Custom return statement added for helper '{helper_name}'",
+                return_statements=return_stmts
+            )
+        else:
+            return MutationResult(
+                success=True,
+                message=f"Statement already exists for helper '{helper_name}' (no duplicate created)"
+            )
+
+    except Exception as e:
+        conn.close()
+        return MutationResult(
+            success=False,
+            error=f"Database error: {str(e)}"
+        )
+
+
+def delete_custom_return_statement(
+    db_path: str,
+    helper_name: str,
+    statement: Optional[str] = None,
+    statement_id: Optional[int] = None
+) -> MutationResult:
+    """
+    Delete custom return statement(s) for a helper function (MCP tool).
+
+    Three modes:
+    - If statement_id provided: delete that specific row by ID
+    - If statement provided: delete the matching (helper_name, statement) row
+    - If neither: delete ALL custom return statements for the helper
+
+    Args:
+        db_path: Path to user_preferences.db
+        helper_name: Helper function name
+        statement: Specific statement text to delete (optional)
+        statement_id: Specific row ID to delete (optional)
+
+    Returns:
+        MutationResult with success/error
+    """
+    if not helper_name or not helper_name.strip():
+        return MutationResult(
+            success=False,
+            error="helper_name is required and cannot be empty"
+        )
+
+    conn = _open_connection(db_path)
+
+    try:
+        if statement_id is not None:
+            # Delete by ID (must also match helper_name for safety)
+            conn.execute(
+                "DELETE FROM custom_return_statements WHERE id = ? AND helper_name = ?",
+                (statement_id, helper_name.strip())
+            )
+        elif statement is not None:
+            # Delete specific statement
+            conn.execute(
+                "DELETE FROM custom_return_statements WHERE helper_name = ? AND statement = ?",
+                (helper_name.strip(), statement.strip())
+            )
+        else:
+            # Delete ALL for this helper
+            conn.execute(
+                "DELETE FROM custom_return_statements WHERE helper_name = ?",
+                (helper_name.strip(),)
+            )
+
+        conn.commit()
+        conn.close()
+
+        return_stmts = get_return_statements("delete_custom_return_statement")
+
+        return MutationResult(
+            success=True,
+            message=f"Custom return statement(s) deleted for helper '{helper_name}'",
+            return_statements=return_stmts
+        )
+
+    except Exception as e:
+        conn.close()
+        return MutationResult(
+            success=False,
+            error=f"Database error: {str(e)}"
+        )
+
+
+def get_custom_return_statements(
+    db_path: str,
+    helper_name: str
+) -> CustomReturnStatementsResult:
+    """
+    Get all active custom return statements for a helper function (sub-helper).
+
+    Called internally by get_return_statements() for merging with core statements.
+    Also available for AI to inspect what custom return statements exist for a helper.
+
+    Args:
+        db_path: Path to user_preferences.db
+        helper_name: Helper function name to get custom statements for
+
+    Returns:
+        CustomReturnStatementsResult with active custom statements
+    """
+    if not helper_name or not helper_name.strip():
+        return CustomReturnStatementsResult(
+            success=False,
+            error="helper_name is required and cannot be empty"
+        )
+
+    conn = _open_connection(db_path)
+
+    try:
+        cursor = conn.execute(
+            """
+            SELECT id, helper_name, statement, active, description
+            FROM custom_return_statements
+            WHERE helper_name = ? AND active = 1
+            ORDER BY id
+            """,
+            (helper_name.strip(),)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        statements = tuple(
+            CustomReturnStatement(
+                id=row['id'],
+                helper_name=row['helper_name'],
+                statement=row['statement'],
+                active=bool(row['active']),
+                description=row['description']
+            )
+            for row in rows
+        )
+
+        return_stmts = get_return_statements("get_custom_return_statements")
+
+        return CustomReturnStatementsResult(
+            success=True,
+            statements=statements,
+            return_statements=return_stmts
+        )
+
+    except Exception as e:
+        conn.close()
+        return CustomReturnStatementsResult(
             success=False,
             error=f"Database error: {str(e)}"
         )

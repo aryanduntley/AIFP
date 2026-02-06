@@ -39,9 +39,8 @@ class FunctionRecord:
     name: str
     file_id: int
     purpose: Optional[str]
-    params: Optional[str]  # JSON string
+    parameters: Optional[str]  # JSON string
     returns: Optional[str]  # JSON string
-    purity_score: Optional[float]
     is_reserved: bool
     id_in_name: bool
     file_name: Optional[str]  # From JOIN with files table
@@ -193,7 +192,7 @@ def build_update_query(
         params_list.append(purpose)
 
     if params_json is not None:
-        updates.append("params = ?")
+        updates.append("parameters = ?")
         params_list.append(params_json)
 
     if returns_json is not None:
@@ -229,9 +228,8 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
         name=row["name"],
         file_id=row["file_id"],
         purpose=row["purpose"],
-        params=row["params"],
+        parameters=row["parameters"],
         returns=row["returns"],
-        purity_score=row["purity_score"],
         is_reserved=bool(row["is_reserved"]),
         id_in_name=bool(row["id_in_name"]),
         file_name=row["file_name"] if "file_name" in keys else None,

@@ -2,10 +2,10 @@
 
 **Version**: 1.2
 **Created**: 2026-02-04
-**Updated**: 2026-02-05
+**Updated**: 2026-02-06
 **Status**: Ready for Implementation
 **Estimated Scope**: ~12-15 files, ~3000-4000 lines of code
-**MCP Tools**: 204 (from 222 total helpers)
+**MCP Tools**: 207 (from 224 total helpers)
 
 ---
 
@@ -28,6 +28,22 @@ Created `pyproject.toml` (file 201), `src/aifp/__init__.py` (file 202), `src/aif
 ### ~~Issue 4: `mcp_server/` Directory Exists But Is Empty~~ — RESOLVED
 Populated with: `__init__.py` (210), `server.py` (209), `registry.py` (208), `schema.py` (206), `serialization.py` (207), `errors.py` (205). All tracked in project.db.
 
+### Feature: Custom Return Statements — COMPLETE (2026-02-06)
+
+Added `custom_return_statements` table to `user_preferences.db` (schema v1.2), allowing users to extend the immutable `return_statements` from `aifp_core.db` with per-helper custom guidance. Custom statements merge with core statements at runtime via `get_return_statements()`.
+
+**New helpers** (in `user_preferences/management.py`):
+
+| Helper | Type | Purpose |
+|--------|------|---------|
+| `set_custom_return_statement` | Tool | Add/replace a custom return statement for a helper |
+| `delete_custom_return_statement` | Tool | Delete custom return statements (by ID, text, or all for a helper) |
+| `get_custom_return_statements` | Sub-helper | Read active custom return statements for a helper |
+
+**Integration**: `get_return_statements()` in `database/connection.py` accepts optional `user_preferences_db_path` and merges custom statements after core statements. Backward compatible — callers that omit the path get core-only behavior.
+
+**Use case**: User says "no IDs in file names" → AI sets directive preference + adds custom return statement on `reserve_file_name`, `reserve_function_name`, `reserve_type_name` helpers.
+
 ---
 
 ## MCP SDK Details
@@ -44,7 +60,7 @@ The MCP Python SDK provides two APIs:
 - **Low-level Server**: Explicit `@server.list_tools()` and `@server.call_tool()` handlers
 
 **Decision**: Use the **low-level Server API** because:
-- 204 tools need programmatic registration from a data structure, not 204 individual decorators
+- 207 tools need programmatic registration from a data structure, not 207 individual decorators
 - Tool parameter schemas come from `aifp_core.db`, not Python type hints
 - Full control over the `list_tools` and `call_tool` dispatch logic
 - Both APIs are OOP under the hood, so the FP wrapper cost is identical
@@ -91,6 +107,7 @@ Build the MCP (Model Context Protocol) server layer that exposes AIFP helper fun
 - ✅ `pyproject.toml`, `__init__.py`, `__main__.py` created
 - ✅ MCP SDK installed (`~/python-libraries/mcp`)
 - ✅ MCP server layer complete (Milestone 1) — 4 entry point tools working
+- ✅ Custom return statements feature added (3 new helpers: 2 tools + 1 sub-helper)
 
 ### Goal
 Wire existing helpers into a production MCP server that AI assistants can connect to via the MCP protocol.
@@ -108,7 +125,7 @@ src/aifp/
 ├── mcp_server/
 │   ├── __init__.py          # NEW - Package exports (run_server)
 │   ├── server.py            # NEW - Server creation, handler wiring, run_server()
-│   ├── registry.py          # NEW - TOOL_REGISTRY dict (204 entries) + lazy import
+│   ├── registry.py          # NEW - TOOL_REGISTRY dict (207 entries) + lazy import
 │   ├── schema.py            # NEW - Parameter defs → JSON Schema conversion
 │   ├── serialization.py     # NEW - Result types → JSON text for MCP TextContent
 │   └── errors.py            # NEW - MCP error codes + error formatters
@@ -141,13 +158,13 @@ def make_text_content(text: str) -> TextContent
 
 ### Tool Registry (`registry.py`)
 
-Static dict mapping all 204 tool names to `(module_path, function_name)` tuples:
+Static dict mapping all 207 tool names to `(module_path, function_name)` tuples:
 
 ```python
 TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     'aifp_run': ('aifp.helpers.orchestrators.entry_points', 'aifp_run'),
     'aifp_init': ('aifp.helpers.orchestrators.entry_points', 'aifp_init'),
-    # ... all 204 entries
+    # ... all 207 entries
 }
 
 def _effect_import_tool_function(tool_name: str) -> Callable:
@@ -156,7 +173,7 @@ def _effect_import_tool_function(tool_name: str) -> Callable:
 
 **Why static, not DB-driven**: Predictable tool list, no runtime DB dependency for tool listing, `file_path` field in DB uses inconsistent prefixes (`helpers/` vs `TODO_helpers/`), easy to test.
 
-**Why importlib**: Provides uniform dynamic import for all 204 tools. Eliminates the need for static import statements in the dispatcher.
+**Why importlib**: Provides uniform dynamic import for all 207 tools. Eliminates the need for static import statements in the dispatcher.
 
 ### Schema Generation (`schema.py`)
 
@@ -229,14 +246,14 @@ def run_server() -> None  # Creates server, registers handlers, starts stdio
 | **Project Items/Notes** | project | 9 | project/items_notes.py |
 | **Project Interactions** | project | 3 | project/interactions.py |
 | **Project Themes/Flows** | project | 22 | project/themes_flows_1.py, themes_flows_2.py |
-| **Project Types** | project | 7 | project/types_1.py, types_2.py |
+| **Project Types** | project | 8 | project/types_1.py, types_2.py |
 | **Project State DB** | project | 1 | project/state_db.py |
 | **Project Validation** | project | 1 | project/validation.py |
-| **User Preferences** | user_preferences | 23 | user_preferences/crud.py, management.py, schema.py, validation.py |
+| **User Preferences** | user_preferences | 25 | user_preferences/crud.py, management.py, schema.py, validation.py |
 | **User Directives** | user_directives | 19 | user_directives/crud.py, management.py, schema.py, validation.py |
 | **Git** | no_db | 7 | git/operations.py |
-| **Global** | no_db | 2 | shared/supportive_context.py, database_info.py |
-| **Total** | | **204** | |
+| **Shared** | no_db | 2 | shared/supportive_context.py, database_info.py |
+| **Total** | | **207** | |
 
 ---
 
@@ -292,7 +309,7 @@ When users `pip install aifp`, pip pulls `mcp` automatically. No bundling, no cu
 ## Implementation Order
 
 ### ~~Pre-Step: Fix Known Issues~~ — COMPLETE
-1. ~~Audit and fix `sys.path` hacks~~ — converted to relative imports
+1. ~~Audit and fix `sys.path` hacks~~ — converted to relative imports (shared/ in pre-step, remaining 21 files in Milestone 2)
 2. ~~Rename `global/` → `shared/`~~ — done, all imports/JSON updated
 3. ~~Fix `TODO_helpers/` stale JSON paths~~ — 20 entries corrected
 4. ~~Install MCP SDK~~ — `gpip3 mcp` (installed to `~/python-libraries`)
@@ -312,9 +329,16 @@ When users `pip install aifp`, pip pulls `mcp` automatically. No bundling, no cu
 
 **Verified**: Server starts on stdio (exit 124 = timeout kill = was running). `list_tools` returns 4 tools. `aifp_run(is_new_session=False)` returns `{"success": true, ...}`. Unknown tools return clean error. All 7 new files + 25 functions tracked in project.db (210 files, 315 functions total).
 
-### Milestone 2: Full Tool Coverage
-12. Expand `registry.py` to all 204 `is_tool=true` helpers
-13. **Verify**: `tools/list` returns 204 tools, representative tools from each category callable
+### ~~Milestone 2: Full Tool Coverage~~ — COMPLETE
+12. ~~Expand `registry.py` to all 207 `is_tool=true` helpers~~ ✓
+13. ~~**Verify**: `tools/list` returns 207 tools, representative tools from each category callable~~ ✓
+
+**Additional fixes required during Milestone 2:**
+- Created missing `src/aifp/helpers/__init__.py` and `src/aifp/helpers/project/__init__.py` (required for package-based imports)
+- Fixed stale imports in `src/aifp/helpers/core/__init__.py` (removed 7 non-existent function/type re-exports from directives_1.py and flows.py, added 3 missing flow function exports)
+- Converted `sys.path.insert()` hacks to relative imports in 21 helper files across project/, user_preferences/, and user_directives/ categories (same fix applied to shared/ in pre-step, now extended to all remaining helpers)
+
+**Verified**: `list_tools` returns 207 tools. All 37 unique modules import cleanly via importlib. `get_all_directive_names` returns live data from aifp_core.db. Tools missing required arguments return clean `TypeError` errors (not crashes). Unknown tools return proper "Tool not found" errors.
 
 ### Milestone 3: Testing & Polish
 14. Unit tests: schema generation, serialization, registry completeness
@@ -336,7 +360,7 @@ When users `pip install aifp`, pip pulls `mcp` automatically. No bundling, no cu
 **Decision**: Use `mcp.server.Server` with explicit handlers
 
 **Rationale**:
-- 204 tools need programmatic registration from data, not decorators
+- 207 tools need programmatic registration from data, not decorators
 - Schemas come from `aifp_core.db`, not Python type hints
 - Full control over dispatch logic
 - Both APIs are OOP under the hood; wrapper cost is identical
@@ -386,7 +410,7 @@ When users `pip install aifp`, pip pulls `mcp` automatically. No bundling, no cu
 tests/mcp_server/
 ├── test_schema.py         # JSON Schema generation from param defs
 ├── test_serialization.py  # Result type → JSON conversion
-├── test_registry.py       # All 204 entries valid, modules importable
+├── test_registry.py       # All 207 entries valid, modules importable
 └── test_errors.py         # Error formatters produce valid JSON
 ```
 
@@ -398,7 +422,7 @@ tests/mcp_server/
 ```
 
 ### Key Assertions
-- `len(TOOL_REGISTRY) == 204`
+- `len(TOOL_REGISTRY) == 207`
 - Every registry module path is importable
 - Every registry function name exists in its module
 - `serialize_result()` handles all Result subclasses
@@ -421,7 +445,7 @@ tests/mcp_server/
 
 ## Success Criteria
 
-1. **Functional**: All 204 `is_tool=true` helpers callable via MCP
+1. **Functional**: All 207 `is_tool=true` helpers callable via MCP
 2. **Compliant**: Passes MCP protocol validation
 3. **FP-Compliant**: Zero OOP violations, all wrappers in place
 4. **Tested**: >90% test coverage
@@ -444,21 +468,21 @@ Accurate tool counts from `dev/helpers-json/` files:
 | helpers-project-1.json | 22 |
 | helpers-project-2.json | 9 |
 | helpers-project-3.json | 9 |
-| helpers-project-4.json | 10 |
+| helpers-project-4.json | 11 |
 | helpers-project-5.json | 11 |
 | helpers-project-6.json | 11 |
 | helpers-project-7.json | 15 |
 | helpers-project-8.json | 14 |
 | helpers-project-9.json | 10 |
-| helpers-settings.json | 23 |
+| helpers-settings.json | 25 |
 | helpers-user-custom.json | 19 |
-| **Total** | **204** |
+| **Total** | **207** |
 
 **Summary**:
-- Total helpers: 222
-- MCP Tools (is_tool=true): **204**
-- Sub-helpers (is_sub_helper=true): 4
-- Non-tools: 18
+- Total helpers: 224
+- MCP Tools (is_tool=true): **207**
+- Sub-helpers (is_sub_helper=true): 5
+- Non-tools: 12
 
 ---
 
@@ -480,4 +504,4 @@ No `AIFP_CORE_DB` env var needed — the server resolves the path to `aifp_core.
 
 ---
 
-*Plan updated 2026-02-05 with MCP SDK research, FP wrapper design, known issues, and dependency strategy.*
+*Plan updated 2026-02-06 with custom return statements feature (+3 helpers, tool count 204→207) and corrected per-file tool counts.*

@@ -1,7 +1,10 @@
 -- user_preferences.db Schema
--- Version: 1.1
+-- Version: 1.2
 -- Purpose: Store user-specific AI behavior preferences, customizations, and opt-in tracking
 -- Location: .aifp-project/user_preferences.db
+-- Changelog v1.2:
+--   - Added custom_return_statements table for user-defined helper guidance extensions
+--   - Added indexes and trigger for custom_return_statements
 -- Changelog v1.1:
 --   - Renamed directive_context to directive_name in ai_interaction_log table
 --   - Added CHECK constraints for status fields
@@ -130,6 +133,26 @@ CREATE TABLE IF NOT EXISTS tracking_settings (
 );
 
 -- ===============================================================
+-- Custom Return Statements (User Extensions for Helper Guidance)
+-- ===============================================================
+
+-- Custom Return Statements: User-defined return statement extensions for helper functions
+-- Allows users to add forward-thinking context, notes, and guidance to any helper's output
+-- These merge with core return_statements from aifp_core.db at runtime
+-- Management: Use set_custom_return_statement to add, delete_custom_return_statement to remove
+-- No update — delete and recreate to modify existing statements
+CREATE TABLE IF NOT EXISTS custom_return_statements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    helper_name TEXT NOT NULL,              -- Helper function name (matches aifp_core.db helper_functions.name)
+    statement TEXT NOT NULL,                -- Custom return statement text
+    active BOOLEAN DEFAULT 1,              -- Whether statement is active
+    description TEXT,                       -- Why this was added (optional context)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(helper_name, statement)          -- Prevent duplicate statements for same helper
+);
+
+-- ===============================================================
 -- Indexes for Performance
 -- ===============================================================
 
@@ -141,6 +164,8 @@ CREATE INDEX IF NOT EXISTS idx_tracking_notes_type ON tracking_notes(note_type);
 CREATE INDEX IF NOT EXISTS idx_tracking_notes_directive ON tracking_notes(directive_name);
 CREATE INDEX IF NOT EXISTS idx_tracking_notes_reference ON tracking_notes(reference_type, reference_name);
 CREATE INDEX IF NOT EXISTS idx_issue_reports_status ON issue_reports(status);
+CREATE INDEX IF NOT EXISTS idx_custom_return_statements_helper ON custom_return_statements(helper_name);
+CREATE INDEX IF NOT EXISTS idx_custom_return_statements_active ON custom_return_statements(active);
 
 -- ===============================================================
 -- Triggers for Timestamp Updates
@@ -174,6 +199,13 @@ BEGIN
     UPDATE tracking_settings SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
+CREATE TRIGGER IF NOT EXISTS update_custom_return_statements_timestamp
+AFTER UPDATE ON custom_return_statements
+FOR EACH ROW
+BEGIN
+    UPDATE custom_return_statements SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
 -- ===============================================================
 -- Schema Version Tracking
 -- ===============================================================
@@ -184,4 +216,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.1');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.2');

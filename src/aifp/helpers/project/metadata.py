@@ -30,10 +30,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple, List, Dict, Any
 from pathlib import Path
 
-# Import global utilities
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements
+from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
 from ._common import _open_connection

@@ -15,11 +15,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
-# Import global utilities
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements
+from ..utils import get_return_statements
 
 # Import common user_directives utilities (DRY principle)
 from ._common import _open_connection

@@ -368,14 +368,29 @@ def _parse_check_constraint(sql: str, field_name: str) -> Optional[Tuple[str, ..
 # Return Statements Fetcher
 # ============================================================================
 
-def get_return_statements(helper_name: str) -> Tuple[str, ...]:
+def get_return_statements(
+    helper_name: str,
+    user_preferences_db_path: str = ""
+) -> Tuple[str, ...]:
     """
-    Fetch return statements for a helper from core database.
+    Fetch return statements for a helper from core database,
+    optionally merging with custom user-defined return statements.
 
     Return statements are forward-thinking guidance for AI,
     providing next steps and context after a helper executes.
     Returns empty tuple on any error (graceful degradation).
+
+    Args:
+        helper_name: Name of the helper function
+        user_preferences_db_path: Optional path to user_preferences.db.
+            When provided and file exists, custom return statements from
+            the custom_return_statements table are appended to core statements.
+
+    Returns:
+        Tuple of return statement strings (core + custom if path provided)
     """
+    # Fetch core return statements from aifp_core.db
+    core_stmts: Tuple[str, ...] = ()
     try:
         core_db = get_core_db_path()
         if not database_exists(core_db):
@@ -388,22 +403,36 @@ def get_return_statements(helper_name: str) -> Tuple[str, ...]:
                 (helper_name,)
             )
             row = cursor.fetchone()
-            if row is None:
-                return ()
-
-            return_statements_json = row['return_statements']
-            if return_statements_json is None:
-                return ()
-
-            if isinstance(return_statements_json, str):
-                statements = json.loads(return_statements_json)
-            else:
-                statements = return_statements_json
-
-            if isinstance(statements, list):
-                return tuple(statements)
-            return ()
+            if row is not None:
+                return_statements_json = row['return_statements']
+                if return_statements_json is not None:
+                    if isinstance(return_statements_json, str):
+                        statements = json.loads(return_statements_json)
+                    else:
+                        statements = return_statements_json
+                    if isinstance(statements, list):
+                        core_stmts = tuple(statements)
         finally:
             conn.close()
     except Exception:
-        return ()
+        pass
+
+    # Merge custom return statements from user_preferences.db if path provided
+    if user_preferences_db_path and os.path.exists(user_preferences_db_path):
+        try:
+            prefs_conn = _open_connection(user_preferences_db_path)
+            try:
+                cursor = prefs_conn.execute(
+                    "SELECT statement FROM custom_return_statements "
+                    "WHERE helper_name = ? AND active = 1 ORDER BY id",
+                    (helper_name,)
+                )
+                custom_rows = cursor.fetchall()
+                custom_stmts = tuple(row['statement'] for row in custom_rows)
+                return core_stmts + custom_stmts
+            finally:
+                prefs_conn.close()
+        except Exception:
+            return core_stmts
+
+    return core_stmts

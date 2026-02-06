@@ -22,11 +22,7 @@ import json
 from dataclasses import dataclass
 from typing import Optional, Tuple, Dict, List, Any
 
-# Import global utilities
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import get_return_statements
+from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
 from ._common import (
