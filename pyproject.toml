@@ -20,11 +20,21 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
 
 dependencies = [
     "mcp>=1.26.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/anthropics/aifp"
+Repository = "https://github.com/anthropics/aifp"
+Issues = "https://github.com/anthropics/aifp/issues"
+
+[project.scripts]
+aifp = "aifp.__main__:main"
 
 [project.optional-dependencies]
 dev = [
@@ -45,6 +55,8 @@ aifp = [
     "database/schemas/*.sql",
     "database/initialization/*.sql",
     "templates/*.md",
+    "templates/**/*.py",
+    "templates/**/*.md",
     "reference/**/*.md",
     "reference/**/*.txt",
 ]

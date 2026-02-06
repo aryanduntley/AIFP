@@ -19,6 +19,8 @@ src/aifp/database/schemas/user_preferences.sql
 
 docs/MCP/MCP_IMPLEMENTATION_PLAN.md
 
+do the directives tell AI to create the .git if not exists during init? It's a required thing.
+
 Do not read or modify notes.txt. That is just for me.                         
 
 return statements for aifp_init
@@ -30,6 +32,30 @@ MUST make OOP wrapper examples
 --help add_function, add_file, add_type.. etc. any that require reservation.
 
 dev/sync-directives.py
+
+=============================
+
+rm -rf ~/python-libraries/aifp/                       
+rm -rf ~/python-libraries/aifp-0.1.0.dist-info/       
+rm -f ~/python-libraries/bin/aifp  
+
+install/update
+from project root:
+gpip3 .
+
+claude mcp add --transport stdio --scope user aifp -- 
+python3 -m aifp                                       
+                                                      
+- --scope user makes it available across all your     
+projects (stored in ~/.claude.json)                   
+- Use --scope project instead if you want it          
+project-specific (creates .mcp.json in project root)  
+                                                      
+Verify it's configured:
+claude mcp list
+claude mcp get aifp
+
+Or inside Claude Code, type /mcp to see server status.
 
 =============================
 Token cost: ~15-20k tokens loaded on every API call. Fora tool that's meant to be cost-conscious (all trackingoff by default), the system prompt itself is the largestfixed cost per interaction.

@@ -428,36 +428,65 @@ project_file_write
 ### Prerequisites
 
 - **Python 3.11+** (required for type hint syntax used throughout)
-- **MCP Python SDK**: `pip install mcp` (v1.26.0+) — required runtime dependency for the MCP server
 
 ### Installation
 
-```bash
-# Download/clone AIFP MCP server to your preferred location
-# Example: ~/mcp-servers/aifp/ or /path/to/your/mcp-servers/aifp/
-
-# Install the MCP Python SDK dependency
-pip install mcp
-
-# The MCP server installation contains:
-# aifp_core.db (directive definitions)
-# Server code (Python)
-# Helper function implementations
-# Database schemas
-```
-
-### Project Initialization
+#### Method 1: pip install (Recommended)
 
 ```bash
-cd /path/to/your/project
-aifp init
+pip install aifp
 ```
 
-This creates an `.aifp-project/` folder in your project root containing databases for project state tracking, user preferences, and a ProjectBlueprint document. You don't need to interact with these files — the MCP server manages them automatically.
+This installs the MCP server, all dependencies (`mcp` SDK), and makes the `aifp` command available. Done.
 
-### Configure AI Assistant
+#### Method 2: Manual Install (GitHub Download)
 
-Add to Claude Desktop config (`claude_desktop_config.json`):
+1. **Download** the repository (zip download or `git clone`)
+2. **Locate** the `src/aifp/` folder — this is the complete MCP server package
+3. **Copy** the `aifp/` folder to wherever you keep MCP servers:
+   ```bash
+   # Example: copy to your MCP servers directory
+   cp -r src/aifp/ ~/mcp-servers/aifp/
+   ```
+4. **Install** the MCP SDK dependency:
+   ```bash
+   pip install "mcp>=1.26.0"
+   ```
+
+The `aifp/` folder contains everything the server needs: helper functions, directives, database schemas, and the pre-populated `aifp_core.db`. No additional setup required.
+
+### Add the System Prompt to Your AI Client
+
+**This step is required.** The system prompt is what tells the AI to use AIFP tools proactively. Without it, the MCP server is just a collection of passive tools that never get called.
+
+**pip install users** — print the system prompt to your terminal, then copy-paste it:
+
+```bash
+aifp --system-prompt
+# or: python -m aifp --system-prompt
+```
+
+**Manual install users** — find the system prompt file in the downloaded repository:
+
+```
+sys-prompt/aifp_system_prompt.txt
+```
+
+Open it and copy its contents.
+
+**Where to paste it** (depends on your AI client):
+
+| AI Client | Where to Add System Prompt |
+|-----------|---------------------------|
+| **Claude Desktop** | Settings → Custom Instructions |
+| **Claude Code** | Add to `CLAUDE.md` in your project root |
+| **Other MCP clients** | System prompt / custom instructions field |
+
+### Configure Your AI Client
+
+Register the AIFP MCP server in your AI client's configuration.
+
+**Claude Desktop** — edit `claude_desktop_config.json`:
 
 ```json
 {
@@ -471,7 +500,43 @@ Add to Claude Desktop config (`claude_desktop_config.json`):
 }
 ```
 
-The server resolves the path to `aifp_core.db` relative to its own installation directory — no environment variables needed.
+If you used **Method 2 (manual install)**, add the parent directory of your `aifp/` folder to `PYTHONPATH` so Python can find it:
+
+```json
+{
+  "mcpServers": {
+    "aifp": {
+      "command": "python3",
+      "args": ["-m", "aifp"],
+      "env": {
+        "PYTHONPATH": "/path/to/parent-of-aifp-folder"
+      }
+    }
+  }
+}
+```
+
+For example, if you copied `aifp/` to `~/mcp-servers/aifp/`, set `PYTHONPATH` to `~/mcp-servers`.
+
+**Claude Code** — add to your MCP settings (`.mcp.json` or via settings UI) with the same command pattern above.
+
+**Other MCP Clients** — the server uses **stdio transport**. Point your client at `python3 -m aifp`. For manual installs, ensure `PYTHONPATH` includes the parent directory of the `aifp/` folder.
+
+### How It Works
+
+The server communicates over stdio using the Model Context Protocol. It resolves `aifp_core.db` (the directive database) relative to its own installation — no environment variables needed.
+
+Once connected, the AI calls `aifp_run()` on every interaction (guided by the system prompt). Project state is stored in `.aifp-project/` in your working directory, created automatically when you initialize a project.
+
+### Project Initialization
+
+Tell your AI assistant:
+
+```
+"Initialize AIFP for my project"
+```
+
+The AI calls `aifp_init` which creates an `.aifp-project/` folder in your project root containing databases for project state tracking, user preferences, and a ProjectBlueprint document. You don't need to interact with these files — the MCP server manages them automatically.
 
 ---
 

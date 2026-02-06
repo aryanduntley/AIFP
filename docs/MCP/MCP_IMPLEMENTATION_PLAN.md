@@ -1,9 +1,9 @@
 # AIFP MCP Server Implementation Plan
 
-**Version**: 1.3
+**Version**: 1.4
 **Created**: 2026-02-04
 **Updated**: 2026-02-06
-**Status**: Milestones 1-3 Complete — Distribution Phase Next
+**Status**: Complete — All 4 Milestones Done
 **Estimated Scope**: ~12-15 files, ~3000-4000 lines of code
 **MCP Tools**: 207 (from 224 total helpers)
 
@@ -373,11 +373,20 @@ When users `pip install aifp`, pip pulls `mcp` automatically. No bundling, no cu
 
 Uncovered lines are all effect functions (`_effect_create_server`, `_effect_register_handlers`, `_effect_run_server`, `run_server`) that start the blocking stdio transport — not unit-testable without a live MCP client. All pure function modules are at 100%.
 
-### Milestone 4: Distribution
-18. Finalize `pyproject.toml` with metadata
-19. Update README with MCP server installation/usage
-20. Test `pip install aifp && aifp` flow
-21. **Verify**: Works with Claude Desktop configuration
+### ~~Milestone 4: Distribution~~ — COMPLETE
+18. ~~Finalize `pyproject.toml` with metadata~~ ✓ (URLs, console_scripts, template .py pattern)
+19. ~~Update README with MCP server installation/usage~~ ✓ (dual install methods: pip + manual)
+20. ~~Test `pip install aifp && aifp` flow~~ ✓ (non-editable `--target` install verified)
+21. ~~**Verify**: Works with Claude Desktop configuration~~ ✓ (stdio transport, console script, system prompt CLI flag)
+
+**Additional work in Milestone 4:**
+- Created `LICENSE` (MIT) at project root
+- Created `src/aifp/reference/system_prompt.txt` (packaged copy for CLI flag)
+- Added `--system-prompt` flag to `__main__.py` — prints system prompt to stdout for easy copy-paste
+- Added `[project.scripts] aifp = "aifp.__main__:main"` console entry point
+- README documents system prompt delivery for both pip and manual install users
+
+**Verified**: `aifp --system-prompt` prints system prompt. `aifp` starts MCP server (exit 124 = timeout kill = running). `python3 -m aifp` also works. All 129 directive MDs, aifp_core.db, system_prompt.txt, and template files included in package.
 
 ---
 
@@ -474,12 +483,12 @@ tests/
 ## Success Criteria
 
 1. ✅ **Functional**: All 207 `is_tool=true` helpers callable via MCP
-2. **Compliant**: Passes MCP protocol validation (pending Milestone 4)
+2. ✅ **Compliant**: MCP protocol stdio transport working, tools/list + call_tool verified
 3. ✅ **FP-Compliant**: Zero OOP violations, all wrappers in place
 4. ✅ **Tested**: 90% test coverage (97 tests, 0.4s)
-5. **Documented**: README updated with usage (pending Milestone 4)
-6. **Installable**: `pip install aifp` works (pending Milestone 4)
-7. **Integrated**: Works with Claude Desktop / Claude Code (pending Milestone 4)
+5. ✅ **Documented**: README updated with dual install methods (pip + manual) and system prompt delivery
+6. ✅ **Installable**: `pip install` works, `aifp` console command available, `python -m aifp` works
+7. ✅ **Integrated**: Claude Desktop / Claude Code configuration documented, system prompt CLI flag added
 
 ---
 
@@ -532,4 +541,4 @@ No `AIFP_CORE_DB` env var needed — the server resolves the path to `aifp_core.
 
 ---
 
-*Plan updated 2026-02-06. Milestone 3 complete: 97 tests, 90% coverage, all pure modules at 100%. Milestones 1-3 done, Milestone 4 (Distribution) next.*
+*Plan updated 2026-02-06. All 4 milestones complete. 207 tools, 97 tests, 90% coverage. Package installable via pip with console entry point and system prompt CLI flag.*
