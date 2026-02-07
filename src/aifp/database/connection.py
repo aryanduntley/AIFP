@@ -1,0 +1,438 @@
+"""
+AIFP Database - Foundation Connection Layer
+
+Single source of truth for ALL database operations in the AIFP package.
+Every module that needs database access imports from here.
+
+Databases managed:
+    1. aifp_core.db        — Global read-only (directives, helpers, flows)
+    2. project.db           — Per-project mutable (files, functions, tasks)
+    3. user_preferences.db  — Per-project mutable (settings, preferences)
+    4. user_directives.db   — Per-project optional (Use Case 2 automation)
+    5. mcp_runtime.db       — Global mutable (MCP server runtime state)
+
+DRY hierarchy position:
+    database/connection.py  (THIS FILE — foundation, imported by everything)
+        └── helpers/utils.py (re-exports for backward compatibility)
+            └── helpers/{category}/_common.py (category re-exports)
+                └── helpers/{category}/{file}.py (individual helpers)
+        └── watchdog/ (imports directly)
+        └── wrappers/ (imports directly)
+        └── mcp_server/ (imports directly)
+
+Design:
+    - Pure functions for path resolution and data conversion
+    - Effect functions (prefixed _effect_) for I/O operations
+    - All connections use row_factory for dict-like access
+    - Immutable result types (frozen dataclasses)
+    - No OOP beyond frozen dataclasses
+"""
+
+import json
+import os
+import re
+import sqlite3
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Tuple, Optional, List, Dict, Any, Final
+
+
+# ============================================================================
+# Global Constants
+# ============================================================================
+
+AIFP_PROJECT_DIR: Final[str] = ".aifp-project"
+
+CORE_DB_NAME: Final[str] = "aifp_core.db"
+PROJECT_DB_NAME: Final[str] = "project.db"
+USER_PREFERENCES_DB_NAME: Final[str] = "user_preferences.db"
+USER_DIRECTIVES_DB_NAME: Final[str] = "user_directives.db"
+MCP_RUNTIME_DB_NAME: Final[str] = "mcp_runtime.db"
+
+
+# ============================================================================
+# Result Types (Immutable)
+# ============================================================================
+
+@dataclass(frozen=True)
+class Result:
+    """Generic immutable result type for operations."""
+    success: bool
+    data: Optional[Any] = None
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class QueryResult:
+    """Immutable result for database query operations."""
+    success: bool
+    rows: Tuple[Dict[str, Any], ...] = ()
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class SchemaResult:
+    """Immutable result for schema introspection operations."""
+    success: bool
+    tables: Tuple[str, ...] = ()
+    fields: Tuple[Dict[str, Any], ...] = ()
+    error: Optional[str] = None
+
+
+# ============================================================================
+# Database Path Resolution — Global Databases
+# ============================================================================
+
+def _get_database_dir() -> str:
+    """Pure: Get the directory containing global databases (src/aifp/database/)."""
+    return str(Path(__file__).parent)
+
+
+def get_core_db_path() -> str:
+    """Pure: Get absolute path to aifp_core.db."""
+    return str(Path(_get_database_dir()) / CORE_DB_NAME)
+
+
+def get_mcp_runtime_db_path() -> str:
+    """Pure: Get absolute path to mcp_runtime.db."""
+    return str(Path(_get_database_dir()) / MCP_RUNTIME_DB_NAME)
+
+
+# ============================================================================
+# Database Path Resolution — Per-Project Databases
+# ============================================================================
+
+def get_aifp_project_dir(project_root: str) -> str:
+    """Pure: Get absolute path to .aifp-project directory."""
+    return str(Path(project_root) / AIFP_PROJECT_DIR)
+
+
+def get_project_db_path(project_root: str) -> str:
+    """Pure: Get absolute path to project.db for a given project."""
+    return str(Path(project_root) / AIFP_PROJECT_DIR / PROJECT_DB_NAME)
+
+
+def get_user_preferences_db_path(project_root: str) -> str:
+    """Pure: Get absolute path to user_preferences.db for a given project."""
+    return str(Path(project_root) / AIFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME)
+
+
+def get_user_directives_db_path(project_root: str) -> str:
+    """Pure: Get absolute path to user_directives.db for a given project."""
+    return str(Path(project_root) / AIFP_PROJECT_DIR / USER_DIRECTIVES_DB_NAME)
+
+
+
+def database_exists(db_path: str) -> bool:
+    """Pure: Check if database file exists."""
+    return os.path.exists(db_path)
+
+
+# ============================================================================
+# Connection Management
+# ============================================================================
+
+def _open_connection(db_path: str) -> sqlite3.Connection:
+    """
+    Effect: Open database connection with row factory.
+
+    Row factory enables dict-like access to columns by name.
+    Caller is responsible for closing the connection.
+    """
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _close_connection(conn: sqlite3.Connection) -> None:
+    """Effect: Close database connection safely."""
+    if conn:
+        conn.close()
+
+
+# ============================================================================
+# Convenience Connection Openers (per database)
+# ============================================================================
+
+def _open_core_connection() -> sqlite3.Connection:
+    """
+    Effect: Open connection to aifp_core.db (global, read-only).
+
+    Raises FileNotFoundError if database does not exist.
+    """
+    db_path = get_core_db_path()
+    if not database_exists(db_path):
+        raise FileNotFoundError(f"Core database not found: {db_path}")
+    return _open_connection(db_path)
+
+
+def _open_project_connection(project_root: str) -> sqlite3.Connection:
+    """
+    Effect: Open connection to project.db.
+
+    Raises FileNotFoundError if database does not exist.
+    """
+    db_path = get_project_db_path(project_root)
+    if not database_exists(db_path):
+        raise FileNotFoundError(f"Project database not found: {db_path}")
+    return _open_connection(db_path)
+
+
+def _open_preferences_connection(project_root: str) -> sqlite3.Connection:
+    """
+    Effect: Open connection to user_preferences.db.
+
+    Raises FileNotFoundError if database does not exist.
+    """
+    db_path = get_user_preferences_db_path(project_root)
+    if not database_exists(db_path):
+        raise FileNotFoundError(f"User preferences database not found: {db_path}")
+    return _open_connection(db_path)
+
+
+def _open_directives_connection(project_root: str) -> sqlite3.Connection:
+    """
+    Effect: Open connection to user_directives.db.
+
+    Raises FileNotFoundError if database does not exist.
+    """
+    db_path = get_user_directives_db_path(project_root)
+    if not database_exists(db_path):
+        raise FileNotFoundError(f"User directives database not found: {db_path}")
+    return _open_connection(db_path)
+
+
+def _open_mcp_runtime_connection() -> sqlite3.Connection:
+    """
+    Effect: Open connection to mcp_runtime.db (global, mutable).
+
+    Creates the database if it does not exist.
+    """
+    db_path = get_mcp_runtime_db_path()
+    return _open_connection(db_path)
+
+
+
+# ============================================================================
+# Stateless Query Functions (open-close per call)
+# ============================================================================
+
+def _effect_query_one(
+    db_path: str,
+    sql: str,
+    params: Tuple[Any, ...] = (),
+) -> Optional[Dict[str, Any]]:
+    """
+    Effect: Execute a query and return the first row as a dict.
+
+    Connection opened and closed per call. Returns None if no rows.
+    """
+    conn = _open_connection(db_path)
+    try:
+        cursor = conn.execute(sql, params)
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def _effect_query_all(
+    db_path: str,
+    sql: str,
+    params: Tuple[Any, ...] = (),
+) -> Tuple[Dict[str, Any], ...]:
+    """
+    Effect: Execute a query and return all rows as a tuple of dicts.
+
+    Connection opened and closed per call.
+    """
+    conn = _open_connection(db_path)
+    try:
+        cursor = conn.execute(sql, params)
+        return tuple(dict(row) for row in cursor.fetchall())
+    finally:
+        conn.close()
+
+
+def _effect_execute(
+    db_path: str,
+    sql: str,
+    params: Tuple[Any, ...] = (),
+) -> int:
+    """
+    Effect: Execute a write statement and return rows affected.
+
+    Connection opened and closed per call. Auto-commits.
+    """
+    conn = _open_connection(db_path)
+    try:
+        cursor = conn.execute(sql, params)
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
+
+
+# ============================================================================
+# Row Conversion Utilities
+# ============================================================================
+
+def row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
+    """Pure: Convert SQLite Row to dict."""
+    return dict(row)
+
+
+def rows_to_tuple(rows: List[sqlite3.Row]) -> Tuple[Dict[str, Any], ...]:
+    """Pure: Convert list of SQLite Rows to tuple of dicts."""
+    return tuple(row_to_dict(row) for row in rows)
+
+
+# ============================================================================
+# JSON Parsing Utilities
+# ============================================================================
+
+def parse_json_field(value: Optional[str]) -> Optional[Any]:
+    """Pure: Safely parse JSON field from database. Returns None on failure."""
+    if value is None:
+        return None
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+def json_to_tuple(value: Optional[str]) -> Tuple[Any, ...]:
+    """Pure: Parse JSON array field to tuple. Returns empty tuple on failure."""
+    parsed = parse_json_field(value)
+    if isinstance(parsed, list):
+        return tuple(parsed)
+    return ()
+
+
+# ============================================================================
+# Schema Introspection Utilities
+# ============================================================================
+
+def _get_table_names(conn: sqlite3.Connection) -> Tuple[str, ...]:
+    """Effect: Get all table names from database."""
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+    )
+    return tuple(row['name'] for row in cursor.fetchall())
+
+
+def _get_table_info(conn: sqlite3.Connection, table_name: str) -> Tuple[Dict[str, Any], ...]:
+    """Effect: Get column info for a table using PRAGMA table_info."""
+    cursor = conn.execute(f"PRAGMA table_info({table_name})")
+    return tuple(
+        {
+            'cid': row['cid'],
+            'name': row['name'],
+            'type': row['type'],
+            'notnull': bool(row['notnull']),
+            'default_value': row['dflt_value'],
+            'is_primary_key': bool(row['pk'])
+        }
+        for row in cursor.fetchall()
+    )
+
+
+def _get_table_sql(conn: sqlite3.Connection, table_name: str) -> Optional[str]:
+    """Effect: Get CREATE TABLE SQL statement for a table."""
+    cursor = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+        (table_name,)
+    )
+    row = cursor.fetchone()
+    return row['sql'] if row else None
+
+
+def _parse_check_constraint(sql: str, field_name: str) -> Optional[Tuple[str, ...]]:
+    """
+    Pure: Parse CHECK constraint values from CREATE TABLE SQL.
+
+    Extracts values from CHECK (field IN ('val1', 'val2', ...)) patterns.
+    """
+    pattern = rf"CHECK\s*\(\s*{re.escape(field_name)}\s+IN\s*\(([^)]+)\)\s*\)"
+    match = re.search(pattern, sql, re.IGNORECASE)
+    if not match:
+        return None
+    values_str = match.group(1)
+    values = re.findall(r"['\"]([^'\"]+)['\"]", values_str)
+    return tuple(values) if values else None
+
+
+# ============================================================================
+# Return Statements Fetcher
+# ============================================================================
+
+def get_return_statements(
+    helper_name: str,
+    user_preferences_db_path: str = ""
+) -> Tuple[str, ...]:
+    """
+    Fetch return statements for a helper from core database,
+    optionally merging with custom user-defined return statements.
+
+    Return statements are forward-thinking guidance for AI,
+    providing next steps and context after a helper executes.
+    Returns empty tuple on any error (graceful degradation).
+
+    Args:
+        helper_name: Name of the helper function
+        user_preferences_db_path: Optional path to user_preferences.db.
+            When provided and file exists, custom return statements from
+            the custom_return_statements table are appended to core statements.
+
+    Returns:
+        Tuple of return statement strings (core + custom if path provided)
+    """
+    # Fetch core return statements from aifp_core.db
+    core_stmts: Tuple[str, ...] = ()
+    try:
+        core_db = get_core_db_path()
+        if not database_exists(core_db):
+            return ()
+
+        conn = _open_connection(core_db)
+        try:
+            cursor = conn.execute(
+                "SELECT return_statements FROM helper_functions WHERE name = ?",
+                (helper_name,)
+            )
+            row = cursor.fetchone()
+            if row is not None:
+                return_statements_json = row['return_statements']
+                if return_statements_json is not None:
+                    if isinstance(return_statements_json, str):
+                        statements = json.loads(return_statements_json)
+                    else:
+                        statements = return_statements_json
+                    if isinstance(statements, list):
+                        core_stmts = tuple(statements)
+        finally:
+            conn.close()
+    except Exception:
+        pass
+
+    # Merge custom return statements from user_preferences.db if path provided
+    if user_preferences_db_path and os.path.exists(user_preferences_db_path):
+        try:
+            prefs_conn = _open_connection(user_preferences_db_path)
+            try:
+                cursor = prefs_conn.execute(
+                    "SELECT statement FROM custom_return_statements "
+                    "WHERE helper_name = ? AND active = 1 ORDER BY id",
+                    (helper_name,)
+                )
+                custom_rows = cursor.fetchall()
+                custom_stmts = tuple(row['statement'] for row in custom_rows)
+                return core_stmts + custom_stmts
+            finally:
+                prefs_conn.close()
+        except Exception:
+            return core_stmts
+
+    return core_stmts
