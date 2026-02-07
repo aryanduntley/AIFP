@@ -26,7 +26,7 @@ This directive generates wrappers for:
 
 **Wrapper principle**: Convert stateful methods to pure functions with explicit state.
 
-**Real-world examples**: See [../wrappers/](../wrappers/) for working wrapper implementations. As AIFP develops, this folder will contain reference implementations for common libraries.
+**Real-world examples**: See the compliant usage examples below for working wrapper implementations covering HTTP clients, databases, stateful classes, context managers, and fluent APIs.
 
 ---
 
