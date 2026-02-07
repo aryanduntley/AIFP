@@ -1,0 +1,593 @@
+[
+  {
+    "name": "user_preferences_sync",
+    "type": "project",
+    "level": 0,
+    "parent_directive": "aifp_run",
+    "category": {
+      "name": "user_customization",
+      "description": "Manages user-specific AI behavior preferences and settings."
+    },
+    "description": "Loads and applies user preferences before executing any project directive. Checks user_preferences.db for directive-specific preferences and applies them to current context. Executed automatically before file writes and compliance checks.",
+    "md_file_path": "directives/user_preferences_sync.md",
+    "workflow": {
+      "trunk": "check_preferences_db",
+      "branches": [
+        {
+          "if": "preferences_db_exists",
+          "then": "load_preferences",
+          "details": {
+            "cache_duration": "session"
+          }
+        },
+        {
+          "if": "no_preferences_db",
+          "then": "initialize_defaults",
+          "details": {
+            "create_db": true,
+            "use_schema": "schemaExampleSettings.sql"
+          }
+        },
+        {
+          "if": "directive_preferences_found",
+          "then": "apply_to_context",
+          "details": {
+            "use_helper": "load directive preferences for directive"
+          }
+        },
+        {
+          "if": "tracking_enabled",
+          "then": "enable_logging",
+          "details": {
+            "check_tracking_settings": true
+          }
+        },
+        {
+          "fallback": "continue_without_preferences"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_to_project_notes",
+        "continue": true
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "preferences_db_missing",
+        "resolution": "Initialize user_preferences.db with default schema"
+      },
+      {
+        "issue": "preferences_db_corrupted",
+        "resolution": "Backup corrupt DB and recreate from schema"
+      },
+      {
+        "issue": "conflicting_preferences",
+        "resolution": "Prompt user for resolution and update"
+      }
+    ],
+    "intent_keywords_json": [
+      "preferences",
+      "settings",
+      "load settings",
+      "apply preferences"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "user_preferences_update",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "user_preferences_sync",
+    "category": {
+      "name": "user_customization",
+      "description": "Updates user preferences based on explicit user requests."
+    },
+    "description": "Handles explicit user requests to modify behavior preferences. Uses find_directive_by_intent helper to map user requests to specific directives by searching name, description, and intent_keywords. Creates or updates directive_preferences entries with chosen directive name. Validates preference changes and confirms with user before applying. When a preference affects helper function outputs, offers to add custom return statements for related helpers via set_custom_return_statement.",
+    "md_file_path": "directives/user_preferences_update.md",
+    "workflow": {
+      "trunk": "parse_preference_request",
+      "branches": [
+        {
+          "if": "parse_complete",
+          "then": "find_directive_by_intent",
+          "details": {
+            "search_fields": [
+              "name",
+              "description",
+              "intent_keywords_json"
+            ],
+            "min_confidence": 0.6
+          }
+        },
+        {
+          "if": "single_directive_match",
+          "then": "confirm_directive",
+          "details": {
+            "show_directive_description": true
+          }
+        },
+        {
+          "if": "multiple_matches",
+          "then": "prompt_user",
+          "details": {
+            "clarify": "Multiple directives match. Which one?",
+            "show_options": true,
+            "show_descriptions": true
+          }
+        },
+        {
+          "if": "directive_confirmed",
+          "then": "parse_preference_details",
+          "details": {
+            "extract_key_value": true
+          }
+        },
+        {
+          "if": "preference_key_clear",
+          "then": "update_or_insert",
+          "details": {
+            "table": "directive_preferences",
+            "upsert": true,
+            "fields": [
+              "directive_name",
+              "preference_key",
+              "preference_value",
+              "description"
+            ]
+          }
+        },
+        {
+          "if": "preference_updated",
+          "then": "confirm_with_user",
+          "details": {
+            "show_current_value": true,
+            "show_directive_name": true
+          }
+        },
+        {
+          "if": "helper_context_applicable",
+          "then": "offer_custom_return_statement",
+          "details": {
+            "check": "Does the preference affect specific helper function outputs?",
+            "action": "Offer to add custom return statements for related helpers",
+            "use_helper": "set_custom_return_statement",
+            "examples": [
+              "User sets 'no IDs in names' → add custom return statement to reserve_file_name, reserve_function_name, reserve_type_name",
+              "User sets 'always use snake_case' → add custom return statement to relevant file/function creation helpers"
+            ]
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Could you specify which behavior you want to change?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "directive_not_found",
+        "resolution": "Show list of available directives and prompt user"
+      },
+      {
+        "issue": "invalid_preference_value",
+        "resolution": "Validate value type and prompt for correction"
+      },
+      {
+        "issue": "preference_conflict",
+        "resolution": "Show existing preference and ask user to confirm override"
+      }
+    ],
+    "intent_keywords_json": [
+      "set preference",
+      "change behavior",
+      "always do",
+      "never do",
+      "prefer",
+      "return statement",
+      "helper guidance",
+      "custom guidance"
+    ],
+    "confidence_threshold": 0.6
+  },
+  {
+    "name": "user_preferences_learn",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "user_preferences_sync",
+    "category": {
+      "name": "user_customization",
+      "description": "Learns preferences from user corrections and feedback."
+    },
+    "description": "Detects when user corrects or modifies AI output and offers to learn the preference. Logs interaction to ai_interaction_log and prompts user whether to apply preference project-wide. Requires user confirmation before updating directive_preferences.",
+    "md_file_path": "directives/user_preferences_learn.md",
+    "workflow": {
+      "trunk": "detect_correction",
+      "branches": [
+        {
+          "if": "correction_detected",
+          "then": "log_to_ai_interaction",
+          "details": {
+            "table": "ai_interaction_log",
+            "interaction_type": "correction"
+          }
+        },
+        {
+          "if": "pattern_identified",
+          "then": "infer_preference",
+          "details": {
+            "confidence_threshold": 0.8
+          }
+        },
+        {
+          "if": "high_confidence",
+          "then": "prompt_user",
+          "details": {
+            "clarify": "I noticed you prefer X. Should I remember this preference?",
+            "show_scope": "project-wide"
+          }
+        },
+        {
+          "if": "user_confirms",
+          "then": "update_directive_preferences",
+          "details": {
+            "mark_applied": true
+          }
+        },
+        {
+          "if": "low_confidence",
+          "then": "log_only",
+          "details": {
+            "skip_prompt": true
+          }
+        },
+        {
+          "fallback": "continue"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_to_ai_interaction_only"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "correction_unclear",
+        "resolution": "Log to ai_interaction_log but do not prompt user"
+      },
+      {
+        "issue": "conflicting_corrections",
+        "resolution": "Present conflict to user and ask for clarification"
+      },
+      {
+        "issue": "user_declines_preference",
+        "resolution": "Mark in ai_interaction_log as declined, do not ask again"
+      }
+    ],
+    "intent_keywords_json": [
+      "correction",
+      "actually do",
+      "instead do",
+      "fix this"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "user_preferences_export",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "user_preferences_sync",
+    "category": {
+      "name": "user_customization",
+      "description": "Exports user preferences for backup or sharing."
+    },
+    "description": "Exports user_preferences.db settings to a portable JSON format for backup or sharing across projects. Includes directive_preferences and user_settings tables. Optionally includes tracking data if user requests it.",
+    "md_file_path": "directives/user_preferences_export.md",
+    "workflow": {
+      "trunk": "query_preferences",
+      "branches": [
+        {
+          "if": "preferences_exist",
+          "then": "export_to_json",
+          "details": {
+            "include_tables": [
+              "user_settings",
+              "directive_preferences"
+            ]
+          }
+        },
+        {
+          "if": "include_tracking_requested",
+          "then": "add_tracking_data",
+          "details": {
+            "tables": [
+              "ai_interaction_log",
+              "fp_flow_tracking"
+            ]
+          }
+        },
+        {
+          "if": "export_complete",
+          "then": "save_file",
+          "details": {
+            "filename": "aifp_preferences_export.json"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "No preferences to export. Would you like to create default settings?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "no_preferences_db",
+        "resolution": "Inform user that no preferences exist yet"
+      },
+      {
+        "issue": "export_path_invalid",
+        "resolution": "Prompt user for valid export path"
+      }
+    ],
+    "intent_keywords_json": [
+      "export preferences",
+      "backup settings",
+      "save preferences"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "user_preferences_import",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "user_preferences_sync",
+    "category": {
+      "name": "user_customization",
+      "description": "Imports user preferences from exported JSON file."
+    },
+    "description": "Imports previously exported preferences from JSON file into user_preferences.db. Merges with existing preferences, prompting user on conflicts. Validates imported data before applying.",
+    "md_file_path": "directives/user_preferences_import.md",
+    "workflow": {
+      "trunk": "read_import_file",
+      "branches": [
+        {
+          "if": "file_valid",
+          "then": "validate_schema",
+          "details": {
+            "check_version": true
+          }
+        },
+        {
+          "if": "conflicts_detected",
+          "then": "prompt_user",
+          "details": {
+            "show_conflicts": true,
+            "options": "keep_existing, use_imported, merge"
+          }
+        },
+        {
+          "if": "validation_passed",
+          "then": "import_preferences",
+          "details": {
+            "tables": [
+              "user_settings",
+              "directive_preferences"
+            ]
+          }
+        },
+        {
+          "if": "import_complete",
+          "then": "confirm_with_user",
+          "details": {
+            "show_summary": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Import failed. Check file format."
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "file_not_found",
+        "resolution": "Prompt user for correct file path"
+      },
+      {
+        "issue": "invalid_json",
+        "resolution": "Inform user of format error and provide example"
+      },
+      {
+        "issue": "version_mismatch",
+        "resolution": "Attempt migration or warn user of incompatibility"
+      }
+    ],
+    "intent_keywords_json": [
+      "import preferences",
+      "restore settings",
+      "load preferences"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_notes_log",
+    "type": "project",
+    "level": 3,
+    "parent_directive": null,
+    "category": {
+      "name": "logging",
+      "description": "Handles logging to project.db notes table with directive context."
+    },
+    "description": "Logs clarifications, reasoning, and directive execution context to project.db notes table. Optionally includes directive_name when note is related to specific directive execution. Used by other directives for transparent reasoning trails.",
+    "md_file_path": "directives/project_notes_log.md",
+    "workflow": {
+      "trunk": "prepare_note",
+      "branches": [
+        {
+          "if": "directive_context_available",
+          "then": "include_directive_name",
+          "details": {
+            "field": "directive_name",
+            "optional": true
+          }
+        },
+        {
+          "if": "severity_specified",
+          "then": "set_severity",
+          "details": {
+            "default": "info",
+            "options": [
+              "info",
+              "warning",
+              "error"
+            ]
+          }
+        },
+        {
+          "if": "source_specified",
+          "then": "set_source",
+          "details": {
+            "default": "ai",
+            "options": [
+              "user",
+              "ai",
+              "directive"
+            ]
+          }
+        },
+        {
+          "if": "reference_provided",
+          "then": "link_to_entity",
+          "details": {
+            "tables": [
+              "tasks",
+              "files",
+              "functions",
+              "completion_path"
+            ]
+          }
+        },
+        {
+          "then": "insert_note",
+          "details": {
+            "table": "project.notes"
+          }
+        },
+        {
+          "fallback": "skip_logging"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "continue_silently"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "project_db_not_initialized",
+        "resolution": "Skip logging and continue execution"
+      },
+      {
+        "issue": "note_insert_failed",
+        "resolution": "Log error to stderr and continue"
+      }
+    ],
+    "intent_keywords_json": [
+      "log note",
+      "record clarification",
+      "add reasoning"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "tracking_toggle",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "user_preferences_sync",
+    "category": {
+      "name": "tracking_management",
+      "description": "Enables or disables tracking features in user_preferences.db."
+    },
+    "description": "Toggles tracking features on or off by updating tracking_settings table. Shows user estimated token overhead before enabling. Allows granular control over fp_flow_tracking, issue_reports, ai_interaction_log, helper_function_logging, and compliance_checking.",
+    "md_file_path": "directives/tracking_toggle.md",
+    "workflow": {
+      "trunk": "parse_tracking_request",
+      "branches": [
+        {
+          "if": "feature_identified",
+          "then": "check_current_status",
+          "details": {
+            "use_helper": "get tracking setting status"
+          }
+        },
+        {
+          "if": "enabling_feature",
+          "then": "show_token_overhead",
+          "details": {
+            "warn_user": true,
+            "show_estimate": true
+          }
+        },
+        {
+          "if": "user_confirms",
+          "then": "update_tracking_setting",
+          "details": {
+            "toggle_enabled": true
+          }
+        },
+        {
+          "if": "disabling_feature",
+          "then": "disable_immediately",
+          "details": {
+            "no_confirmation_needed": true
+          }
+        },
+        {
+          "if": "status_updated",
+          "then": "confirm_with_user",
+          "details": {
+            "show_new_status": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Which tracking feature? Options: fp_flow_tracking, issue_reports, ai_interaction_log, helper_function_logging, compliance_checking"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "feature_not_found",
+        "resolution": "Show list of available tracking features"
+      },
+      {
+        "issue": "preferences_db_missing",
+        "resolution": "Initialize user_preferences.db first"
+      }
+    ],
+    "intent_keywords_json": [
+      "enable tracking",
+      "disable tracking",
+      "turn on logging",
+      "turn off logging"
+    ],
+    "confidence_threshold": 0.7
+  }
+]

@@ -1,0 +1,767 @@
+{
+  "helpers": [
+    {
+      "name": "reserve_type",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Type name (will have _idxxx appended)"
+        },
+        {
+          "name": "definition_json",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "ADT definition (e.g., {'type': 'enum', 'variants': ['A', 'B']})"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Type description"
+        },
+        {
+          "name": "links",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Links to related functions"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "File ID where type is defined"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip ID embedding in name. Sets id_in_name=0 in database."
+        }
+      ],
+      "purpose": "Reserve type ID for naming before creation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Use returned ID for type naming: {TypeName}_id_{id}"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "reserve_type_name",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve type ID before writing code - AI embeds ID in type name for instant lookups (TypeName_id_7)"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "reserve_before_write",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve type IDs before generating type code - enables rename-proof type references"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, id: reserved_id, is_reserved: true, id_in_name: !skip_id_naming}",
+        "SQL: INSERT INTO types (name, definition_json, description, links, file_id, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) RETURNING id",
+        "Type name pattern: {TypeName}_id_{id} (e.g., Maybe_id_7) unless skip_id_naming=true",
+        "If skip_id_naming=true: id_in_name=0, name stays as-is"
+      ]
+    },
+    {
+      "name": "reserve_types",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "types",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of type objects [{name, definition_json, description, links, file_id, skip_id_naming?}, ...]"
+        }
+      ],
+      "purpose": "Reserve multiple type IDs",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Use returned IDs for type naming: {TypeName}_id_{id}"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, ids: [id1, id2, ...]} in same order as input types array",
+        "SQL: Multiple INSERT INTO types (name, definition_json, description, links, file_id, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) (in transaction)",
+        "IDs correspond to types array indices: types[0] gets ids[0], types[1] gets ids[1], etc.",
+        "Each item has its own skip_id_naming flag - allows mixed batch with some types having IDs, some not",
+        "id_in_name is set to !skip_id_naming for each type individually"
+      ]
+    },
+    {
+      "name": "finalize_type",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "type_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Reserved type ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Final name with _idxx suffix"
+        },
+        {
+          "name": "definition_json",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "ADT definition"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Type description"
+        },
+        {
+          "name": "links",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Links to related functions"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "File ID where type is defined"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip _id_XX pattern validation (for types where ID naming was skipped during reservation)"
+        }
+      ],
+      "purpose": "Finalize reserved type after creation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Do any type-function relationships need to be added in types_functions table?",
+        "If called during project_reserve_finalize: proceed to project_update_db to sync type registrations."
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, type_id: int, file_id: int}",
+        "Sets is_reserved=0 in types table",
+        "Calls update_file_timestamp(file_id) automatically",
+        "Definition_json stores ADT structure for FP analysis",
+        "Name validation: must contain '_id_{type_id}' pattern UNLESS skip_id_naming=true"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "finalize_reservation",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize type after code written - sets is_reserved=false and updates file timestamp"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "finalize_after_write",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize type reservations after successful code generation"
+        },
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "finalize_new_types",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize type reservations when updating database with new type metadata"
+        }
+      ]
+    },
+    {
+      "name": "finalize_types",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "types",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of type objects [{type_id, name, definition_json, description, links, file_id, skip_id_naming?}, ...]"
+        }
+      ],
+      "purpose": "Finalize multiple reserved types",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Do any type-function relationships need to be added in types_functions table?"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, finalized_ids: [int, ...]}",
+        "Groups types by file_id for efficient timestamp updates",
+        "Sets is_reserved=0 for all types in batch",
+        "Each item has its own skip_id_naming flag - validation is per-item, not global",
+        "If skip_id_naming=true for an item, skip _id_XX pattern validation for that specific type"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_type",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "type_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Type ID to update"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New file_id (NULL = don't update)"
+        },
+        {
+          "name": "definition_json",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "New definition (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update type metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Ensure name or definition changes are updated throughout codebase",
+        "If name changed, verify _id_xxx suffix is retained"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, type_id: int, file_id: int}",
+        "NULL parameters = don't update that field",
+        "Calls update_file_timestamp(file_id) automatically"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "update_types_table",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update type metadata after code generation - synchronizes type definitions and ADT structures"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "update_dependency_entry",
+          "sequence_order": 6,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update stale type metadata during DB-filesystem sync - fixes outdated type definitions"
+        }
+      ]
+    },
+    {
+      "name": "delete_type",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "type_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Type ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete type with relationship validation",
+      "error_handling": "Return error if types_functions exist - requires manual unlinking first",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Ensure the type code is also removed from the file, not just the database"
+      ],
+      "implementation_notes": [
+        "ERROR LOGIC: Query types table for is_reserved WHERE id=? - if is_reserved=1, return error",
+        "ERROR RETURN (reserved): {success: false, error: 'type_reserved', message: 'Cannot delete reserved type. Use delete_reserved helper or finalize_type first'}",
+        "ERROR LOGIC: Query types_functions WHERE type_id=? - if not empty, return error with function relationships list",
+        "ERROR RETURN: {success: false, error: 'types_functions_exist', function_relationships: [{function_id, function_name, role}, ...]}",
+        "ERROR MESSAGE: 'Cannot delete type - function relationships exist. Delete types_functions entries first, then retry'",
+        "SUCCESS LOGIC: Only proceed if is_reserved=0 AND types_functions check returns empty",
+        "SUCCESS LOGIC: Get file_id before deletion: SELECT file_id FROM types WHERE id=type_id",
+        "SUCCESS LOGIC: Create note entry in notes table with reason, severity, source, type, reference details",
+        "SUCCESS LOGIC: Delete type: DELETE FROM types WHERE id=type_id",
+        "SUCCESS RETURN: {success: true, deleted_type_id: type_id, file_id: file_id}",
+        "NOTE: types_functions must be manually unlinked first"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_delete",
+          "execution_context": "delete_file_and_db_records",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Cascade delete all types in file - automatically called when file is deleted"
+        }
+      ]
+    },
+    {
+      "name": "get_type_by_name",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "type_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Type name to look up"
+        }
+      ],
+      "purpose": "Get types by name (returns list with file data)",
+      "error_handling": "Return error if no types found with that name",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Look up types by name during DB-filesystem sync - verifies type entries exist before syncing"
+        },
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query types by name for dependency graph generation - maps type relationships"
+        }
+      ],
+      "implementation_notes": [
+        "Returns array of type objects with file data (multiple types can share same name across files)",
+        "SQL: SELECT t.*, fi.name AS file_name, fi.path AS file_path FROM types t LEFT JOIN files fi ON t.file_id = fi.id WHERE t.name = ?",
+        "Returns: {success, types: [{id, name, file_id, file_name, file_path, definition_json, description, links, is_reserved, id_in_name, created_at, updated_at}, ...]}",
+        "Returns TypeQueryResult with types tuple"
+      ]
+    },
+    {
+      "name": "add_types_functions",
+      "file_path": "helpers/project/types_2.py",
+      "parameters": [
+        {
+          "name": "relationships",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of tuples [(type_id, function_id, role), ...] - role: 'factory', 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator'"
+        }
+      ],
+      "purpose": "Add type-function relationship(s)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: {success: true, ids: [int, ...]} - inserted relationship IDs",
+        "For single relationship: pass [(type_id, function_id, role)]",
+        "Roles help FP analysis understand type usage patterns",
+        "Inserts into types_functions table"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "add_type_function_relationships",
+          "sequence_order": 5,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Track type-function relationships after code generation - creates relationship records for factory/transformer/accessor functions"
+        }
+      ]
+    },
+    {
+      "name": "update_type_function_role",
+      "file_path": "helpers/project/types_2.py",
+      "parameters": [
+        {
+          "name": "type_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Type ID"
+        },
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID"
+        },
+        {
+          "name": "role",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'factory', 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator'"
+        }
+      ],
+      "purpose": "Update relationship role only",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Updates role field only in types_functions table",
+        "For type_id/function_id changes: delete + add new"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_type_function",
+      "file_path": "helpers/project/types_2.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "types_functions junction table ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Remove type-function relationship",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Deletes from types_functions table",
+        "Creates note record for audit trail"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_interaction",
+      "file_path": "helpers/project/interactions.py",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Source function name"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Target function name"
+        },
+        {
+          "name": "interaction_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Interaction type ('call', 'chain', 'borrow', 'compose', 'pipe')"
+        }
+      ],
+      "purpose": "Add function dependency/interaction",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: {success: true, id: int} - new interaction ID",
+        "Inserts into interactions table",
+        "Source/target are function names - resolved to IDs internally via JOIN with files table",
+        "DISAMBIGUATION: If function name matches multiple functions, returns error with list of matches [{id, name, file_name, file_path}] — AI should choose the correct one and call add_interactions with specific function IDs instead",
+        "If exactly 1 match: proceeds normally. If 0 matches: returns 'not found' error"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "add_function_interactions",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Track function dependencies after code generation - creates interaction records for function relationships"
+        }
+      ]
+    },
+    {
+      "name": "add_interactions",
+      "file_path": "helpers/project/interactions.py",
+      "parameters": [
+        {
+          "name": "interactions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of tuples [(source_function_id, target_function_id, interaction_type, description), ...] - type: 'call', 'chain', 'borrow', 'compose', 'pipe'"
+        }
+      ],
+      "purpose": "Add multiple interactions at once",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: {success: true, ids: [int, ...]} - inserted interaction IDs",
+        "Uses function IDs (not names)",
+        "More efficient than multiple single-interaction calls"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "add_function_interactions",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch track function dependencies after code generation - more efficient for multiple interactions"
+        }
+      ]
+    },
+    {
+      "name": "update_interaction",
+      "file_path": "helpers/project/interactions.py",
+      "parameters": [
+        {
+          "name": "interaction_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Interaction ID to update"
+        },
+        {
+          "name": "source_function_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New source (NULL = don't update)"
+        },
+        {
+          "name": "target_function_id",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "New target (NULL = don't update)"
+        },
+        {
+          "name": "interaction_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'call', 'chain', 'borrow', 'compose', 'pipe' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update interaction metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Ensure the code reflects this interaction change"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "NULL parameters = don't update that field",
+        "Updates interactions table"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "update_dependency_entry",
+          "sequence_order": 7,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update stale interaction metadata during DB-filesystem sync - fixes outdated function dependencies"
+        }
+      ]
+    },
+    {
+      "name": "delete_interaction",
+      "file_path": "helpers/project/interactions.py",
+      "parameters": [
+        {
+          "name": "interaction_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Interaction ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete interaction",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Ensure the function dependency/call has been removed from the code, not just the database"
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Deletes from interactions table",
+        "Creates note record for audit trail"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-4.json",
+    "count": 14,
+    "range": "helpers 36-49 of 113",
+    "description": "Type reservation/finalization, type-function relationships, and interaction management",
+    "first_helper": "reserve_type",
+    "last_helper": "delete_interaction",
+    "status": "return_statements complete - 8 helpers enhanced",
+    "last_updated": "2026-01-02"
+  }
+}

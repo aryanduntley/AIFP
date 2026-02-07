@@ -1,0 +1,3816 @@
+[
+  {
+    "name": "aifp_run",
+    "type": "project",
+    "level": 0,
+    "parent_directive": null,
+    "category": {
+      "name": "orchestration",
+      "description": "Gateway and reminder for AIFP directive application."
+    },
+    "description": "Gateway entry point for AIFP system. Returns guidance to AI assistant on when and how to use AIFP directives. Does NOT execute directives itself - AI receives guidance and decides next action based on task type (coding, project management, or simple discussion). Always assume AIFP applies unless user explicitly rejects. First action should be calling aifp_status to understand current project state.",
+    "md_file_path": "directives/aifp_run.md",
+    "workflow": {
+      "trunk": "evaluate_is_new_session_parameter",
+      "branches": [
+        {
+          "if": "is_new_session_true",
+          "then": "bundle_session_startup_data",
+          "details": {
+            "call_helpers": [
+              "aifp_status() - comprehensive project state",
+              "get_user_settings() - all user settings",
+              "get_fp_directive_index() - FP directives grouped by category"
+            ],
+            "cache_in_context": true,
+            "return_with_suggestions": true,
+            "message": "Bundling session startup data (status + settings + FP index)",
+            "guidance": {
+              "cache_bundle": "Cache entire bundle (status, settings, fp_index) in your context to avoid re-fetching",
+              "when_to_refresh": "Call aifp_run(is_new_session=true) again after: (1) major state changes (init/milestone complete), (2) long breaks, (3) new conversation",
+              "use_for_navigation": "Use returned state with get_flows_from_directive() to find appropriate next directives",
+              "fp_reference": "Use fp_index for quick FP directive lookup by category. Call search_directives(type='fp') or get_directive_by_name(name) for directive JSON. If more context needed, read MD file directly (path provided in directive object's md_file_path field)",
+              "settings_usage": "Apply user_settings preferences during directive execution (code style, task granularity, etc.)"
+            }
+          }
+        },
+        {
+          "if": "is_new_session_false_or_default",
+          "then": "return_lightweight_guidance",
+          "details": {
+            "assume_ai_has_cached_data": true,
+            "message": "AIFP MCP available (continuation mode)",
+            "common_starting_points": [
+              "aifp_status - Get comprehensive project state (if not cached)",
+              "aifp_init - Initialize new AIFP project",
+              "project_file_write - Write code and update database",
+              "project_task_create - Create new tasks",
+              "project_task_complete - Mark task as complete and loop back to status"
+            ],
+            "guidance": {
+              "directive_access": "Call get_all_directives() if you don't have them in memory. Call get_directive(name) or search_directives(keyword, category, type) for specific details.",
+              "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
+              "assumption": "Always assume AIFP applies unless user explicitly rejects it with 'do not use aifp for this task'.",
+              "status_based_navigation": "If you have status cached, query directive_flow table with get_flows_from_directive(directive_name) to find next steps",
+              "directive_flow_queries": [
+                "get_flows_from_directive(directive_name) - get all outbound flows from a directive",
+                "get_directive_flows(flow_category='fp') - query FP flows",
+                "get_directive_flows(flow_category='git') - query git flows"
+              ],
+              "when_to_get_fresh_bundle": "Call aifp_run(is_new_session=true) if: (1) new session, (2) after major state change, (3) unsure of current state, (4) user asks for status",
+              "available_helpers": [
+                "get_all_directives",
+                "get_directive",
+                "search_directives",
+                "get_flows_from_directive",
+                "get_user_settings",
+                "get_fp_directive_index",
+                "get_directive_flows",
+                "query_mcp_db",
+                "get_project_status",
+                "get_task_context",
+                "get_current_progress",
+                "query_project_state"
+              ]
+            },
+            "ai_decision_flow": [
+              "1. If new session or unclear context: Consider calling aifp_run(is_new_session=true) for fresh bundle",
+              "2. Check project type: Query project.user_directives_status (NULL=Use Case 1, 'in_progress'/'active'/'disabled'=Use Case 2)",
+              "3. Evaluate: Is this coding, project management, or user directive automation?",
+              "4. Check: Do I have directives in memory?",
+              "5. If no directives: Call get_all_directives() to load directive names",
+              "6. If you have cached status: Use get_flows_from_directive() to determine next appropriate directive",
+              "7. If coding: Apply FP directives (how to code) + project directives (DB updates)",
+              "8. If project management: Apply project directives based on status and user intent",
+              "9. If user directive task (Use Case 2): Apply user directive system directives (parse/validate/implement/approve/activate pipeline)",
+              "10. If simple discussion: No directives needed unless decision impacts project"
+            ]
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "return_guidance_anyway"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "ai_bypasses_aifp",
+        "resolution": "System prompt should enforce: 'If AIFP MCP present, always call aifp_run unless explicitly rejected'"
+      },
+      {
+        "issue": "ai_forgets_directives",
+        "resolution": "AI should call get_all_directives() when directives not in memory"
+      },
+      {
+        "issue": "ai_unsure_when_to_use",
+        "resolution": "Guidance clarifies: coding + project management = use directives"
+      },
+      {
+        "issue": "ai_starts_without_context",
+        "resolution": "Call aifp_status first to understand project state and current focus"
+      }
+    ],
+    "intent_keywords_json": [
+      "run",
+      "execute",
+      "aifp",
+      "start",
+      "continue",
+      "status",
+      "resume"
+    ],
+    "confidence_threshold": 1.0
+  },
+  {
+    "name": "aifp_init",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "aifp_run",
+    "category": {
+      "name": "initialization",
+      "description": "Handles creation and setup of new AIFP projects with ProjectBlueprint.md creation."
+    },
+    "description": "Initializes a new AIFP project using a two-phase approach: Phase 1 (Mechanical Setup) calls aifp_init helper to atomically create folders, databases, and templates. Phase 2 (Intelligent Population) uses AI to detect language/tools, prompt user for metadata, and populate ProjectBlueprint and infrastructure. Checks for existing .aifp-project/ or .git/.aifp/ folders before initialization. Scans existing codebase for OOP patterns and aborts if OOP detected (AIFP is FP-only). Offers restoration from .git/.aifp/ backup if found.",
+    "md_file_path": "directives/aifp_init.md",
+    "workflow": {
+      "trunk": "check_existing_state",
+      "branches": [
+        {
+          "if": "aifp_folder_exists",
+          "then": "call_aifp_status",
+          "details": {
+            "message": ".aifp-project/ folder already exists"
+          }
+        },
+        {
+          "if": "existing_code_detected_no_aifp",
+          "then": "scan_for_oop_patterns",
+          "details": {
+            "scan_patterns": {
+              "oop_indicators": [
+                "class .*\\(.*\\):",
+                "self\\.",
+                "this\\.",
+                "__init__",
+                "def .*\\(self",
+                "extends ",
+                "implements ",
+                "interface ",
+                "abstract class"
+              ],
+              "file_types": ["*.py", "*.js", "*.ts", "*.java", "*.cpp", "*.cs", "*.rb", "*.php"],
+              "threshold": "3+ OOP patterns detected across multiple files"
+            },
+            "trigger": "fp_no_oop directive for pattern detection",
+            "note": "Scans existing codebase before initialization to detect OOP patterns"
+          }
+        },
+        {
+          "if": "oop_detected_in_existing_code",
+          "then": "abort_initialization_with_message",
+          "details": {
+            "action": "abort_without_init",
+            "message": "🛑 AIFP Incompatible Project Detected\n\nThis directory contains existing OOP-based code. AIFP is designed exclusively for Functional Procedural (FP) codebases.\n\nYour options:\n1. Convert this project to FP first (major refactor - use AIFP in a separate directory to help)\n2. Disable/uninstall AIFP MCP server for this project\n3. Start a new FP-compliant project in a different directory\n\nAIFP cannot manage OOP projects - it enforces pure functions, immutability, and no classes with methods.",
+            "exit_directive": true,
+            "do_not_initialize": true
+          }
+        },
+        {
+          "if": "existing_code_is_fp_or_empty",
+          "then": "proceed_with_initialization",
+          "details": {
+            "message": "Existing code appears FP-compliant or directory is empty. Proceeding with initialization.",
+            "continue_to_next_branch": true
+          }
+        },
+        {
+          "if": "git_aifp_backup_exists",
+          "then": "prompt_restore_or_new",
+          "details": {
+            "check_path": ".git/.aifp/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "restore_chosen",
+          "then": "restore_from_git_backup",
+          "details": {
+            "copy_from": ".git/.aifp/",
+            "copy_to": ".aifp-project/"
+          }
+        },
+        {
+          "if": "new_project_chosen",
+          "then": "determine_project_root",
+          "details": {
+            "action": "get_current_working_directory",
+            "note": "Project root is where AIFP is being initialized (current directory)"
+          }
+        },
+        {
+          "if": "project_root_determined",
+          "then": "phase_1_mechanical_setup",
+          "details": {
+            "phase": "1 - Mechanical Setup (Code)",
+            "use_helper": "aifp_init",
+            "parameters": {
+              "project_root": "full path to project root"
+            },
+            "operations": [
+              "Create .aifp-project/ and backups/ directories",
+              "Copy ProjectBlueprint_template.md to .aifp-project/",
+              "Create project.db from schemas/project.sql",
+              "Execute initialization/standard_infrastructure.sql (8 empty entries)",
+              "INSERT project_root into infrastructure table",
+              "Create user_preferences.db from schemas/user_preferences.sql",
+              "INSERT default tracking_settings (all disabled)",
+              "Validate initialization (all files and tables exist)"
+            ],
+            "note": "aifp_init helper does all file/database creation atomically. Returns success or error."
+          }
+        },
+        {
+          "if": "mechanical_setup_complete",
+          "then": "phase_2_intelligent_population",
+          "details": {
+            "phase": "2 - Intelligent Population (AI)",
+            "note": "AI now populates with real data through detection and user interaction"
+          }
+        },
+        {
+          "if": "phase_2_start",
+          "then": "detect_and_prompt_metadata",
+          "details": {
+            "detect": [
+              "primary_language (scan file extensions: .py, .rs, .js, .go)",
+              "source_directory (scan for src/, lib/, app/, or ask user)",
+              "build_tool (look for Cargo.toml, package.json, Makefile, pom.xml)",
+              "package_manager (infer from build_tool or language defaults)",
+              "test_framework (scan dependencies in build files)",
+              "runtime_version (check .tool-versions, .nvmrc, rust-toolchain.toml)"
+            ],
+            "prompt_user": [
+              "project_name (required)",
+              "purpose (required)",
+              "goals (required, array)",
+              "Confirm detected values or provide corrections"
+            ],
+            "update": [
+              "infrastructure table with detected/confirmed values",
+              "ProjectBlueprint.md with project metadata"
+            ]
+          }
+        },
+        {
+          "if": "metadata_populated",
+          "then": "create_initial_completion_path",
+          "details": {
+            "use_helper": "add completion path",
+            "default_path": {
+              "name": "Project Setup & Core Development",
+              "order_index": 1,
+              "status": "in_progress",
+              "description": "Initialize project structure and implement core functionality"
+            },
+            "note": "AI can adjust based on project scope and user goals"
+          }
+        },
+        {
+          "if": "completion_path_created",
+          "then": "prompt_user_directives_init",
+          "details": {
+            "prompt": "Initialize user directives system? (y/n)",
+            "optional": true
+          }
+        },
+        {
+          "if": "user_directives_yes",
+          "then": "init_user_directives_db",
+          "details": {
+            "create_db": "user_directives.db",
+            "apply_schema": "user_directives_schema.sql",
+            "set_status": "in_progress"
+          }
+        },
+        {
+          "if": "user_directives_no_or_complete",
+          "then": "initialize_git_if_needed",
+          "details": {
+            "trigger": "git_init directive",
+            "action": "Initialize or integrate with Git repository"
+          }
+        },
+        {
+          "if": "git_initialized",
+          "then": "backup_blueprint",
+          "details": {
+            "backup_to": ".aifp-project/backups/ProjectBlueprint.md.backup"
+          }
+        },
+        {
+          "if": "backup_complete",
+          "then": "report_success_and_route_to_discovery",
+          "details": {
+            "show": [
+              "project_name",
+              "blueprint_path",
+              "databases",
+              "user_directives_status",
+              "git_status"
+            ],
+            "next_directive": "project_discovery",
+            "note": "Init Phase 1+2 complete. Route to project_discovery for collaborative project shape definition (blueprint, completion path, milestones, themes, flows). If pre-existing FP code exists, discovery will delegate to project_catalog."
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Provide missing project details or choose restoration option"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 2 attempts"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "oop_detected_in_existing_code",
+        "resolution": "Abort initialization and inform user that AIFP cannot manage OOP projects. Suggest: 1) Convert to FP first, 2) Disable AIFP MCP server, 3) Start new FP project elsewhere"
+      },
+      {
+        "issue": "db_creation_failed",
+        "resolution": "Check file permissions or re-run as admin"
+      },
+      {
+        "issue": "schema_missing",
+        "resolution": "Verify schema file in /schemas/"
+      },
+      {
+        "issue": "aifp_folder_exists",
+        "resolution": "Call aifp_status to show existing project state"
+      },
+      {
+        "issue": "blueprint_generation_failed",
+        "resolution": "Use default template and prompt user for manual completion"
+      },
+      {
+        "issue": "git_backup_corrupted",
+        "resolution": "Prompt user to start fresh or provide backup manually"
+      }
+    ],
+    "intent_keywords_json": [
+      "create project",
+      "initialize",
+      "start project",
+      "init project",
+      "new project"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_task_decomposition",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "aifp_run",
+    "category": {
+      "name": "task_management",
+      "description": "Manages decomposition of user goals into AIFP-aligned tasks, subtasks, and sidequests."
+    },
+    "description": "Decomposes high-level user requests into completion_path, milestones, tasks, subtasks, and items. When tasks require code generation, use project_reserve_finalize before project_file_write to reserve names and get database IDs. Respects user preferences for task granularity, naming conventions, and decomposition style. Creates roadmap structure and ensures hierarchy consistency. Central decomposition directive; translates user intent into actionable milestones.",
+    "md_file_path": "directives/project_task_decomposition.md",
+    "workflow": {
+      "trunk": "check_user_preferences",
+      "branches": [
+        {
+          "if": "directive_preferences_exist",
+          "then": "load_task_preferences",
+          "details": {
+            "use_helper": "load directive preferences for project_task_decomposition",
+            "common_preferences": [
+              "naming_convention",
+              "auto_create_items",
+              "default_priority"
+            ]
+          }
+        },
+        {
+          "if": "preferences_loaded",
+          "then": "decompose_with_preferences",
+          "details": {
+            "apply_granularity": true,
+            "respect_naming_convention": true
+          }
+        },
+        {
+          "if": "task_decomposition_requested",
+          "then": "call_aifp_status",
+          "details": {
+            "purpose": "Understand current context before creating new tasks",
+            "brief": true
+          }
+        },
+        {
+          "if": "status_obtained",
+          "then": "review_open_tasks",
+          "details": {
+            "check_sidequests": true,
+            "check_subtasks": true,
+            "check_tasks": true
+          }
+        },
+        {
+          "if": "related_to_open_task",
+          "then": "update_if_needed",
+          "details": {
+            "check_alignment": true
+          }
+        },
+        {
+          "if": "new_task_needed",
+          "then": "create_new_task",
+          "details": {
+            "link_to_completion_path": true,
+            "update_project_version": true
+          }
+        },
+        {
+          "if": "subtask_needed",
+          "then": "create_subtask",
+          "details": {
+            "table": "subtasks",
+            "priority": "high",
+            "pause_parent_task": true
+          }
+        },
+        {
+          "if": "sidequest_needed",
+          "then": "create_sidequest",
+          "details": {
+            "table": "sidequests",
+            "priority": "low",
+            "link_to_project": true
+          }
+        },
+        {
+          "if": "interruption_detected",
+          "then": "handle_subtask_priority",
+          "details": {
+            "notify_user": true,
+            "options": "complete/discard/resume"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Is this a new task, subtask, or sidequest?"
+          }
+        },
+        {
+          "parallel": [
+            "execute_code_gen",
+            "update_db"
+          ],
+          "details": {
+            "if_code_and_db": true
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 2 attempts"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "task vs subtask vs sidequest ambiguity",
+        "resolution": "Prompt user for clarification, log in notes"
+      },
+      {
+        "issue": "no matching open task",
+        "resolution": "Create new task or sidequest, align to completion_path"
+      },
+      {
+        "issue": "status_unavailable",
+        "resolution": "Continue with decomposition but warn user about potential context issues"
+      }
+    ],
+    "intent_keywords_json": [
+      "decompose task",
+      "break down",
+      "plan steps",
+      "explore"
+    ],
+    "confidence_threshold": 0.5
+  },
+  {
+    "name": "project_add_path",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Handles roadmap and completion_path modifications."
+    },
+    "description": "Creates or updates completion_path, milestones, and tasks in project.db to maintain project roadmap continuity. Maintains structural coherence of project paths and milestones.",
+    "md_file_path": "directives/project_add_path.md",
+    "workflow": {
+      "trunk": "modify_path",
+      "branches": [
+        {
+          "if": "new_path",
+          "then": "insert_completion_path",
+          "details": {
+            "order_index": true
+          }
+        },
+        {
+          "if": "new_task",
+          "then": "insert_task",
+          "details": {
+            "link_to_milestone": true
+          }
+        },
+        {
+          "if": "new_subtask",
+          "then": "insert_subtask",
+          "details": {
+            "table": "subtasks",
+            "priority": "high"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Add to roadmap?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "path_misaligned",
+        "resolution": "Prompt user for roadmap alignment"
+      },
+      {
+        "issue": "duplicate_entry",
+        "resolution": "Verify milestone/task uniqueness"
+      }
+    ],
+    "intent_keywords_json": [
+      "add path",
+      "update roadmap",
+      "milestone"
+    ],
+    "confidence_threshold": 0.6
+  },
+  {
+    "name": "project_file_write",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_add_path",
+    "category": {
+      "name": "file_operations",
+      "description": "Handles file generation and metadata updates."
+    },
+    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, enforces DRY principle by extracting IDENTICAL functions to shared modules at appropriate scope level (avoid forced DRY with god functions), and updates project.db accordingly. MUST use project_reserve_finalize BEFORE writing to get database IDs for embedding, and finalize AFTER writing. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
+    "md_file_path": "directives/project_file_write.md",
+    "workflow": {
+      "trunk": "reserve_before_write",
+      "branches": [
+        {
+          "if": "new_file_or_new_functions",
+          "then": "reserve_entities",
+          "details": {
+            "mandatory": true,
+            "order": "ALWAYS reserve BEFORE writing code",
+            "steps": [
+              "1. reserve_files() or reserve_file() — get file IDs",
+              "2. reserve_functions() or reserve_function() — get function IDs for all planned functions",
+              "3. reserve_types() if applicable — get type IDs"
+            ],
+            "batch_encouraged": "Use batch helpers (reserve_files, reserve_functions) when creating multiple entities",
+            "returns": "Database IDs to embed in code (AIFP:FUNC:42, AIFP:FILE:7)"
+          }
+        },
+        {
+          "if": "entities_reserved",
+          "then": "check_user_preferences",
+          "details": {
+            "use_helper": "load directive preferences for project_file_write",
+            "apply_to": "code_generation_context",
+            "common_preferences": [
+              "always_add_docstrings",
+              "max_function_length",
+              "prefer_guard_clauses",
+              "code_style",
+              "indent_style"
+            ]
+          }
+        },
+        {
+          "if": "preferences_loaded",
+          "then": "generate_file_with_preferences",
+          "details": {
+            "respect_user_settings": true,
+            "fallback_to_defaults": "if_preference_missing",
+            "embed_reserved_ids": "Use reserved IDs in code comments/docstrings"
+          }
+        },
+        {
+          "if": "file_path_starts_with_.aifp-project/user-directives/generated/",
+          "then": "mark_as_user_directive_implementation",
+          "details": {
+            "metadata_tag": "user_directive_generated",
+            "still_apply_fp_checks": true
+          }
+        },
+        {
+          "if": "user_directive_file_and_compliant",
+          "then": "write_file_and_link_to_directive",
+          "details": {
+            "update_db": true,
+            "update_directive_implementations_table": true,
+            "link_to_user_directive": true
+          }
+        },
+        {
+          "if": "code_compliant",
+          "then": "write_file",
+          "details": {
+            "metadata": true,
+            "update_db": true
+          }
+        },
+        {
+          "if": "file_written_successfully",
+          "then": "finalize_reservations",
+          "details": {
+            "mandatory": true,
+            "order": "ALWAYS finalize AFTER writing code",
+            "steps": [
+              "1. finalize_files() or finalize_file() — mark files as implemented",
+              "2. finalize_functions() or finalize_function() — mark functions as implemented",
+              "3. finalize_types() if applicable — mark types as implemented",
+              "4. add_interactions() — batch add all function dependencies"
+            ],
+            "batch_encouraged": "Use batch helpers (finalize_files, finalize_functions, add_interactions) for all entities in one call"
+          }
+        },
+        {
+          "if": "non_compliant",
+          "then": "fp_compliance_check",
+          "details": {
+            "escalate_to_fp_directives": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Fix compliance before write?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "missing_metadata",
+        "resolution": "Add AIFP_METADATA, prompt user"
+      },
+      {
+        "issue": "fp_violation",
+        "resolution": "Trigger fp_compliance_check"
+      },
+      {
+        "issue": "user_directive_link_missing",
+        "resolution": "Parse file for directive reference in AIFP_METADATA or prompt user"
+      }
+    ],
+    "intent_keywords_json": [
+      "create file",
+      "write code",
+      "generate file"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_reserve_finalize",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "database_operations",
+      "description": "Reservation and finalization workflow for files, functions, and types."
+    },
+    "description": "Manages reservation and finalization of files, functions, and types in project database. AI reserves names BEFORE writing code to receive database IDs, embeds IDs in code for instant lookups (filename_id_42.py, function_name_id_99), and finalizes reservations after implementation. Prevents naming collisions, enables rename-proof references, and dramatically reduces API query costs by using integer lookups instead of string matching. Use skip_id_naming=True parameter to track entities without ID embedding - database field id_in_name=0 indicates clean names. EXCEPTIONS: (1) Files with required naming (__init__.py, .db files, config files) use skip_id_naming=True. (2) MCP tool functions use skip_id_naming=True to maintain clean callable names. (3) Private functions (underscore prefix like _helper) are NOT tracked - only public functions get reserve/finalize treatment.",
+    "md_file_path": "directives/project_reserve_finalize.md",
+    "workflow": {
+      "trunk": "reserve_entities",
+      "branches": [
+        {
+          "if": "reserving_file",
+          "then": "reserve_file_name",
+          "details": {
+            "helper": "reserve_file(name, path, language, skip_id_naming=False)",
+            "returns": "file_id for embedding",
+            "skip_id_naming": "If True, sets id_in_name=0 in database - name won't contain _id_XX",
+            "batch_helper": "reserve_files([(name, path, language, skip_id_naming), ...]) - per-item control"
+          }
+        },
+        {
+          "if": "reserving_function",
+          "then": "reserve_function_name",
+          "details": {
+            "helper": "reserve_function(name, file_id, purpose, skip_id_naming=False)",
+            "returns": "function_id for embedding",
+            "skip_id_naming": "If True, sets id_in_name=0 in database - name won't contain _id_XX",
+            "batch_helper": "reserve_functions([{name, file_id, skip_id_naming, ...}, ...]) - per-item control"
+          }
+        },
+        {
+          "if": "reserving_type",
+          "then": "reserve_type_name",
+          "details": {
+            "helper": "reserve_type(name, definition_json, file_id, skip_id_naming=False)",
+            "returns": "type_id for embedding",
+            "skip_id_naming": "If True, sets id_in_name=0 in database - name won't contain _id_XX",
+            "batch_helper": "reserve_types([{name, definition_json, file_id, skip_id_naming, ...}, ...]) - per-item control"
+          }
+        },
+        {
+          "if": "reserved_successfully_with_naming_exception",
+          "then": "write_without_embedded_id",
+          "details": {
+            "file_exceptions": ["__init__.py", ".db files", "pyproject.toml", "setup.py", "conftest.py", "requirements.txt"],
+            "file_reason": "These files require specific names for Python/tooling conventions",
+            "action": "Reserve with skip_id_naming=True, finalize with skip_id_naming=True - name preserved without ID suffix",
+            "database_field": "id_in_name=0 indicates entity name does NOT contain _id_XX pattern",
+            "user_defined": "Additional exclusions via user_preferences.project_reserve_finalize.exclude_patterns"
+          }
+        },
+        {
+          "if": "function_is_mcp_tool",
+          "then": "reserve_without_id_embedding",
+          "details": {
+            "reason": "MCP tool functions must have clean names for external tool calls",
+            "action": "Reserve with skip_id_naming=True - function tracked but name stays clean",
+            "database_field": "id_in_name=0 for all MCP tools",
+            "examples": ["reserve_file", "finalize_function", "get_file_by_path"],
+            "helper_flag": "is_tool=true in helper JSON"
+          }
+        },
+        {
+          "if": "function_is_private",
+          "then": "skip_function_tracking",
+          "details": {
+            "pattern": "Functions starting with underscore (_)",
+            "examples": ["_open_connection", "_reserve_file_effect", "_validate_input"],
+            "reason": "Private/internal functions are implementation details, not public API",
+            "action": "Do NOT reserve or track - only parent file is tracked",
+            "track_instead": "Public functions (no underscore prefix) get full reserve/finalize treatment"
+          }
+        },
+        {
+          "if": "reserved_successfully",
+          "then": "write_with_embedded_id",
+          "details": {
+            "naming": "filename_id_42.py, function_name_id_99(), TypeName_id_7",
+            "id_comment": "# AIFP:FUNC:42 or AIFP-ID: 42 in docstring"
+          }
+        },
+        {
+          "if": "code_written",
+          "then": "finalize_reservation",
+          "details": {
+            "helpers": "finalize_file(file_id, skip_id_naming), finalize_function(function_id, skip_id_naming), finalize_type(type_id, skip_id_naming)",
+            "updates": "name field with embedded ID (e.g., calculate_sum -> calculate_sum_id_99) unless skip_id_naming=True",
+            "sets": "is_reserved=FALSE",
+            "skip_id_naming": "If True, skip _id_XX pattern validation - use for naming exceptions and MCP tools",
+            "batch_helpers": "finalize_files/functions/types accept per-item skip_id_naming in array"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "reservation_failed_or_unclear"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "check_collision_or_retry"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "name_collision",
+        "resolution": "Suggest alternative names with v2/alt suffix"
+      },
+      {
+        "issue": "reservation_without_implementation",
+        "resolution": "Cleanup reservation or mark abandoned"
+      },
+      {
+        "issue": "finalize_without_reserve",
+        "resolution": "Verify entity exists and is_reserved flag"
+      }
+    ],
+    "intent_keywords_json": [
+      "reserve",
+      "finalize",
+      "embed ID",
+      "database ID",
+      "prevent collision"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_update_db",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "file_operations",
+      "description": "Synchronizes generated code metadata with the project database."
+    },
+    "description": "Parses generated code for functions, dependencies, and metadata, then updates project.db tables using helpers to maintain accurate state tracking. Finalizes reservations (via project_reserve_finalize) to update names with embedded IDs and set is_reserved=FALSE after successful file writes. Handles user directive generated files by also updating user_directives.db tables (directive_implementations). Uses helper functions instead of direct SQL for all database operations. Central DB synchronization directive; ensures project.db accurately reflects file and function states after each generation cycle.",
+    "md_file_path": "directives/project_update_db.md",
+    "workflow": {
+      "trunk": "parse_content",
+      "branches": [
+        {
+          "if": "user_directive_generated_file",
+          "then": "update_user_directives_db",
+          "details": {
+            "table": "directive_implementations",
+            "link_to_user_directive": true,
+            "store_file_path": true,
+            "update_status": "implemented"
+          }
+        },
+        {
+          "if": "user_directive_implementation_updated",
+          "then": "continue_with_project_db_update",
+          "details": {
+            "proceed_to_standard_flow": true
+          }
+        },
+        {
+          "if": "new_file",
+          "then": "update_files_table",
+          "details": {
+            "use_helper": "add file to project",
+            "note": "No checksums - Git handles file change detection. Include path, name, language, is_reserved"
+          }
+        },
+        {
+          "if": "new_function",
+          "then": "update_functions_table",
+          "details": {
+            "use_helper": "add function to project",
+            "note": "Extract metadata from AST, store parameters and returns as JSON. Include is_reserved for reservation system"
+          }
+        },
+        {
+          "if": "dependencies_found",
+          "then": "update_interactions_table",
+          "details": {
+            "use_helper": "add interaction between functions",
+            "note": "Find target function by name using project query helpers, then add interaction"
+          }
+        },
+        {
+          "if": "task_related",
+          "then": "update_items_subtasks",
+          "details": {
+            "link_to_completion_path": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Update DB for what component?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "missing_metadata",
+        "resolution": "Parse again or prompt user for function metadata"
+      },
+      {
+        "issue": "reserved_name_conflict",
+        "resolution": "Check is_reserved flag, finalize existing reservation first"
+      },
+      {
+        "issue": "user_directive_not_found",
+        "resolution": "Parse file for directive reference or prompt user to link manually"
+      }
+    ],
+    "intent_keywords_json": [
+      "update db",
+      "track file",
+      "metadata"
+    ],
+    "confidence_threshold": 0.6
+  },
+  {
+    "name": "project_compliance_check",
+    "type": "fp",
+    "level": null,
+    "parent_directive": null,
+    "activation_required": "tracking_settings.compliance_checking = enabled",
+    "token_overhead": "~5-10% per check",
+    "category": {
+      "name": "analytics",
+      "description": "Optional FP compliance pattern analytics (tracking only, NOT validation)"
+    },
+    "description": "OPTIONAL analytics directive that tracks FP compliance patterns over time. DISABLED by default (requires tracking_settings.compliance_checking = enabled). NOT a validation gatekeeper - FP compliance is baseline behavior enforced by system prompt. Provides compliance reports and analytics for audits, research, or educational purposes only. Never automatically called by project directives.",
+    "md_file_path": "directives/project_compliance_check.md",
+    "workflow": {
+      "trunk": "check_tracking_enabled",
+      "branches": [
+        {
+          "if": "tracking_disabled",
+          "then": "skip",
+          "details": {
+            "use_helper": "check if tracking enabled for compliance_checking",
+            "result": "Return early without checking if disabled",
+            "optimization": "Most common path - tracking disabled by default, no token overhead"
+          }
+        },
+        {
+          "if": "tracking_enabled",
+          "then": "collect_analytics",
+          "details": {
+            "use_helper": "get all functions from project",
+            "analyze": "FP patterns, purity levels, compliance distribution",
+            "log_to": "fp_flow_tracking table (if enabled)",
+            "optimization": "Non-blocking, fire-and-forget analytics collection"
+          }
+        },
+        {
+          "if": "user_requested_report",
+          "then": "generate_report",
+          "details": {
+            "generate": "Compliance summary from project.db",
+            "include": "Function purity distribution, FP patterns used",
+            "return": "Report to user"
+          }
+        },
+        {
+          "fallback": "skip",
+          "details": {
+            "note": "Graceful failure - tracking errors don't affect development"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "tracking_disabled",
+        "resolution": "Enable via tracking_toggle directive with user consent"
+      },
+      {
+        "issue": "performance_impact",
+        "resolution": "Use sampling mode (10% tracking) or disable tracking"
+      }
+    ],
+    "intent_keywords_json": [
+      "compliance report",
+      "compliance analytics",
+      "track compliance",
+      "compliance patterns"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_completion_check",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_milestone_complete",
+    "category": {
+      "name": "compliance",
+      "description": "Evaluates roadmap progress and completion readiness."
+    },
+    "description": "Checks completion_path, milestones, and tasks for status updates. Marks completion milestones when conditions are met and logs alignment notes. Monitors roadmap alignment, marks progress milestones, and prevents premature completion marking.",
+    "md_file_path": "directives/project_completion_check.md",
+    "workflow": {
+      "trunk": "check_progress",
+      "branches": [
+        {
+          "if": "criteria_met",
+          "then": "mark_done",
+          "details": {
+            "update_status": true
+          }
+        },
+        {
+          "if": "drift_detected",
+          "then": "alert_user",
+          "details": {
+            "log_note": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Adjust roadmap or tasks?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "roadmap_drift",
+        "resolution": "Prompt user to realign completion_path"
+      },
+      {
+        "issue": "incomplete_tasks",
+        "resolution": "Auto-mark pending subtasks or prompt user"
+      }
+    ],
+    "intent_keywords_json": [
+      "progress",
+      "check completion",
+      "roadmap"
+    ],
+    "confidence_threshold": 0.6
+  },
+  {
+    "name": "project_error_handling",
+    "type": "project",
+    "level": 4,
+    "parent_directive": null,
+    "category": {
+      "name": "error_handling",
+      "description": "Handles directive failures, logging, and escalation to user."
+    },
+    "description": "Monitors directive execution for known or unknown failures, applies stored roadblock resolutions, and logs issues to the notes table for transparency. Provides universal error recovery handling for all project-level directives. Integrates with the notes table for traceability.",
+    "md_file_path": "directives/project_error_handling.md",
+    "workflow": {
+      "trunk": "check_roadblocks",
+      "branches": [
+        {
+          "if": "known_issue",
+          "then": "apply_resolution",
+          "details": {
+            "log_note": true
+          }
+        },
+        {
+          "if": "unknown_issue",
+          "then": "prompt_user",
+          "details": {
+            "escalate_to_md": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Resolve error manually?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_and_halt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "generic_error",
+        "resolution": "Prompt user and record in notes"
+      },
+      {
+        "issue": "workflow_failure",
+        "resolution": "Escalate to associated .md file for guidance"
+      }
+    ],
+    "intent_keywords_json": [
+      "error",
+      "failure",
+      "roadblock",
+      "issue"
+    ],
+    "confidence_threshold": 0.5
+  },
+  {
+    "name": "project_evolution",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_completion_check",
+    "category": {
+      "name": "evolution_tracking",
+      "description": "Tracks changes to project idea, goals, purpose, and updates ProjectBlueprint.md accordingly."
+    },
+    "description": "Handles versioning and pivot tracking for evolving project goals. Updates ProjectBlueprint.md sections when project-wide changes occur (architecture, goals, themes, flows, infrastructure, completion path). Logs changes in notes and updates roadmap and completion paths accordingly. Captures and logs project pivots for transparency in long-running projects. Updates project.version and completion paths.",
+    "md_file_path": "directives/project_evolution.md",
+    "workflow": {
+      "trunk": "detect_project_wide_change",
+      "branches": [
+        {
+          "if": "architecture_change",
+          "then": "update_blueprint_section_2",
+          "details": {
+            "section": "Technical Blueprint",
+            "update_db": [
+              "project.version",
+              "infrastructure"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "goals_change",
+          "then": "update_blueprint_section_1",
+          "details": {
+            "section": "Project Overview",
+            "update_db": [
+              "project.goals_json",
+              "project.version"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "themes_or_flows_change",
+          "then": "update_blueprint_section_3",
+          "details": {
+            "section": "Project Themes & Flows",
+            "update_db": [
+              "themes",
+              "flows",
+              "project.version"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "completion_path_change",
+          "then": "update_blueprint_section_4",
+          "details": {
+            "section": "Completion Path",
+            "update_db": [
+              "completion_path",
+              "milestones",
+              "project.version"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "infrastructure_change",
+          "then": "update_blueprint_section_2_infrastructure",
+          "details": {
+            "section": "Technical Blueprint - Key Infrastructure",
+            "update_db": [
+              "infrastructure",
+              "project.version"
+            ],
+            "increment_version": true,
+            "backup_blueprint": true
+          }
+        },
+        {
+          "if": "pivot_detected",
+          "then": "increment_version",
+          "details": {
+            "update_goals": true,
+            "update_blueprint_section_1": true
+          }
+        },
+        {
+          "if": "path_affected",
+          "then": "update_completion_path",
+          "details": {
+            "log_note": true,
+            "update_blueprint_section_4": true
+          }
+        },
+        {
+          "if": "blueprint_updated",
+          "then": "add_evolution_history",
+          "details": {
+            "section": "Section 5: Evolution History",
+            "log_change": true,
+            "show_version": true
+          }
+        },
+        {
+          "parallel": [
+            "backup_blueprint_to_aifp_backups",
+            "log_evolution_to_notes"
+          ],
+          "details": {
+            "backup_path": ".aifp-project/backups/",
+            "note_type": "evolution",
+            "source": "directive",
+            "directive_name": "project_evolution"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Confirm pivot or adjust roadmap?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "pivot_ambiguity",
+        "resolution": "Prompt user for new purpose and goals"
+      },
+      {
+        "issue": "version_conflict",
+        "resolution": "Reconcile project version and completion_path entries"
+      },
+      {
+        "issue": "blueprint_missing",
+        "resolution": "Generate new ProjectBlueprint.md from current database state"
+      },
+      {
+        "issue": "blueprint_update_failed",
+        "resolution": "Backup current state and prompt user for manual update"
+      }
+    ],
+    "intent_keywords_json": [
+      "pivot",
+      "evolve",
+      "update goals",
+      "project change",
+      "change architecture",
+      "update infrastructure"
+    ],
+    "confidence_threshold": 0.6
+  },
+  {
+    "name": "project_user_referral",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_error_handling",
+    "category": {
+      "name": "error_handling",
+      "description": "Delegates unresolved issues back to the user."
+    },
+    "description": "When confidence is low or a workflow fails, prompts the user for guidance and logs the clarification request to notes for review. Standard fallback directive for AI–user collaboration. Ensures ambiguous operations always route through human confirmation.",
+    "md_file_path": "directives/project_user_referral.md",
+    "workflow": {
+      "trunk": "check_confidence",
+      "branches": [
+        {
+          "if": "low_confidence",
+          "then": "prompt_user",
+          "details": {
+            "log_note": true
+          }
+        },
+        {
+          "if": "workflow_failure",
+          "then": "escalate_to_md",
+          "details": {
+            "prompt_user": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Resolve or confirm intended action?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_and_halt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "unresolved_issue",
+        "resolution": "Prompt user and record clarification in notes"
+      },
+      {
+        "issue": "low_confidence_path",
+        "resolution": "Escalate to user confirmation"
+      }
+    ],
+    "intent_keywords_json": [
+      "clarify",
+      "user input",
+      "confirmation",
+      "resolve"
+    ],
+    "confidence_threshold": 0.5
+  },
+  {
+    "name": "project_theme_flow_mapping",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "theme_mapping",
+      "description": "Links generated code elements to project themes and flows, triggers ProjectBlueprint.md updates."
+    },
+    "description": "Infers or assigns flow and theme groupings based on file metadata, updating linking tables for file_flows and flow_themes within project.db. Maintains thematic and procedural grouping across project files. Supports roadmap visualization and organization. Triggers project_evolution directive when themes or flows are added or modified to update ProjectBlueprint.md accordingly.",
+    "md_file_path": "directives/project_theme_flow_mapping.md",
+    "workflow": {
+      "trunk": "infer_metadata",
+      "branches": [
+        {
+          "if": "metadata_present",
+          "then": "update_flow_themes",
+          "details": {
+            "confidence_score": true
+          }
+        },
+        {
+          "if": "no_metadata",
+          "then": "prompt_user",
+          "details": {
+            "assign_default": true
+          }
+        },
+        {
+          "if": "theme_or_flow_updated",
+          "then": "call_project_evolution",
+          "details": {
+            "change_type": "themes_or_flows_change",
+            "trigger_blueprint_update": true,
+            "update_section": 3
+          }
+        },
+        {
+          "if": "new_theme_created",
+          "then": "call_project_evolution",
+          "details": {
+            "change_type": "themes_or_flows_change",
+            "trigger_blueprint_update": true
+          }
+        },
+        {
+          "if": "new_flow_created",
+          "then": "call_project_evolution",
+          "details": {
+            "change_type": "themes_or_flows_change",
+            "trigger_blueprint_update": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Assign theme and flow manually?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "ambiguous_mapping",
+        "resolution": "Prompt user to specify theme or flow"
+      },
+      {
+        "issue": "missing_metadata",
+        "resolution": "Parse file for AIFP_METADATA or prompt user"
+      },
+      {
+        "issue": "blueprint_update_failed",
+        "resolution": "Continue with DB update but log warning about blueprint sync"
+      }
+    ],
+    "intent_keywords_json": [
+      "theme",
+      "flow",
+      "grouping",
+      "categorize"
+    ],
+    "confidence_threshold": 0.5
+  },
+  {
+    "name": "project_metrics",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_completion_check",
+    "category": {
+      "name": "metrics",
+      "description": "Tracks quantitative and qualitative project progress metrics."
+    },
+    "description": "Calculates project completion percentage, directive success rates, and task distribution to inform AI reasoning and user summaries. Provides periodic project health reports for both AI and user reference. Logged in notes for transparency.",
+    "md_file_path": "directives/project_metrics.md",
+    "workflow": {
+      "trunk": "gather_metrics",
+      "branches": [
+        {
+          "if": "completion_path_available",
+          "then": "compute_progress",
+          "details": {
+            "aggregate": true
+          }
+        },
+        {
+          "if": "function_table_updated",
+          "then": "calculate_compliance_score",
+          "details": {
+            "fp_links": true
+          }
+        },
+        {
+          "fallback": "log_metrics_to_notes"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "missing_task_data",
+        "resolution": "Requery project.db and retry"
+      },
+      {
+        "issue": "stale_metrics",
+        "resolution": "Recalculate from base tables"
+      }
+    ],
+    "intent_keywords_json": [
+      "progress",
+      "metrics",
+      "statistics"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_performance_summary",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_metrics",
+    "category": {
+      "name": "metrics",
+      "description": "Generates a summary of recent directive and workflow performance."
+    },
+    "description": "Summarizes recent directive outcomes, including successes, retries, and failures, and stores summaries in notes for audit. Keeps a rolling summary of directive performance for reliability tracking.",
+    "md_file_path": "directives/project_performance_summary.md",
+    "workflow": {
+      "trunk": "summarize_recent_runs",
+      "branches": [
+        {
+          "if": "error_logs_present",
+          "then": "analyze_failures"
+        },
+        {
+          "if": "recent_successes",
+          "then": "record_success_rate"
+        },
+        {
+          "fallback": "write_summary_to_notes"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "missing_logs",
+        "resolution": "Query notes table for directive references"
+      }
+    ],
+    "intent_keywords_json": [
+      "summary",
+      "audit",
+      "performance"
+    ],
+    "confidence_threshold": 0.6
+  },
+  {
+    "name": "project_dependency_sync",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_update_db",
+    "category": {
+      "name": "dependency_management",
+      "description": "Reconciles mismatched dependencies between code and project.db."
+    },
+    "description": "Compares functions and flows in files against database records, resolving missing or outdated dependencies. Maintains consistency between the physical codebase and project metadata.",
+    "md_file_path": "directives/project_dependency_sync.md",
+    "workflow": {
+      "trunk": "compare_db_and_files",
+      "branches": [
+        {
+          "if": "missing_function_in_db",
+          "then": "insert_function_entry"
+        },
+        {
+          "if": "db_function_stale",
+          "then": "update_dependency_entry"
+        },
+        {
+          "if": "unlinked_file",
+          "then": "link_to_flow"
+        },
+        {
+          "fallback": "log_sync_status"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "unresolved_dependency",
+        "resolution": "Prompt user to confirm update direction"
+      }
+    ],
+    "intent_keywords_json": [
+      "dependency",
+      "sync",
+      "link"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_integrity_check",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_dependency_sync",
+    "category": {
+      "name": "dependency_management",
+      "description": "Performs integrity verification on project.db."
+    },
+    "description": "Runs validation queries to detect orphaned records, missing links, and checksum mismatches within project.db. Ensures internal DB consistency, preventing corruption during iterative project growth.",
+    "md_file_path": "directives/project_integrity_check.md",
+    "workflow": {
+      "trunk": "run_integrity_queries",
+      "branches": [
+        {
+          "if": "missing_foreign_key",
+          "then": "repair_link"
+        },
+        {
+          "if": "checksum_error",
+          "then": "recalculate_file_checksum"
+        },
+        {
+          "fallback": "log_integrity_status"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "data_misalignment",
+        "resolution": "Auto-correct links where safe"
+      }
+    ],
+    "intent_keywords_json": [
+      "integrity",
+      "verify database",
+      "consistency"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_auto_resume",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "aifp_run",
+    "category": {
+      "name": "recovery_automation",
+      "description": "Automatically resumes interrupted tasks or workflows."
+    },
+    "description": "Detects unfinished tasks or subtasks from project.db and resumes execution at the appropriate directive entry point. Restores workflow continuity between user sessions or interruptions.",
+    "md_file_path": "directives/project_auto_resume.md",
+    "workflow": {
+      "trunk": "detect_incomplete_tasks",
+      "branches": [
+        {
+          "if": "task_paused",
+          "then": "resume_from_checkpoint"
+        },
+        {
+          "if": "sidequest_paused",
+          "then": "prompt_resume"
+        },
+        {
+          "fallback": "mark_as_resolved"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "resume_conflict",
+        "resolution": "Prompt user to choose branch or discard task"
+      }
+    ],
+    "intent_keywords_json": [
+      "resume",
+      "continue",
+      "checkpoint"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_backup_restore",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_integrity_check",
+    "category": {
+      "name": "recovery_automation",
+      "description": "Manages project database and file backups."
+    },
+    "description": "Creates periodic backups of project.db and associated files, and restores them on demand or after failure detection. Protects project state from corruption or user error. Integrates with integrity check for recovery decisions.",
+    "md_file_path": "directives/project_backup_restore.md",
+    "workflow": {
+      "trunk": "perform_backup",
+      "branches": [
+        {
+          "if": "scheduled_backup_time",
+          "then": "execute_backup"
+        },
+        {
+          "if": "restore_requested",
+          "then": "load_backup"
+        },
+        {
+          "fallback": "log_backup_status"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "backup_failure",
+        "resolution": "Prompt user to retry or restore manually"
+      }
+    ],
+    "intent_keywords_json": [
+      "backup",
+      "restore",
+      "recovery"
+    ],
+    "confidence_threshold": 0.6
+  },
+  {
+    "name": "project_archive",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_completion_check",
+    "category": {
+      "name": "archival_refactor",
+      "description": "Archives completed projects for long-term storage."
+    },
+    "description": "Packages the final project.db, all files, and completion reports into an archive format and marks project status as 'archived'. Preserves completed project versions and prepares exportable deliverables.",
+    "md_file_path": "directives/project_archive.md",
+    "workflow": {
+      "trunk": "prepare_archive",
+      "branches": [
+        {
+          "if": "project_completed",
+          "then": "compress_and_store"
+        },
+        {
+          "if": "incomplete_milestones",
+          "then": "prompt_user_to_finalize"
+        },
+        {
+          "fallback": "log_archive_status"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "archive_incomplete",
+        "resolution": "Prompt user for approval before packaging"
+      }
+    ],
+    "intent_keywords_json": [
+      "archive",
+      "package",
+      "finalize"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_refactor_path",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_evolution",
+    "category": {
+      "name": "archival_refactor",
+      "description": "Refactors roadmap paths and milestones."
+    },
+    "description": "Allows restructuring of completion_path sequences for clarity, merging or reordering tasks while maintaining linkage integrity. Provides roadmap reorganization utilities for evolving projects.",
+    "md_file_path": "directives/project_refactor_path.md",
+    "workflow": {
+      "trunk": "analyze_completion_path",
+      "branches": [
+        {
+          "if": "duplicate_milestone",
+          "then": "merge_entries"
+        },
+        {
+          "if": "order_misaligned",
+          "then": "reorder_path"
+        },
+        {
+          "fallback": "log_changes"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "path_conflict",
+        "resolution": "Prompt user for reorder approval"
+      }
+    ],
+    "intent_keywords_json": [
+      "refactor path",
+      "reorder roadmap"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_dependency_map",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_dependency_sync",
+    "category": {
+      "name": "dependency_management",
+      "description": "Generates visual dependency maps across project entities."
+    },
+    "description": "Queries relationships between files, functions, flows, and tasks to produce a dependency graph for reasoning or visualization. Improves transparency and traceability across project elements for AIFP reasoning.",
+    "md_file_path": "directives/project_dependency_map.md",
+    "workflow": {
+      "trunk": "generate_dependency_graph",
+      "branches": [
+        {
+          "if": "linked_entities_found",
+          "then": "store_dependency_map"
+        },
+        {
+          "fallback": "log_dependency_status"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "missing_links",
+        "resolution": "Rebuild function-to-task relationships"
+      }
+    ],
+    "intent_keywords_json": [
+      "dependency map",
+      "graph",
+      "visualize"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_auto_summary",
+    "type": "project",
+    "level": 4,
+    "parent_directive": "project_metrics",
+    "category": {
+      "name": "metrics",
+      "description": "Automatically summarizes project status and context."
+    },
+    "description": "Generates a human-readable summary of project purpose, progress, and open tasks. Stores summary in notes table with note_type='auto_summary' for future reference and outputs to terminal. Provides quick, automated overviews of project state for both AI and user consumption.",
+    "md_file_path": "directives/project_auto_summary.md",
+    "workflow": {
+      "trunk": "summarize_project_state",
+      "branches": [
+        {
+          "if": "active_tasks_found",
+          "then": "summarize_by_path"
+        },
+        {
+          "if": "completed_milestones",
+          "then": "log_completion_summary"
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Include additional context?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "summary_generation_failed",
+        "resolution": "Retry summary or prompt user for context"
+      }
+    ],
+    "intent_keywords_json": [
+      "summary",
+      "status",
+      "report"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "aifp_status",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "aifp_run",
+    "category": {
+      "name": "status_management",
+      "description": "Retrieves comprehensive project status with context-aware task continuation support."
+    },
+    "description": "Retrieves comprehensive project status with historical context for task continuation. For existing projects: reads ProjectBlueprint.md, loads infrastructure, builds priority status tree (sidequests → subtasks → tasks), provides historical context from previous tasks, checks for ambiguities, and generates status report. For new projects: checks for .aifp/ folder, checks .git/.aifp/ backup, prompts for restoration or initialization.",
+    "md_file_path": "directives/aifp_status.md",
+    "workflow": {
+      "trunk": "determine_project_state",
+      "branches": [
+        {
+          "if": "aifp_folder_exists",
+          "then": "sync_git_state_on_boot",
+          "details": {
+            "trigger": "git_sync_state directive",
+            "action": "Detect external changes and sync Git hash"
+          }
+        },
+        {
+          "if": "git_synced",
+          "then": "get_existing_project_status",
+          "details": {}
+        },
+        {
+          "if": "no_aifp_folder",
+          "then": "check_git_aifp_backup",
+          "details": {
+            "check_path": ".git/.aifp/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "git_backup_found",
+          "then": "prompt_restore_or_init",
+          "details": {
+            "options": [
+              "restore",
+              "init_new",
+              "exit"
+            ]
+          }
+        },
+        {
+          "if": "no_backups",
+          "then": "prompt_init_new_project",
+          "details": {
+            "suggest_aifp_init": true
+          }
+        },
+        {
+          "if": "existing_project",
+          "then": "read_project_blueprint",
+          "details": {
+            "path": ".aifp-project/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "blueprint_read",
+          "then": "load_infrastructure_context",
+          "details": {
+            "use_helper": "get all infrastructure"
+          }
+        },
+        {
+          "if": "infrastructure_loaded",
+          "then": "check_user_directives_status",
+          "details": {
+            "use_helper": "get project metadata",
+            "include_in_report": true
+          }
+        },
+        {
+          "if": "user_directives_active",
+          "then": "query_user_directive_stats",
+          "details": {
+            "count_active": true,
+            "get_last_execution": true,
+            "get_error_count": true
+          }
+        },
+        {
+          "if": "user_directive_stats_gathered",
+          "then": "build_priority_status_tree",
+          "details": {
+            "priority_order": [
+              "sidequests",
+              "subtasks",
+              "tasks"
+            ],
+            "context_limit": 10
+          }
+        },
+        {
+          "if": "open_sidequests_found",
+          "then": "get_sidequest_context",
+          "details": {
+            "get_parent_task": true,
+            "get_all_items": true,
+            "get_previous_task_if_no_completed": true,
+            "previous_task_item_limit": 10
+          }
+        },
+        {
+          "if": "no_sidequests_open_subtasks",
+          "then": "get_subtask_context",
+          "details": {
+            "get_parent_task": true,
+            "get_all_items": true,
+            "get_previous_task_if_no_completed": true,
+            "previous_task_item_limit": 10
+          }
+        },
+        {
+          "if": "no_subtasks_open_tasks",
+          "then": "get_task_context",
+          "details": {
+            "get_all_items": true,
+            "evaluate_completed_vs_incomplete": true,
+            "order_incomplete": true
+          }
+        },
+        {
+          "if": "context_gathered",
+          "then": "check_for_ambiguities",
+          "details": {
+            "query_notes": true,
+            "filter_severity": [
+              "warning",
+              "error"
+            ],
+            "filter_source": [
+              "directive",
+              "ai"
+            ],
+            "limit": 5
+          }
+        },
+        {
+          "if": "auto_run_mode",
+          "then": "auto_browse_for_context",
+          "details": {
+            "browse_flows": true,
+            "browse_functions": true,
+            "browse_notes": true
+          }
+        },
+        {
+          "if": "status_complete",
+          "then": "generate_status_report",
+          "details": {
+            "sections": [
+              "current_focus",
+              "open_items",
+              "recently_completed",
+              "historical_context",
+              "ambiguities",
+              "next_actions"
+            ]
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Unable to determine project state"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "blueprint_missing",
+        "resolution": "Attempt to load from database, generate new blueprint if needed"
+      },
+      {
+        "issue": "no_open_work_items",
+        "resolution": "Report project as idle, suggest next milestone or task creation"
+      },
+      {
+        "issue": "database_empty",
+        "resolution": "Inform user project initialized but no tasks created yet"
+      },
+      {
+        "issue": "ambiguity_detected",
+        "resolution": "Present ambiguities to user and offer to browse DB for more context"
+      }
+    ],
+    "intent_keywords_json": [
+      "status",
+      "continue",
+      "resume",
+      "what's next",
+      "show status",
+      "project status",
+      "where were we"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_blueprint_read",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "aifp_status",
+    "category": {
+      "name": "blueprint_management",
+      "description": "Standard helper for reading and parsing ProjectBlueprint.md."
+    },
+    "description": "Reads and parses ProjectBlueprint.md into structured data. Returns project metadata (name, version, status, goals), technical blueprint (language, runtime, architecture), themes, flows, and completion path. Falls back to database if blueprint file missing.",
+    "md_file_path": "directives/project_blueprint_read.md",
+    "workflow": {
+      "trunk": "read_blueprint_file",
+      "branches": [
+        {
+          "if": "blueprint_exists",
+          "then": "parse_markdown_sections",
+          "details": {
+            "sections": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "return_structured_data": true
+          }
+        },
+        {
+          "if": "blueprint_missing",
+          "then": "check_database_fallback",
+          "details": {
+            "query_project_table": true,
+            "query_infrastructure": true,
+            "query_themes": true,
+            "query_flows": true
+          }
+        },
+        {
+          "if": "database_fallback_success",
+          "then": "return_db_data",
+          "details": {
+            "warn_user": "Blueprint missing, using database data"
+          }
+        },
+        {
+          "if": "parse_complete",
+          "then": "return_structured_data",
+          "details": {
+            "return_structured_data": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Blueprint not found and database empty"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "blueprint_corrupted",
+        "resolution": "Attempt to parse sections individually, use database fallback for missing sections"
+      },
+      {
+        "issue": "markdown_parse_error",
+        "resolution": "Use database data and offer to regenerate blueprint"
+      },
+      {
+        "issue": "checksum_mismatch",
+        "resolution": "Warn user about potential blueprint/DB desync"
+      }
+    ],
+    "intent_keywords_json": [
+      "read blueprint",
+      "load blueprint",
+      "parse blueprint"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_blueprint_update",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "project_evolution",
+    "category": {
+      "name": "blueprint_management",
+      "description": "Standard helper for updating specific sections of ProjectBlueprint.md."
+    },
+    "description": "Updates specific section of ProjectBlueprint.md with new content. Backs up current blueprint before modification, replaces section content, optionally increments version and adds evolution history entry. Used by project_evolution and other directives when project-wide changes occur.",
+    "md_file_path": "directives/project_blueprint_update.md",
+    "workflow": {
+      "trunk": "validate_parameters",
+      "branches": [
+        {
+          "if": "parameters_valid",
+          "then": "read_current_blueprint",
+          "details": {}
+        },
+        {
+          "if": "blueprint_read",
+          "then": "backup_current_blueprint",
+          "details": {
+            "backup_to": ".aifp-project/backups/ProjectBlueprint.md.v{version}",
+            "include_timestamp": true
+          }
+        },
+        {
+          "if": "backup_complete",
+          "then": "replace_section_content",
+          "details": {
+            "section_number": "from_params",
+            "new_content": "from_params"
+          }
+        },
+        {
+          "if": "increment_version_requested",
+          "then": "update_version_and_date",
+          "details": {
+            "increment_project_version_in_db": true,
+            "update_last_updated_date": true
+          }
+        },
+        {
+          "if": "version_incremented",
+          "then": "add_evolution_history_entry",
+          "details": {
+            "section": 5,
+            "log_change": true,
+            "show_version": true,
+            "show_date": true
+          }
+        },
+        {
+          "if": "section_replaced",
+          "then": "write_updated_blueprint",
+          "details": {
+            "path": ".aifp-project/ProjectBlueprint.md"
+          }
+        },
+        {
+          "if": "write_complete",
+          "then": "return_success",
+          "details": {
+            "show_new_version": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Blueprint update failed"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "restore_from_backup",
+        "prompt_user": true
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "section_not_found",
+        "resolution": "Warn user and append new section to blueprint"
+      },
+      {
+        "issue": "backup_failed",
+        "resolution": "Abort update and prompt user"
+      },
+      {
+        "issue": "write_failed",
+        "resolution": "Restore from backup and prompt user"
+      },
+      {
+        "issue": "version_conflict",
+        "resolution": "Prompt user to resolve version manually"
+      }
+    ],
+    "intent_keywords_json": [
+      "update blueprint",
+      "modify blueprint",
+      "change blueprint section"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_file_read",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "file_operations",
+      "description": "Context-aware file reading with database metadata"
+    },
+    "description": "Intelligent file reader that provides file content with full database context including metadata, functions, dependencies, theme/flow associations, and checksum verification. Detects if file changed since last DB update.",
+    "md_file_path": "directives/project_file_read.md",
+    "workflow": {
+      "trunk": "validate_file_path",
+      "branches": [
+        {
+          "if": "file_exists_in_db",
+          "then": "load_with_context"
+        },
+        {
+          "if": "file_not_in_db_but_exists",
+          "then": "load_without_context"
+        },
+        {
+          "if": "checksum_mismatch",
+          "then": "warn_file_changed"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "file_not_found",
+        "resolution": "Verify path and prompt user"
+      },
+      {
+        "issue": "file_not_tracked",
+        "resolution": "Suggest running project_file_write"
+      }
+    ],
+    "intent_keywords_json": [
+      "read file",
+      "load file",
+      "file context"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_file_delete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "file_operations",
+      "description": "Safe file deletion with database cleanup"
+    },
+    "description": "Safe file remover that ensures filesystem and database consistency. Uses ERROR-first approach: delete_file() returns error if dependencies exist (functions, types, file_flows). AI must systematically delete functions (which checks types_functions), remove file_flows entries, then retry file deletion. No automatic cascading - forces intentional cleanup to prevent accidental data loss.",
+    "md_file_path": "directives/project_file_delete.md",
+    "workflow": {
+      "trunk": "validate_delete_request",
+      "branches": [
+        {
+          "if": "file_tracked_in_db",
+          "then": "call_delete_file_helper"
+        },
+        {
+          "if": "delete_file_returns_error",
+          "then": "dependencies_exist_cleanup_loop",
+          "details": {
+            "error_structure": "{success: false, error: 'dependencies_exist', functions: [...], types: [...], file_flows: [...]}",
+            "cleanup_steps": [
+              "1. For each function: call delete_function() - may error if types_functions exist",
+              "2. If delete_function errors: unlink types_functions entries first, then retry",
+              "3. Remove file_flows entries manually",
+              "4. Retry delete_file() - should now succeed"
+            ]
+          }
+        },
+        {
+          "if": "delete_file_success",
+          "then": "remove_from_filesystem"
+        },
+        {
+          "fallback": "prompt_user_for_clarification"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "return_error_with_dependency_details"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "dependencies_exist",
+        "resolution": "Systematically delete functions, unlink types_functions, remove file_flows, then retry"
+      },
+      {
+        "issue": "types_functions_exist_when_deleting_function",
+        "resolution": "Unlink types_functions entries before deleting function"
+      }
+    ],
+    "intent_keywords_json": [
+      "delete file",
+      "remove file",
+      "file cleanup"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_task_create",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Atomic task creation"
+    },
+    "description": "Atomic task constructor for creating new independent tasks. Links to milestone, sets initial status, assigns priority, validates inputs, and returns task ID for immediate use.",
+    "md_file_path": "directives/project_task_create.md",
+    "workflow": {
+      "trunk": "validate_inputs",
+      "branches": [
+        {
+          "if": "inputs_valid",
+          "then": "check_milestone_exists"
+        },
+        {
+          "if": "milestone_valid",
+          "then": "check_duplicate_tasks"
+        },
+        {
+          "if": "no_duplicates_or_confirmed",
+          "then": "create_task_record"
+        },
+        {
+          "if": "task_created",
+          "then": "return_task_id"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "duplicate_task",
+        "resolution": "Prompt user to confirm or rename"
+      },
+      {
+        "issue": "invalid_milestone",
+        "resolution": "Prompt user to select valid milestone"
+      }
+    ],
+    "intent_keywords_json": [
+      "create task",
+      "new task",
+      "add task"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_task_update",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Task lifecycle state management"
+    },
+    "description": "Central task state manager for updating status, priority, and metadata. Delegates completion workflows to specialized completion directives. Maintains roadmap integrity and triggers downstream actions.",
+    "md_file_path": "directives/project_task_update.md",
+    "workflow": {
+      "trunk": "identify_update_type",
+      "branches": [
+        {
+          "if": "status_update_requested",
+          "then": "update_task_status",
+          "details": {
+            "validate_transition": true,
+            "update_timestamp": true
+          }
+        },
+        {
+          "if": "task_status_changed_to_completed",
+          "then": "delegate_to_project_task_complete",
+          "details": {
+            "delegate_to": "project_task_complete",
+            "pass_task_id": true,
+            "pass_milestone_id": true
+          }
+        },
+        {
+          "if": "subtask_status_changed_to_completed",
+          "then": "delegate_to_project_subtask_complete",
+          "details": {
+            "delegate_to": "project_subtask_complete",
+            "pass_subtask_id": true,
+            "pass_parent_task_id": true
+          }
+        },
+        {
+          "if": "sidequest_status_changed_to_completed",
+          "then": "delegate_to_project_sidequest_complete",
+          "details": {
+            "delegate_to": "project_sidequest_complete",
+            "pass_sidequest_id": true,
+            "pass_paused_task_id": true
+          }
+        },
+        {
+          "if": "priority_update_requested",
+          "then": "update_task_priority",
+          "details": {
+            "validate_priority": true,
+            "log_change": true
+          }
+        },
+        {
+          "if": "description_update_requested",
+          "then": "update_description",
+          "details": {
+            "log_change": true
+          }
+        },
+        {
+          "if": "task_cancelled",
+          "then": "cancel_task",
+          "details": {
+            "mark_items_cancelled": true,
+            "log_reason": true,
+            "do_not_resume_parent": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "What aspect of the task needs updating?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "invalid_state_transition",
+        "resolution": "Warn user about valid transitions"
+      },
+      {
+        "issue": "completed_task_reopened",
+        "resolution": "Block reopening completed tasks"
+      }
+    ],
+    "intent_keywords_json": [
+      "update task",
+      "mark complete",
+      "change status",
+      "task priority"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_subtask_create",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Atomic subtask creation with parent management"
+    },
+    "description": "Atomic subtask constructor that creates focused, high-priority subtasks and automatically pauses parent tasks until completion. Subtasks are immediate-focus work that blocks parent task progress.",
+    "md_file_path": "directives/project_subtask_create.md",
+    "workflow": {
+      "trunk": "validate_inputs",
+      "branches": [
+        {
+          "if": "inputs_valid",
+          "then": "check_parent_task_exists"
+        },
+        {
+          "if": "parent_task_valid",
+          "then": "check_active_subtasks"
+        },
+        {
+          "if": "no_blocking_subtasks_or_confirmed",
+          "then": "create_subtask_record"
+        },
+        {
+          "if": "subtask_created",
+          "then": "pause_parent_task"
+        },
+        {
+          "if": "parent_paused",
+          "then": "return_subtask_id"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "parent_task_completed",
+        "resolution": "Cannot create subtask for completed task"
+      },
+      {
+        "issue": "multiple_active_subtasks",
+        "resolution": "Warn about context switching"
+      }
+    ],
+    "intent_keywords_json": [
+      "create subtask",
+      "new subtask",
+      "refine task"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_item_create",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Atomic item creation for granular tracking"
+    },
+    "description": "Atomic item constructor for creating smallest work units within tasks. Links to parent task, supports optional file/function references, and enables fine-grained progress tracking.",
+    "md_file_path": "directives/project_item_create.md",
+    "workflow": {
+      "trunk": "validate_inputs",
+      "branches": [
+        {
+          "if": "inputs_valid",
+          "then": "check_parent_task_exists"
+        },
+        {
+          "if": "parent_task_valid",
+          "then": "check_duplicate_items"
+        },
+        {
+          "if": "no_duplicates_or_confirmed",
+          "then": "create_item_record"
+        },
+        {
+          "if": "item_created",
+          "then": "return_item_id"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "parent_task_completed",
+        "resolution": "Cannot add items to completed task"
+      },
+      {
+        "issue": "duplicate_item",
+        "resolution": "Prompt user to confirm"
+      }
+    ],
+    "intent_keywords_json": [
+      "create item",
+      "new item",
+      "add checklist"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_sidequest_create",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_decomposition",
+    "category": {
+      "name": "task_management",
+      "description": "Exploratory work tracking"
+    },
+    "description": "Atomic sidequest constructor for creating exploratory interruptions. Handles fixes, pivots, or unrelated work that pauses tasks. Default low priority for exploratory work outside main roadmap.",
+    "md_file_path": "directives/project_sidequest_create.md",
+    "workflow": {
+      "trunk": "validate_inputs",
+      "branches": [
+        {
+          "if": "linked_to_task",
+          "then": "create_with_task_link"
+        },
+        {
+          "if": "exploratory_work",
+          "then": "create_standalone"
+        },
+        {
+          "if": "bug_fix",
+          "then": "create_fix_sidequest"
+        },
+        {
+          "if": "pivot_exploration",
+          "then": "create_pivot_sidequest"
+        },
+        {
+          "fallback": "prompt_user"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "too_many_sidequests",
+        "resolution": "Warn about focus fragmentation"
+      },
+      {
+        "issue": "sidequest_should_be_task",
+        "resolution": "Suggest creating task instead"
+      }
+    ],
+    "intent_keywords_json": [
+      "create sidequest",
+      "exploratory work",
+      "bug fix",
+      "interruption"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_task_complete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_update",
+    "category": {
+      "name": "task_management",
+      "description": "Post-task completion workflow and next-step planning"
+    },
+    "description": "Handles post-task completion workflow: marks task and items complete, checks milestone progress, reviews completion_path, and engages user to plan next task. Ensures continuous forward progress by automatically reviewing roadmap status after each task completion.",
+    "md_file_path": "directives/project_task_complete.md",
+    "workflow": {
+      "trunk": "mark_task_complete",
+      "branches": [
+        {
+          "if": "task_valid_for_completion",
+          "then": "mark_complete_and_items",
+          "details": {
+            "update_task_status": "completed",
+            "mark_all_items_complete": true,
+            "log_completion_time": true
+          }
+        },
+        {
+          "if": "task_completed",
+          "then": "check_milestone_status",
+          "details": {
+            "use_helper": "get incomplete tasks for milestone",
+            "check_all_tasks_complete": true
+          }
+        },
+        {
+          "if": "milestone_complete",
+          "then": "call_project_milestone_complete",
+          "details": {
+            "delegate_to": "project_milestone_complete",
+            "pass_milestone_id": true
+          }
+        },
+        {
+          "if": "milestone_not_complete",
+          "then": "review_next_steps",
+          "details": {
+            "call_aifp_status": true,
+            "brief": true,
+            "show_completion_path_progress": true,
+            "show_milestone_progress": true,
+            "use_helper": "get pending tasks for milestone ordered by priority",
+            "discuss_with_user": true,
+            "prompt_template": "Task '[task_name]' completed successfully! Milestone '[milestone_name]' progress: [X/Y tasks complete]. Next steps?",
+            "offer_options": [
+              "Continue with next task",
+              "Create new task",
+              "Pivot to different milestone",
+              "Review completion path"
+            ]
+          }
+        },
+        {
+          "if": "user_chooses_next_task",
+          "then": "set_next_task_in_progress",
+          "details": {
+            "update_task_status": "in_progress"
+          }
+        },
+        {
+          "if": "user_chooses_create_task",
+          "then": "call_project_task_create",
+          "details": {
+            "delegate_to": "project_task_create",
+            "auto_create_items": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "What would you like to work on next?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "active_subtasks_blocking",
+        "resolution": "Cannot complete task with active subtasks - complete or cancel them first"
+      },
+      {
+        "issue": "no_pending_tasks",
+        "resolution": "Offer to create new task or move to next milestone"
+      },
+      {
+        "issue": "user_unavailable",
+        "resolution": "Log completion and defer next-step planning to next session"
+      }
+    ],
+    "intent_keywords_json": [
+      "complete task",
+      "finish task",
+      "task done",
+      "mark complete"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_subtask_complete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_update",
+    "category": {
+      "name": "task_management",
+      "description": "Post-subtask completion workflow and parent resumption"
+    },
+    "description": "Handles post-subtask completion workflow: marks subtask complete, checks all subtasks for parent task, resumes parent task when all subtasks complete. Ensures parent task automatically resumes when blocking subtasks are finished.",
+    "md_file_path": "directives/project_subtask_complete.md",
+    "workflow": {
+      "trunk": "mark_subtask_complete",
+      "branches": [
+        {
+          "if": "subtask_valid_for_completion",
+          "then": "mark_complete",
+          "details": {
+            "update_subtask_status": "completed",
+            "log_completion_time": true
+          }
+        },
+        {
+          "if": "subtask_completed",
+          "then": "check_parent_subtasks",
+          "details": {
+            "use_helper": "get incomplete subtasks for parent task",
+            "check_all_subtasks_complete": true
+          }
+        },
+        {
+          "if": "all_subtasks_complete",
+          "then": "resume_parent_task",
+          "details": {
+            "update_parent_status": "in_progress",
+            "log_resume": true,
+            "notify_user": "All subtasks complete for task '[parent_task_name]'. Parent task resumed.",
+            "call_aifp_status": true,
+            "brief": true
+          }
+        },
+        {
+          "if": "subtasks_remaining",
+          "then": "notify_remaining_work",
+          "details": {
+            "use_helper": "get pending subtasks for parent task ordered by priority",
+            "show_remaining_subtasks": true,
+            "prompt_user": "Subtask '[subtask_name]' complete. [X] subtasks remaining for parent task."
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Subtask completion issue - manual intervention needed"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "parent_task_not_paused",
+        "resolution": "Log warning - parent should be paused when subtasks exist"
+      },
+      {
+        "issue": "parent_task_completed",
+        "resolution": "Cannot resume completed parent - this is a data integrity issue"
+      }
+    ],
+    "intent_keywords_json": [
+      "complete subtask",
+      "finish subtask",
+      "subtask done",
+      "resume parent"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_sidequest_complete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_update",
+    "category": {
+      "name": "task_management",
+      "description": "Post-sidequest completion workflow and work resumption"
+    },
+    "description": "Handles post-sidequest completion workflow: marks sidequest complete, logs outcome and lessons learned, optionally resumes paused task. Captures exploratory work results for future reference.",
+    "md_file_path": "directives/project_sidequest_complete.md",
+    "workflow": {
+      "trunk": "mark_sidequest_complete",
+      "branches": [
+        {
+          "if": "sidequest_valid_for_completion",
+          "then": "mark_complete_and_log",
+          "details": {
+            "update_sidequest_status": "completed",
+            "log_completion_time": true,
+            "prompt_for_outcome": true
+          }
+        },
+        {
+          "if": "sidequest_completed",
+          "then": "capture_lessons_learned",
+          "details": {
+            "prompt_user": "What did you learn from this sidequest?",
+            "log_to_notes": true,
+            "note_type": "task_context",
+            "reference_table": "sidequests",
+            "source": "user",
+            "directive_name": "project_sidequest_complete"
+          }
+        },
+        {
+          "if": "linked_to_paused_task",
+          "then": "prompt_resume_work",
+          "details": {
+            "use_helper": "get sidequest by id",
+            "notify_user": "Sidequest '[sidequest_name]' complete. Resume paused task '[task_name]'?",
+            "offer_options": [
+              "Resume paused task",
+              "Continue with different work",
+              "Create new task based on sidequest findings"
+            ]
+          }
+        },
+        {
+          "if": "user_chooses_resume",
+          "then": "resume_paused_task",
+          "details": {
+            "update_task_status": "in_progress",
+            "log_resume": true
+          }
+        },
+        {
+          "if": "sidequest_revealed_new_work",
+          "then": "offer_task_creation",
+          "details": {
+            "prompt_user": "Should we create a new task based on sidequest findings?",
+            "delegate_to": "project_task_create"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Sidequest complete - what's next?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "sidequest_reveals_pivot",
+        "resolution": "Capture findings in notes, discuss with user if project direction should change"
+      },
+      {
+        "issue": "paused_task_no_longer_relevant",
+        "resolution": "Offer to cancel paused task instead of resuming"
+      }
+    ],
+    "intent_keywords_json": [
+      "complete sidequest",
+      "finish sidequest",
+      "sidequest done",
+      "exploratory work done"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_milestone_complete",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_task_complete",
+    "category": {
+      "name": "task_management",
+      "description": "Post-milestone completion workflow and next-milestone planning"
+    },
+    "description": "Handles post-milestone completion workflow: marks milestone complete, updates completion_path progress, reviews overall project status, moves to next milestone, and creates first task. Ensures continuous project momentum by automatically planning next phase.",
+    "md_file_path": "directives/project_milestone_complete.md",
+    "workflow": {
+      "trunk": "mark_milestone_complete",
+      "branches": [
+        {
+          "if": "milestone_valid_for_completion",
+          "then": "mark_complete_and_update_path",
+          "details": {
+            "update_milestone_status": "completed",
+            "log_completion_time": true,
+            "use_helper": "get completion path for milestone",
+            "check_path_completion": true
+          }
+        },
+        {
+          "if": "completion_path_complete",
+          "then": "mark_path_complete",
+          "details": {
+            "update_completion_path_status": "completed",
+            "log_path_completion": true
+          }
+        },
+        {
+          "if": "completion_path_complete",
+          "then": "check_project_completion",
+          "details": {
+            "use_helper": "get incomplete completion paths",
+            "check_all_paths_complete": true
+          }
+        },
+        {
+          "if": "project_complete",
+          "then": "call_project_completion_check",
+          "details": {
+            "delegate_to": "project_completion_check",
+            "trigger_final_review": true
+          }
+        },
+        {
+          "if": "project_not_complete",
+          "then": "move_to_next_milestone",
+          "details": {
+            "call_aifp_status": true,
+            "brief": true,
+            "show_completion_path_progress": true,
+            "use_helper": "get next pending milestone",
+            "prompt_template": "Milestone '[milestone_name]' completed! Project progress: [X/Y completion paths complete]. Moving to next milestone: '[next_milestone_name]'."
+          }
+        },
+        {
+          "if": "next_milestone_identified",
+          "then": "discuss_first_task",
+          "details": {
+            "discuss_with_user": true,
+            "prompt_user": "Next milestone: '[milestone_name]'. What should be the first task?",
+            "offer_options": [
+              "Let AI suggest first task based on milestone description",
+              "User defines first task",
+              "Review milestone details before deciding"
+            ]
+          }
+        },
+        {
+          "if": "user_chooses_ai_suggestion",
+          "then": "suggest_and_create_task",
+          "details": {
+            "analyze_milestone_description": true,
+            "suggest_task_name": true,
+            "suggest_task_items": true,
+            "prompt_user_approval": true,
+            "delegate_to": "project_task_create"
+          }
+        },
+        {
+          "if": "user_defines_task",
+          "then": "create_user_defined_task",
+          "details": {
+            "prompt_for_task_name": true,
+            "prompt_for_task_description": true,
+            "prompt_for_items": true,
+            "delegate_to": "project_task_create"
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "How should we proceed with next milestone?"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 1 attempt"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "no_next_milestone",
+        "resolution": "All milestones complete - trigger project completion check"
+      },
+      {
+        "issue": "next_milestone_unclear",
+        "resolution": "Review ProjectBlueprint.md with user to clarify roadmap"
+      },
+      {
+        "issue": "user_wants_pivot",
+        "resolution": "Call project_evolution to handle roadmap change"
+      }
+    ],
+    "intent_keywords_json": [
+      "complete milestone",
+      "finish milestone",
+      "milestone done",
+      "next milestone"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "aifp_help",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "aifp_run",
+    "category": {
+      "name": "orchestration",
+      "description": "Documentation and guidance access for AIFP directives"
+    },
+    "description": "Loads detailed documentation for a specific directive. Uses get_directive_by_name helper to retrieve directive JSON (includes workflow, description, category, md_file_path). If comprehensive context needed, reads MD file directly for purpose, examples, edge cases, and related directives. Provides guidance beyond basic directive metadata.",
+    "md_file_path": "directives/aifp_help.md",
+    "workflow": {
+      "trunk": "load_directive_documentation",
+      "branches": [
+        {
+          "if": "directive_name_provided",
+          "then": "call_helper",
+          "details": {
+            "parameters": [
+              "directive_name"
+            ],
+            "returns": "Directive JSON (includes workflow, description, category, md_file_path). Read MD file directly if detailed context needed."
+          }
+        },
+        {
+          "if": "documentation_loaded",
+          "then": "display_to_user",
+          "details": {
+            "format": "markdown",
+            "sections": [
+              "Purpose",
+              "When to Apply",
+              "Workflow",
+              "Examples",
+              "Edge Cases",
+              "Related Directives",
+              "Helper Functions",
+              "Database Operations"
+            ]
+          }
+        },
+        {
+          "if": "no_directive_specified",
+          "then": "show_available_directives",
+          "details": {
+            "prompt": "Which directive do you need help with? (name, keyword, or category)"
+          }
+        },
+        {
+          "if": "directive_not_found",
+          "then": "suggest_similar",
+          "details": {
+            "use": "search_directives",
+            "fuzzy_match": true
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Please specify a directive name (e.g., 'fp_purity', 'project_file_write')"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "show_directive_list",
+        "retry": "max 2 attempts"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "directive_not_found",
+        "resolution": "Use search_directives to find similar directives"
+      },
+      {
+        "issue": "md_file_missing",
+        "resolution": "Fall back to basic directive metadata from database"
+      }
+    ],
+    "intent_keywords_json": [
+      "help with directive",
+      "show documentation",
+      "explain directive",
+      "how does",
+      "what is",
+      "directive info"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "project_discovery",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "aifp_init",
+    "category": {
+      "name": "initialization",
+      "description": "Guided project discovery and shape definition after initialization."
+    },
+    "description": "Guided project discovery workflow. After aifp_init creates base files and databases, AI collaborates with user to define the full project shape: detailed blueprint, infrastructure mapping, completion path with stages, milestones, initial themes and flows. For pre-existing FP codebases, delegates to project_catalog before proceeding. This directive bridges the gap between mechanical initialization and active development work.",
+    "md_file_path": "directives/project_discovery.md",
+    "workflow": {
+      "trunk": "assess_project_state",
+      "branches": [
+        {
+          "if": "pre_existing_fp_code_detected",
+          "then": "delegate_to_project_catalog",
+          "details": {
+            "trigger": "project_catalog directive",
+            "condition": "Existing FP-compliant code was detected during aifp_init pre-flight scan",
+            "action": "Call project_catalog to scan and register all existing code before proceeding with discovery conversation",
+            "resume_after": "project_catalog completion loops back to project_discovery to continue with blueprint discussion"
+          }
+        },
+        {
+          "if": "catalog_complete_or_empty_project",
+          "then": "discuss_project_blueprint",
+          "details": {
+            "action": "Collaborative blueprint population",
+            "steps": [
+              "Review current ProjectBlueprint.md (template or partially filled from init Phase 2)",
+              "Discuss with user: project purpose in detail, goals, scope boundaries, constraints",
+              "Fill out blueprint sections collaboratively — do not assume, ask",
+              "Update ProjectBlueprint.md via project_blueprint_update helper"
+            ],
+            "note": "This is a conversation, not a form fill. AI should ask open-ended questions and refine based on user responses."
+          }
+        },
+        {
+          "if": "automation_behavior_detected",
+          "then": "determine_project_type",
+          "details": {
+            "trigger": "During blueprint discussion, evaluate if user describes automation BEHAVIOR vs SOFTWARE to build",
+            "case_2_signals": [
+              "User describes WHAT to automate: 'Turn off lights at 5pm', 'Scale EC2 when CPU > 80%', 'Send notification when X happens'",
+              "Key phrases: automate, when X then Y, schedule, trigger, monitor",
+              "User wants AI to build everything, not code together"
+            ],
+            "case_1_signals": [
+              "User describes SOFTWARE to build: 'A web server for...', 'A library that does...', 'An automation tool' (building the tool itself)"
+            ],
+            "action": "Present explicit Case 1 vs Case 2 choice to user",
+            "on_case_2_selection": [
+              "Set project.user_directives_status = 'pending_discovery'",
+              "Adapt remaining discovery branches for automation context",
+              "Infrastructure: default Python, note scheduler/API client needs",
+              "Themes: default to Trigger Handlers, Action Executors, Scheduling, Monitoring",
+              "Completion Path: default to Directive Setup, Implementation, Testing, Activation stages",
+              "Milestones: derived from user's automation goals"
+            ]
+          }
+        },
+        {
+          "if": "blueprint_populated",
+          "then": "map_infrastructure",
+          "details": {
+            "action": "Confirm and refine infrastructure entries",
+            "steps": [
+              "Review infrastructure values detected during init Phase 2",
+              "Discuss with user: language choices and rationale, build tools, testing strategy, deployment targets",
+              "Discuss coding conventions, file organization patterns, naming standards",
+              "Update infrastructure table with confirmed/corrected values",
+              "Create state database: Once source_directory is confirmed, call create_state_database(source_directory) to create <source-dir>/.state/runtime.db — FP-compliant replacement for mutable global variables",
+              "Create state operations entry point: Using template at src/aifp/templates/state_db/state_operations.py as reference, create language-appropriate state operations file in <source-dir>/.state/state_operations.{ext}",
+              "Register state files in project.db: After creating state DB and state_operations file, register them in project.db files table via reserve → finalize flow. The .state/ directory contents are project files that should be tracked."
+            ]
+          }
+        },
+        {
+          "if": "infrastructure_mapped",
+          "then": "define_themes_and_flows",
+          "details": {
+            "action": "Establish organizational structure",
+            "steps": [
+              "Discuss project organization with user",
+              "Identify themes — logical groupings of functionality (e.g., 'Database Operations', 'Authentication', 'API Layer')",
+              "Identify flows — cross-cutting workflows and processes (e.g., 'Request Handling Flow', 'Data Pipeline Flow')",
+              "Create initial theme and flow entries in database via create_theme, create_flow helpers",
+              "Update blueprint section 3 (Project Themes & Flows)"
+            ],
+            "note": "Themes and flows will evolve as the project progresses. These are initial definitions, not final."
+          }
+        },
+        {
+          "if": "themes_flows_defined",
+          "then": "create_completion_path",
+          "details": {
+            "action": "Define project stages",
+            "steps": [
+              "Discuss major project phases with user (what are the stages from start to finish?)",
+              "Replace default completion path placeholder with user-informed path",
+              "Each stage should have: name, description, clear entry criteria, exit criteria",
+              "Stages should reflect the project's natural progression, not arbitrary divisions",
+              "Update completion_path table"
+            ],
+            "example_stages": [
+              "Foundation & Setup",
+              "Core Implementation",
+              "Integration & Testing",
+              "Polish & Documentation",
+              "Release Preparation"
+            ],
+            "note": "Stages are high-level. Milestones provide the detail within each stage."
+          }
+        },
+        {
+          "if": "completion_path_created",
+          "then": "create_milestones",
+          "details": {
+            "action": "Break stages into milestones",
+            "steps": [
+              "For each stage in completion path, discuss concrete milestones with user",
+              "Create milestone entries with: name, description, acceptance criteria, order_index",
+              "Milestones should be achievable and verifiable (not vague)",
+              "Do NOT create tasks yet — tasks are created incrementally during project_progression",
+              "Set first milestone of first stage to status 'in_progress'",
+              "Update milestones table"
+            ],
+            "note": "Tasks will be created one at a time per milestone via project_progression. Discovery defines the roadmap; progression drives execution."
+          }
+        },
+        {
+          "if": "milestones_created",
+          "then": "finalize_discovery",
+          "details": {
+            "action": "Wrap up discovery and prepare for work",
+            "steps": [
+              "Backup blueprint to .aifp-project/backups/",
+              "Log discovery completion in notes (source=directive, directive_name=project_discovery)",
+              "Present summary to user: project shape, stages, milestones, themes, flows",
+              "Inform user: 'Project shape defined. First milestone is open. Ready to begin work.'",
+              "Flow to aifp_status — status will route to project_progression for first task creation"
+            ]
+          }
+        },
+        {
+          "if": "case_2_selected_during_discovery",
+          "then": "case_2_onboarding",
+          "details": {
+            "condition": "project.user_directives_status = 'pending_discovery' (set in determine_project_type branch)",
+            "action": "Complete Case 2 setup and begin directive discussion with user",
+            "steps": [
+              "Update project.user_directives_status = 'pending_parse'",
+              "Begin conversational onboarding with user about their directive files",
+              "Ask: 'Do you already have directive files written? If yes, tell me where. If no, describe what you want to automate and I'll help you write them.'",
+              "Discuss format options (YAML/JSON/plain text)",
+              "If user has files: Ask for path, read and review with user, discuss improvements",
+              "If user needs help: Collaboratively create directive file(s) through discussion",
+              "Route to user_directive_parse when directive discussion complete"
+            ],
+            "note": "This is CONVERSATIONAL - AI must understand user's intent fully before parsing. Raw user file is a starting point for discussion, not something to store verbatim."
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Ask user for missing information needed to define the project shape"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "retry": "max 2 attempts"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "user_unsure_about_scope",
+        "resolution": "Help user think through goals by asking about target users, key features, and constraints. Start broad, then narrow."
+      },
+      {
+        "issue": "pre_existing_code_too_large_to_catalog",
+        "resolution": "project_catalog handles batching. Discovery waits for catalog completion before proceeding."
+      },
+      {
+        "issue": "user_wants_to_skip_discovery",
+        "resolution": "Allow skip but warn: 'Skipping discovery means default completion path and no milestones. You can run project_discovery later.' Set a note in project.db."
+      }
+    ],
+    "intent_keywords_json": [
+      "discover",
+      "define project",
+      "project shape",
+      "plan project",
+      "blueprint",
+      "milestones",
+      "completion path"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_catalog",
+    "type": "project",
+    "level": 1,
+    "parent_directive": "project_discovery",
+    "category": {
+      "name": "initialization",
+      "description": "Comprehensive cataloging of pre-existing FP codebase into project database."
+    },
+    "description": "Comprehensive cataloging of an existing FP-compliant codebase into project.db. Scans all source files, identifies functions with metadata, maps interactions, and infers organizational structure. Called by project_discovery when pre-existing FP code is detected during initialization. Requires Phase 1 (aifp_init) to be complete — needs database and directory structure before cataloging.",
+    "md_file_path": "directives/project_catalog.md",
+    "workflow": {
+      "trunk": "prepare_catalog_scan",
+      "branches": [
+        {
+          "if": "source_directory_set",
+          "then": "scan_all_source_files",
+          "details": {
+            "action": "Build file inventory",
+            "steps": [
+              "Read source_directory from infrastructure table",
+              "Recursively scan for source files matching primary_language extensions",
+              "Also include other recognized source file types (config, data, script files)",
+              "Exclude: build artifacts, dependencies, generated files, .aifp-project/, node_modules, __pycache__, etc.",
+              "Use same exclusion patterns as watchdog config.py for consistency",
+              "Build file inventory: path, size, last_modified, extension, language"
+            ],
+            "note": "Exclusion patterns match watchdog EXCLUDED_DIRS and EXCLUDED_EXTENSIONS for consistency across the system."
+          }
+        },
+        {
+          "if": "files_scanned",
+          "then": "register_files_in_database",
+          "details": {
+            "action": "Create file entries in project.db",
+            "steps": [
+              "For each source file, use reserve_file helper to get database ID",
+              "Set file metadata: path, purpose (infer from filename and directory location), theme (infer from directory structure)",
+              "Use finalize_file helper to confirm registration",
+              "For large codebases (>100 files): process in batches, report progress to user periodically"
+            ],
+            "use_helpers": ["reserve_file", "finalize_file"]
+          }
+        },
+        {
+          "if": "files_registered",
+          "then": "scan_functions_per_file",
+          "details": {
+            "action": "Identify and register all functions",
+            "steps": [
+              "For each registered file, parse function definitions using language-appropriate patterns",
+              "Use same FUNCTION_PATTERNS as watchdog analyzers for consistency (Python: def, JS/TS: function/arrow, Rust: fn, Go: func, etc.)",
+              "For each function identify: name, parameters, return type (if typed), purity assessment (pure / side effects / uncertain), purpose (infer from name and docstring)",
+              "Use reserve_function and finalize_function helpers to register in database",
+              "Flag impure functions with a note — these are informational, not blockers"
+            ],
+            "purity_assessment": {
+              "pure": "No side effects detected, deterministic based on visible logic",
+              "side_effects": "Contains I/O, mutations, or external calls not wrapped",
+              "uncertain": "Cannot determine purity from static analysis alone"
+            },
+            "use_helpers": ["reserve_function", "finalize_function"]
+          }
+        },
+        {
+          "if": "functions_registered",
+          "then": "map_interactions",
+          "details": {
+            "action": "Build dependency graph",
+            "steps": [
+              "For each function, identify which other project functions it calls",
+              "For each file, identify which other project files it imports from",
+              "Identify external library dependencies per file",
+              "Create interaction entries in database via create_interaction helper",
+              "Build a dependency graph understanding for the project"
+            ],
+            "use_helpers": ["create_interaction"]
+          }
+        },
+        {
+          "if": "interactions_mapped",
+          "then": "infer_themes_and_flows",
+          "details": {
+            "action": "Suggest organizational structure from existing code",
+            "steps": [
+              "Analyze file/directory structure for logical groupings — suggest themes",
+              "Analyze call patterns and data flow for cross-cutting workflows — suggest flows",
+              "Present inferred themes and flows to user for confirmation or adjustment",
+              "These feed into project_discovery's theme/flow definition step (discovery will finalize)"
+            ],
+            "note": "Catalog suggests; discovery confirms. User has final say on themes and flows."
+          }
+        },
+        {
+          "if": "catalog_complete",
+          "then": "report_catalog_summary",
+          "details": {
+            "action": "Summarize cataloging results",
+            "report": [
+              "Total files registered",
+              "Total functions registered",
+              "Total interactions mapped",
+              "Purity assessment summary: N pure, N side effects, N uncertain",
+              "Suggested themes and flows (pending user confirmation in discovery)"
+            ],
+            "steps": [
+              "Log catalog completion in notes (source=directive, directive_name=project_catalog)",
+              "Return to project_discovery flow to continue with blueprint discussion"
+            ]
+          }
+        },
+        {
+          "fallback": "prompt_user",
+          "details": {
+            "clarify": "Ask user about unrecognized file types or ambiguous code patterns"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "log_and_continue",
+        "note": "Catalog should not abort on individual file failures. Log errors, skip problematic files, continue with rest."
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "source_directory_not_set",
+        "resolution": "Prompt user to set source_directory in infrastructure table before cataloging"
+      },
+      {
+        "issue": "large_codebase_performance",
+        "resolution": "Process in batches of 20-50 files. Report progress to user between batches."
+      },
+      {
+        "issue": "unrecognized_language",
+        "resolution": "Use generic function patterns (look for common function keywords). Warn user about reduced accuracy."
+      },
+      {
+        "issue": "mixed_fp_and_non_fp_code",
+        "resolution": "Catalog everything but flag non-FP patterns (impure functions, OOP remnants). Discovery will address with user."
+      },
+      {
+        "issue": "no_functions_in_file",
+        "resolution": "Register file without functions. Valid for config files, data files, entry points."
+      }
+    ],
+    "intent_keywords_json": [
+      "catalog",
+      "scan codebase",
+      "register existing code",
+      "index project",
+      "scan files",
+      "import existing"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "project_progression",
+    "type": "project",
+    "level": 2,
+    "parent_directive": "aifp_status",
+    "category": {
+      "name": "task_management",
+      "description": "Incremental milestone/task state machine for project advancement."
+    },
+    "description": "Codifies the incremental milestone/task/items state machine. Determines what work to create next after task or milestone completions. Ensures tasks are created one at a time per milestone, not in bulk. Handles milestone transitions (close current, open next). Triggers completion path review when themes or flows evolve via project_evolution. Acts as both a reference directive (AI consults for progression rules) and an orchestration point (status routes through it after completions).",
+    "md_file_path": "directives/project_progression.md",
+    "workflow": {
+      "trunk": "assess_progression_state",
+      "branches": [
+        {
+          "if": "discovery_just_completed",
+          "then": "create_first_milestone_task",
+          "details": {
+            "action": "Bootstrap the first task for the project",
+            "steps": [
+              "Identify the first milestone (first in_progress milestone of first stage)",
+              "Review milestone description and acceptance criteria",
+              "Discuss with user or infer: what is the first concrete task for this milestone?",
+              "Create ONE task with items via project_task_create and project_item_create helpers",
+              "This is the entry point from discovery into active development work"
+            ],
+            "note": "Only one task created. Subsequent tasks created after this one completes."
+          }
+        },
+        {
+          "if": "task_just_completed",
+          "then": "evaluate_and_create_next_task",
+          "details": {
+            "action": "Determine and create next task for active milestone",
+            "steps": [
+              "Review active milestone scope, description, and acceptance criteria",
+              "Review what was just completed (context from completed task)",
+              "Review current themes and flows for organizational context",
+              "Assess: is there more work needed for this milestone?",
+              "If yes: create ONE new task with items for the active milestone",
+              "If no (milestone work fully covered): do NOT create more tasks — let project_milestone_complete handle closure",
+              "Log progression decision in notes"
+            ],
+            "key_principle": "Create ONE task at a time. Never batch-create all remaining tasks for a milestone."
+          }
+        },
+        {
+          "if": "milestone_just_completed",
+          "then": "open_next_milestone",
+          "details": {
+            "action": "Transition to next milestone",
+            "steps": [
+              "Identify next milestone in current completion path stage (by order_index)",
+              "If next milestone exists in current stage: set its status to in_progress",
+              "Create FIRST task (with items) for the newly opened milestone",
+              "If no more milestones in current stage: check if more stages exist in completion path",
+              "If next stage exists: set first milestone of next stage to in_progress, create first task",
+              "If no more stages: route to project_completion_check (project may be complete)",
+              "Log milestone transition in notes"
+            ],
+            "use_helpers": ["update_milestone_status", "create_task", "create_item"]
+          }
+        },
+        {
+          "if": "no_active_tasks_in_milestone",
+          "then": "create_first_task_for_milestone",
+          "details": {
+            "action": "Fresh milestone with no tasks yet",
+            "condition": "Active milestone exists but has zero tasks (e.g., milestone just opened or tasks were cleared)",
+            "steps": [
+              "Review milestone description and acceptance criteria",
+              "Discuss with user or infer first task",
+              "Create ONE task with items"
+            ]
+          }
+        },
+        {
+          "if": "themes_or_flows_evolved",
+          "then": "review_completion_path",
+          "details": {
+            "action": "Evolution impact assessment",
+            "trigger": "project_evolution directive has updated themes or flows",
+            "steps": [
+              "Review current completion path stages against new project shape",
+              "Assess: do existing milestones still make sense with evolved themes/flows?",
+              "Assess: does the completion path need new stages or modified stages?",
+              "If changes needed: add/modify milestones, potentially add completion path stages, update blueprint via project_blueprint_update, log evolution impact in notes",
+              "If no changes needed: log 'Evolution reviewed, no completion path changes required'"
+            ],
+            "note": "This is a thoughtful review, not automatic restructuring. AI should consider whether changes are necessary before making them."
+          }
+        },
+        {
+          "fallback": "route_to_status",
+          "details": {
+            "action": "No progression action needed at this time",
+            "return_to": "aifp_status"
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user",
+        "note": "If AI cannot determine next task, ask user for direction rather than guessing"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "unclear_next_task",
+        "resolution": "Ask user what they want to work on next within the current milestone scope. Do not guess."
+      },
+      {
+        "issue": "milestone_scope_exhausted_but_criteria_not_met",
+        "resolution": "Review milestone acceptance criteria with user. Either add tasks to meet criteria or revise criteria."
+      },
+      {
+        "issue": "evolution_invalidates_milestones",
+        "resolution": "Discuss with user: update existing milestones or create new ones? Never silently restructure."
+      },
+      {
+        "issue": "no_milestones_exist",
+        "resolution": "Route to project_discovery to define milestones. Progression requires milestones to operate."
+      },
+      {
+        "issue": "all_stages_complete_unexpectedly",
+        "resolution": "Route to project_completion_check. If completion check fails, create missing work via new milestones."
+      }
+    ],
+    "intent_keywords_json": [
+      "next task",
+      "what's next",
+      "continue work",
+      "next milestone",
+      "progress",
+      "advance"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
+    "name": "aifp_end",
+    "type": "project",
+    "level": 0,
+    "parent_directive": null,
+    "category": {
+      "name": "session_management",
+      "description": "Graceful session termination with comprehensive data audit."
+    },
+    "description": "Graceful session termination directive. Comprehensive audit of all work done during the session, ensuring database state is consistent and up to date. Closes watchdog if running, processes final reminders. Verifies all files and functions are tracked, checks FP compliance of session work, reviews project management state, and generates session summary. Counterpart to aifp_run(is_new_session=true) — bookend pattern for session lifecycle.",
+    "md_file_path": "directives/aifp_end.md",
+    "workflow": {
+      "trunk": "begin_session_audit",
+      "branches": [
+        {
+          "if": "watchdog_running",
+          "then": "stop_watchdog_read_final_reminders",
+          "details": {
+            "action": "Close watchdog and process remaining reminders",
+            "steps": [
+              "Check for .aifp-project/watchdog/watchdog.pid",
+              "If PID file exists and process is alive: read final reminders.json",
+              "Process any outstanding reminders (unregistered files, missing functions, stale timestamps)",
+              "Kill watchdog process",
+              "If watchdog not implemented yet: skip gracefully (check PID file existence, if absent log 'watchdog not active' and continue)"
+            ],
+            "watchdog_note": "Watchdog implementation is pending. aifp_end handles both states: watchdog present (stop it) and watchdog absent (skip gracefully)."
+          }
+        },
+        {
+          "if": "session_has_file_writes",
+          "then": "verify_all_files_tracked",
+          "details": {
+            "action": "Audit file tracking completeness",
+            "steps": [
+              "Identify files written or modified during this session",
+              "Cross-reference with files table in project.db",
+              "If any file missing from DB: register it using reserve_file + finalize_file",
+              "If any file has stale updated_at: correct the timestamp",
+              "Report discrepancies found and actions taken"
+            ]
+          }
+        },
+        {
+          "if": "session_has_code_changes",
+          "then": "verify_all_functions_tracked",
+          "details": {
+            "action": "Audit function tracking completeness",
+            "steps": [
+              "For each file modified during session, scan for function definitions",
+              "Cross-reference with functions table in project.db",
+              "If any function missing from DB: register it using reserve_function + finalize_function",
+              "If any DB function missing from actual file: flag for user review (may have been removed/renamed)",
+              "Report discrepancies found and actions taken"
+            ]
+          }
+        },
+        {
+          "if": "code_verified",
+          "then": "check_fp_compliance",
+          "details": {
+            "action": "Quick FP scan of session work",
+            "steps": [
+              "Review all code written during this session",
+              "Check for: mutations, OOP patterns, unwrapped external calls, missing Result types, hidden state",
+              "Report violations to user (informational — do not auto-fix)",
+              "Log compliance status in notes (source=directive, directive_name=aifp_end, severity=info or warning)"
+            ],
+            "note": "This is a quick scan, not a deep audit. FP compliance should have been maintained during coding. This catches anything that slipped through."
+          }
+        },
+        {
+          "if": "compliance_checked",
+          "then": "review_project_management_state",
+          "details": {
+            "action": "Ensure project management data is current",
+            "steps": [
+              "Check task/item progress: any items worked on but status not updated?",
+              "Check notes: any important discussion points or decisions not logged?",
+              "Check completion path: does current progress match task/milestone state?",
+              "Check themes/flows: any new patterns observed during session that should be captured?",
+              "Check infrastructure: any changes to tools, dependencies, or conventions?",
+              "Update anything that is stale or missing"
+            ]
+          }
+        },
+        {
+          "if": "state_reviewed",
+          "then": "generate_session_summary",
+          "details": {
+            "action": "Compile and present session summary",
+            "steps": [
+              "Compile session summary: files created/modified, functions added/modified, tasks completed/progressed, milestones progressed, discrepancies found and fixed, FP compliance status, outstanding items for next session",
+              "Log session summary in notes (source=directive, directive_name=aifp_end)",
+              "Present summary to user",
+              "If clean session: 'All project data is up to date. Safe to end session.'",
+              "If outstanding issues: list them with severity and recommended next-session actions"
+            ]
+          }
+        },
+        {
+          "fallback": "report_minimal_summary",
+          "details": {
+            "action": "If no work was done this session, report that",
+            "message": "No code changes detected this session. Project state unchanged. Safe to end session."
+          }
+        }
+      ],
+      "error_handling": {
+        "on_failure": "report_partial_audit",
+        "note": "If audit partially fails, report what was checked and what wasn't. Never silently skip the audit."
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "watchdog_process_cannot_be_stopped",
+        "resolution": "Log warning, continue with rest of audit. Watchdog will be killed when parent MCP process exits."
+      },
+      {
+        "issue": "database_locked",
+        "resolution": "Retry with backoff. If persistent, warn user and log the lock issue."
+      },
+      {
+        "issue": "large_session_many_changes",
+        "resolution": "Process audit in batches. Report progress to user."
+      },
+      {
+        "issue": "user_closes_without_aifp_end",
+        "resolution": "Not a blocker — watchdog catches drift during next session. aifp_end is best practice, not mandatory."
+      }
+    ],
+    "intent_keywords_json": [
+      "end session",
+      "wrap up",
+      "done for now",
+      "finish session",
+      "close",
+      "goodbye",
+      "signing off"
+    ],
+    "confidence_threshold": 0.8
+  }
+]

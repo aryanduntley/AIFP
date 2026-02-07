@@ -9,14 +9,14 @@
 - [What is AIFP?](#what-is-aifp)
 - [Core Principles](#core-principles)
 - [Architecture Overview](#architecture-overview)
-- [Four-Database System](#four-database-system)
+- [Database Architecture](#database-architecture)
 - [How It Works](#how-it-works)
 - [Getting Started](#getting-started)
 - [Directives System](#directives-system)
-- [User-Defined Directives](#user-defined-directives-7)
 - [Project Lifecycle](#project-lifecycle)
 - [Example Workflow](#example-workflow)
 - [Documentation](#documentation)
+- [Development](#development)
 - [Design Philosophy](#design-philosophy)
 - [License](#license)
 
@@ -175,7 +175,7 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 - One directive can use many helpers, one helper can serve many directives
 - Junction table stores: execution context, sequence order, parameter mappings
 - Enables flexible helper reuse and clear execution flow
-- See `docs/HELPER_DIRECTIVE_SCHEMA_DESIGN.md` for complete design
+- Defined in `directive_helpers` junction table in `aifp_core.db`
 
 **Helper Classification** (New in v1.4):
 - `is_tool = TRUE`: Exposed as MCP tool (AI can call directly via MCP)
@@ -649,7 +649,7 @@ def turn_off_living_room_lights(ha_client: HomeAssistant) -> Result[None, str]:
     ...
 ```
 
-See [User Directives Blueprint](docs/blueprints/blueprint_user_directives.md) and [examples](docs/examples/) for more details.
+See the directive MD files in `src/aifp/reference/directives/` for complete workflow documentation.
 
 ### Git Integration
 
@@ -697,7 +697,7 @@ AI Recommendation: Keep Bob's version (confidence: 85%)
 Reason: More comprehensive tests, still pure
 ```
 
-See [Git Integration Blueprint](docs/blueprints/blueprint_git.md) for complete multi-user collaboration workflows.
+See the Git directive MD files in `src/aifp/reference/directives/` for complete multi-user collaboration workflows.
 
 ---
 
@@ -833,45 +833,51 @@ AI: ✅ Preference learned: project_file_write
 
 ## Documentation
 
-### Comprehensive Blueprints
+### Directive Reference
 
-- **[Project Directives Blueprint](docs/project_directives_blueprint.md)** - Project lifecycle management
-- **[FP Directives Blueprint](docs/fp_directives_blueprint.md)** - Functional programming enforcement
-- **[MCP Blueprint](docs/mcp_blueprint.md)** - MCP server architecture and tools
-- **[Project DB Blueprint](docs/blueprints/blueprint_project_db.md)** - project.db schema and queries
-- **[MCP DB Blueprint](docs/mcp_db_blueprint.md)** - aifp_core.db schema and population
-- **[User Directives Blueprint](docs/blueprints/blueprint_user_directives.md)** - User-defined automation system (home automation, cloud infrastructure, custom workflows)
-- **[Interactions Blueprint](docs/blueprints/blueprint_interactions.md)** - Cross-component interactions including Git integration
-- **[Git Integration Blueprint](docs/blueprints/blueprint_git.md)** - Multi-user collaboration, FP-powered conflict resolution, external change detection
-- **[AIFP Project Structure Blueprint](docs/blueprints/blueprint_aifp_project_structure.md)** - Complete project directory structure and organization
+All directive documentation is shipped with the package at **[src/aifp/reference/directives/](src/aifp/reference/directives/)** — 129 MD files covering every directive. Each file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, and database operations.
 
-### Schema Files
+### Database Schemas
 
-- **[schemaExampleMCP.sql](docs/db-schema/schemaExampleMCP.sql)** - Complete aifp_core.db schema
-- **[schemaExampleProject.sql](docs/db-schema/schemaExampleProject.sql)** - Complete project.db schema
-- **[schemaExampleSettings.sql](docs/db-schema/schemaExampleSettings.sql)** - Complete user_preferences.db schema
-- **[schemaExampleUserDirectives.sql](docs/db-schema/schemaExampleUserDirectives.sql)** - Complete user_directives.db schema
+Schema SQL files are in the package at `src/aifp/database/schemas/`:
+- `aifp_core.sql` — Global read-only database (directives, helpers, flows)
+- `project.sql` — Per-project mutable database (files, functions, tasks, milestones)
+- `user_preferences.sql` — Per-project user customization database
+- `user_directives.sql` — Per-project automation directives (Use Case 2 only)
 
-### Reference Documents
+---
 
-- **[Helper Registry](docs/helpers/json/)** - **Development staging area** for helper function definitions. Developers modify JSON files here, then import to `aifp_core.db`. Each helper includes full specifications, parameters, return types, error handling, and `used_by_directives` field. These JSON files are dev-only staging and are NOT shipped with the package.
-- **[Directive MD Files](src/aifp/reference/directives/)** - Complete documentation for all directives shipped with the package. Each directive MD file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, database operations, and testing scenarios.
+## Development
 
-### Directive Definitions (JSON + MD)
+### Dev Directory (`dev/`)
 
-**Development Staging**: Directives defined in JSON files for easy editing:
-- **[FP Core Directives](docs/directives-json/directives-fp-core.json)** - Core functional programming directives
-- **[FP Aux Directives](docs/directives-json/directives-fp-aux.json)** - Auxiliary FP directives
-- **[Project Directives](docs/directives-json/directives-project.json)** - Project lifecycle management
-- **[User Preference Directives](docs/directives-json/directives-user-pref.json)** - User customization directives
-- **[User Directive System](docs/directives-json/directives-user-system.json)** - User-defined automation directives
-- **[Git Integration Directives](docs/directives-json/directives-git.json)** - Git collaboration directives
+The `dev/` directory contains the **source of truth** for directive and helper function definitions. These JSON files are the canonical definitions that get imported into `aifp_core.db` before release.
 
-Developers modify JSON files, then import to database when complete.
+```
+dev/
+├── directives-json/              # Directive definitions (source of truth)
+│   ├── directives-fp-core.json   # Core FP directives
+│   ├── directives-fp-aux.json    # Auxiliary FP directives
+│   ├── directives-project.json   # Project lifecycle directives
+│   ├── directives-user-pref.json # User preference directives
+│   ├── directives-user-system.json # User automation directives
+│   ├── directives-git.json       # Git collaboration directives
+│   ├── directive_flow_fp.json    # FP directive flow transitions
+│   ├── directive_flow_project.json # Project directive flow transitions
+│   └── directive_flow_user_preferences.json # User pref flow transitions
+├── helpers-json/                 # Helper function definitions (source of truth)
+│   ├── helpers-core.json         # Core/directive helpers
+│   ├── helpers-orchestrators.json # Entry point and status helpers
+│   ├── helpers-project-*.json    # Project management helpers (9 files)
+│   ├── helpers-settings.json     # User preference helpers
+│   ├── helpers-user-custom.json  # User directive helpers
+│   ├── helpers-git.json          # Git operation helpers
+│   └── helpers-index.json        # Shared/global helpers
+├── sync-directives.py            # Imports JSON → aifp_core.db
+└── logs/                         # Development logs
+```
 
-**Production**: JSON files imported into `aifp_core.db` before release. Users query database, NOT JSON files. JSON files are dev-only staging area, never shipped with package.
-
-**Documentation**: [MD Files](src/aifp/reference/directives/) - Comprehensive documentation shipped with package. Each directive includes workflows, examples, edge cases, database operations, FP compliance notes, and cross-directive relationships.
+**Dev workflow**: Modify JSON files in `dev/` → run `sync-directives.py` to rebuild `aifp_core.db` → test → release. End users only interact with the pre-populated `aifp_core.db`, never the JSON files directly.
 
 ---
 
@@ -909,48 +915,14 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ---
 
-## Roadmap
-
-### Completed
-
-- ✅ Comprehensive directive system designed (FP, Project, User Preference, Git, User Directives)
-- ✅ Four-database architecture specified (aifp_core, project, user_preferences, user_directives)
-- ✅ MCP server architecture designed with command routing
-- ✅ User preference system designed with directive mapping and AI learning
-- ✅ User-defined directives system designed for domain-specific automation
-- ✅ Git integration designed with FP-powered multi-user collaboration
-- ✅ Complete documentation and specifications
-- ✅ Cost-conscious design (all tracking features disabled by default)
-- ✅ Settings system finalized (12-setting baseline, v3.1)
-- ✅ Helper function library implemented (all categories: core, project, git, user preferences, user directives, global, orchestrators)
-
-### In Progress
-
-- [ ] MCP server implementation (Python)
-- [ ] MCP tool registration and request routing
-- [ ] Integration testing with MCP protocol
-- [ ] Directive sync script (`sync-directives.py`)
-- [ ] Database migration scripts (`migrate.py`)
-
-### Planned
-
-- [ ] End-to-end testing with real AI interactions
-- [ ] PyPI package release
-- [ ] VS Code extension for task management
-- [ ] Cross-language wrapper generation
-
----
-
 ## Contributing
 
 AIFP is an **open standard** for AI-optimized programming. Contributions welcome:
 
-1. **New FP directives** - Language-specific or advanced patterns
-2. **Helper functions** - Database, file, Git, or FP utilities
-3. **Templates** - ADT boilerplate, error handling patterns
-4. **Documentation** - Examples, tutorials, case studies
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+1. **New FP directives** — Language-specific or advanced patterns
+2. **Helper functions** — Database, file, Git, or FP utilities
+3. **Templates** — ADT boilerplate, error handling patterns
+4. **Documentation** — Examples, tutorials, case studies
 
 ---
 

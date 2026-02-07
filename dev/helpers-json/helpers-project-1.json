@@ -1,0 +1,938 @@
+{
+  "helpers": [
+    {
+      "name": "project_allowed_check_constraints",
+      "file_path": "helpers/project/validation.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to check for CHECK constraints"
+        },
+        {
+          "name": "field",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Field name to get allowed values for"
+        }
+      ],
+      "purpose": "Returns list of allowed values for CHECK constraint enum fields in project.db. Parses schema to extract CHECK(field IN (...)) constraints.",
+      "error_handling": "Returns error if table does not exist, field does not exist, or field does not have a CHECK constraint list",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Returns array of allowed string values: [\"value1\", \"value2\", ...]",
+        "Error: \"Table {table} not found in project database\"",
+        "Error: \"Field {field} not found in table {table}\"",
+        "Error: \"Field {field} does not have a CHECK constraint list\""
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Parse schema SQL for table definition",
+        "Find field with CHECK constraint: CHECK (field IN (...))",
+        "Extract values from IN clause",
+        "Return as array of strings",
+        "Examples: project_allowed_check_constraints(\"project\", \"user_directives_status\") -> [\"in_progress\", \"active\", \"disabled\"]",
+        "Examples: project_allowed_check_constraints(\"tasks\", \"status\") -> [\"pending\", \"in_progress\", \"blocked\", \"completed\", \"cancelled\"]",
+        "Examples: project_allowed_check_constraints(\"types_functions\", \"role\") -> [\"interface\", \"implementation\", \"utility\", \"test\"]",
+        "Examples: project_allowed_check_constraints(\"interactions\", \"type\") -> [\"calls\", \"returns\", \"modifies\", \"reads\", \"creates\"]",
+        "Examples: project_allowed_check_constraints(\"completion_path\", \"status\") -> [\"pending\", \"in_progress\", \"completed\", \"blocked\"]"
+      ]
+    },
+    {
+      "name": "get_project_tables",
+      "file_path": "helpers/project/schema.py",
+      "parameters": [],
+      "purpose": "List all tables in project database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of strings: ['project', 'files', 'functions', 'types', 'interactions', 'themes', 'flows', 'file_flows', 'flow_themes', 'completion_path', 'milestones', 'tasks', 'subtasks', 'sidequests', 'items', 'notes', 'infrastructure', 'types_functions', 'work_branches', 'merge_history']",
+        "SQL: SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+        "NOTE: Generic AI tool - not typically called by directives"
+      ]
+    },
+    {
+      "name": "get_project_fields",
+      "file_path": "helpers/project/schema.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to get fields for"
+        }
+      ],
+      "purpose": "Get field names and types for a specific table",
+      "error_handling": "Return error if table doesn't exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of objects: [{name: str, type: str, nullable: bool, default: any, pk: bool}, ...]",
+        "SQL: PRAGMA table_info(table_name)"
+      ]
+    },
+    {
+      "name": "get_project_schema",
+      "file_path": "helpers/project/schema.py",
+      "parameters": [],
+      "purpose": "Get complete schema for project database",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns object: {table_name: [{name, type, nullable, default, pk}, ...], ...}",
+        "Combines get_project_tables() + get_project_fields() for each table"
+      ]
+    },
+    {
+      "name": "get_project_json_parameters",
+      "file_path": "helpers/project/schema.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name to get available fields for"
+        }
+      ],
+      "purpose": "Get available fields for table to use with generic add/update operations",
+      "error_handling": "Return error if table doesn't exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns object: {field_name: type_hint, ...}",
+        "Example: {name: 'TEXT', path: 'TEXT', language: 'TEXT', is_reserved: 'INTEGER'}",
+        "Filters out id, created_at, updated_at from PRAGMA table_info() results"
+      ]
+    },
+    {
+      "name": "get_from_project",
+      "file_path": "helpers/project/crud.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "id_array",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "**MUST contain at least one ID**"
+        }
+      ],
+      "purpose": "Get records by ID(s) - **EMPTY ARRAY NOT ALLOWED**",
+      "error_handling": "- Return empty array if no matches",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of records or empty array if no matches",
+        "Raises error if id_array is empty",
+        "SQL: SELECT * FROM table WHERE id IN (?, ?, ...)"
+      ]
+    },
+    {
+      "name": "get_from_project_where",
+      "file_path": "helpers/project/crud.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "conditions",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs (AND logic)"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum rows to return"
+        },
+        {
+          "name": "orderby",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Sort order"
+        }
+      ],
+      "purpose": "Flexible filtering with structured JSON conditions",
+      "error_handling": "Return empty array if no matches, error if invalid fields",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of records or empty array if no matches",
+        "Builds WHERE clause from conditions object using AND logic",
+        "SQL: SELECT * FROM table WHERE field1=? AND field2=? [ORDER BY ...] [LIMIT ...]"
+      ]
+    },
+    {
+      "name": "query_project",
+      "file_path": "helpers/project/crud.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "WHERE clause without \"WHERE\" keyword"
+        }
+      ],
+      "purpose": "Execute complex SQL WHERE clause (advanced, rare use)",
+      "error_handling": "Return error if SQL syntax invalid",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns array of records or empty array if no matches",
+        "SQL: SELECT * FROM table WHERE {query}",
+        "Query string is raw SQL WHERE clause without the WHERE keyword"
+      ]
+    },
+    {
+      "name": "add_project_entry",
+      "file_path": "helpers/project/crud.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs"
+        }
+      ],
+      "purpose": "Add new entry to project database",
+      "error_handling": "Return error if used on restricted tables",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, id: new_id}",
+        "SQL: INSERT INTO table (field1, field2, ...) VALUES (?, ?, ...) RETURNING id",
+        "Validate table exists and is not restricted before insert",
+        "CRITICAL WORKFLOW PROTECTION: Must reject inserts to tables with reserve/finalize workflows:",
+        "  - Reject if table is 'files' (use reserve_file helper instead)",
+        "  - Reject if table is 'functions' (use reserve_function helper instead)",
+        "  - Reject if table is 'types' (use reserve_type helper instead)",
+        "Return error message directing user to appropriate reserve helper"
+      ]
+    },
+    {
+      "name": "update_project_entry",
+      "file_path": "helpers/project/crud.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Record ID"
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs to update"
+        }
+      ],
+      "purpose": "Update existing entry",
+      "error_handling": "Return error if ID not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, id: id}",
+        "SQL: UPDATE table SET field1=?, field2=? WHERE id=?",
+        "Only updates fields present in data object - partial updates supported",
+        "CRITICAL WORKFLOW PROTECTION: Must check for reserved records before update:",
+        "  - If table is 'files', 'functions', or 'types': Query database for is_reserved status",
+        "  - If is_reserved=1: Reject update and return error directing to finalize_file/finalize_function/finalize_type helper",
+        "  - This prevents bypassing finalize workflow validation and proper state management",
+        "  - Only allow updates to non-reserved records in these tables"
+      ]
+    },
+    {
+      "name": "delete_project_entry",
+      "file_path": "helpers/project/crud.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name"
+        },
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Record ID"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "\"info\", \"warning\", \"error\""
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "\"ai\" or \"user\""
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "\"entry_deletion\""
+        }
+      ],
+      "purpose": "Smart delete with automatic routing to specialized functions when needed",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true} or error if dependencies exist",
+        "Routes to specialized delete if available (delete_file, delete_type, delete_theme, delete_flow, etc.)",
+        "Logs deletion to notes table: {reason: note_reason, severity: note_severity, source: note_source, type: note_type}",
+        "SQL: DELETE FROM table WHERE id=? (after validation)"
+      ]
+    },
+    {
+      "name": "delete_reserved",
+      "file_path": "helpers/project/crud.py",
+      "parameters": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name (must be 'files', 'functions', or 'types')"
+        },
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Reserved record ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason (e.g., 'User cancelled operation', 'Correcting reservation error')"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete abandoned reserved entries (escape hatch for cancelled reserve operations)",
+      "error_handling": "Return error if table not allowed, record not reserved, or dependencies exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "PURPOSE: Provides escape hatch when user cancels after reserve but before finalize",
+        "SCENARIO: AI reserves file/function/type, user says 'cancel that', AI needs way to delete without finalizing",
+        "VALIDATION: Reject if table not in ['files', 'functions', 'types']",
+        "ERROR LOGIC: Query table for is_reserved WHERE id=? - if is_reserved=0 or NULL, return error",
+        "ERROR RETURN (not reserved): {success: false, error: 'not_reserved', message: 'Record is finalized. Use delete_file/delete_function/delete_type instead'}",
+        "ERROR LOGIC: Check for dependencies (functions/types should have none while reserved, but validate anyway)",
+        "ERROR RETURN (dependencies): {success: false, error: 'dependencies_exist', message: 'Reserved entry has dependencies - manual cleanup required'}",
+        "SUCCESS LOGIC: Only proceed if is_reserved=1 AND no dependencies",
+        "SUCCESS LOGIC: Create note entry in notes table with reason, severity, source, type='entry_deletion'",
+        "SUCCESS LOGIC: Delete record: DELETE FROM table WHERE id=? AND is_reserved=1",
+        "SUCCESS RETURN: {success: true, deleted_id: id, table: table}",
+        "NOTE: This helper is specifically for cleaning up abandoned reservations, NOT for normal deletion workflow"
+      ]
+    },
+    {
+      "name": "create_project",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project name (e.g., 'MatrixCalculator')"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project purpose (e.g., 'Build a pure functional matrix math library')"
+        },
+        {
+          "name": "goals",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of goal strings (e.g., ['Fast computation', 'No OOP'])"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "default": "active",
+          "description": "'active', 'paused', 'completed', 'abandoned'"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "required": true,
+          "default": 1,
+          "description": "Tracks idea evolution (starts at 1)"
+        },
+        {
+          "name": "user_directives_status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "NULL (Case 1), 'pending_discovery', 'pending_parse', 'in_progress', 'active', 'disabled'"
+        }
+      ],
+      "purpose": "Initialize project entry (one per database)",
+      "error_handling": "Return error if project already exists",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_init",
+          "execution_context": "create_project_structure",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Initialize project entry during .aifp-project/ creation - creates single project record with metadata"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, project_id: 1}",
+        "Auto-populates last_known_git_hash from git rev-parse HEAD (if git available)",
+        "Auto-populates last_git_sync with current timestamp",
+        "SQL: INSERT INTO project (name, purpose, goals, status, version, user_directives_status, ...) VALUES (...)"
+      ]
+    },
+    {
+      "name": "get_project",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [],
+      "purpose": "Get project metadata (single entry)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_blueprint_read",
+          "execution_context": "database_fallback",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Fallback to database when ProjectBlueprint.md missing - retrieves project metadata from database"
+        },
+        {
+          "directive_name": "project_blueprint_update",
+          "execution_context": "read_current_blueprint",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Get current project version before updating blueprint - checks version for increment"
+        },
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "get_existing_project_status",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Read project metadata for comprehensive status report - retrieves name, purpose, goals, version, status, user_directives_status"
+        },
+        {
+          "directive_name": "project_evolution",
+          "execution_context": "detect_project_wide_change",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Read current project version before incrementing - checks version for evolution tracking"
+        },
+        {
+          "directive_name": "project_archive",
+          "execution_context": "prepare_archive",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Read project status to verify completion before archival - checks if project completed"
+        }
+      ],
+      "implementation_notes": [
+        "Returns project object: {id: 1, name, purpose, goals: [...], status, version, user_directives_status, last_known_git_hash, last_git_sync, created_at, updated_at}",
+        "SQL: SELECT * FROM project LIMIT 1",
+        "Always returns single row or null if project not initialized"
+      ]
+    },
+    {
+      "name": "update_project",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Project name (NULL = don't update)"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Project purpose (NULL = don't update)"
+        },
+        {
+          "name": "goals",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Array of goal strings (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'active', 'paused', 'completed', 'abandoned' (NULL = don't update)"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Version number (NULL = don't update)"
+        },
+        {
+          "name": "user_directives_status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "NULL, 'pending_discovery', 'pending_parse', 'in_progress', 'active', 'disabled' (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update project metadata",
+      "error_handling": "Return error if no project exists",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_blueprint_update",
+          "execution_context": "update_version_and_date",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {
+            "version": "incremented_version",
+            "last_updated": "current_timestamp"
+          },
+          "description": "Increment project version after blueprint update - updates version and last_updated timestamp in database"
+        },
+        {
+          "directive_name": "project_evolution",
+          "execution_context": "increment_version",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "version": "incremented_version"
+          },
+          "description": "Update project version after evolution changes - increments version when architecture, goals, themes, flows, or completion path changes"
+        },
+        {
+          "directive_name": "project_archive",
+          "execution_context": "compress_and_store",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "status": "archived"
+          },
+          "description": "Update project status to archived - marks project as archived after packaging"
+        },
+        {
+          "directive_name": "user_directive_parse",
+          "execution_context": "update_project_status",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "user_directives_status": "in_progress"
+          },
+          "description": "Set user_directives_status to in_progress during first-time initialization - transitions from NULL to in_progress"
+        },
+        {
+          "directive_name": "user_directive_activate",
+          "execution_context": "update_project_status_to_active",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {
+            "user_directives_status": "active"
+          },
+          "description": "Set user_directives_status to active after user approval - transitions from in_progress or disabled to active"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true}",
+        "SQL: UPDATE project SET field1=?, field2=? WHERE id=1",
+        "Only updates provided fields - NULL values are ignored (not set to NULL, just skipped)",
+        "updated_at timestamp auto-updated by trigger"
+      ]
+    },
+    {
+      "name": "blueprint_has_changed",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [],
+      "purpose": "Check if ProjectBlueprint.md has changed using Git or filesystem timestamp",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_blueprint_read",
+          "execution_context": "parse_complete",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Check if blueprint changed since last read - uses Git diff or filesystem timestamp for staleness detection"
+        },
+        {
+          "directive_name": "project_blueprint_update",
+          "execution_context": "validate_parameters",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Pre-check if blueprint already modified - prevents conflicting updates"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {changed: boolean, method: 'git'|'filesystem'}",
+        "Git method: git diff --quiet .aifp/ProjectBlueprint.md || compute hash and compare with project.last_known_git_hash",
+        "Filesystem method: Compare os.path.getmtime() with project.updated_at",
+        "Prefers git method if available, falls back to filesystem"
+      ]
+    },
+    {
+      "name": "get_infrastructure_by_type",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Infrastructure type (e.g., 'language', 'package', 'testing', 'database', 'build_tool')"
+        }
+      ],
+      "purpose": "Get all infrastructure of specific type",
+      "error_handling": "Return empty array if none found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_init",
+          "execution_context": "create_project_structure",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check and populate initial infrastructure during project initialization - verifies database, language, build tool"
+        },
+        {
+          "directive_name": "project_blueprint_read",
+          "execution_context": "database_fallback",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Query infrastructure when blueprint missing - retrieves language, runtime, build tool from database"
+        }
+      ],
+      "implementation_notes": [
+        "Returns array of infrastructure objects: [{id, type, name, version, purpose, created_at, updated_at}, ...]",
+        "SQL: SELECT * FROM infrastructure WHERE type=? ORDER BY created_at",
+        "Returns empty array if no infrastructure of that type exists"
+      ]
+    },
+    {
+      "name": "get_source_directory",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [],
+      "purpose": "Get project source directory from infrastructure table",
+      "error_handling": "Return SourceDirResult(success=False, error='Source directory not configured') if not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_type": "SourceDirResult",
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_init",
+          "execution_context": "state_db_initialization",
+          "sequence_order": 9.5,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Retrieve source directory before creating state database infrastructure in Step 9.5"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "determine_file_location",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Check source directory when writing files to ensure correct placement"
+        }
+      ],
+      "implementation_notes": [
+        "Query infrastructure table WHERE type='source_directory'",
+        "Universal entry name: INFRASTRUCTURE_TYPE_SOURCE_DIR = 'source_directory'",
+        "SQL: SELECT value FROM infrastructure WHERE type='source_directory'",
+        "Return SourceDirResult with source directory path or error",
+        "SourceDirResult dataclass: @dataclass(frozen=True) with fields: success: bool, data: Optional[str], error: Optional[str]"
+      ]
+    },
+    {
+      "name": "update_source_directory",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [
+        {
+          "name": "new_source_dir",
+          "type": "str",
+          "required": true,
+          "default": null,
+          "description": "New source directory path"
+        }
+      ],
+      "purpose": "Update existing source directory in infrastructure table",
+      "error_handling": "Return error if source_directory not configured yet",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_type": "SourceDirResult",
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Check if source_directory exists in infrastructure table",
+        "Return error if not found",
+        "Validate new_source_dir (no absolute paths, no parent references)",
+        "UPDATE infrastructure SET value=new_source_dir, updated_at=CURRENT_TIMESTAMP WHERE type='source_directory'",
+        "Return SourceDirResult with success status"
+      ]
+    },
+    {
+      "name": "get_all_infrastructure",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [],
+      "purpose": "Get all infrastructure entries including standard fields (even if empty). Returns complete infrastructure table for session bundling and status reports.",
+      "error_handling": "Return empty array if table doesn't exist or database not initialized",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_type": "list[dict]",
+      "return_statements": [
+        "Check for empty infrastructure values - AI should detect and populate these",
+        "Use update_project_entry to populate empty infrastructure fields with detected/confirmed values",
+        "Infrastructure with empty values signals incomplete initialization - prompt user or detect from codebase"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "session_bundle",
+          "sequence_order": 5,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Include infrastructure data in session bundle when is_new_session=true"
+        },
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "load_infrastructure",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Retrieve all infrastructure data for comprehensive status report"
+        }
+      ],
+      "implementation_notes": [
+        "SQL: SELECT * FROM infrastructure ORDER BY created_at",
+        "Returns ALL rows including empty values",
+        "Used by aifp_run to bundle infrastructure in session context (~500 tokens)",
+        "AI caches this data and only re-calls if cache lost or infrastructure updated",
+        "Empty values signal 'needs population' - AI should detect and populate these"
+      ]
+    },
+    {
+      "name": "get_project_root",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [],
+      "purpose": "Get project root directory from infrastructure table",
+      "error_handling": "Return SourceDirResult(success=False, error='Project root not configured') if not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_type": "SourceDirResult",
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "SQL: SELECT value FROM infrastructure WHERE type = 'project_root'",
+        "Returns: SourceDirResult(success=True, data=project_root_path)",
+        "Error if project_root not configured (should never happen after init)"
+      ]
+    },
+    {
+      "name": "update_project_root",
+      "file_path": "helpers/project/metadata.py",
+      "parameters": [
+        {
+          "name": "new_project_root",
+          "type": "str",
+          "required": true,
+          "default": null,
+          "description": "New project root path (absolute path)"
+        }
+      ],
+      "purpose": "Update project root in infrastructure table. Failsafe: Inserts if not exists (should never happen, initialized by SQL).",
+      "error_handling": "Return error if path is not absolute. Failsafe insert if entry doesn't exist.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_type": "SourceDirResult",
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_init",
+          "execution_context": "populate_project_root",
+          "sequence_order": 5,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Populate project_root value after SQL initialization (Phase 1)"
+        }
+      ],
+      "implementation_notes": [
+        "SQL: UPDATE infrastructure SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE type = 'project_root'",
+        "Failsafe: If project_root entry doesn't exist, INSERT instead",
+        "Validates path is absolute with os.path.isabs()",
+        "Returns: SourceDirResult(success=True, data=new_project_root)"
+      ]
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-1.json",
+    "count": 22,
+    "range": "helpers 1-22 of 130",
+    "description": "Database schema queries, CHECK constraint validation, generic CRUD operations, project metadata management, source directory management, state database initialization, infrastructure queries, workflow protection",
+    "first_helper": "project_allowed_check_constraints",
+    "last_helper": "get_all_infrastructure",
+    "status": "UPDATED - added 5 helpers: state database infrastructure (4) + infrastructure query (1)",
+    "last_updated": "2026-01-18"
+  }
+}

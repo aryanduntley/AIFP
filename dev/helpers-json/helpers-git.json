@@ -1,0 +1,454 @@
+{
+  "helpers": [
+    {
+      "name": "get_current_commit_hash",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
+      "purpose": "Get current Git HEAD commit hash",
+      "error_handling": "Return null if not Git repository",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns string commit hash (40-char SHA-1) or null if Git unavailable",
+        "Uses subprocess to run: git rev-parse HEAD",
+        "No database writes - pure Git query"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_init",
+          "execution_context": "get_current_hash_after_init",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Get current Git HEAD to store in project.last_known_git_hash for external change tracking"
+        },
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "get_current_git_hash",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Get current Git HEAD to compare with stored hash and detect external changes"
+        }
+      ]
+    },
+    {
+      "name": "get_current_branch",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
+      "purpose": "Get current Git branch name",
+      "error_handling": "Return null if Git unavailable",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns string branch name or null if Git unavailable",
+        "Uses subprocess to run: git branch --show-current",
+        "Returns commit hash if in detached HEAD state",
+        "No database writes - pure Git query for display purposes"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_init",
+          "execution_context": "report_success",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Display current branch in success report after Git initialization"
+        },
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "return_success",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Display current branch in sync success report"
+        }
+      ]
+    },
+    {
+      "name": "get_git_status",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
+      "purpose": "Get comprehensive Git state snapshot (orchestrator)",
+      "error_handling": "Returns git_available=false if Git unavailable",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns object: {git_available, branch, commit_hash, remote_tracking, ahead, behind, staged_files[], unstaged_files[], untracked_files[]}",
+        "Uses multiple git commands: git branch --show-current, git rev-parse HEAD, git status --porcelain, git rev-list --left-right --count",
+        "Returns git_available=false if Git not installed/not a repository",
+        "Comprehensive orchestrator - combines get_current_commit_hash + get_current_branch + file status"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_init",
+          "execution_context": "report_success",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Show comprehensive Git status (branch, tracking status, uncommitted files) in initialization success report"
+        }
+      ]
+    },
+    {
+      "name": "detect_external_changes",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
+      "purpose": "Compare current Git HEAD with project.last_known_git_hash",
+      "error_handling": "Return empty changes if Git unavailable",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns object: {hash_changed, old_hash, new_hash, changed_files[], affected_themes[], affected_functions[], commit_range, organizational_impact}",
+        "Uses git diff {old_hash}...{new_hash} --name-only to get changed files",
+        "Queries project.db to map changed files to themes/flows/functions",
+        "Returns empty changes if Git unavailable"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_detect_external_changes",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements the git_detect_external_changes directive - compares stored hash with current HEAD, analyzes changed files, queries theme/function impact"
+        },
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "compare_hashes",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Detect if external changes occurred during sync - triggers git_detect_external_changes if hash differs"
+        }
+      ]
+    },
+    {
+      "name": "create_user_branch",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [
+        {
+          "name": "user",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Username"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Branch purpose description"
+        }
+      ],
+      "purpose": "Create work branch following aifp-{user}-{number} convention",
+      "error_handling": "Auto-increment number if branch exists",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns object: {success, branch_name, user, purpose, linked_tasks[]}",
+        "Format: aifp-{user}-{number:03d} (e.g., aifp-alice-001, aifp-bob-042)",
+        "Queries MAX(branch_number) FROM work_branches WHERE user_name = ? to get next number",
+        "Creates Git branch: git checkout -b {branch_name} main",
+        "Inserts into work_branches table: {branch_name, user_name, purpose, status=active, created_from=main}"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_create_branch",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "user": "workflow.detected_user",
+            "purpose": "workflow.branch_purpose"
+          },
+          "description": "Tool that implements git_create_branch directive - detects user, formats branch name (aifp-{user}-{number}), creates Git branch, stores metadata in work_branches table"
+        }
+      ]
+    },
+    {
+      "name": "get_user_name_for_branch",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [],
+      "purpose": "Detect username from git config/environment/system",
+      "error_handling": "Fallback to \"user\" if all detection fails",
+      "is_tool": false,
+      "is_sub_helper": true,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns string username (never null) - guarantees 'user' fallback",
+        "Detection order: git config user.name → env USER → env USERNAME → os.getlogin() → fallback 'user'",
+        "Used to format branch names: aifp-{user}-{number:03d}"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_create_branch",
+          "execution_context": "get_user_identification",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Detect username from git config, environment variables (USER, USERNAME), or system user - used to format branch name aifp-{user}-{number}"
+        }
+      ]
+    },
+    {
+      "name": "list_active_branches",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [],
+      "purpose": "List all AIFP work branches from work_branches table",
+      "error_handling": "Return empty array if table doesn't exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns array of objects: [{branch_name, user_name, purpose, status, created_at, created_from, merged_at}, ...]",
+        "Queries SELECT * FROM work_branches WHERE status = 'active' (or all if filter not applied)",
+        "Returns empty array if table doesn't exist"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "get_existing_project_status",
+          "sequence_order": 15,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Show active AIFP work branches in project status report - displays branches awaiting merge or currently in use"
+        },
+        {
+          "directive_name": "git_merge_branch",
+          "execution_context": "list_available_branches",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "List available work branches when user wants to merge - helps user select which branch to merge"
+        }
+      ]
+    },
+    {
+      "name": "detect_conflicts_before_merge",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [
+        {
+          "name": "source_branch",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Branch to merge from"
+        },
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
+      "purpose": "Dry-run merge analysis - retrieves potential conflict data for AI to evaluate",
+      "error_handling": "Returns file-level data only if DB query fails",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns object: {would_conflict: bool, conflicting_files[], affected_functions[], affected_themes[]}",
+        "Uses git merge --no-commit --no-ff then git merge --abort for dry-run",
+        "Queries project.db to map conflicting files to functions/themes",
+        "NO scoring or recommendations - returns raw conflict data for AI to analyze",
+        "Falls back to file-level data only if database queries fail"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_detect_conflicts",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Performs dry-run merge, returns conflict data for AI analysis"
+        },
+        {
+          "directive_name": "git_merge_branch",
+          "execution_context": "call_git_detect_conflicts",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Called before merge to gather conflict data"
+        }
+      ]
+    },
+    {
+      "name": "execute_merge",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [
+        {
+          "name": "source_branch",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Branch to merge from"
+        },
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
+      "purpose": "Execute git merge and return result. Updates work_branches table on success.",
+      "error_handling": "Returns conflict details if merge fails, does NOT auto-abort",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns object: {success, merged: bool, conflicts: bool, conflict_files[], commit_hash?, error?}",
+        "Executes: git merge {source_branch}",
+        "If conflicts: returns conflict_files list, does NOT abort (AI decides next action)",
+        "If success: updates work_branches status='merged', merged_at=now",
+        "NO auto-resolution - AI handles conflict resolution workflow"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_merge_branch",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Executes merge, returns result data for AI to process"
+        }
+      ]
+    },
+    {
+      "name": "sync_git_state",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project directory path"
+        }
+      ],
+      "purpose": "Update project.last_known_git_hash with current Git HEAD",
+      "error_handling": "Log warning if Git unavailable, continue with cached",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns object: {success, hash_synced, external_changes_detected, current_branch, commit_hash}",
+        "Calls get_current_commit_hash() to get Git HEAD",
+        "Queries project.last_known_git_hash for comparison",
+        "If differs → calls detect_external_changes()",
+        "Updates project.last_known_git_hash and project.last_git_sync",
+        "Logs warning if Git unavailable, continues with cached hash"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "self_implementation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Tool that implements git_sync_state directive - gets current Git HEAD, compares with stored hash, triggers external change detection if hash differs, updates last_known_git_hash and last_git_sync timestamp"
+        }
+      ]
+    },
+    {
+      "name": "project_update_git_status",
+      "file_path": "helpers/git/operations.py",
+      "parameters": [],
+      "purpose": "Update last_known_git_hash and last_git_sync in project table",
+      "error_handling": "",
+      "is_tool": false,
+      "is_sub_helper": true,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns object: {success: true, hash: string, sync_time: timestamp}",
+        "Updates project table: SET last_known_git_hash = ?, last_git_sync = NOW()",
+        "Gets current hash from get_current_commit_hash() if not provided",
+        "Convenience wrapper - reduces boilerplate for common operation"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "git_init",
+          "execution_context": "update_project_last_known_git_hash",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Store initial Git hash in project table after repository initialization or integration"
+        },
+        {
+          "directive_name": "git_detect_external_changes",
+          "execution_context": "update_project_table",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update stored hash after user acknowledges external changes - keeps tracking in sync"
+        },
+        {
+          "directive_name": "git_sync_state",
+          "execution_context": "initialize_hash_or_update_sync_timestamp",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update last_known_git_hash and last_git_sync timestamp in project table"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "file": "helpers-git.json",
+    "count": 11,
+    "status": "COMPLETE - all 11 helpers implemented 2026-01-27",
+    "last_updated": "2026-01-27",
+    "notes": "All helpers are Git operations + data retrieval. NO auto-resolution or scoring logic - AI handles decisions."
+  }
+}

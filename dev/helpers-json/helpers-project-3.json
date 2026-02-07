@@ -1,0 +1,616 @@
+{
+  "helpers": [
+    {
+      "name": "reserve_function",
+      "file_path": "helpers/project/functions_1.py",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Function name (will have _idxxx appended)"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID where function will be defined"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Function purpose"
+        },
+        {
+          "name": "parameters",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Function parameters"
+        },
+        {
+          "name": "returns",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Return value specification"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip ID embedding in name (for MCP tools, private functions excluded). Sets id_in_name=0 in database."
+        }
+      ],
+      "purpose": "Reserve function ID for naming before creation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Use returned ID for function naming: {name}_id_{id}"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "reserve_function_name",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve function ID before writing code - AI embeds ID in function name for instant lookups (function_name_id_99)"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "reserve_before_write",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Reserve function IDs before generating function code - enables rename-proof references"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, id: reserved_id, is_reserved: true, id_in_name: !skip_id_naming}",
+        "SQL: INSERT INTO functions (name, file_id, purpose, parameters, returns, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) RETURNING id",
+        "Function name pattern: {name}_id_{id} (e.g., calculate_sum_id_42) unless skip_id_naming=true",
+        "If skip_id_naming=true: id_in_name=0, name stays as-is (for MCP tools that need clean names)"
+      ]
+    },
+    {
+      "name": "reserve_functions",
+      "file_path": "helpers/project/functions_1.py",
+      "parameters": [
+        {
+          "name": "functions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of function objects [{name, file_id, purpose, parameters, returns, skip_id_naming?}, ...]"
+        }
+      ],
+      "purpose": "Reserve multiple function IDs",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Use returned IDs for function naming: {name}_id_{id}"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, ids: [id1, id2, ...]} in same order as input functions array",
+        "SQL: Multiple INSERT INTO functions (name, file_id, purpose, parameters, returns, is_reserved, id_in_name) VALUES (?, ?, ?, ?, ?, 1, ?) (in transaction)",
+        "IDs correspond to functions array indices: functions[0] gets ids[0], functions[1] gets ids[1], etc.",
+        "Each item has its own skip_id_naming flag - allows mixed batch with some functions having IDs, some not",
+        "id_in_name is set to !skip_id_naming for each function individually"
+      ]
+    },
+    {
+      "name": "finalize_function",
+      "file_path": "helpers/project/functions_1.py",
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Reserved function ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Final name with _idxx suffix"
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Function purpose"
+        },
+        {
+          "name": "parameters",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Function parameters"
+        },
+        {
+          "name": "returns",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Return value specification"
+        },
+        {
+          "name": "skip_id_naming",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, skip _id_XX pattern validation (for functions where ID naming was skipped during reservation)"
+        }
+      ],
+      "purpose": "Finalize reserved function after creation",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Do any database interactions need to be added for this function?",
+        "If called during project_reserve_finalize: proceed to project_update_db to sync function dependencies."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "finalize_reservation",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize function after code written - sets is_reserved=false and updates file timestamp"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "finalize_after_write",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize function reservations after successful code generation"
+        },
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "finalize_new_functions",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Finalize function reservations when updating database with new function metadata"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, function_id: function_id, file_id: file_id}",
+        "Sets is_reserved=0, automatically calls update_file_timestamp(file_id)",
+        "SQL: UPDATE functions SET is_reserved=0, name=?, purpose=?, parameters=?, returns=? WHERE id=?",
+        "Name validation: must contain '_id_{function_id}' pattern UNLESS skip_id_naming=true",
+        "If skip_id_naming=true: skip _id_XX validation, function was reserved with id_in_name=0"
+      ]
+    },
+    {
+      "name": "finalize_functions",
+      "file_path": "helpers/project/functions_1.py",
+      "parameters": [
+        {
+          "name": "functions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of function objects [{function_id, name, file_id, purpose, parameters, returns, skip_id_naming?}, ...]"
+        }
+      ],
+      "purpose": "Finalize multiple reserved functions",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Do any database interactions need to be added for these functions?"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true, finalized_ids: [...]} confirming which IDs were finalized",
+        "Calls update_file_timestamp() once per unique file_id (not once per function)",
+        "SQL: Multiple UPDATE functions SET is_reserved=0 WHERE id=? (in transaction)",
+        "All operations succeed or all fail - no partial finalization",
+        "Each item has its own skip_id_naming flag - validation is per-item, not global",
+        "If skip_id_naming=true for an item, skip _id_XX pattern validation for that specific function"
+      ]
+    },
+    {
+      "name": "get_function_by_name",
+      "file_path": "helpers/project/functions_1.py",
+      "parameters": [
+        {
+          "name": "function_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Function name to look up"
+        }
+      ],
+      "purpose": "Get functions by name (very high-frequency lookup, returns list with file data)",
+      "error_handling": "Return error if no functions found with that name",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Look up functions by name during DB-filesystem sync - verifies function entries exist before syncing dependencies"
+        },
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query functions by name for dependency graph generation - maps function call relationships and dependencies"
+        },
+        {
+          "directive_name": "project_compliance_check",
+          "execution_context": "run_checks_with_preferences",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Look up functions for FP compliance validation - checks purity, immutability, and OOP violations"
+        }
+      ],
+      "implementation_notes": [
+        "Returns array of function objects with file data (multiple functions can share same name across files)",
+        "SQL: SELECT f.*, fi.name AS file_name, fi.path AS file_path FROM functions f LEFT JOIN files fi ON f.file_id = fi.id WHERE f.name = ?",
+        "Returns: {success, functions: [{id, name, file_id, file_name, file_path, purpose, parameters, returns, is_reserved, id_in_name, created_at, updated_at}, ...]}",
+        "Returns FunctionQueryResult with functions tuple (not single function)"
+      ]
+    },
+    {
+      "name": "get_functions_by_file",
+      "file_path": "helpers/project/functions_2.py",
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to get functions for"
+        }
+      ],
+      "purpose": "Get all functions in a file (high-frequency)",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_read",
+          "execution_context": "load_with_context",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Load all functions for file with context - provides complete file metadata including function dependencies"
+        },
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "generate_dependency_graph",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query all functions in each file for complete dependency graph - maps file-level and function-level relationships"
+        },
+        {
+          "directive_name": "project_compliance_check",
+          "execution_context": "run_checks_with_preferences",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Load all functions in files for FP compliance validation - batch checks for purity, immutability, OOP violations"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "compare_db_and_files",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Query all functions in file during sync - compares database records against actual code functions"
+        }
+      ],
+      "implementation_notes": [
+        "Returns array of function objects with file data",
+        "SQL: SELECT f.*, fi.name AS file_name, fi.path AS file_path FROM functions f LEFT JOIN files fi ON f.file_id = fi.id WHERE f.file_id = ? ORDER BY f.created_at",
+        "Returns empty array if file has no functions"
+      ]
+    },
+    {
+      "name": "update_function",
+      "file_path": "helpers/project/functions_2.py",
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID to update"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New function name (NULL = don't update)"
+        },
+        {
+          "name": "purpose",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New purpose (NULL = don't update)"
+        },
+        {
+          "name": "parameters",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "New parameters (NULL = don't update)"
+        },
+        {
+          "name": "returns",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "New return specification (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update function metadata",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Ensure name, parameter, or return changes are updated in all function calls",
+        "If name changed, verify _id_xxx suffix is retained"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "update_functions_table",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update function metadata after code generation - synchronizes dependencies and function information"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "update_dependency_entry",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Update stale function metadata during DB-filesystem sync - fixes outdated dependencies and parameters"
+        },
+        {
+          "directive_name": "project_compliance_check",
+          "execution_context": "run_checks_with_preferences",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update function purity scores after compliance validation - records FP compliance metrics"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, function_id: function_id, file_id: file_id}",
+        "Automatically calls update_file_timestamp(file_id) after update",
+        "SQL: UPDATE functions SET name=?, purpose=?, parameters=?, returns=? WHERE id=?",
+        "Only updates non-NULL parameters - partial updates supported"
+      ]
+    },
+    {
+      "name": "update_functions_for_file",
+      "file_path": "helpers/project/functions_2.py",
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID"
+        },
+        {
+          "name": "functions",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of function update objects [{function_id, name, purpose, parameters, returns}, ...]"
+        }
+      ],
+      "purpose": "Update multiple functions in a single file",
+      "error_handling": "",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If any names changed, verify _id_xxx suffix is retained for each",
+        "Ensure any parameter or return changes are updated in all function calls"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_update_db",
+          "execution_context": "update_functions_table",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch update multiple functions in same file - more efficient than individual updates"
+        },
+        {
+          "directive_name": "project_dependency_sync",
+          "execution_context": "update_dependency_entry",
+          "sequence_order": 5,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch update multiple stale functions in same file during sync - more efficient than individual updates"
+        },
+        {
+          "directive_name": "project_compliance_check",
+          "execution_context": "run_checks_with_preferences",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch update purity scores for multiple functions in same file - more efficient after compliance checks"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, updated_count: count}",
+        "Calls update_file_timestamp(file_id) once at end (not per function)",
+        "SQL: Multiple UPDATE functions ... WHERE id=? (in transaction) + single timestamp update",
+        "Validates all functions belong to file_id before updating"
+      ]
+    },
+    {
+      "name": "update_function_file_location",
+      "file_path": "helpers/project/functions_2.py",
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID to move"
+        },
+        {
+          "name": "old_file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Current file ID"
+        },
+        {
+          "name": "new_file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "New file ID"
+        }
+      ],
+      "purpose": "Move function to different file (rarely used)",
+      "error_handling": "Return error if function_id/file_ids not found",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Ensure all calls or references to this function have updated import paths"
+      ],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Returns {success: true}",
+        "Calls update_file_timestamp() for both old_file_id and new_file_id",
+        "SQL: UPDATE functions SET file_id=? WHERE id=?",
+        "Not exposed as MCP tool (is_tool: false) - internal use only"
+      ]
+    },
+    {
+      "name": "delete_function",
+      "file_path": "helpers/project/functions_2.py",
+      "parameters": [
+        {
+          "name": "function_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Function ID to delete"
+        },
+        {
+          "name": "note_reason",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Deletion reason"
+        },
+        {
+          "name": "note_severity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'info', 'warning', 'error'"
+        },
+        {
+          "name": "note_source",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'ai' or 'user'"
+        },
+        {
+          "name": "note_type",
+          "type": "string",
+          "required": true,
+          "default": "entry_deletion",
+          "description": "'entry_deletion'"
+        }
+      ],
+      "purpose": "Delete function with validation and interaction cascade",
+      "error_handling": "Return error if types_functions exist - requires manual unlinking first",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Ensure the function code is also removed from the file, not just the database"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_delete",
+          "execution_context": "delete_file_and_db_records",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Cascade delete all functions in file - automatically deletes interactions"
+        }
+      ],
+      "implementation_notes": [
+        "ERROR LOGIC: Query functions table for is_reserved WHERE id=? - if is_reserved=1, return error",
+        "ERROR RETURN (reserved): {success: false, error: 'function_reserved', message: 'Cannot delete reserved function. Use delete_reserved helper or finalize_function first'}",
+        "ERROR LOGIC: Query types_functions WHERE function_id=? - if not empty, return error with type relationships list",
+        "ERROR RETURN: {success: false, error: 'types_functions_exist', type_relationships: [{type_id, type_name, role}, ...]}",
+        "ERROR MESSAGE: 'Cannot delete function - type relationships exist. Delete or update types_functions entries first, then retry'",
+        "SUCCESS LOGIC: Only proceed if is_reserved=0 AND types_functions check returns empty",
+        "SUCCESS LOGIC: Get file_id before deletion: SELECT file_id FROM functions WHERE id=function_id",
+        "SUCCESS LOGIC: Create note entry in notes table with reason, severity, source, type, reference details",
+        "SUCCESS LOGIC: Delete function: DELETE FROM functions WHERE id=function_id",
+        "SUCCESS RETURN: {success: true, deleted_function_id: function_id, file_id: file_id}",
+        "NOTE: Interactions cascade via SQL ON DELETE CASCADE; types_functions must be manually unlinked first"
+      ]
+    }
+  ],
+  "metadata": {
+    "file": "helpers-project-3.json",
+    "count": 10,
+    "range": "helpers 26-35 of 112",
+    "description": "Function reservation, finalization, and management operations",
+    "first_helper": "reserve_function",
+    "last_helper": "delete_function",
+    "status": "return_statements complete - 8 helpers enhanced",
+    "last_updated": "2026-01-02"
+  }
+}

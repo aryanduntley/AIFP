@@ -1,0 +1,1003 @@
+{
+  "metadata": {
+    "description": "FP directive reference consultation flows - When and how AI consults FP directives as inline references during code writing",
+    "version": "1.0.0",
+    "created": "2025-12-19",
+    "total_flows": 48,
+    "scope": "FP reference consultation patterns (NOT execution flows)",
+    "key_principles": [
+      "FP directives are reference documentation only",
+      "AI writes FP-compliant code by default (no consultation needed for basics)",
+      "Consultation happens inline when AI uncertain about implementation details",
+      "NO loop-back to aifp_status (not workflow steps)",
+      "FP compliance checking (project_compliance_check) is separate - already in directive_flow_project.json"
+    ],
+    "consultation_triggers": [
+      "Implementation details unclear",
+      "Complex FP patterns needed",
+      "OOP library wrapping required",
+      "Optimization techniques needed",
+      "Validation of FP compliance"
+    ],
+    "helpers_used": [
+      "search_directives(keyword, type='fp') - Keyword-based FP directive search",
+      "get_directive_by_name(directive_name) - Get directive JSON (includes md_file_path if more detail needed)",
+      "query_core(table, filters) - Query aifp_core.db for directive metadata"
+    ]
+  },
+  "flows": [
+    {
+      "id": 1,
+      "from_context": "code_writing",
+      "to_directive": "fp_optionals",
+      "flow_type": "reference_consultation",
+      "condition_key": "handling_null_or_missing_values",
+      "condition_value": "true",
+      "condition_description": "AI needs to handle null/None/missing values in FP style",
+      "priority": 40,
+      "description": "Consult fp_optionals when implementing Option/Maybe pattern for null safety",
+      "consultation_method": "search_directives(keyword='optional', type='fp') OR get_directive_by_name('fp_optionals')",
+      "common_scenarios": [
+        "Function might return null",
+        "Database query might return no results",
+        "API call might fail",
+        "Optional parameters needed"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 2,
+      "from_context": "code_writing",
+      "to_directive": "fp_result_types",
+      "flow_type": "reference_consultation",
+      "condition_key": "handling_errors_without_exceptions",
+      "condition_value": "true",
+      "condition_description": "AI needs to handle success/failure without try-catch",
+      "priority": 40,
+      "description": "Consult fp_result_types when implementing Result/Either pattern for error handling",
+      "consultation_method": "search_directives(keyword='result', type='fp') OR get_directive_by_name('fp_result_types')",
+      "common_scenarios": [
+        "File I/O operations that can fail",
+        "Validation that can succeed or fail",
+        "API calls with error responses",
+        "Parsing that might fail"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 3,
+      "from_context": "code_writing",
+      "to_directive": "fp_try_monad",
+      "flow_type": "reference_consultation",
+      "condition_key": "wrapping_potentially_failing_operations",
+      "condition_value": "true",
+      "condition_description": "AI needs to wrap operations that might throw exceptions",
+      "priority": 40,
+      "description": "Consult fp_try_monad when wrapping risky operations in Try monad",
+      "consultation_method": "search_directives(keyword='try monad', type='fp') OR get_directive_by_name('fp_try_monad')",
+      "common_scenarios": [
+        "Third-party library calls that throw exceptions",
+        "External API calls",
+        "File system operations",
+        "Network operations"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 4,
+      "from_context": "code_writing",
+      "to_directive": "fp_error_pipeline",
+      "flow_type": "reference_consultation",
+      "condition_key": "chaining_error_prone_operations",
+      "condition_value": "true",
+      "condition_description": "AI needs to chain multiple operations that can fail",
+      "priority": 40,
+      "description": "Consult fp_error_pipeline for composing error-handling chains",
+      "consultation_method": "search_directives(keyword='error pipeline', type='fp') OR get_directive_by_name('fp_error_pipeline')",
+      "common_scenarios": [
+        "Multi-step validation pipeline",
+        "Data transformation with multiple failure points",
+        "Sequential API calls"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 5,
+      "from_context": "code_writing",
+      "to_directive": "fp_purity",
+      "flow_type": "reference_consultation",
+      "condition_key": "uncertain_about_function_purity",
+      "condition_value": "true",
+      "condition_description": "AI unsure if function is pure or needs purity clarification",
+      "priority": 40,
+      "description": "Consult fp_purity to understand pure function requirements",
+      "consultation_method": "search_directives(keyword='purity', type='fp') OR get_directive_by_name('fp_purity')",
+      "common_scenarios": [
+        "Function accesses external state",
+        "Function has side effects",
+        "Function depends on global variables",
+        "Function modifies input parameters"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 6,
+      "from_context": "code_writing",
+      "to_directive": "fp_side_effect_detection",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_detect_hidden_side_effects",
+      "condition_value": "true",
+      "condition_description": "AI needs to identify or isolate side effects in code",
+      "priority": 40,
+      "description": "Consult fp_side_effect_detection to identify and isolate side effects",
+      "consultation_method": "search_directives(keyword='side effect', type='fp') OR get_directive_by_name('fp_side_effect_detection')",
+      "common_scenarios": [
+        "Reviewing existing code for side effects",
+        "Isolating I/O operations",
+        "Detecting mutations"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 7,
+      "from_context": "code_writing",
+      "to_directive": "fp_state_elimination",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_remove_global_state",
+      "condition_value": "true",
+      "condition_description": "AI needs to eliminate global variables or mutable state",
+      "priority": 40,
+      "description": "Consult fp_state_elimination to remove global state dependencies",
+      "consultation_method": "search_directives(keyword='state elimination', type='fp') OR get_directive_by_name('fp_state_elimination')",
+      "common_scenarios": [
+        "Refactoring stateful code to FP",
+        "Eliminating global variables",
+        "Converting class-based state to parameters"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 8,
+      "from_context": "code_writing",
+      "to_directive": "fp_immutability",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_immutable_data_structures",
+      "condition_value": "true",
+      "condition_description": "AI needs to ensure data structures are immutable",
+      "priority": 40,
+      "description": "Consult fp_immutability for immutable data structure patterns",
+      "consultation_method": "search_directives(keyword='immutability', type='fp') OR get_directive_by_name('fp_immutability')",
+      "common_scenarios": [
+        "Preventing list/dict mutations",
+        "Creating copies instead of modifying",
+        "Using frozen data structures"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 9,
+      "from_context": "code_writing",
+      "to_directive": "fp_no_reassignment",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_eliminate_variable_reassignment",
+      "condition_value": "true",
+      "condition_description": "AI needs to avoid variable reassignment",
+      "priority": 40,
+      "description": "Consult fp_no_reassignment to eliminate variable mutations",
+      "consultation_method": "search_directives(keyword='no reassignment', type='fp') OR get_directive_by_name('fp_no_reassignment')",
+      "common_scenarios": [
+        "Refactoring loops to recursion/comprehensions",
+        "Eliminating accumulator variables",
+        "Using const bindings"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 10,
+      "from_context": "code_writing",
+      "to_directive": "fp_no_oop",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_avoid_classes_and_inheritance",
+      "condition_value": "true",
+      "condition_description": "AI needs to implement logic without OOP patterns",
+      "priority": 40,
+      "description": "Consult fp_no_oop to avoid classes/inheritance/objects",
+      "consultation_method": "search_directives(keyword='no oop', type='fp') OR get_directive_by_name('fp_no_oop')",
+      "common_scenarios": [
+        "Designing without classes",
+        "Using functions instead of methods",
+        "Avoiding inheritance hierarchies"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 11,
+      "from_context": "code_writing",
+      "to_directive": "fp_wrapper_generation",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_wrap_oop_library",
+      "condition_value": "true",
+      "condition_description": "AI needs to wrap OOP library (Django, React, SQLAlchemy) in FP style",
+      "priority": 45,
+      "description": "Consult fp_wrapper_generation to wrap OOP libraries functionally",
+      "consultation_method": "search_directives(keyword='wrapper', type='fp') OR get_directive_by_name('fp_wrapper_generation')",
+      "common_scenarios": [
+        "Wrapping Django ORM queries",
+        "Wrapping React components",
+        "Wrapping SQLAlchemy sessions",
+        "Wrapping any class-based API"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 12,
+      "from_context": "code_writing",
+      "to_directive": "fp_currying",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_implement_currying",
+      "condition_value": "true",
+      "condition_description": "AI needs to curry functions for partial application",
+      "priority": 35,
+      "description": "Consult fp_currying to implement function currying",
+      "consultation_method": "search_directives(keyword='currying', type='fp') OR get_directive_by_name('fp_currying')",
+      "common_scenarios": [
+        "Creating reusable parameterized functions",
+        "Partial function application",
+        "Function composition"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 13,
+      "from_context": "code_writing",
+      "to_directive": "fp_chaining",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_chain_function_calls",
+      "condition_value": "true",
+      "condition_description": "AI needs to chain multiple function calls fluently",
+      "priority": 35,
+      "description": "Consult fp_chaining for method chaining patterns",
+      "consultation_method": "search_directives(keyword='chaining', type='fp') OR get_directive_by_name('fp_chaining')",
+      "common_scenarios": [
+        "Data transformation pipelines",
+        "Fluent interfaces",
+        "Query builders"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 14,
+      "from_context": "code_writing",
+      "to_directive": "fp_pattern_matching",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_declarative_conditionals",
+      "condition_value": "true",
+      "condition_description": "AI needs pattern matching for declarative branching",
+      "priority": 35,
+      "description": "Consult fp_pattern_matching for pattern matching syntax",
+      "consultation_method": "search_directives(keyword='pattern matching', type='fp') OR get_directive_by_name('fp_pattern_matching')",
+      "common_scenarios": [
+        "Complex conditional logic",
+        "Type-based branching",
+        "Destructuring data structures"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 15,
+      "from_context": "code_writing",
+      "to_directive": "fp_tail_recursion",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_optimize_recursion",
+      "condition_value": "true",
+      "condition_description": "AI needs to implement tail-recursive functions",
+      "priority": 35,
+      "description": "Consult fp_tail_recursion for tail call optimization",
+      "consultation_method": "search_directives(keyword='tail recursion', type='fp') OR get_directive_by_name('fp_tail_recursion')",
+      "common_scenarios": [
+        "Recursive list processing",
+        "Recursive tree traversal",
+        "Preventing stack overflow"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 16,
+      "from_context": "code_writing",
+      "to_directive": "fp_recursion_enforcement",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_replace_loops_with_recursion",
+      "condition_value": "true",
+      "condition_description": "AI needs to replace imperative loops with recursion",
+      "priority": 35,
+      "description": "Consult fp_recursion_enforcement to convert loops to recursion",
+      "consultation_method": "search_directives(keyword='recursion', type='fp') OR get_directive_by_name('fp_recursion_enforcement')",
+      "common_scenarios": [
+        "Replacing for/while loops",
+        "Iterative algorithms to recursive",
+        "Accumulator patterns"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 17,
+      "from_context": "code_writing",
+      "to_directive": "fp_memoization",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_cache_function_results",
+      "condition_value": "true",
+      "condition_description": "AI needs to memoize expensive pure function computations",
+      "priority": 30,
+      "description": "Consult fp_memoization for function result caching",
+      "consultation_method": "search_directives(keyword='memoization', type='fp') OR get_directive_by_name('fp_memoization')",
+      "common_scenarios": [
+        "Expensive recursive computations",
+        "Repeated calculations with same inputs",
+        "Performance optimization"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 18,
+      "from_context": "code_writing",
+      "to_directive": "fp_lazy_evaluation",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_defer_computation",
+      "condition_value": "true",
+      "condition_description": "AI needs to implement lazy evaluation for performance",
+      "priority": 30,
+      "description": "Consult fp_lazy_evaluation for deferred computation patterns",
+      "consultation_method": "search_directives(keyword='lazy evaluation', type='fp') OR get_directive_by_name('fp_lazy_evaluation')",
+      "common_scenarios": [
+        "Large dataset processing",
+        "Infinite sequences",
+        "Conditional computation"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 19,
+      "from_context": "code_writing",
+      "to_directive": "fp_lazy_computation",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_delay_expensive_operations",
+      "condition_value": "true",
+      "condition_description": "AI needs to delay expensive operations until needed",
+      "priority": 30,
+      "description": "Consult fp_lazy_computation for thunks and delayed execution",
+      "consultation_method": "search_directives(keyword='lazy computation', type='fp') OR get_directive_by_name('fp_lazy_computation')",
+      "common_scenarios": [
+        "Expensive computations",
+        "Short-circuit evaluation",
+        "Resource-intensive operations"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 20,
+      "from_context": "code_writing",
+      "to_directive": "fp_monadic_composition",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_compose_monads",
+      "condition_value": "true",
+      "condition_description": "AI needs to compose multiple monadic operations",
+      "priority": 35,
+      "description": "Consult fp_monadic_composition for monad composition patterns",
+      "consultation_method": "search_directives(keyword='monadic composition', type='fp') OR get_directive_by_name('fp_monadic_composition')",
+      "common_scenarios": [
+        "Composing Option with Result",
+        "Chaining Try monads",
+        "Complex error handling pipelines"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 21,
+      "from_context": "code_writing",
+      "to_directive": "fp_type_safety",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_strict_type_annotations",
+      "condition_value": "true",
+      "condition_description": "AI needs to add type annotations for safety",
+      "priority": 40,
+      "description": "Consult fp_type_safety for type annotation patterns",
+      "consultation_method": "search_directives(keyword='type safety', type='fp') OR get_directive_by_name('fp_type_safety')",
+      "common_scenarios": [
+        "Adding type hints to functions",
+        "Ensuring type correctness",
+        "Generic type parameters"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 22,
+      "from_context": "code_writing",
+      "to_directive": "fp_type_inference",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_infer_types",
+      "condition_value": "true",
+      "condition_description": "AI needs type inference guidance",
+      "priority": 30,
+      "description": "Consult fp_type_inference for type inference patterns",
+      "consultation_method": "search_directives(keyword='type inference', type='fp') OR get_directive_by_name('fp_type_inference')",
+      "common_scenarios": [
+        "Complex generic types",
+        "Type variable constraints",
+        "Inference from usage"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 23,
+      "from_context": "code_writing",
+      "to_directive": "fp_generic_constraints",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_constrain_generic_types",
+      "condition_value": "true",
+      "condition_description": "AI needs to apply constraints to generic type parameters",
+      "priority": 30,
+      "description": "Consult fp_generic_constraints for type parameter constraints",
+      "consultation_method": "search_directives(keyword='generic constraints', type='fp') OR get_directive_by_name('fp_generic_constraints')",
+      "common_scenarios": [
+        "Bounded generics",
+        "Type class constraints",
+        "Protocol types"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 24,
+      "from_context": "code_writing",
+      "to_directive": "fp_list_operations",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_functional_list_processing",
+      "condition_value": "true",
+      "condition_description": "AI needs functional list manipulation patterns",
+      "priority": 35,
+      "description": "Consult fp_list_operations for map/filter/reduce patterns",
+      "consultation_method": "search_directives(keyword='list operations', type='fp') OR get_directive_by_name('fp_list_operations')",
+      "common_scenarios": [
+        "Data transformation",
+        "Collection filtering",
+        "List aggregation"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 25,
+      "from_context": "code_writing",
+      "to_directive": "fp_map_reduce",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_parallel_data_processing",
+      "condition_value": "true",
+      "condition_description": "AI needs map-reduce pattern for large datasets",
+      "priority": 30,
+      "description": "Consult fp_map_reduce for parallel data processing",
+      "consultation_method": "search_directives(keyword='map reduce', type='fp') OR get_directive_by_name('fp_map_reduce')",
+      "common_scenarios": [
+        "Large dataset processing",
+        "Parallel computation",
+        "Distributed processing"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 26,
+      "from_context": "code_writing",
+      "to_directive": "fp_data_filtering",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_declarative_filtering",
+      "condition_value": "true",
+      "condition_description": "AI needs declarative data filtering patterns",
+      "priority": 35,
+      "description": "Consult fp_data_filtering for filtering patterns",
+      "consultation_method": "search_directives(keyword='filtering', type='fp') OR get_directive_by_name('fp_data_filtering')",
+      "common_scenarios": [
+        "Collection filtering",
+        "Predicate-based selection",
+        "Query-like filtering"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 27,
+      "from_context": "code_writing",
+      "to_directive": "fp_io_isolation",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_isolate_io_operations",
+      "condition_value": "true",
+      "condition_description": "AI needs to separate pure logic from I/O",
+      "priority": 40,
+      "description": "Consult fp_io_isolation to separate I/O from pure functions",
+      "consultation_method": "search_directives(keyword='io isolation', type='fp') OR get_directive_by_name('fp_io_isolation')",
+      "common_scenarios": [
+        "File I/O operations",
+        "Network calls",
+        "Database queries",
+        "Logging operations"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 28,
+      "from_context": "code_writing",
+      "to_directive": "fp_logging_safety",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_pure_logging",
+      "condition_value": "true",
+      "condition_description": "AI needs to implement logging without side effects",
+      "priority": 35,
+      "description": "Consult fp_logging_safety for pure logging patterns",
+      "consultation_method": "search_directives(keyword='logging safety', type='fp') OR get_directive_by_name('fp_logging_safety')",
+      "common_scenarios": [
+        "Debug logging in pure functions",
+        "Trace logging",
+        "Audit logging"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 29,
+      "from_context": "code_writing",
+      "to_directive": "fp_concurrency_safety",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_thread_safe_functions",
+      "condition_value": "true",
+      "condition_description": "AI needs to ensure functions are thread-safe",
+      "priority": 35,
+      "description": "Consult fp_concurrency_safety for thread-safe FP patterns",
+      "consultation_method": "search_directives(keyword='concurrency', type='fp') OR get_directive_by_name('fp_concurrency_safety')",
+      "common_scenarios": [
+        "Parallel processing",
+        "Concurrent execution",
+        "Race condition prevention"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 30,
+      "from_context": "code_writing",
+      "to_directive": "fp_parallel_purity",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_pure_parallel_functions",
+      "condition_value": "true",
+      "condition_description": "AI needs to ensure parallel functions remain pure",
+      "priority": 35,
+      "description": "Consult fp_parallel_purity for pure parallel execution",
+      "consultation_method": "search_directives(keyword='parallel purity', type='fp') OR get_directive_by_name('fp_parallel_purity')",
+      "common_scenarios": [
+        "Parallel map operations",
+        "Concurrent pure computations",
+        "Thread pool processing"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 31,
+      "from_context": "code_writing",
+      "to_directive": "fp_parallel_evaluation",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_parallel_computation",
+      "condition_value": "true",
+      "condition_description": "AI needs to parallelize pure computations",
+      "priority": 30,
+      "description": "Consult fp_parallel_evaluation for parallel execution patterns",
+      "consultation_method": "search_directives(keyword='parallel evaluation', type='fp') OR get_directive_by_name('fp_parallel_evaluation')",
+      "common_scenarios": [
+        "CPU-intensive pure functions",
+        "Independent computations",
+        "Batch processing"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 32,
+      "from_context": "code_writing",
+      "to_directive": "fp_test_purity",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_test_function_purity",
+      "condition_value": "true",
+      "condition_description": "AI needs to write tests that verify function purity",
+      "priority": 30,
+      "description": "Consult fp_test_purity for purity testing patterns",
+      "consultation_method": "search_directives(keyword='test purity', type='fp') OR get_directive_by_name('fp_test_purity')",
+      "common_scenarios": [
+        "Unit testing pure functions",
+        "Property-based testing",
+        "Purity verification tests"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 33,
+      "from_context": "code_writing",
+      "to_directive": "fp_naming_conventions",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_fp_naming_guidance",
+      "condition_value": "true",
+      "condition_description": "AI needs FP-specific naming conventions",
+      "priority": 25,
+      "description": "Consult fp_naming_conventions for function/variable naming",
+      "consultation_method": "search_directives(keyword='naming', type='fp') OR get_directive_by_name('fp_naming_conventions')",
+      "common_scenarios": [
+        "Function naming",
+        "Parameter naming",
+        "Module naming"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 34,
+      "from_context": "code_writing",
+      "to_directive": "fp_docstring_enforcement",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_fp_documentation_style",
+      "condition_value": "true",
+      "condition_description": "AI needs FP-specific docstring patterns",
+      "priority": 25,
+      "description": "Consult fp_docstring_enforcement for FP documentation style",
+      "consultation_method": "search_directives(keyword='docstring', type='fp') OR get_directive_by_name('fp_docstring_enforcement')",
+      "common_scenarios": [
+        "Documenting pure functions",
+        "Type signature documentation",
+        "Side effect documentation (if any)"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 35,
+      "from_context": "code_writing",
+      "to_directive": "fp_api_design",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_design_functional_api",
+      "condition_value": "true",
+      "condition_description": "AI needs to design API in functional style",
+      "priority": 35,
+      "description": "Consult fp_api_design for functional API design patterns",
+      "consultation_method": "search_directives(keyword='api design', type='fp') OR get_directive_by_name('fp_api_design')",
+      "common_scenarios": [
+        "Module public interface design",
+        "Library API design",
+        "Function composition interfaces"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 36,
+      "from_context": "code_writing",
+      "to_directive": "fp_null_elimination",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_remove_null_checks",
+      "condition_value": "true",
+      "condition_description": "AI needs to eliminate null/None checks",
+      "priority": 40,
+      "description": "Consult fp_null_elimination to remove null checks with Option types",
+      "consultation_method": "search_directives(keyword='null elimination', type='fp') OR get_directive_by_name('fp_null_elimination')",
+      "common_scenarios": [
+        "Replacing if x is None checks",
+        "Converting nullable returns to Option",
+        "Eliminating null pointer risks"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 37,
+      "from_context": "code_writing",
+      "to_directive": "fp_conditional_elimination",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_simplify_conditionals",
+      "condition_value": "true",
+      "condition_description": "AI needs to simplify complex if-else chains",
+      "priority": 30,
+      "description": "Consult fp_conditional_elimination to simplify conditionals",
+      "consultation_method": "search_directives(keyword='conditional elimination', type='fp') OR get_directive_by_name('fp_conditional_elimination')",
+      "common_scenarios": [
+        "Complex nested if-else",
+        "Switch-like logic",
+        "Guard clauses"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 38,
+      "from_context": "code_writing",
+      "to_directive": "fp_guard_clauses",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_early_returns",
+      "condition_value": "true",
+      "condition_description": "AI needs guard clause patterns",
+      "priority": 30,
+      "description": "Consult fp_guard_clauses for early return patterns",
+      "consultation_method": "search_directives(keyword='guard clauses', type='fp') OR get_directive_by_name('fp_guard_clauses')",
+      "common_scenarios": [
+        "Input validation",
+        "Precondition checks",
+        "Early exit conditions"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 39,
+      "from_context": "code_writing",
+      "to_directive": "fp_inheritance_flattening",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_flatten_inheritance",
+      "condition_value": "true",
+      "condition_description": "AI needs to convert class hierarchies to functions",
+      "priority": 35,
+      "description": "Consult fp_inheritance_flattening to remove OOP inheritance",
+      "consultation_method": "search_directives(keyword='inheritance flattening', type='fp') OR get_directive_by_name('fp_inheritance_flattening')",
+      "common_scenarios": [
+        "Converting class hierarchies",
+        "Removing inheritance",
+        "Flattening to functions"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 40,
+      "from_context": "code_writing",
+      "to_directive": "fp_const_refactoring",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_use_constants",
+      "condition_value": "true",
+      "condition_description": "AI needs to refactor mutable variables to constants",
+      "priority": 35,
+      "description": "Consult fp_const_refactoring to convert variables to constants",
+      "consultation_method": "search_directives(keyword='const', type='fp') OR get_directive_by_name('fp_const_refactoring')",
+      "common_scenarios": [
+        "Converting let to const",
+        "Eliminating variable reassignment",
+        "Immutable bindings"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 41,
+      "from_context": "code_writing",
+      "to_directive": "fp_ownership_safety",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_ownership_tracking",
+      "condition_value": "true",
+      "condition_description": "AI needs ownership safety patterns (Rust-like)",
+      "priority": 30,
+      "description": "Consult fp_ownership_safety for ownership tracking",
+      "consultation_method": "search_directives(keyword='ownership', type='fp') OR get_directive_by_name('fp_ownership_safety')",
+      "common_scenarios": [
+        "Resource management",
+        "Memory safety",
+        "Borrow checking"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 42,
+      "from_context": "code_writing",
+      "to_directive": "fp_borrow_check",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_borrow_checking",
+      "condition_value": "true",
+      "condition_description": "AI needs borrow checking patterns",
+      "priority": 30,
+      "description": "Consult fp_borrow_check for borrow safety patterns",
+      "consultation_method": "search_directives(keyword='borrow', type='fp') OR get_directive_by_name('fp_borrow_check')",
+      "common_scenarios": [
+        "Reference safety",
+        "Mutable borrow conflicts",
+        "Lifetime tracking"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 43,
+      "from_context": "code_writing",
+      "to_directive": "fp_dependency_tracking",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_track_dependencies",
+      "condition_value": "true",
+      "condition_description": "AI needs to track function dependencies",
+      "priority": 30,
+      "description": "Consult fp_dependency_tracking for dependency analysis",
+      "consultation_method": "search_directives(keyword='dependency tracking', type='fp') OR get_directive_by_name('fp_dependency_tracking')",
+      "common_scenarios": [
+        "Function dependency graphs",
+        "Build order determination",
+        "Circular dependency detection"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 44,
+      "from_context": "code_writing",
+      "to_directive": "fp_function_indexing",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_index_functions",
+      "condition_value": "true",
+      "condition_description": "AI needs to create function indices for lookup",
+      "priority": 25,
+      "description": "Consult fp_function_indexing for function indexing patterns",
+      "consultation_method": "search_directives(keyword='function indexing', type='fp') OR get_directive_by_name('fp_function_indexing')",
+      "common_scenarios": [
+        "Function registry patterns",
+        "Dynamic function lookup",
+        "Plugin systems"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 45,
+      "from_context": "code_writing",
+      "to_directive": "fp_metadata_annotation",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_function_metadata",
+      "condition_value": "true",
+      "condition_description": "AI needs to attach metadata to functions",
+      "priority": 25,
+      "description": "Consult fp_metadata_annotation for function metadata patterns",
+      "consultation_method": "search_directives(keyword='metadata', type='fp') OR get_directive_by_name('fp_metadata_annotation')",
+      "common_scenarios": [
+        "Decorators for metadata",
+        "Function annotations",
+        "Capability tracking"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 46,
+      "from_context": "code_writing",
+      "to_directive": "fp_purity_caching_analysis",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_purity_analysis_for_caching",
+      "condition_value": "true",
+      "condition_description": "AI needs to analyze function purity for safe caching",
+      "priority": 30,
+      "description": "Consult fp_purity_caching_analysis to determine cache safety",
+      "consultation_method": "search_directives(keyword='purity caching', type='fp') OR get_directive_by_name('fp_purity_caching_analysis')",
+      "common_scenarios": [
+        "Determining if function can be memoized",
+        "Cache safety analysis",
+        "Performance optimization decisions"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 47,
+      "from_context": "code_writing",
+      "to_directive": "fp_cost_analysis",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_performance_cost_analysis",
+      "condition_value": "true",
+      "condition_description": "AI needs to analyze computational cost",
+      "priority": 25,
+      "description": "Consult fp_cost_analysis for performance cost estimation",
+      "consultation_method": "search_directives(keyword='cost analysis', type='fp') OR get_directive_by_name('fp_cost_analysis')",
+      "common_scenarios": [
+        "Algorithm complexity analysis",
+        "Performance optimization decisions",
+        "Resource usage estimation"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 48,
+      "from_context": "code_writing",
+      "to_directive": "fp_evaluation_order_control",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_control_evaluation_order",
+      "condition_value": "true",
+      "condition_description": "AI needs to control when expressions are evaluated",
+      "priority": 30,
+      "description": "Consult fp_evaluation_order_control for evaluation ordering",
+      "consultation_method": "search_directives(keyword='evaluation order', type='fp') OR get_directive_by_name('fp_evaluation_order_control')",
+      "common_scenarios": [
+        "Lazy vs eager evaluation",
+        "Short-circuit evaluation",
+        "Performance optimization"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    }
+  ],
+  "flow_summary": {
+    "total_flows": 48,
+    "by_priority": {
+      "high_priority_40_45": 12,
+      "medium_priority_30_35": 23,
+      "low_priority_25": 13
+    },
+    "by_category": {
+      "error_handling": 4,
+      "purity_principles": 6,
+      "optimization": 7,
+      "advanced_patterns": 9,
+      "type_safety": 3,
+      "data_structures": 3,
+      "concurrency": 3,
+      "code_quality": 4,
+      "api_design": 2,
+      "performance_analysis": 3,
+      "refactoring": 4
+    },
+    "consultation_frequency": {
+      "very_common": [
+        "fp_optionals",
+        "fp_result_types",
+        "fp_purity",
+        "fp_null_elimination",
+        "fp_wrapper_generation"
+      ],
+      "common": [
+        "fp_currying",
+        "fp_pattern_matching",
+        "fp_tail_recursion",
+        "fp_io_isolation",
+        "fp_list_operations"
+      ],
+      "moderate": [
+        "fp_monadic_composition",
+        "fp_memoization",
+        "fp_lazy_evaluation",
+        "fp_concurrency_safety"
+      ],
+      "rare": [
+        "fp_cost_analysis",
+        "fp_ownership_safety",
+        "fp_borrow_check"
+      ]
+    }
+  },
+  "notes": {
+    "no_duplication": "FP compliance checking (project_compliance_check) is separate - already in directive_flow_project.json with 5 opt-in flows",
+    "inline_consultations": "All FP reference consultations happen inline during code writing - NO loop-back to aifp_status",
+    "baseline_compliance": "AI writes FP-compliant code by default - consultations only needed for implementation details",
+    "helpers_used": "search_directives() and get_directive_by_name() are primary consultation methods. Read MD file directly if detailed context needed (path in directive JSON)",
+    "not_covered": "Some FP directives not included in flows (optimization-specific, language-specific) - consult via keyword search when needed"
+  }
+}

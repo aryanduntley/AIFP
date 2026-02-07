@@ -1,0 +1,649 @@
+{
+  "helpers": [
+    {
+      "name": "aifp_run",
+      "file_path": "helpers/orchestrators/entry_points.py",
+      "parameters": [
+        {
+          "name": "is_new_session",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Whether this is a new session start. Use true for first interaction, new session, or after long breaks. Use false (default) for continuation work."
+        }
+      ],
+      "purpose": "Main entry point orchestrator. Can be called on every user interaction or automatically on start. Optionally bundles comprehensive session startup data.",
+      "error_handling": "Returns error message if database not accessible. Returns empty suggestions if no directives match.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If user setting project_continue_on_start=true and is_new_session=true: Automatically continue project work with bundled context instead of waiting for user command",
+        "When autostart enabled: Load pending tasks from status, present with priority order, proactively suggest next steps for project completion"
+      ],
+      "implementation_notes": [
+        "Returns: If is_new_session=true → bundles {status, user_settings, fp_directive_index, all_directive_names[], infrastructure_data, guidance, watchdog: {started, start_error, status, reminders[], notice}}",
+        "Returns: If is_new_session=false → lightweight {guidance, common_starting_points[], watchdog: {status, reminders[], notice}}",
+        "Watchdog status values: 'ok' (running, checked), 'not_running' (PID file missing — inform user), 'no_reminders_file' (PID exists but reminders missing — watchdog may have failed), 'no_project' (no project found). AI should surface notice to user when status is not 'ok'.",
+        "Session bundle calls: aifp_status(), get_user_settings(), get_fp_directive_index(), get_all_directive_names(), get_all_infrastructure(), get_supportive_context()",
+        "Directive names only - NOT full directive data (AI queries by name when needs details)",
+        "fp_directive_index: FP directive names grouped by category for quick reference",
+        "all_directive_names: Complete list of ALL directive names (project, fp, user, git) for AI to know what's available",
+        "Does NOT parse user input or match intent - returns static guidance only",
+        "AI receives guidance and makes own decisions about which directives to apply",
+        "Called on EVERY interaction to keep AI on track with AIFP directives",
+        "Session bundle is ~19-24k tokens: status (~10k) + settings (~1k) + fp_index (~2k) + directive_names (~1k) + infrastructure (~500) + supportive_context (~3.5k) + guidance (~2k)",
+        "Always includes guidance on when to call aifp_run(is_new_session=true) again"
+      ],
+      "target_database": "multi_db",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "self_invocation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "aifp_run directive uses aifp_run helper as entry point orchestrator"
+        }
+      ]
+    },
+    {
+      "name": "aifp_init",
+      "file_path": "helpers/orchestrators/entry_points.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        }
+      ],
+      "purpose": "Phase 1 mechanical setup orchestrator for project initialization. Atomically creates directories, databases with schemas, and templates. No deep logic - pure mechanical operations.",
+      "error_handling": "Return detailed error if: already initialized, directory permissions denied, database creation failed. Clean up partial initialization on error (delete .aifp-project/ if incomplete).",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Verify initialization: confirm .aifp-project/ directory exists with project.db, user_preferences.db, ProjectBlueprint.md, and backups/ directory. Check project.db has 21 tables, user_preferences.db has 8 tables, infrastructure has 8 entries. Report any issues to user before proceeding.",
+        "Phase 1 complete. AI must now execute Phase 2: scan for OOP patterns (if existing code), detect infrastructure (language, build tool, source directory), and prompt user for project name/purpose/goals.",
+        "Empty infrastructure entries created: project_root (populated), source_directory, primary_language, build_tool, package_manager, test_framework, runtime_version, main_branch. AI must detect and populate these values.",
+        "ProjectBlueprint.md is a template with placeholders. AI must populate with real project data after user interaction.",
+        "After Phase 2 population complete: route to project_discovery directive. Discovery handles: collaborative blueprint refinement, infrastructure confirmation, state database creation (via create_state_database helper once source_directory is confirmed), theme/flow definition, completion path with milestones.",
+        "Do NOT create state database during init — source_directory is not yet confirmed. State DB creation happens during project_discovery Branch 3 (map_infrastructure) after source_directory is confirmed with user."
+      ],
+      "implementation_notes": [
+        "PHASE 1 ONLY - Mechanical setup with no intelligence",
+        "Step 1: Check if already initialized (error if .aifp-project/project.db exists)",
+        "Step 2: Create directories: .aifp-project/, .aifp-project/backups/",
+        "Step 3: Copy ProjectBlueprint_template.md to .aifp-project/ProjectBlueprint.md",
+        "Step 4: Initialize project.db: load schemas/project.sql, execute, then execute initialization/standard_infrastructure.sql (8 empty entries), then call update_project_root() to populate project_root value",
+        "Step 5: Initialize user_preferences.db: load schemas/user_preferences.sql, execute, INSERT default tracking_settings (all disabled)",
+        "Step 6: Create .gitkeep files for empty directories",
+        "Step 7: Verify all created files exist (inline check, no helper call)",
+        "Step 8: Return success object",
+        "RETURN STRUCTURE: {success: bool, project_root: str, aifp_dir: str, files_created: ['.aifp-project/', 'project.db', 'user_preferences.db', 'ProjectBlueprint.md'], tables_created: {project_db: [...], user_prefs_db: [...]}, infrastructure_entries: 8, next_phase: 'AI populates infrastructure and blueprint'}",
+        "State database is NOT created during init. It is created during project_discovery (Branch 3: map_infrastructure) via create_state_database() helper after source_directory is confirmed with user.",
+        "State DB reference: SQL schema at src/aifp/database/initialization/state_db.sql, template at src/aifp/templates/state_db/state_operations.py, helper at helpers/project/state_db.py",
+        "ERROR CLEANUP: If any step fails after Step 2, delete .aifp-project/ directory entirely (shutil.rmtree). Partial initialization is worse than no initialization.",
+        "ERROR RETURN: {success: false, error: str, failed_step: int, cleanup_performed: bool}",
+        "All operations are direct file/DB operations - no external helper calls"
+      ],
+      "target_database": "multi_db",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_init",
+          "execution_context": "phase_1_mechanical_setup",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "project_root": "from current working directory or user input"
+          },
+          "description": "aifp_init directive calls aifp_init for Phase 1 mechanical setup"
+        }
+      ]
+    },
+    {
+      "name": "aifp_status",
+      "file_path": "helpers/orchestrators/entry_points.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Absolute path to the project root directory containing .aifp-project/"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "default": "summary",
+          "description": "'quick', 'summary', 'detailed' - level of detail to return"
+        }
+      ],
+      "purpose": "Status orchestrator that retrieves comprehensive project state. Gathers data from multiple tables for AI to determine next steps.",
+      "error_handling": "Returns {initialized: false} if .aifp-project/ does not exist.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "AI should interpret status data and determine next directive to execute based on project state.",
+        "If not initialized: AI should prompt user to run project_init.",
+        "If validation has errors: AI should address structural issues before continuing work.",
+        "Priority order for current focus: sidequests \u2192 subtasks \u2192 tasks."
+      ],
+      "implementation_notes": [
+        "Returns status object with: project_metadata, infrastructure, work_hierarchy (counts + tree), user_directives_status, recent_warnings, git_state, supportive_context",
+        "Calls get_project_status(project_root, type) for work hierarchy data (includes both flat counts AND nested tree)",
+        "Calls get_supportive_context() to include detailed FP examples, DRY patterns, state DB usage, behavioral rules — provides same reference material as aifp_run(is_new_session=true) so AI can refresh context mid-session without full directive reload",
+        "AI assesses structural health from returned data (infrastructure, metadata, work_hierarchy)",
+        "Reads project metadata from project table",
+        "Reads infrastructure from infrastructure table",
+        "Checks project.user_directives_status for Use Case determination",
+        "If Use Case 2 + active: queries user_directives.db for active directive counts",
+        "Reads recent notes (limit 5, severity warning/error)",
+        "Gets git state from work_branches table",
+        "Type='quick': Counts and current work item only",
+        "Type='summary': Standard detail - incomplete items, recent context (default)",
+        "Type='detailed': Full data including all history",
+        "NO suggestion logic - AI determines appropriate next directive from returned data"
+      ],
+      "target_database": "multi_db",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "self_invocation",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "aifp_status directive uses aifp_status helper to retrieve comprehensive project state - AI determines next steps from returned data"
+        },
+        {
+          "directive_name": "aifp_run",
+          "execution_context": "get_status_when_requested",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Called by aifp_run when is_new_session=true - provides comprehensive status for fresh context"
+        }
+      ]
+    },
+    {
+      "name": "get_project_status",
+      "file_path": "helpers/orchestrators/status.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "default": "summary",
+          "description": "'quick', 'summary', 'detailed' - how much data to retrieve"
+        }
+      ],
+      "purpose": "Retrieve work hierarchy data from project database. Returns structured counts, records, and nested tree in a single pass.",
+      "error_handling": "Returns error if project.db not found or not accessible.",
+      "is_tool": false,
+      "is_sub_helper": true,
+      "return_statements": [
+        "Files and functions may be reserved (is_reserved=1) but not finalized. Complete the reserve → write with ID in name → finalize flow before continuing."
+      ],
+      "implementation_notes": [
+        "Summary returns: {counts{}, hierarchy{active_path, active_milestone, active_tasks[], active_subtasks[], active_sidequests[], current_focus, active_items[], historical{}, recent_files[], reserved_entities{}}, blocked_items[]}",
+        "Hierarchy follows: completion_path → milestone → task/subtask/sidequest → items",
+        "Historical context is positional: last completed task in active milestone + items, last completed milestone if first task or no tasks",
+        "Reserved entities: files/functions with is_reserved=1 (not yet finalized)",
+        "Recent files: last 5 by updated_at",
+        "Detailed returns: full history with all records + nested tree",
+        "Type='quick': Counts and current in_progress item only",
+        "Type='summary': Hierarchy-aware context with positional history (default)",
+        "Type='detailed': All records including completed history + complete tree",
+        "NO analysis logic - returns raw data, AI interprets meaning"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_status",
+          "execution_context": "retrieve_work_hierarchy",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Sub-helper used by aifp_status to retrieve work hierarchy data (completion paths, milestones, tasks, subtasks, sidequests) with counts and nested tree"
+        }
+      ]
+    },
+    {
+      "name": "get_task_context",
+      "file_path": "helpers/orchestrators/status.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        },
+        {
+          "name": "task_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Type of task: 'task', 'subtask', 'sidequest'"
+        },
+        {
+          "name": "task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "ID of the task/subtask/sidequest"
+        },
+        {
+          "name": "include_interactions",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Include function dependency interactions"
+        },
+        {
+          "name": "include_history",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Include note history for task"
+        }
+      ],
+      "purpose": "Get complete context for resuming work on a specific task/subtask/sidequest. Single call retrieves item + associated items + flows + files + functions + optionally interactions and notes.",
+      "error_handling": "Returns error if task not found or project.db not accessible.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Task context loaded. AI should review items to determine where to resume.",
+        "If task is blocked: check blocked_by field and resolve blockers first."
+      ],
+      "implementation_notes": [
+        "Returns: {task_item{}, items[], flows[], files[], functions[], interactions[]?, notes[]?}",
+        "Queries task/subtask/sidequest by task_type + task_id from appropriate table",
+        "Gets associated items from items table (polymorphic: reference_table + reference_id)",
+        "Gets flows linked to task's items via file_flows",
+        "Gets files from file_flows for those flows",
+        "Gets functions for those files",
+        "If include_interactions=true: gets interactions for those functions",
+        "If include_history=true: gets notes for this task",
+        "Optimized for session resumption - all context in one call"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_auto_resume",
+          "execution_context": "load_task_context",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {
+            "task_type": "detected_task_type (task, subtask, sidequest)",
+            "task_id": "last_incomplete_task_id",
+            "include_interactions": "true",
+            "include_history": "true"
+          },
+          "description": "Load complete task context for resuming interrupted work - retrieves task details, associated flows, files, functions, interactions, and note history in single optimized query"
+        }
+      ]
+    },
+    {
+      "name": "get_current_progress",
+      "file_path": "helpers/orchestrators/state.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        },
+        {
+          "name": "scope",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "What to retrieve: 'tasks', 'milestones', 'completion_paths', 'files', 'functions', 'flows', 'themes', 'infrastructure', 'all'"
+        },
+        {
+          "name": "detail_level",
+          "type": "string",
+          "required": false,
+          "default": "standard",
+          "description": "How much detail: 'minimal', 'standard', 'full'"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "WHERE-like conditions: {field: value} or {field: {operator: value}}"
+        }
+      ],
+      "purpose": "Single entry point for scoped project status queries. Replaces 5-10 separate helper calls with one flexible query.",
+      "error_handling": "Returns error if project.db not found. Returns empty results for unknown scope.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: Flexible object based on scope and detail_level parameters",
+        "Routes to appropriate table queries based on scope value",
+        "Applies filters as WHERE conditions",
+        "Default detail_level='standard' returns reasonable data without overwhelming",
+        "scope=null returns summary counts for all entity types"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "update_project_state",
+      "file_path": "helpers/orchestrators/state.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        },
+        {
+          "name": "action",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Operation: 'start_task', 'complete_task', 'pause_task', 'resume_task', 'block_task', 'unblock_task', 'start_subtask', 'complete_subtask', etc."
+        },
+        {
+          "name": "target_type",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Entity type: 'task', 'subtask', 'sidequest', 'milestone', 'completion_path'"
+        },
+        {
+          "name": "target_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "ID of target entity"
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "Action-specific data (e.g., blocked_by, completion_notes)"
+        },
+        {
+          "name": "create_note",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Auto-log action as note in notes table"
+        }
+      ],
+      "purpose": "Single entry point for common project state updates. Simplifies task lifecycle management and progress tracking.",
+      "error_handling": "Returns error if entity not found or invalid action for entity type.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "State updated. If task completed: check if all tasks in milestone are complete, consider marking milestone complete.",
+        "If task blocked: create sidequest to resolve blocker, then unblock and resume."
+      ],
+      "implementation_notes": [
+        "Returns: {success, updated_entity{}, note_created?, note_id?}",
+        "Maps action to appropriate field updates (status, timestamps)",
+        "Actions: start_task, complete_task, pause_task, resume_task, block_task, unblock_task, start_subtask, complete_subtask, start_sidequest, complete_sidequest, start_milestone, complete_milestone, start_path, complete_path",
+        "Updates entity status field and related timestamps",
+        "If create_note=true: inserts note record automatically with action context",
+        "Simplifies common state transitions with action-based interface"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "batch_update_progress",
+      "file_path": "helpers/orchestrators/state.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        },
+        {
+          "name": "updates",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "List of update objects: [{target_type, target_id, action, data}, ...]"
+        },
+        {
+          "name": "transaction",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "All-or-nothing commit vs independent updates"
+        },
+        {
+          "name": "continue_on_error",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Stop on first error or continue processing remaining updates"
+        }
+      ],
+      "purpose": "Update multiple project items atomically. Used after code generation or bulk operations to ensure consistency.",
+      "error_handling": "Returns per-update results. If transaction=true and any fail, rolls back all.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Batch update complete. Review any failures and retry individually if needed."
+      ],
+      "implementation_notes": [
+        "Returns: {success, updated_count, failed_count, results[{success, entity, error?}]}",
+        "Iterates updates, calls update_project_state for each",
+        "Transaction=true: wraps in DB transaction for atomicity",
+        "Continue_on_error=true: processes all updates even if some fail",
+        "If transaction=true and any fail: rolls back all changes"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "query_project_state",
+      "file_path": "helpers/orchestrators/query.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        },
+        {
+          "name": "entity",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Primary table to query: 'tasks', 'subtasks', 'sidequests', 'milestones', 'files', 'functions', 'flows', 'themes', etc."
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "description": "WHERE-like conditions with operators: {field: value} or {field: {op: 'gt', value: 5}}"
+        },
+        {
+          "name": "joins",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "Relations to include via LEFT JOIN: ['milestones', 'files']"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "ORDER BY clause: 'field ASC' or 'field DESC'"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Maximum results (pagination)"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "default": null,
+          "description": "Skip first N results (pagination)"
+        }
+      ],
+      "purpose": "Flexible SQL-like query interface for complex project queries. Provides powerful filtering and joining capabilities without writing raw SQL.",
+      "error_handling": "Returns error for unknown entity names or invalid filter operators.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of entity objects with joins embedded",
+        "Filter operators: eq, ne, gt, lt, gte, lte, in, like",
+        "Joins uses predefined LEFT JOIN mappings (e.g., entity='tasks' + joins=['milestones'] -> LEFT JOIN milestones ON tasks.milestone_id = milestones.id)",
+        "Sort: 'field ASC' or 'field DESC'",
+        "Powerful SQL-like interface without writing raw SQL",
+        "Prevents SQL injection by parameterizing all values"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_files_by_flow_context",
+      "file_path": "helpers/orchestrators/query.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Path to project root directory"
+        },
+        {
+          "name": "flow_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Flow ID to get files for"
+        }
+      ],
+      "purpose": "Get all files for a flow with functions embedded in each file dict.",
+      "error_handling": "Returns error if flow not found or project.db not accessible.",
+      "is_tool": false,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "implementation_notes": [
+        "Returns: Array of file objects with functions[] embedded in each",
+        "Step 1: Query file_flows for flow_id -> get file_ids",
+        "Step 2: Query files for those file_ids",
+        "Step 3: For each file: query functions WHERE file_id = file.id",
+        "Step 4: Embed functions array in each file dict",
+        "Provides complete view of flow implementation"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "map_flow_dependencies",
+          "sequence_order": 6,
+          "is_required": true,
+          "parameters_mapping": {
+            "flow_id": "current_flow_id_from_flows_loop"
+          },
+          "description": "Get all files implementing a flow with embedded functions - used to build dependency map showing file-flow-function relationships"
+        }
+      ]
+    },
+    {
+      "name": "aifp_end",
+      "file_path": "helpers/orchestrators/entry_points.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Absolute path to the project root directory containing .aifp-project/"
+        }
+      ],
+      "purpose": "Session termination orchestrator. Gathers session audit data: reads watchdog state and final reminders, queries all files and functions from DB for AI to cross-reference, reads recent notes and task state. Stops watchdog process if running. Returns structured audit data for AI to interpret and act on. No analysis logic — AI determines what is stale or missing.",
+      "error_handling": "Returns {initialized: false} if .aifp-project/ does not exist. Returns partial data if watchdog PID file missing (watchdog not implemented or not running). Never fails hard — always returns what it can gather.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "AI should compare returned file/function lists against session work to identify untracked items.",
+        "AI should review returned task/milestone state for any needed progress updates.",
+        "AI should use returned watchdog reminders (if any) to address outstanding issues.",
+        "AI should generate session summary from returned data and present to user.",
+        "AI handles all FP compliance checking — helper only returns code data for AI to review.",
+        "Once complete, Inform user safe to end session."
+      ],
+      "implementation_notes": [
+        "NO analysis or compliance logic — pure data gathering and process management",
+        "Step 1: Read .aifp-project/watchdog/watchdog.pid — if PID file exists and process alive, read .aifp-project/watchdog/reminders.json, then kill process. If PID file absent, set watchdog_stopped=null (not implemented/not running)",
+        "Step 2: Query files table — SELECT id, path, updated_at, is_reserved FROM files",
+        "Step 3: Query functions table — SELECT id, name, file_id, is_reserved FROM functions",
+        "Step 4: Query active tasks/items — SELECT from tasks, items WHERE status='in_progress'",
+        "Step 5: Query recent notes — SELECT from notes ORDER BY created_at DESC LIMIT 10",
+        "Step 6: Read project metadata — SELECT status, version from project table",
+        "Step 7: Return structured audit data object",
+        "RETURN STRUCTURE: {success: bool, watchdog: {stopped: bool|null, final_reminders: []}, project_state: {files: [], functions: [], active_tasks: [], active_items: [], recent_notes: [], metadata: {}}}",
+        "ERROR RETURN: {success: false, error: str, partial_data: {}|null}",
+        "Watchdog handling is graceful: if watchdog module not yet implemented, PID file won't exist — return watchdog.stopped=null",
+        "All operations are DB reads + one process kill — no writes except clearing reminders.json"
+      ],
+      "target_database": "multi_db",
+      "used_by_directives": [
+        {
+          "directive_name": "aifp_end",
+          "execution_context": "session_termination_audit",
+          "sequence_order": 1,
+          "is_required": true,
+          "parameters_mapping": {
+            "project_root": "from project context or user input"
+          },
+          "description": "aifp_end directive calls aifp_end helper to gather session audit data — AI interprets returned data and performs compliance checks, identifies gaps, generates summary"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "file": "helpers-orchestrators.json",
+    "count": 11,
+    "status": "updated 2026-01-31 - moved get_supportive_context to helpers-index.json (not an orchestrator)",
+    "last_updated": "2026-01-31",
+    "changes": [
+      "Removed get_status_tree: tree logic folded into get_project_status",
+      "Removed get_project_context: redundant with existing helpers (get_from_project, get_all_infrastructure, get_project_status)",
+      "Renamed target_database 'orchestrator' to 'multi_db' for cross-DB helpers (aifp_run, aifp_init, aifp_status)",
+      "Renamed target_database 'orchestrator' to 'project' for single-DB helpers (all others)",
+      "Added project_root parameter to helpers that were missing it",
+      "Updated aifp_status implementation_notes to remove get_status_tree reference",
+      "Updated aifp_init return_statements per orchestrator implementation plan",
+      "Updated file_path values to match planned file organization",
+      "Removed validate_initialization: validation logic belongs to AI, not coded helpers. aifp_init uses inline file-exists check instead",
+      "Renamed get_work_context → get_task_context, work_item_type → task_type, work_item_id → task_id",
+      "Restructured get_project_status summary mode: hierarchy-aware context (completion_path → milestone → task → items) with positional history, reserved entities, recent files",
+      "Fixed items JOIN_MAPPINGS: items uses polymorphic reference_table + reference_id, not FK columns"
+    ],
+    "notes": "All helpers are data retrieval/update operations. NO analysis/suggestion logic - AI interprets returned data and decides next steps."
+  }
+}
