@@ -11,7 +11,7 @@
 
 ### Idea
 
-Build a Model Context Protocol (MCP) server that provides AI assistants with database-driven directives for functional programming enforcement and project management. The server enables AI to write pure functional code, manage project lifecycles, and support user-defined automation directives. Testing changes
+Build a Model Context Protocol (MCP) server that provides AI assistants with database-driven directives for functional programming enforcement and project management. The server enables AI to write pure functional code, manage project lifecycles, and support user-defined automation directives.
 
 ### Current Phase
 
