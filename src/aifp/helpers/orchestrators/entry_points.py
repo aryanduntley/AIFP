@@ -162,15 +162,26 @@ def aifp_init(project_root: str) -> Result:
             conn.executescript(schema_sql)
 
             # Insert default tracking_settings (all disabled)
-            conn.execute(
+            conn.executescript(
                 """
-                INSERT OR IGNORE INTO tracking_settings (
-                    track_files, track_functions, track_types,
-                    track_interactions, track_themes, track_flows,
-                    track_git_branches, track_dependencies,
-                    auto_detect_functions, auto_detect_types,
-                    auto_detect_interactions
-                ) VALUES (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                INSERT OR IGNORE INTO tracking_settings
+                    (feature_name, enabled, description, estimated_token_overhead)
+                VALUES
+                    ('fp_flow_tracking', 0,
+                     'Track FP directive consultations',
+                     '~2% per directive check'),
+                    ('ai_interaction_log', 0,
+                     'Log user corrections and feedback',
+                     '~3% per interaction'),
+                    ('helper_function_logging', 0,
+                     'Log directive execution performance',
+                     '~5% per file write'),
+                    ('issue_reports', 0,
+                     'Log errors and roadblocks',
+                     '~1% when errors occur'),
+                    ('compliance_checking', 0,
+                     'Track FP compliance patterns',
+                     '~5% per compliance check');
                 """
             )
 

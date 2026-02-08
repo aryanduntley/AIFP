@@ -459,20 +459,13 @@ No additional dependencies to install. The `aifp/` folder contains everything th
 
 **This step is required.** The system prompt is what tells the AI to use AIFP tools proactively. Without it, the MCP server is just a collection of passive tools that never get called.
 
-**pip install users** — print the system prompt to your terminal, then copy-paste it:
+Print the system prompt to your terminal, then copy-paste it into your AI client:
 
 ```bash
-aifp --system-prompt
-# or: python -m aifp --system-prompt
+python3 -m aifp --system-prompt
 ```
 
-**Manual install users** — find the system prompt file in the downloaded repository:
-
-```
-sys-prompt/aifp_system_prompt.txt
-```
-
-Open it and copy its contents.
+The system prompt is shipped with the package — no separate file or download needed. This works for all install methods (pip, venv, manual).
 
 **Where to paste it** (depends on your AI client):
 
@@ -484,9 +477,11 @@ Open it and copy its contents.
 
 ### Configure Your AI Client
 
-Register the AIFP MCP server in your AI client's configuration.
+Register the AIFP MCP server in your AI client's configuration. The server uses **stdio transport** — it reads JSON-RPC messages from stdin and writes responses to stdout.
 
-**Claude Desktop** — edit `claude_desktop_config.json`:
+#### Claude Desktop
+
+Edit `claude_desktop_config.json`:
 
 ```json
 {
@@ -518,9 +513,61 @@ If you used **Method 2 (manual install)**, add the parent directory of your `aif
 
 For example, if you copied `aifp/` to `~/mcp-servers/aifp/`, set `PYTHONPATH` to `~/mcp-servers`.
 
-**Claude Code** — add to your MCP settings (`.mcp.json` or via settings UI) with the same command pattern above.
+If you installed into a **virtual environment**, use the full path to the venv's Python so Claude Desktop uses the correct interpreter:
 
-**Other MCP Clients** — the server uses **stdio transport**. Point your client at `python3 -m aifp`. For manual installs, ensure `PYTHONPATH` includes the parent directory of the `aifp/` folder.
+```json
+{
+  "mcpServers": {
+    "aifp": {
+      "command": "/path/to/venv/bin/python3",
+      "args": ["-m", "aifp"],
+      "env": {}
+    }
+  }
+}
+```
+
+#### Claude Code
+
+Use `claude mcp add` to register the server. Run the command **from within the project folder** you want AIFP to manage.
+
+**Choose a scope first.** AIFP enforces strict functional programming and actively rejects OOP codebases. If you work on other projects that use OOP or don't need AIFP, avoid `--scope user` — it enables the server in every project you open.
+
+| Scope | Effect | Best for |
+|---|---|---|
+| `--scope project` (Recommended) | Creates `.mcp.json` in the current directory. Shareable via git. | Teams and per-project control |
+| `--scope local` | Stored in `~/.claude.json` keyed to the current directory. Private. | Personal per-project use |
+| `--scope user` | Available in every project you open. | Developers who use AIFP for all projects |
+
+**pip install (system-wide):**
+```bash
+claude mcp add --transport stdio --scope project aifp -- python3 -m aifp
+```
+
+**pip install (virtual environment)** — use the venv's Python path:
+```bash
+claude mcp add --transport stdio --scope project aifp -- /path/to/venv/bin/python3 -m aifp
+```
+A bare `python3` resolves to the system Python, which won't have the package. Use the full path to the venv's interpreter so the MCP server subprocess finds the installed package.
+
+**Manual install or running from source** — set `PYTHONPATH` to the parent of the `aifp/` folder:
+```bash
+claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/parent-of-aifp aifp -- python3 -m aifp
+```
+
+**Quick reference:**
+
+| Install Method | Claude Code Command |
+|---|---|
+| `pip install aifp` (system) | `-- python3 -m aifp` |
+| `pip install aifp` (venv) | `-- /path/to/venv/bin/python3 -m aifp` |
+| Manual folder / from source | `--env PYTHONPATH=/parent/of/aifp -- python3 -m aifp` |
+
+> **Note**: All flags (`--transport`, `--scope`, `--env`) must come **before** the server name. The `--` separates the name from the command. Verify the server is connected with `/mcp` inside Claude Code.
+
+#### Other MCP Clients
+
+The server uses **stdio transport**. Point your client at `python3 -m aifp` (or the full path to your venv's Python). For manual installs, ensure `PYTHONPATH` includes the parent directory of the `aifp/` folder. No API keys or authentication required.
 
 ### How It Works
 
