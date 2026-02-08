@@ -625,7 +625,9 @@
       "error_handling": "Return error if no project exists",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If purpose, goals, or version changed, add an 'evolution' note via add_note describing what changed and why"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {

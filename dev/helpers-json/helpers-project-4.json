@@ -580,7 +580,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Verify all function calls in code are tracked in the interactions table"
+      ],
       "implementation_notes": [
         "Returns: {success: true, id: int} - new interaction ID",
         "Inserts into interactions table",
@@ -616,7 +618,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Verify all function calls in code are tracked in the interactions table"
+      ],
       "implementation_notes": [
         "Returns: {success: true, ids: [int, ...]} - inserted interaction IDs",
         "Uses function IDs (not names)",

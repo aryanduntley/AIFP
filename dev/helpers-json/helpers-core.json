@@ -191,16 +191,24 @@
           "required": true,
           "default": null,
           "description": "Directive name to look up"
+        },
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Project root directory. When provided, also retrieves directive preferences from user_preferences.db and linked notes (send_with_directive=1) from project.db."
         }
       ],
-      "purpose": "Get specific directive by name (high-frequency operation)",
+      "purpose": "Get specific directive by name with optional cross-DB enrichment (preferences + linked notes)",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
-        "Returns: Directive object with workflow, description, category, etc.",
-        "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for this directive)"
+        "Returns: Directive object with workflow, description, category, preferences, and linked notes",
+        "When project_root provided: queries user_preferences.db for directive_preferences (by directive_name) and project.db for notes with send_with_directive=1",
+        "Without project_root: returns directive data from aifp_core.db only (no preferences or linked notes)"
       ],
       "target_database": "core",
       "used_by_directives": [

@@ -48,6 +48,8 @@ from ..utils import (
     parse_json_field,
     json_to_tuple,
     _open_core_connection,
+    _open_preferences_connection,
+    _open_project_connection,
 )
 
 # Re-export for convenience
@@ -65,6 +67,8 @@ __all__ = [
     'parse_json_field',
     'json_to_tuple',
     '_open_core_connection',
+    '_open_preferences_connection',
+    '_open_project_connection',
     'DirectiveRecord',
     'HelperRecord',
     'FlowRecord',
@@ -170,8 +174,8 @@ def row_to_directive(row: sqlite3.Row) -> DirectiveRecord:
         description=row['description'] if 'description' in row.keys() else None,
         category=row['category'] if 'category' in row.keys() else None,
         md_file_path=row['md_file_path'] if 'md_file_path' in row.keys() else None,
-        created_at=row['created_at'],
-        updated_at=row['updated_at'],
+        created_at=row['created_at'] if 'created_at' in row.keys() else '',
+        updated_at=row['updated_at'] if 'updated_at' in row.keys() else '',
     )
 
 

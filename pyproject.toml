@@ -25,13 +25,13 @@ classifiers = [
 ]
 
 dependencies = [
-    "mcp>=1.26.0",
+    "watchdog",
 ]
 
 [project.urls]
-Homepage = "https://github.com/anthropics/aifp"
-Repository = "https://github.com/anthropics/aifp"
-Issues = "https://github.com/anthropics/aifp/issues"
+Homepage = "https://github.com/aryanduntley/AIFP"
+Repository = "https://github.com/aryanduntley/AIFP"
+Issues = "https://github.com/aryanduntley/AIFP/issues"
 
 [project.scripts]
 aifp = "aifp.__main__:main"
@@ -40,7 +40,6 @@ aifp = "aifp.__main__:main"
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
-    "pytest-asyncio>=0.21.0",
     "hypothesis>=6.92.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
@@ -65,8 +64,6 @@ aifp = [
 testpaths = ["tests"]
 python_files = "test_*.py"
 python_functions = "test_*"
-asyncio_mode = "auto"
-
 [tool.mypy]
 python_version = "3.11"
 strict = true

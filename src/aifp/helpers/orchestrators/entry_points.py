@@ -17,15 +17,11 @@ import os
 import shutil
 import sqlite3
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any, List
+from typing import Optional, Tuple, Dict, Any
 
 from ._common import (
-    _open_connection,
-    _close_connection,
     _open_project_connection,
-    _open_preferences_connection,
     _open_directives_connection,
-    get_core_db_path,
     get_project_db_path,
     get_user_preferences_db_path,
     get_user_directives_db_path,
@@ -44,6 +40,7 @@ from ._common import (
     VALID_STATUS_TYPES,
 )
 
+from .backup import check_and_run_backup
 from .status import get_project_status
 
 
@@ -139,6 +136,14 @@ def aifp_init(project_root: str) -> Result:
                 "UPDATE infrastructure SET value = ? WHERE type = 'project_root'",
                 (project_root,)
             )
+
+            # Add init evolution note
+            conn.execute(
+                "INSERT INTO notes (content, note_type, source, directive_name, severity) "
+                "VALUES (?, 'evolution', 'directive', 'aifp_init', 'info')",
+                ("ProjectBlueprint.md created at init. Needs to be populated with project "
+                 "blueprint data by AI after discussing details of the project with user.",)
+            )
             conn.commit()
 
             project_tables = _get_table_names(conn)
@@ -168,6 +173,13 @@ def aifp_init(project_root: str) -> Result:
                 ) VALUES (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
                 """
             )
+
+            # Load and execute standard user settings (backup defaults, etc.)
+            user_settings_sql_path = _get_initialization_path("standard_user_settings.sql")
+            with open(user_settings_sql_path, 'r') as f:
+                user_settings_sql = f.read()
+            conn.executescript(user_settings_sql)
+
             conn.commit()
 
             prefs_tables = _get_table_names(conn)
@@ -549,6 +561,9 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 'routing': status_data.get('case_2_routing'),
             }
 
+        # Automated backup check: trigger if project inactive beyond threshold
+        backup_data = check_and_run_backup(project_root)
+
         return Result(
             success=True,
             data={
@@ -562,6 +577,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 'guidance': _get_guidance(),
                 'watchdog': watchdog_data,
                 'case_2_context': case_2_context,
+                'backup': backup_data,
             },
             return_statements=get_return_statements("aifp_run"),
         )

@@ -18,6 +18,10 @@
 - [Documentation](#documentation)
 - [Development](#development)
 - [Design Philosophy](#design-philosophy)
+- [Features](#features)
+- [Usage Examples](#usage-examples)
+- [Privacy Policy](#privacy-policy)
+- [Support](#support)
 - [License](#license)
 
 ---
@@ -437,7 +441,7 @@ project_file_write
 pip install aifp
 ```
 
-This installs the MCP server, all dependencies (`mcp` SDK), and makes the `aifp` command available. Done.
+This installs the MCP server and makes the `aifp` command available. AIFP has zero required external dependencies — the server is pure Python stdlib.
 
 #### Method 2: Manual Install (GitHub Download)
 
@@ -448,12 +452,8 @@ This installs the MCP server, all dependencies (`mcp` SDK), and makes the `aifp`
    # Example: copy to your MCP servers directory
    cp -r src/aifp/ ~/mcp-servers/aifp/
    ```
-4. **Install** the MCP SDK dependency:
-   ```bash
-   pip install "mcp>=1.26.0"
-   ```
 
-The `aifp/` folder contains everything the server needs: helper functions, directives, database schemas, and the pre-populated `aifp_core.db`. No additional setup required.
+No additional dependencies to install. The `aifp/` folder contains everything the server needs: helper functions, directives, database schemas, and the pre-populated `aifp_core.db`.
 
 ### Add the System Prompt to Your AI Client
 
@@ -912,6 +912,116 @@ Setup → Core Development → Testing → Documentation → Finalization
 ```
 
 Once `project_completion_check` passes, the project is **done**. No endless feature creep.
+
+---
+
+## Features
+
+- **207 MCP tools** — Full CRUD for 4 SQLite databases, covering project management, FP directives, user preferences, and custom automation directives
+- **Pure functional enforcement** — AI writes FP-compliant code by default (pure functions, immutability, no OOP)
+- **Database-driven persistent memory** — Project state survives across sessions; no context loss
+- **Directive-based workflows** — Deterministic trunk → branches → fallback execution patterns
+- **Finite completion paths** — Projects have defined stages, milestones, and tasks; work converges toward completion
+- **Two use cases** — Regular software development (Use Case 1) or custom directive automation (Use Case 2)
+- **User preference learning** — AI adapts to coding style via per-directive key-value overrides
+- **Git integration** — FP-powered branch management and conflict resolution
+- **Zero external dependencies** — Pure Python stdlib server (custom JSON-RPC over stdio)
+- **Cost-conscious design** — All tracking/analytics features disabled by default
+
+---
+
+## Usage Examples
+
+### Example 1: Project Initialization
+
+**User prompt**: "Initialize AIFP for my calculator project"
+
+**Tool calls**:
+```
+1. aifp_run(is_new_session=true)
+   → Returns: session bundle (directive names, settings, project status, supportive context)
+
+2. aifp_init(project_root="/home/user/calculator")
+   → Returns: { success: true, message: "Project initialized" }
+```
+
+**What happens**:
+- Creates `.aifp-project/` directory with `project.db`, `user_preferences.db`, and `ProjectBlueprint.md`
+- Registers project metadata (name, root path, infrastructure)
+- Inserts default user settings and backup configuration
+- AI proceeds to project discovery (themes, flows, completion path)
+
+### Example 2: Writing FP-Compliant Code
+
+**User prompt**: "Write a multiply_matrices function"
+
+**Tool calls**:
+```
+1. aifp_run(is_new_session=false)
+   → Returns: lightweight guidance
+
+2. reserve_file(project_root="/home/user/calculator", name="matrix_operations", ...)
+   → Returns: { success: true, data: { id: 42 } }
+
+3. reserve_function(project_root="/home/user/calculator", name="multiply_matrices", file_id=42, ...)
+   → Returns: { success: true, data: { id: 99 } }
+
+   (AI writes FP-compliant code to src/matrix_operations_id_42.py)
+
+4. finalize_file(project_root="/home/user/calculator", file_id=42, path="src/matrix_operations_id_42.py", ...)
+   → Returns: { success: true }
+
+5. finalize_function(project_root="/home/user/calculator", function_id=99, line_start=5, line_end=25, ...)
+   → Returns: { success: true }
+```
+
+**What happens**:
+- File and function are reserved in `project.db` before writing (IDs embedded in names)
+- AI writes pure functional code following FP baseline (no OOP, no mutations, explicit parameters)
+- File and function are finalized with line numbers and metadata
+- Project database now tracks the code structure for instant retrieval in future sessions
+
+### Example 3: Resuming Work / Checking Status
+
+**User prompt**: "Where are we?" or "Continue working"
+
+**Tool calls**:
+```
+1. aifp_run(is_new_session=false)
+   → Returns: guidance + common starting points
+
+   (AI answers from cached context — no additional DB calls needed
+    unless context is stale, in which case:)
+
+2. aifp_status(project_root="/home/user/calculator", type="full")
+   → Returns: project metadata, active milestone, current task, recent notes, warnings
+```
+
+**What happens**:
+- AI presents current milestone, active task, and next steps
+- If `project_continue_on_start=true`, AI automatically picks up the next task
+- No source code reparsing needed — everything is indexed in `project.db`
+
+---
+
+## Privacy Policy
+
+AIFP runs entirely on your local machine. **No data ever leaves your computer.**
+
+- **No network requests**: The MCP server makes zero network calls. All operations are local SQLite database reads/writes and filesystem operations.
+- **No telemetry**: No usage analytics, crash reports, or diagnostic data is collected or transmitted.
+- **No third-party services**: AIFP does not connect to any external APIs, cloud services, or remote servers.
+- **Local data only**: All project data (databases, preferences, directives) is stored in your project's `.aifp-project/` directory. You own and control all data.
+- **No Claude memory access**: AIFP does not access or read Claude's conversation history, memory, or any other client-side data.
+
+If you have questions about data handling, please open an issue on our [GitHub repository](https://github.com/aryanduntley/AIFP).
+
+---
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/aryanduntley/AIFP/issues)
+- **Repository**: [github.com/aryanduntley/AIFP](https://github.com/aryanduntley/AIFP)
 
 ---
 

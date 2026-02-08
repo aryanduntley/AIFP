@@ -2202,6 +2202,17 @@
         },
         {
           "if": "write_complete",
+          "then": "add_evolution_note",
+          "details": {
+            "note_type": "evolution",
+            "directive_name": "project_blueprint_update",
+            "source": "ai",
+            "severity": "info",
+            "description": "After updating any blueprint section, add an 'evolution' note via add_note (note_type='evolution', directive_name='project_blueprint_update') describing what was changed and why. Do NOT set reference_table — ProjectBlueprint.md is a file, not a database table."
+          }
+        },
+        {
+          "if": "note_added",
           "then": "return_success",
           "details": {
             "show_new_version": true

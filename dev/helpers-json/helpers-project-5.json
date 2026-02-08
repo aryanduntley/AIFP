@@ -264,7 +264,9 @@
       "error_handling": "Error if no update fields provided",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Add an 'evolution' note describing the theme change"
+      ],
       "implementation_notes": [
         "Returns: {success: true}",
         "NULL parameters = don't update that field",
@@ -471,7 +473,9 @@
       "error_handling": "Error if no update fields provided",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Add an 'evolution' note describing the flow change"
+      ],
       "implementation_notes": [
         "Returns: {success: true}",
         "NULL parameters = don't update",

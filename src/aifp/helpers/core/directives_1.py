@@ -30,6 +30,8 @@ from typing import Optional, Tuple, Dict, Any, List
 # Import core utilities
 from ._common import (
     _open_core_connection,
+    _open_preferences_connection,
+    _open_project_connection,
     get_return_statements,
     rows_to_tuple,
     row_to_dict,
@@ -48,7 +50,8 @@ class DirectiveResult:
     """Result of single directive lookup."""
     success: bool
     directive: Optional[DirectiveRecord] = None
-    preferences: Tuple[Dict[str, Any], ...] = ()  # Directive-specific preferences
+    preferences: Tuple[Dict[str, Any], ...] = ()  # Directive-specific preferences from user_preferences.db
+    linked_notes: Tuple[Dict[str, Any], ...] = ()  # Notes with send_with_directive=1 from project.db
     error: Optional[str] = None
     return_statements: Tuple[str, ...] = ()
 
@@ -124,22 +127,67 @@ class SimpleResult:
 # Effect Functions (Database Queries)
 # ============================================================================
 
-def _get_directive_preferences(conn, directive_id: int) -> Tuple[Dict[str, Any], ...]:
+def _get_directive_preferences(project_root: str, directive_name: str) -> Tuple[Dict[str, Any], ...]:
     """
-    Effect: Get directive-specific preferences from directive_preferences table.
+    Effect: Get directive-specific preferences from user_preferences.db.
+
+    Queries the directive_preferences table in user_preferences.db by directive_name.
+    Returns empty tuple if user_preferences.db does not exist or query fails.
 
     Args:
-        conn: Database connection
-        directive_id: Directive ID
+        project_root: Project root directory (for locating user_preferences.db)
+        directive_name: Directive name to look up preferences for
 
     Returns:
         Tuple of preference dicts
     """
-    cursor = conn.execute(
-        "SELECT * FROM directive_preferences WHERE directive_id = ?",
-        (directive_id,)
-    )
-    return rows_to_tuple(cursor.fetchall())
+    try:
+        conn = _open_preferences_connection(project_root)
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM directive_preferences WHERE directive_name = ? AND active = 1",
+                (directive_name,)
+            )
+            return rows_to_tuple(cursor.fetchall())
+        finally:
+            conn.close()
+    except (FileNotFoundError, Exception):
+        return ()
+
+
+def _get_directive_linked_notes(project_root: str, directive_name: str) -> Tuple[Dict[str, Any], ...]:
+    """
+    Effect: Get notes linked to a directive via send_with_directive flag.
+
+    Queries project.db for notes where directive_name matches and
+    send_with_directive=1. These notes travel with their directive
+    as contextual reminders.
+
+    Args:
+        project_root: Project root directory (for locating project.db)
+        directive_name: Directive name to look up linked notes for
+
+    Returns:
+        Tuple of note dicts (id, content, note_type, severity, created_at)
+    """
+    try:
+        conn = _open_project_connection(project_root)
+        try:
+            cursor = conn.execute(
+                """
+                SELECT id, content, note_type, severity, created_at
+                FROM notes
+                WHERE directive_name = ?
+                  AND send_with_directive = 1
+                ORDER BY severity DESC, created_at DESC
+                """,
+                (directive_name,)
+            )
+            return rows_to_tuple(cursor.fetchall())
+        finally:
+            conn.close()
+    except (FileNotFoundError, Exception):
+        return ()
 
 
 def _get_directive_categories(conn, directive_id: int) -> Tuple[str, ...]:
@@ -245,20 +293,29 @@ def _calculate_intent_confidence(
 # Public API Functions (MCP Tools)
 # ============================================================================
 
-def get_directive_by_name(directive_name: str) -> DirectiveResult:
+def get_directive_by_name(
+    directive_name: str,
+    project_root: Optional[str] = None
+) -> DirectiveResult:
     """
     Get specific directive by name (high-frequency operation).
 
-    Includes directive-specific preferences from directive_preferences table.
+    When project_root is provided, also retrieves:
+    - Directive-specific preferences from user_preferences.db
+    - Linked notes (send_with_directive=1) from project.db
 
     Args:
         directive_name: Directive name to look up
+        project_root: Optional project root for cross-DB queries.
+            When provided, queries user_preferences.db for preferences
+            and project.db for linked notes (send_with_directive=1).
 
     Returns:
         DirectiveResult with:
         - success: True if found
         - directive: DirectiveRecord if found
-        - preferences: Tuple of preference dicts
+        - preferences: Tuple of preference dicts (from user_preferences.db)
+        - linked_notes: Tuple of note dicts (from project.db, send_with_directive=1)
         - error: Error message if not found
         - return_statements: AI guidance for next steps
 
@@ -268,6 +325,9 @@ def get_directive_by_name(directive_name: str) -> DirectiveResult:
         True
         >>> result.directive.type
         'fp'
+        >>> result = get_directive_by_name("fp_purity", project_root="/path/to/project")
+        >>> result.preferences  # from user_preferences.db
+        >>> result.linked_notes  # from project.db where send_with_directive=1
     """
     try:
         conn = _open_core_connection()
@@ -286,13 +346,20 @@ def get_directive_by_name(directive_name: str) -> DirectiveResult:
                 )
 
             directive = row_to_directive(row)
-            preferences = _get_directive_preferences(conn, directive.id)
             return_statements = get_return_statements("get_directive_by_name")
+
+            # Cross-DB queries when project_root provided
+            preferences: Tuple[Dict[str, Any], ...] = ()
+            linked_notes: Tuple[Dict[str, Any], ...] = ()
+            if project_root:
+                preferences = _get_directive_preferences(project_root, directive_name)
+                linked_notes = _get_directive_linked_notes(project_root, directive_name)
 
             return DirectiveResult(
                 success=True,
                 directive=directive,
                 preferences=preferences,
+                linked_notes=linked_notes,
                 return_statements=return_statements
             )
 

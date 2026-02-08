@@ -355,7 +355,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Add an 'evolution' note describing the completion path change"
+      ],
       "implementation_notes": [
         "Returns: {success: true}",
         "NULL parameters = don't update that field",

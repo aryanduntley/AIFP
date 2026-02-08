@@ -1,0 +1,58 @@
+{
+  "manifest_version": "0.3",
+  "name": "aifp",
+  "display_name": "AIFP",
+  "version": "0.1.0",
+  "description": "Enforce functional procedural coding with database-driven project management for seamless context across sessions — FP enforcement, project lifecycle management, user preferences, and custom directive automation.",
+  "author": {
+    "name": "AIFP Contributors",
+    "url": "https://github.com/aryanduntley"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aryanduntley/AIFP"
+  },
+  "homepage": "https://github.com/aryanduntley/AIFP",
+  "icon": "icon.png",
+  "server": {
+    "type": "python",
+    "entry_point": "src/aifp/__main__.py",
+    "mcp_config": {
+      "command": "python3",
+      "args": ["-m", "aifp"],
+      "env": {
+        "PYTHONPATH": "${__dirname}/src"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "aifp_run",
+      "description": "Primary orchestrator — call on every interaction. Returns session bundle (new) or lightweight status (continuation)."
+    },
+    {
+      "name": "aifp_init",
+      "description": "Initialize AIFP for a project — creates databases, registers project, writes blueprint template."
+    },
+    {
+      "name": "aifp_status",
+      "description": "Get current project status — active task, milestone progress, next steps."
+    },
+    {
+      "name": "aifp_end",
+      "description": "End the current AIFP session — finalizes state, logs interaction summary."
+    }
+  ],
+  "tools_generated": true,
+  "compatibility": {
+    "platforms": ["linux", "darwin", "win32"],
+    "runtimes": {
+      "python": ">=3.11"
+    }
+  },
+  "privacy_policies": [
+    "https://github.com/aryanduntley/AIFP#privacy-policy"
+  ],
+  "keywords": ["functional-programming", "project-management", "fp", "database", "directives", "ai-coding"]
+}

@@ -213,7 +213,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If milestone status changed to 'complete', add a 'task_context' note. If milestone scope changed, add an 'evolution' note."
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -678,7 +680,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If task status changed, add a 'task_context' note describing the status change"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {

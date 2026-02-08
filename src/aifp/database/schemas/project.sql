@@ -1,6 +1,11 @@
 -- project.db Schema
--- Version: 1.5
+-- Version: 1.6
 -- Purpose: Track project-specific data, including files, functions, themes, flows, and completion paths
+-- Changelog v1.6:
+--   - Added send_with_directive BOOLEAN field to notes table
+--   - When TRUE and directive_name set, note is included in directive retrieval
+--   - Added partial index idx_notes_directive_send for efficient queries
+--   - Fixed VALID_NOTE_TYPES in Python code to match SQL CHECK constraint
 -- Changelog v1.5:
 --   - Removed UNIQUE constraint on name from functions and types tables
 --   - Language already enforces per-file name uniqueness; DB constraint was redundant
@@ -255,6 +260,7 @@ CREATE TABLE IF NOT EXISTS notes (
     source TEXT DEFAULT 'ai' CHECK (source IN ('ai', 'user', 'directive')),
     directive_name TEXT,                    -- Optional: directive context if note relates to directive execution
     severity TEXT DEFAULT 'info' CHECK (severity IN ('info', 'warning', 'error')),
+    send_with_directive BOOLEAN DEFAULT 0,  -- If TRUE and directive_name set, include note in directive retrieval
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -441,6 +447,9 @@ CREATE INDEX IF NOT EXISTS idx_items_reference ON items(reference_table, referen
 CREATE INDEX IF NOT EXISTS idx_notes_directive ON notes(directive_name);
 CREATE INDEX IF NOT EXISTS idx_notes_severity ON notes(severity);
 CREATE INDEX IF NOT EXISTS idx_notes_source ON notes(source);
+CREATE INDEX IF NOT EXISTS idx_notes_directive_send
+    ON notes(directive_name, send_with_directive)
+    WHERE send_with_directive = 1 AND directive_name IS NOT NULL;
 
 -- ===============================================================
 -- Schema Version Tracking
@@ -452,4 +461,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.5');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.6');

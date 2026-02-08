@@ -16,8 +16,9 @@ Contents:
 8. Use Case 2: Custom Directive Automation
 9. User Preferences System
 10. Git + FP Collaboration
-11. Edge Cases & Recovery Patterns
-12. Session Management
+11. Evolution Notes
+12. Edge Cases & Recovery Patterns
+13. Session Management
 
 === 1. FP RULES WITH CODE EXAMPLES ===
 
@@ -376,7 +377,25 @@ Why AIFP FP makes Git superior:
 Git directives: git_init, git_detect_external_changes, git_create_branch, git_detect_conflicts, git_merge_branch
 Branch naming: aifp-{user}-{number}
 
-=== 11. EDGE CASES & RECOVERY PATTERNS ===
+=== 11. EVOLUTION NOTES ===
+
+Any change to ProjectBlueprint.md, completion paths, themes, flows, or milestones
+MUST be accompanied by a notes table entry describing what changed and why.
+
+  Use add_note with:
+  - note_type='evolution' (for structural/architectural changes)
+  - note_type='task_context' (for task/milestone status changes)
+  - source='ai'
+  - directive_name= the directive that triggered the change
+  - severity='info' (default)
+  - Do NOT set reference_table for blueprint notes — ProjectBlueprint.md is a file, not a DB table
+
+  Blueprint notes are identified by: note_type='evolution' + directive_name='project_blueprint_update'
+  Query: SELECT * FROM notes WHERE note_type='evolution' AND directive_name='project_blueprint_update'
+
+  This is non-negotiable — the database is the project's memory.
+
+=== 12. EDGE CASES & RECOVERY PATTERNS ===
 
 If confused, lost context, or unsure what to do next:
 - Call aifp_status() → fresh project state + supportive context from database
@@ -395,7 +414,7 @@ The database is your memory — trust it over cached context.
 4. DO NOT proceed with managing non-FP projects
 5. DO NOT try to convert unless explicitly requested
 
-=== 12. SESSION MANAGEMENT ===
+=== 13. SESSION MANAGEMENT ===
 
 **Startup** (no context exists — first interaction or context completely lost):
 - Call aifp_run(is_new_session=true) → full bundle (~15-20k tokens):

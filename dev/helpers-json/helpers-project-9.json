@@ -232,7 +232,7 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "'clarification', 'pivot', 'research', 'entry_deletion', 'warning', 'error', 'info', 'auto_summary'"
+          "description": "'clarification', 'pivot', 'research', 'entry_deletion', 'warning', 'error', 'info', 'auto_summary', 'decision', 'evolution', 'analysis', 'task_context', 'external', 'summary'"
         },
         {
           "name": "reference_table",
@@ -268,6 +268,13 @@
           "required": false,
           "default": null,
           "description": "Optional directive context for note"
+        },
+        {
+          "name": "send_with_directive",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true and directive_name set, note is included when that directive is retrieved. Turns notes into contextual reminders that travel with their directive."
         }
       ],
       "purpose": "Add note to project database",
@@ -510,6 +517,13 @@
           "required": false,
           "default": null,
           "description": "Update directive name"
+        },
+        {
+          "name": "send_with_directive",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "Update send_with_directive flag. If true and directive_name set, note is included when that directive is retrieved."
         }
       ],
       "purpose": "Update note metadata",

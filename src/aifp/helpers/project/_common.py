@@ -49,9 +49,9 @@ VALID_PROJECT_STATUSES: Final[frozenset[str]] = frozenset([
     'active', 'paused', 'completed', 'abandoned'
 ])
 
-# User directives statuses
+# User directives statuses (NULL handled separately — not in frozenset)
 VALID_USER_DIRECTIVES_STATUSES: Final[frozenset[str]] = frozenset([
-    'in_progress', 'active', 'disabled'
+    'pending_discovery', 'pending_parse', 'in_progress', 'active', 'disabled'
 ])
 
 # Function roles
@@ -71,7 +71,7 @@ VALID_TASK_STATUSES: Final[frozenset[str]] = frozenset([
 ])
 
 VALID_MILESTONE_STATUSES: Final[frozenset[str]] = frozenset([
-    'pending', 'in_progress', 'completed'
+    'pending', 'in_progress', 'completed', 'blocked'
 ])
 
 # Priority levels (used in tasks, subtasks, sidequests)
@@ -79,11 +79,14 @@ VALID_PRIORITY_LEVELS: Final[frozenset[str]] = frozenset([
     'low', 'medium', 'high', 'critical'
 ])
 
-# Note types
+# Note types (must match CHECK constraint in project.sql)
 VALID_NOTE_TYPES: Final[frozenset[str]] = frozenset([
-    'entry_deletion', 'ai_decision', 'user_clarification',
-    'blocker', 'milestone', 'refactor', 'optimization',
-    'bug', 'feature', 'documentation', 'test', 'other'
+    # Original types
+    'clarification', 'pivot', 'research', 'entry_deletion',
+    'warning', 'error', 'info', 'auto_summary',
+    # Semantic types
+    'decision', 'evolution', 'analysis', 'task_context',
+    'external', 'summary'
 ])
 
 # Note sources

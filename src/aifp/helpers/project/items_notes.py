@@ -80,6 +80,7 @@ class NoteRecord:
     source: str
     directive_name: Optional[str]
     severity: str
+    send_with_directive: bool
     created_at: str
     updated_at: str
 
@@ -298,7 +299,8 @@ def _insert_note(
     reference_id: Optional[int],
     source: str,
     severity: str,
-    directive_name: Optional[str]
+    directive_name: Optional[str],
+    send_with_directive: bool = False
 ) -> int:
     """
     Effect: Insert note into database.
@@ -312,16 +314,17 @@ def _insert_note(
         source: Note source
         severity: Severity level
         directive_name: Optional directive name
+        send_with_directive: If True, note is included when directive is retrieved
 
     Returns:
         New note ID
     """
     cursor = conn.execute(
         """
-        INSERT INTO notes (content, note_type, reference_table, reference_id, source, severity, directive_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO notes (content, note_type, reference_table, reference_id, source, severity, directive_name, send_with_directive)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (content, note_type, reference_table, reference_id, source, severity, directive_name)
+        (content, note_type, reference_table, reference_id, source, severity, directive_name, int(send_with_directive))
     )
     conn.commit()
     return cursor.lastrowid
@@ -397,6 +400,7 @@ def _query_notes_comprehensive(
             source=row['source'],
             directive_name=row['directive_name'],
             severity=row['severity'],
+            send_with_directive=bool(row['send_with_directive']) if 'send_with_directive' in row.keys() else False,
             created_at=row['created_at'],
             updated_at=row['updated_at']
         )
@@ -474,6 +478,7 @@ def _search_notes(
             source=row['source'],
             directive_name=row['directive_name'],
             severity=row['severity'],
+            send_with_directive=bool(row['send_with_directive']) if 'send_with_directive' in row.keys() else False,
             created_at=row['created_at'],
             updated_at=row['updated_at']
         )
@@ -490,7 +495,8 @@ def _update_note_fields(
     reference_id: Optional[int],
     source: Optional[str],
     severity: Optional[str],
-    directive_name: Optional[str]
+    directive_name: Optional[str],
+    send_with_directive: Optional[bool] = None
 ) -> None:
     """
     Effect: Update note fields (only non-None values).
@@ -505,6 +511,7 @@ def _update_note_fields(
         source: New source (None = don't update)
         severity: New severity (None = don't update)
         directive_name: New directive name (None = don't update)
+        send_with_directive: New send_with_directive flag (None = don't update)
     """
     # Build dynamic UPDATE query
     fields = []
@@ -537,6 +544,10 @@ def _update_note_fields(
     if directive_name is not None:
         fields.append("directive_name = ?")
         values.append(directive_name)
+
+    if send_with_directive is not None:
+        fields.append("send_with_directive = ?")
+        values.append(int(send_with_directive))
 
     if not fields:
         return  # Nothing to update
@@ -818,7 +829,8 @@ def add_note(
     reference_id: Optional[int] = None,
     source: str = "ai",
     severity: str = "info",
-    directive_name: Optional[str] = None
+    directive_name: Optional[str] = None,
+    send_with_directive: bool = False
 ) -> AddResult:
     """
     Add note to project database.
@@ -832,6 +844,7 @@ def add_note(
         source: Note source ('ai', 'user', or 'directive')
         severity: Severity level ('info', 'warning', 'error')
         directive_name: Optional directive context for note
+        send_with_directive: If True and directive_name set, include note when directive is retrieved
 
     Returns:
         AddResult with new note ID on success
@@ -840,7 +853,7 @@ def add_note(
     if not _validate_note_type(note_type):
         return AddResult(
             success=False,
-            error=f"Invalid note_type: {note_type}. Must be one of: {', '.join(VALID_NOTE_TYPES)}"
+            error=f"Invalid note_type: {note_type}. Must be one of: {', '.join(sorted(VALID_NOTE_TYPES))}"
         )
 
     # Validate source
@@ -857,12 +870,20 @@ def add_note(
             error=f"Invalid severity: {severity}. Must be one of: {', '.join(VALID_SEVERITY_LEVELS)}"
         )
 
+    # Validate send_with_directive requires directive_name
+    if send_with_directive and not directive_name:
+        return AddResult(
+            success=False,
+            error="send_with_directive=True requires directive_name to be set"
+        )
+
     conn = _open_connection(db_path)
 
     try:
         # Insert note
         note_id = _insert_note(
-            conn, content, note_type, reference_table, reference_id, source, severity, directive_name
+            conn, content, note_type, reference_table, reference_id,
+            source, severity, directive_name, send_with_directive
         )
         conn.close()
 
@@ -1022,7 +1043,8 @@ def update_note(
     reference_id: Optional[int] = None,
     source: Optional[str] = None,
     severity: Optional[str] = None,
-    directive_name: Optional[str] = None
+    directive_name: Optional[str] = None,
+    send_with_directive: Optional[bool] = None
 ) -> UpdateResult:
     """
     Update note metadata.
@@ -1037,6 +1059,7 @@ def update_note(
         source: New source (None = don't update)
         severity: New severity (None = don't update)
         directive_name: New directive name (None = don't update)
+        send_with_directive: New send_with_directive flag (None = don't update)
 
     Returns:
         UpdateResult with success status
@@ -1045,7 +1068,7 @@ def update_note(
     if note_type is not None and not _validate_note_type(note_type):
         return UpdateResult(
             success=False,
-            error=f"Invalid note_type: {note_type}. Must be one of: {', '.join(VALID_NOTE_TYPES)}"
+            error=f"Invalid note_type: {note_type}. Must be one of: {', '.join(sorted(VALID_NOTE_TYPES))}"
         )
 
     if source is not None and not _validate_note_source(source):
@@ -1072,7 +1095,10 @@ def update_note(
             )
 
         # Update note
-        _update_note_fields(conn, id, content, note_type, reference_table, reference_id, source, severity, directive_name)
+        _update_note_fields(
+            conn, id, content, note_type, reference_table, reference_id,
+            source, severity, directive_name, send_with_directive
+        )
         conn.close()
 
         # Fetch return statements

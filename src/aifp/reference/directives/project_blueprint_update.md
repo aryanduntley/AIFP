@@ -439,7 +439,10 @@ mv .aifp-project/ProjectBlueprint.md.tmp \
    ↓
 9. Update checksum in DB
    ↓
-10. Return success
+10. Add 'evolution' note via add_note (note_type='evolution', directive_name='project_blueprint_update')
+    describing what was changed and why. Do NOT set reference_table — ProjectBlueprint.md is a file, not a DB table.
+   ↓
+11. Return success
 ```
 
 ---
@@ -517,3 +520,4 @@ If ANY step fails:
 - **Evolution history append-only** - Never delete history entries
 - **Rollback on any failure** - All-or-nothing updates
 - **Section numbers fixed** - Valid range: 1-7
+- **Evolution note mandatory** - After updating any blueprint section, add an 'evolution' note via add_note (note_type='evolution', directive_name='project_blueprint_update') describing what was changed and why. Do NOT set reference_table — ProjectBlueprint.md is a file, not a database table.

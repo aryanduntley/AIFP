@@ -38,7 +38,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Use returned ID for file naming: {name}_id_{id}.{ext}"
+        "Use returned ID for file naming: {name}_id_{id}.{ext}",
+        "After finalization, ensure this file is linked to appropriate flows via file_flows table"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -83,7 +84,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Use returned IDs for file naming: {name}_id_{id}.{ext}"
+        "Use returned IDs for file naming: {name}_id_{id}.{ext}",
+        "After finalization, ensure all files are linked to appropriate flows via file_flows table"
       ],
       "target_database": "project",
       "used_by_directives": [],
@@ -358,7 +360,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Ensure name or path changes are updated throughout codebase",
-        "If name changed, verify _id_xxx suffix is retained"
+        "If name changed, verify _id_xxx suffix is retained",
+        "If file path or purpose changed, verify file_flows entries are still correct"
       ],
       "target_database": "project",
       "used_by_directives": [
