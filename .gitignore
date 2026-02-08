@@ -40,3 +40,7 @@ Thumbs.db
 docs/
 CLAUDE.md
 .claude/
+
+# MCPB
+aifp.mcpb
+.mcpbignore
