@@ -486,11 +486,12 @@ PHASE: SESSION START
 
 PHASE: INITIALIZATION (status shows .aifp-project/ missing)
   5. route: aifp_status → aifp_init (directive flow: aifp_initialized=false)
-  6. Phase 1 — call aifp_init(project_root) helper → creates dirs, DBs, blueprint template
+  6. Phase 1 — call aifp_init(project_root) helper → creates dirs, DBs, blueprint template, .git if missing (returns git_status)
   7. Phase 2 — AI detects language/tools, prompts user for name/purpose/goals
      → populates infrastructure table, updates ProjectBlueprint.md
   8. route: aifp_init → project_discovery (directive workflow: next_directive="project_discovery")
-  9. discovery — collaborate with user:
+  9. discovery — execute git_init directive (if git available), then collaborate with user:
+     → git_init: gitignore, initial commit, hash storage (based on git_status from Phase 1)
      → blueprint refinement, themes, flows, completion path, milestones (NO tasks yet)
      → populate DB via add_completion_path, add_milestone, etc.
      → add_note(note_type='evolution', directive_name='project_discovery') for decisions

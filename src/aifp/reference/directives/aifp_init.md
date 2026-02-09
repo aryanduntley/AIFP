@@ -62,7 +62,7 @@ Keywords that trigger `project_init`:
 │   └── logs/                        # Use Case 2 only: user directive execution logs
 │       ├── execution/               # 30-day execution logs
 │       └── errors/                  # 90-day error logs
-├── .git/
+├── .git/                            # Created in Phase 1 if not present
 │   └── .aifp/                       # Optional: archived project state (legacy path)
 │       ├── ProjectBlueprint.md      # Snapshot for recovery
 │       └── project.db.backup
@@ -79,6 +79,31 @@ Keywords that trigger `project_init`:
 - **`.git/.aifp/` archive**: Optional backup/recovery mechanism (legacy compatibility)
 - **ProjectBlueprint.md**: Documents user's actual project structure, language, and architecture
 - **Three-database architecture per project**: project.db, user_preferences.db, and optionally user_directives.db
+
+### Git Repository Initialization
+
+During Phase 1 mechanical setup, the `aifp_init` helper checks for a `.git` directory:
+- **If missing AND git available**: Runs `git init` to create repository
+- **If `.git` exists**: Notes the pre-existing repository
+- **If git unavailable**: Continues without version control (non-blocking)
+
+The helper returns `git_status` with one of three values:
+- `'created'`: Git repository was initialized during Phase 1
+- `'pre_existing'`: Git repository already existed
+- `'git_unavailable'`: Git command not found or failed
+
+**Separation of Concerns**:
+- **Phase 1 (Mechanical)**: Creates `.git` directory via `git init` (if needed) — no intelligence
+- **Discovery (Intelligent)**: Executes `git_init` directive for:
+  - Creating/updating `.gitignore` with AIFP exclusions
+  - Making initial commit (if new repo)
+  - Storing commit hash in `project.last_known_git_hash`
+  - Detecting branch name and remote tracking
+  - Creating collaboration tables (`work_branches`, `merge_history`)
+
+See `git_init` directive for the intelligent Git setup workflow.
+
+---
 
 ### Use Case Distinction
 
@@ -180,7 +205,12 @@ AIFP cannot manage OOP projects - it enforces pure functions, immutability, and 
    .aifp-project/backups/
    ```
 
-2. **Copy template**:
+2. **Initialize Git repository** (non-blocking):
+   - Check if `.git` exists → set `git_status` to `'pre_existing'`
+   - If missing: run `git init` → set `git_status` to `'created'`
+   - If git unavailable → set `git_status` to `'git_unavailable'`, continue
+
+3. **Copy template**:
    - Copy `ProjectBlueprint_template.md` to `.aifp-project/ProjectBlueprint.md`
 
 3. **Create project.db**:
@@ -363,8 +393,9 @@ After both phases complete:
 
 ### Calls
 
-- **`aifp_init`** (Phase 1) - Mechanical setup helper
+- **`aifp_init`** (Phase 1) - Mechanical setup helper (includes git init)
 - **Helpers** (Phase 2) - Infrastructure detection, metadata updates
+- **`git_init` directive** (during `project_discovery`) - Intelligent Git setup (gitignore, initial commit, hash storage)
 
 ### Data Flow
 

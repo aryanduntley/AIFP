@@ -12,6 +12,7 @@
 `project_discovery` guides AI through a structured conversation with the user to define the full project shape after initialization. This directive bridges the gap between mechanical initialization (`project_init`) and active development work.
 
 **What it does**:
+- Executes `git_init` directive for intelligent Git setup (if git available from Phase 1)
 - Collaboratively populates the project blueprint (purpose, goals, scope, constraints)
 - Maps infrastructure in detail (language, tools, conventions, file organization)
 - Establishes themes (logical groupings) and flows (cross-cutting workflows)
@@ -132,6 +133,24 @@ This is a **conversation**, not a form fill. AI should ask open-ended questions 
 - **Completion Path (Branch 5)**: Default automation stages:
   - Directive Setup, Implementation, Testing, Activation, Monitoring
 - **Milestones (Branch 6)**: Derived from user's automation goals, not software features
+
+---
+
+### Branch 2.7: Git Intelligent Setup
+
+**Condition**: `git_status` from `aifp_init` is `'created'` or `'pre_existing'`
+
+**Action**: Execute `git_init` directive for intelligent Git configuration.
+
+**Steps**:
+1. Check `git_status` value from initialization result
+2. If `'created'` or `'pre_existing'`: Execute `git_init` directive
+   - `git_init` handles: `.gitignore` creation/update, initial commit (if new repo), hash storage in `project.last_known_git_hash`, branch detection, collaboration tables
+3. If `'git_unavailable'`: Skip git setup, inform user that version control is unavailable and suggest installing Git
+
+**Note**: Git setup happens early in discovery (before state database creation) because git hash storage is essential for external change detection throughout the project lifecycle.
+
+**Resume**: After `git_init` completes, it loops back here to continue with infrastructure mapping.
 
 ---
 

@@ -293,14 +293,15 @@
         },
         {
           "if": "user_directives_no_or_complete",
-          "then": "initialize_git_if_needed",
+          "then": "note_git_status_for_discovery",
           "details": {
-            "trigger": "git_init directive",
-            "action": "Initialize or integrate with Git repository"
+            "git_status_from_phase_1": "aifp_init helper returns git_status: 'created', 'pre_existing', or 'git_unavailable'",
+            "note": "Git repository mechanical creation happened in Phase 1. Intelligent Git setup (gitignore, initial commit, hash storage, branch detection) happens during project_discovery via git_init directive.",
+            "action": "Store git_status value for project_discovery to consume"
           }
         },
         {
-          "if": "git_initialized",
+          "if": "git_status_noted",
           "then": "backup_blueprint",
           "details": {
             "backup_to": ".aifp-project/backups/ProjectBlueprint.md.backup"
@@ -315,10 +316,10 @@
               "blueprint_path",
               "databases",
               "user_directives_status",
-              "git_status"
+              "git_status (from Phase 1: 'created', 'pre_existing', or 'git_unavailable')"
             ],
             "next_directive": "project_discovery",
-            "note": "Init Phase 1+2 complete. Route to project_discovery for collaborative project shape definition (blueprint, completion path, milestones, themes, flows). If pre-existing FP code exists, discovery will delegate to project_catalog."
+            "note": "Init Phase 1+2 complete. Git mechanical setup done in Phase 1 (git_status in return data). Route to project_discovery which executes git_init directive for intelligent Git setup (if git available), then handles blueprint refinement, state DB, themes/flows, completion path with milestones."
           }
         },
         {

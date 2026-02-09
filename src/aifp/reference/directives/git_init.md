@@ -98,11 +98,35 @@ node_modules/
 ## When to Apply
 
 This directive applies when:
-- **Called by `project_init`** - During new project setup
+- **Called during `project_discovery`** - After `aifp_init` Phase 1 creates `.git` mechanically, this directive performs intelligent Git setup (gitignore, initial commit, hash storage)
 - **User requests Git setup** - "Initialize Git", "setup version control"
 - **Existing project needs Git** - Adding version control to existing AIFP project
 - **Git repository corrupted** - Re-initialization needed
 - **Team collaboration starts** - Enabling multi-user workflows
+
+---
+
+## Integration with aifp_init
+
+The `aifp_init` helper performs **mechanical Git initialization** in Phase 1:
+- Checks if `.git` exists
+- Runs `git init` if missing and git is available
+- Returns `git_status` (`'created'`, `'pre_existing'`, or `'git_unavailable'`) in the result data
+
+This directive performs **intelligent Git setup** during `project_discovery`:
+- Uses `git_status` from init to determine the workflow branch
+- Creates/updates `.gitignore` with AIFP-specific exclusions
+- Makes initial commit (if new repository)
+- Stores commit hash in `project.last_known_git_hash`
+- Creates collaboration tables (`work_branches`, `merge_history`)
+
+**Workflow Example**:
+1. `aifp_init` Phase 1 creates `.git` → returns `git_status: 'created'`
+2. Phase 2 populates metadata → routes to `project_discovery`
+3. Discovery executes THIS directive (`git_init`) early in the workflow
+4. Directive sees `git_status: 'created'` → Branch: `create_new_repo` (gitignore + initial commit)
+5. Directive sees `git_status: 'pre_existing'` → Branch: `integrate_existing_repo` (verify, hash, gitignore)
+6. Discovery resumes with blueprint discussion, themes, flows, completion path
 
 ---
 
@@ -382,7 +406,7 @@ fi
 ## Related Directives
 
 - **Called By**:
-  - `project_init` - During project initialization
+  - `project_discovery` - During discovery after `aifp_init` Phase 1 mechanical git creation
 - **Calls**:
   - Git CLI commands via helpers
   - Database helpers for hash storage

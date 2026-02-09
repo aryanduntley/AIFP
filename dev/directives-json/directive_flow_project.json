@@ -56,6 +56,28 @@
       "flow_category": "git"
     },
     {
+      "from_directive": "project_discovery",
+      "to_directive": "git_init",
+      "flow_type": "conditional",
+      "condition_key": "git_status_from_init",
+      "condition_value": "created_or_pre_existing",
+      "condition_description": "Git repository was created or pre-existed during aifp_init Phase 1 — needs intelligent setup (gitignore, initial commit, hash storage)",
+      "priority": 95,
+      "description": "During discovery, execute git_init directive for intelligent Git setup after mechanical initialization in Phase 1",
+      "flow_category": "git"
+    },
+    {
+      "from_directive": "git_init",
+      "to_directive": "project_discovery",
+      "flow_type": "completion_loop",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Git intelligent setup complete, resume discovery workflow",
+      "priority": 100,
+      "description": "Git configured (gitignore, commit, hash stored), continue with infrastructure mapping and theme definition",
+      "flow_category": "git"
+    },
+    {
       "from_directive": "aifp_status",
       "to_directive": "aifp_init",
       "flow_type": "conditional",
@@ -1051,7 +1073,7 @@
     "created": "2025-12-17",
     "updated": "2026-01-30",
     "phase": "Phase 2-3 Complete + New Directives (discovery, catalog, progression, end)",
-    "total_flows": 95,
+    "total_flows": 97,
     "flow_types": {
       "status_branch": "Flow from status to next directive based on state",
       "completion_loop": "Flow back to aifp_status after state change",
@@ -1090,7 +1112,8 @@
       "v1.3.0: project_progression handles incremental task/milestone creation after completions and evolution",
       "v1.3.0: aifp_end is terminal — no loop back to aifp_status (session is over)",
       "v1.3.0: project_task_decomposition priority lowered to 70 (progression handles normal flow, decomposition for explicit user requests)",
-      "v1.3.0: aifp_status routes to project_discovery at priority 95 if discovery not yet complete"
+      "v1.3.0: aifp_status routes to project_discovery at priority 95 if discovery not yet complete",
+      "v1.3.1: Added project_discovery → git_init → project_discovery flows for Git intelligent setup during discovery (Phase 1 does mechanical git init, discovery does intelligent setup)"
     ]
   }
 }

@@ -16,6 +16,7 @@ All operate across project.db, user_preferences.db, and core.db.
 import os
 import shutil
 import sqlite3
+import subprocess
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
 
@@ -103,6 +104,26 @@ def aifp_init(project_root: str) -> Result:
         step = 2
         os.makedirs(aifp_dir, exist_ok=True)
         os.makedirs(backups_dir, exist_ok=True)
+
+        # Step 2.5: Initialize Git repository if not present (non-blocking)
+        git_dir = os.path.join(project_root, '.git')
+        git_status = 'git_unavailable'
+        if os.path.isdir(git_dir):
+            git_status = 'pre_existing'
+        else:
+            try:
+                subprocess.run(
+                    ['git', 'init'],
+                    cwd=project_root,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                    timeout=10,
+                )
+                git_status = 'created'
+            except (FileNotFoundError, subprocess.CalledProcessError,
+                    subprocess.TimeoutExpired, OSError):
+                git_status = 'git_unavailable'
 
         # Step 3: Copy ProjectBlueprint_template.md
         step = 3
@@ -231,6 +252,7 @@ def aifp_init(project_root: str) -> Result:
                     'user_prefs_db': prefs_tables,
                 },
                 'infrastructure_entries': 8,
+                'git_status': git_status,
                 'next_phase': 'AI populates infrastructure and blueprint',
             },
             return_statements=get_return_statements("aifp_init"),
