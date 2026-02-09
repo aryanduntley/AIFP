@@ -87,15 +87,14 @@ class Calculator:
 
 ### 2. Database-Indexed Logic
 
-Every function, file, and dependency is tracked in SQLite:
+Every function, file, and dependency is tracked in SQLite. AI accesses this data through helper tools — not raw SQL:
 
-```sql
--- Instant access to project structure
-SELECT f.name, f.purpose, f.purity_level
-FROM functions f
-JOIN files fi ON f.file_id = fi.id
-WHERE fi.path = 'src/calculator.py';
 ```
+AI calls: get_functions_by_file(project_root, file_id)
+→ Returns: all functions in that file with name, purpose, line numbers, dependencies
+```
+
+No source code reparsing required. Instant context retrieval across sessions.
 
 ### 3. AI-Readable Code
 
@@ -131,16 +130,17 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 ┌─────────────────────────────────────────────────────┐
 │            AI Assistant (Claude, GPT-4, etc.)        │
 │  - Receives natural language commands                │
-│  - Calls MCP tools                                   │
+│  - Follows directives (FP baseline + project mgmt)   │
+│  - Calls MCP tools to read/write databases           │
 │  - Generates FP-compliant code                       │
 └────────────────────┬────────────────────────────────┘
-                     │ MCP Protocol
+                     │ MCP Protocol (JSON-RPC over stdio)
 ┌────────────────────▼────────────────────────────────┐
 │                 MCP Server                           │
-│  - Routes commands via aifp_run                      │
-│  - Executes directives (FP + Project + User Pref)    │
+│  - Exposes helper tools via JSON-RPC                  │
 │  - Manages four-database connections                 │
-│  - Provides helper functions                         │
+│  - Provides CRUD helpers for all databases           │
+│  - No business logic — AI makes all decisions        │
 └───┬────────────────────┬─────────────────────────┬──┘
     │                    │                         │
 ┌───▼──────────────┐ ┌───▼────────────────┐ ┌─────▼─────────────────┐ ┌──────▼────────────────┐
@@ -340,61 +340,56 @@ The MCP server exposes CRUD helper functions for all database operations — tra
 
 ### 2. Command Flow Example
 
-```bash
-aifp run "Initialize project for calculator"
+```
+User: "Help me build a calculator"
 ```
 
 **AI Processing**:
-1. Calls `aifp_run` → receives guidance
-2. Evaluates: "Project initialization = project management action"
-3. Checks memory: "Do I have directives? No."
-4. Calls directive loading → receives comprehensive directive library
-5. Reviews directives: "This matches `aifp_init`"
-6. Checks prerequisites: "Should run `project_status` first?"
-7. Executes `aifp_init` directive workflow:
-   - Creates `.aifp-project/` directory
-   - Initializes `project.db` with schema
-   - Inserts project metadata
-   - Sets up completion path
-8. Returns result to user
+1. Calls `aifp_run(is_new_session=true)` → receives session bundle (directive names, project status, settings, supportive context)
+2. Checks project state from bundle: `.aifp-project/` missing → project not initialized
+3. Calls `aifp_init` helper (Phase 1: mechanical setup)
+   - Programmatically creates `.aifp-project/` directory, databases, blueprint template
+4. Enters Phase 2 (intelligent population): detects language/tools, discusses project with user
+5. Routes to `project_discovery`: collaborates with user on blueprint, themes, flows, completion path, milestones
+6. Discovery complete → routes to `aifp_status` → `project_progression` → first task created
+7. Work begins
 
 ### 3. Self-Assessment Framework
 
 Before acting, AI performs self-assessment using questions provided with directives:
 
 **Core Questions**:
-1. **Is this coding or project management?**
-   - If coding: Apply FP directives for how to write code
-   - If project management: Apply project directives for actions/reactions
+1. **Does this involve coding or project state changes?**
+   - Coding and project management are unified — writing code triggers file tracking, DB updates, and task progress automatically
+   - FP baseline is always active as the mandatory coding style
+   - Project directives handle the tracking side (file writes, DB updates, task management)
 
 2. **Do I have directives in memory?**
-   - No: Call `get_all_directives()`
+   - No: Load from session bundle via `aifp_run(is_new_session=true)`
    - Yes: Proceed with cached directives
 
 3. **Which directives apply?**
-   - FP baseline: Code structure, purity, immutability, composition (always active)
+   - FP baseline: Mandatory coding style (pure functions, immutability, no OOP) — applied naturally, not as directive calls
+   - FP directives: Reference documentation only — consulted when uncertain about complex scenarios
    - Project directives: File writes, DB updates, task management
 
 4. **Action-reaction needed?**
-   - Code write → FP compliance → DB update
-   - File edit → FP validation → DB sync
+   - Code write → project_file_write directive → DB update
+   - File edit → DB sync
    - Discussion with decision → DB update
 
 **Example Flow (Coding Task)**:
 ```
 User: "Write multiply_matrices function"
 AI thinks:
-  ✓ This is coding (FP baseline applies)
-  ✓ This is project management (project_file_write applies)
+  ✓ FP baseline applies (write pure, immutable, no OOP)
+  ✓ Project tracking applies (project_file_write directive)
   ✓ I have directives in memory
-  ✓ Matches: project_file_write directive
-  ✓ Action-reaction: code → FP check → DB update
 
 AI executes:
-  1. Write function following FP baseline
-  2. Verify FP compliance (purity, immutability)
-  3. Apply project_file_write directive
-  4. Update project.db (files, functions, interactions)
+  1. Write function following FP baseline naturally
+  2. Apply project_file_write directive
+  3. Update project.db (files, functions, interactions)
 ```
 
 ### 4. Directive Execution
@@ -413,18 +408,6 @@ Directives follow a **trunk → branches → fallback** pattern:
 }
 ```
 
-### 5. Cross-Directive Calls
-
-Project directives call FP directives for compliance:
-
-```
-project_file_write
-  ├─ Calls fp_purity (validates function purity)
-  ├─ Calls fp_immutability (checks for mutations)
-  ├─ Calls fp_side_effect_detection (isolates I/O)
-  └─ If all pass: writes file + updates database
-```
-
 ---
 
 ## Getting Started
@@ -441,7 +424,7 @@ project_file_write
 pip install aifp
 ```
 
-This installs the MCP server and makes the `aifp` command available. AIFP has zero required external dependencies — the server is pure Python stdlib.
+This installs the MCP server and makes the `aifp` command available. AIFP requires only one external dependency (`watchdog` for filesystem monitoring) — the JSON-RPC server itself is pure Python stdlib.
 
 #### Method 2: Manual Install (GitHub Download)
 
@@ -453,7 +436,7 @@ This installs the MCP server and makes the `aifp` command available. AIFP has ze
    cp -r src/aifp/ ~/mcp-servers/aifp/
    ```
 
-No additional dependencies to install. The `aifp/` folder contains everything the server needs: helper functions, directives, database schemas, and the pre-populated `aifp_core.db`.
+The only runtime dependency (`watchdog`) is installed automatically. The `aifp/` folder contains everything else the server needs: helper functions, directives, database schemas, and the pre-populated `aifp_core.db`.
 
 ### Add the System Prompt to Your AI Client
 
@@ -752,16 +735,20 @@ See the Git directive MD files in `src/aifp/reference/directives/` for complete 
 
 ```mermaid
 graph TD
-    A[aifp_init] --> B[project_themes_flows_init]
-    B --> C[project_task_decomposition]
+    A[aifp_init] --> B[project_discovery]
+    B --> C[project_progression]
     C --> D[project_file_write]
-    D --> E[FP Compliance Checks]
-    E --> F[project_update_db]
-    F --> G[project_task_update]
+    D --> E[project_update_db]
+    E --> F{All Items Done?}
+    F -->|No| D
+    F -->|Yes| G[project_task_complete]
     G --> H{All Tasks Done?}
-    H -->|No| D
-    H -->|Yes| I[project_completion_check]
-    I --> J[project_archival]
+    H -->|No| C
+    H -->|Yes| I[project_milestone_complete]
+    I --> J{All Milestones Done?}
+    J -->|No| C
+    J -->|Yes| K[project_completion_check]
+    K --> L[project_archive]
 ```
 
 ---
@@ -771,24 +758,24 @@ graph TD
 ### Create Project
 
 ```
-User: "Initialize AIFP for my matrix calculator"
+User: "Help me build a matrix calculator"
 
-AI → aifp_run("Initialize AIFP for my matrix calculator")
-    → Receives: AIFP guidance
-    → Evaluates: "Project management action"
-    → Checks: "No directives in memory"
-    → Calls: get_all_directives()
-    → Receives: Complete directive library + self-assessment questions
-    → Matches: aifp_init directive
-    → Checks: project_status first (no existing project)
-    → Executes: aifp_init workflow
-        → Creates .aifp-project/project.db
-        → Inserts project metadata
-        → Sets up completion path
+AI → aifp_run(is_new_session=true)
+    → Receives: session bundle (directive names, status, settings, supportive context)
+    → Checks project state: .aifp-project/ missing → not initialized
+    → Calls aifp_init helper (Phase 1: mechanical setup)
+        → Creates .aifp-project/ directory
+        → Creates project.db, user_preferences.db
+        → Copies ProjectBlueprint template
+    → Enters Phase 2 (intelligent population)
+        → Detects language, build tool, source directory
+        → Discusses with user: project name, purpose, goals
+        → Updates infrastructure table and blueprint
+    → Routes to project_discovery
+        → Collaborates with user on themes, flows, completion path, milestones
 
 AI: ✅ Project initialized: MatrixCalculator
-    📋 AIFP directives loaded and ready
-    Next: Define themes and create first task
+    Next: Let's define the project shape — themes, completion path, and first milestones.
 ```
 
 ### Write Function
@@ -796,16 +783,14 @@ AI: ✅ Project initialized: MatrixCalculator
 ```
 User: "Write multiply_matrices function"
 
-AI → aifp_run("Write multiply_matrices function")
-    → Receives: AIFP guidance
-    → Evaluates: "Coding task + project management"
-    → Checks: "I have directives in memory"
-    → Identifies FP directives: fp_purity, fp_immutability, fp_no_oop
-    → Identifies project directive: project_file_write
-    → Writes function following FP directives
-    → Verifies: Pure? Yes. Immutable? Yes. No OOP? Yes.
-    → Executes: project_file_write workflow
-        → Writes src/matrix.py
+AI → aifp_run() (continuation — lightweight guidance)
+    → Evaluates: coding task + project tracking needed
+    → Has directives cached from session bundle
+    → Writes FP-compliant function naturally (pure, immutable, no OOP)
+    → Follows project_file_write directive workflow:
+        → Reserves file and function IDs in project.db
+        → Writes src/matrix.py with embedded IDs
+        → Finalizes file and function entries
         → Updates project.db:
            • files table (new entry)
            • functions table (multiply_matrices)
@@ -813,7 +798,6 @@ AI → aifp_run("Write multiply_matrices function")
 
 AI: ✅ Function written: multiply_matrices
     File: src/matrix.py:15
-    FP Compliance: ✓ Pure, immutable, no OOP
     DB Updated: ✓ files, functions, interactions
     Dependencies: validate_dimensions
 ```
@@ -823,11 +807,11 @@ AI: ✅ Function written: multiply_matrices
 ```
 User: "Check project compliance"
 
-AI → aifp_run("Check project compliance")
-    → project_compliance_check directive
+AI → aifp_run() (continuation — lightweight guidance)
+    → project_compliance_check directive (opt-in tracking feature)
     → Queries all functions from project.db
-    → Runs FP directives on each
-    → Generates report
+    → Reviews each function against FP baseline
+    → Generates analytics report
 
 AI: 📊 Compliance Report:
     Total functions: 12
@@ -842,7 +826,7 @@ AI: 📊 Compliance Report:
 ```
 User: "Always add docstrings to functions"
 
-AI → aifp_run("Always add docstrings to functions")
+AI → aifp_run() (continuation — lightweight guidance)
     → user_preferences_update directive
         → Calls find_directive_by_intent helper
         → Searches directives by name/description/keywords
@@ -941,14 +925,13 @@ dev/
 
 Traditional AI assistants lack persistent memory. AIFP solves this:
 
-```sql
--- AI remembers everything across sessions
-SELECT f.name, f.purpose, f.dependencies_json
-FROM functions f
-WHERE f.theme = 'authentication';
 ```
+-- AI remembers everything across sessions via helper tools
+AI calls: get_project_status(project_root, "detailed")
+→ Returns: project metadata, active milestone, current task, recent notes, tracked files and functions
 
-No source code reparsing required. Instant context retrieval.
+-- No source code reparsing required. Instant context retrieval.
+```
 
 ### Finite by Design
 
@@ -964,7 +947,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ## Features
 
-- **207 MCP tools** — Full CRUD for 4 SQLite databases, covering project management, FP directives, user preferences, and custom automation directives
+- **Comprehensive MCP tools** — Full CRUD for 4 SQLite databases, covering project management, FP directives, user preferences, and custom automation directives
 - **Pure functional enforcement** — AI writes FP-compliant code by default (pure functions, immutability, no OOP)
 - **Database-driven persistent memory** — Project state survives across sessions; no context loss
 - **Directive-based workflows** — Deterministic trunk → branches → fallback execution patterns
@@ -972,7 +955,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 - **Two use cases** — Regular software development (Use Case 1) or custom directive automation (Use Case 2)
 - **User preference learning** — AI adapts to coding style via per-directive key-value overrides
 - **Git integration** — FP-powered branch management and conflict resolution
-- **Zero external dependencies** — Pure Python stdlib server (custom JSON-RPC over stdio)
+- **Minimal dependencies** — One runtime package (`watchdog`), custom JSON-RPC server uses stdlib only
 - **Cost-conscious design** — All tracking/analytics features disabled by default
 
 ---
@@ -981,22 +964,25 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ### Example 1: Project Initialization
 
-**User prompt**: "Initialize AIFP for my calculator project"
+**User prompt**: "Help me build a calculator"
 
 **Tool calls**:
 ```
 1. aifp_run(is_new_session=true)
    → Returns: session bundle (directive names, settings, project status, supportive context)
+   → Status shows: .aifp-project/ missing — not initialized
 
 2. aifp_init(project_root="/home/user/calculator")
    → Returns: { success: true, message: "Project initialized" }
 ```
 
 **What happens**:
+- AI detects no project exists and automatically calls `aifp_init` helper
 - Creates `.aifp-project/` directory with `project.db`, `user_preferences.db`, and `ProjectBlueprint.md`
 - Registers project metadata (name, root path, infrastructure)
 - Inserts default user settings and backup configuration
-- AI proceeds to project discovery (themes, flows, completion path)
+- AI enters Phase 2: discusses project shape with user (infrastructure, purpose, goals)
+- Routes to `project_discovery` for collaborative planning (themes, flows, completion path, milestones)
 
 ### Example 2: Writing FP-Compliant Code
 
@@ -1040,7 +1026,7 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
    (AI answers from cached context — no additional DB calls needed
     unless context is stale, in which case:)
 
-2. aifp_status(project_root="/home/user/calculator", type="full")
+2. aifp_status(project_root="/home/user/calculator", type="detailed")
    → Returns: project metadata, active milestone, current task, recent notes, warnings
 ```
 
