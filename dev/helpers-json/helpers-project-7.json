@@ -37,7 +37,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Milestone ready for tasks. Create tasks when work begins: add_task(milestone_id=<id>, name, description, flow_ids, priority)"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -214,7 +216,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "If milestone status changed to 'complete', add a 'task_context' note. If milestone scope changed, add an 'evolution' note."
+        "If milestone status changed: call add_note(note_type='task_context', reference_table='milestones', reference_id=<milestone_id>). If scope changed: call add_note(note_type='evolution', directive_name='project_evolution', reference_table='milestones', reference_id=<milestone_id>)",
+        "If status='completed': call get_milestones_by_path(completion_path_id) — if all completed, call update_completion_path(id, status='completed')"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -315,7 +318,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Consider creating items for this task"
+        "Create items for this task: add_project_entry(table='items', data={reference_table:'tasks', reference_id:<task_id>, name:<name>, description:<desc>})"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -681,7 +684,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "If task status changed, add a 'task_context' note describing the status change"
+        "If task status changed: call add_note(note_type='task_context', reference_table='tasks', reference_id=<task_id>) describing the status change",
+        "If status='completed': call get_incomplete_tasks_by_milestone(milestone_id, skip_pending=false) — if empty, call update_milestone(id, status='completed')"
       ],
       "target_database": "project",
       "used_by_directives": [

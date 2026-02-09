@@ -53,7 +53,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned ID for function naming: {name}_id_{id}",
-        "After finalization, ensure interactions are added where needed. See directive project_update_db (Branch 6: update_interactions_table) for interaction tracking workflow."
+        "After finalization, ensure interactions are added where needed. See directive project_update_db (Branch 6: update_interactions_table) for interaction tracking workflow.",
+        "Next: write function code with ID in name → finalize_function(function_id, name, file_id)"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -99,7 +100,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned IDs for function naming: {name}_id_{id}",
-        "After finalization, ensure interactions are added where needed. See directive project_update_db (Branch 6: update_interactions_table) for interaction tracking workflow."
+        "After finalization, ensure interactions are added where needed. See directive project_update_db (Branch 6: update_interactions_table) for interaction tracking workflow.",
+        "Next: write function code with IDs in names → finalize_functions([{function_id, name, file_id}, ...])"
       ],
       "target_database": "project",
       "used_by_directives": [],
@@ -171,7 +173,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "Ensure interactions are added where needed. See directive project_update_db (Branch 6: update_interactions_table) for interaction tracking workflow.",
-        "If called during project_reserve_finalize: proceed to project_update_db to sync function dependencies."
+        "If called during project_reserve_finalize: follow project_update_db directive to sync function dependencies."
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -225,7 +227,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Ensure interactions are added where needed for all functions. See directive project_update_db (Branch 6: update_interactions_table) for interaction tracking workflow."
+        "Ensure interactions are added where needed for all functions. See directive project_update_db (Branch 6: update_interactions_table) for interaction tracking workflow.",
+        "If called during project_reserve_finalize: follow project_update_db directive to sync function dependencies."
       ],
       "target_database": "project",
       "used_by_directives": [],

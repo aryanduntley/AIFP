@@ -169,7 +169,9 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Consider creating milestones for this completion path: add_milestone(completion_path_id=<id>, name, status='pending', description)"
+      ],
       "implementation_notes": [
         "Returns: {success: true, id: int} - new completion path ID",
         "Inserts into completion_path table"
@@ -356,7 +358,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Add an 'evolution' note describing the completion path change"
+        "Call add_note(note_type='evolution', directive_name='project_evolution', reference_table='completion_path', reference_id=<id>) describing the change",
+        "If status='completed': check get_incomplete_completion_paths() — if empty, route to project_completion_check directive"
       ],
       "implementation_notes": [
         "Returns: {success: true}",

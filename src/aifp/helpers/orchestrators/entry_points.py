@@ -324,7 +324,10 @@ def aifp_status(
     if not os.path.isdir(aifp_dir):
         return Result(
             success=True,
-            data={'initialized': False},
+            data={
+                'initialized': False,
+                'supportive_context': _get_supportive_context_safe(),
+            },
             return_statements=get_return_statements("aifp_status"),
         )
 
@@ -453,12 +456,11 @@ def aifp_run(is_new_session: bool = False) -> Result:
     Returns:
         If is_new_session=True:
             Result with data={
-                status: dict (from aifp_status),
+                status: dict (from aifp_status, includes supportive_context),
                 user_settings: dict,
                 fp_directive_index: dict,
                 all_directive_names: tuple,
                 infrastructure_data: tuple,
-                supportive_context: str (detailed FP examples, DRY, state DB, etc.),
                 guidance: dict
             }
 
@@ -516,6 +518,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 data={
                     'initialized': False,
                     'guidance': _get_guidance(),
+                    'supportive_context': _get_supportive_context_safe(),
                     'message': 'No AIFP project found. Run project_init to initialize.',
                 },
                 return_statements=get_return_statements("aifp_run"),
@@ -548,8 +551,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
         # Bundle: infrastructure
         infrastructure_data = _get_infrastructure_safe(project_root)
 
-        # Bundle: supportive context (detailed FP examples, DRY, state DB, etc.)
-        supportive_context = _get_supportive_context_safe()
+        # Note: supportive_context is included via aifp_status() — not called separately
 
         # Bundle: Case 2 context (if this is a Case 2 project)
         case_2_context = None
@@ -584,7 +586,6 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 'fp_directive_index': fp_directive_index,
                 'all_directive_names': all_directive_names,
                 'infrastructure_data': infrastructure_data,
-                'supportive_context': supportive_context,
                 'guidance': _get_guidance(),
                 'watchdog': watchdog_data,
                 'case_2_context': case_2_context,

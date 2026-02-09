@@ -52,7 +52,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Use returned ID for type naming: {TypeName}_id_{id}"
+        "Use returned ID for type naming: {TypeName}_id_{id}",
+        "Next: write type definition with ID in name → finalize_type(type_id, name, definition_json)"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -97,7 +98,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Use returned IDs for type naming: {TypeName}_id_{id}"
+        "Use returned IDs for type naming: {TypeName}_id_{id}",
+        "Next: write type definitions with IDs in names → finalize_types([{type_id, name, definition_json}, ...])"
       ],
       "target_database": "project",
       "used_by_directives": [],
@@ -169,7 +171,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "Do any type-function relationships need to be added in types_functions table?",
-        "If called during project_reserve_finalize: proceed to project_update_db to sync type registrations."
+        "If called during project_reserve_finalize: follow project_update_db directive to sync type registrations."
       ],
       "implementation_notes": [
         "Returns: {success: true, type_id: int, file_id: int}",
@@ -223,7 +225,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Do any type-function relationships need to be added in types_functions table?"
+        "Do any type-function relationships need to be added in types_functions table?",
+        "If called during project_reserve_finalize: follow project_update_db directive to sync type registrations."
       ],
       "implementation_notes": [
         "Returns: {success: true, finalized_ids: [int, ...]}",

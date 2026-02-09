@@ -265,7 +265,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Add an 'evolution' note describing the theme change"
+        "Call add_note(note_type='evolution', directive_name='project_evolution', reference_table='themes', reference_id=<theme_id>) describing the theme change"
       ],
       "implementation_notes": [
         "Returns: {success: true}",
@@ -474,7 +474,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Add an 'evolution' note describing the flow change"
+        "Call add_note(note_type='evolution', directive_name='project_evolution', reference_table='flows', reference_id=<flow_id>) describing the flow change"
       ],
       "implementation_notes": [
         "Returns: {success: true}",

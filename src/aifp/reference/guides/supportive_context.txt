@@ -19,6 +19,7 @@ Contents:
 11. Evolution Notes
 12. Edge Cases & Recovery Patterns
 13. Session Management
+14. Full Workflow Example
 
 === 1. FP RULES WITH CODE EXAMPLES ===
 
@@ -471,11 +472,109 @@ When user says "end session", "wrap up", "I'm done":
 4. ⚠️ Direct SQL last resort — reads only, confirm no helper exists first
 Exception: user_directives.db allows free SQL (AI-managed)
 
-=== FULL WORKFLOW EXAMPLE not difinitive, rely on directives ===
-user:"help me create a calculator"
-has context?no
-aifp_run(is_new_session=true)
-determines new project; analyzes directive list; discovers aifp_init; analyzes helper function list; discovers get_directives_by_name (??verify??); checks tools; has tool get_directives_by_name (if not tool, calls get_helper_by_name(helper_name) get's helper details including parameters); uses tool (or calls helper), passes parameters if any; gets aifp_init directive details; reviews details; if needs more context has md file path available and reads directive md file; follows directive guidance; calls aifp_init tool/helper with params ifany; gets aifp_init response; reviews response and return_statements; identifies project progression directive - where does it identify this? aifp_init? return_statement? both?; begins project progression directive; discusses with user, obtains full project info (start to finish, first identifyable themes and flows, infrastructure, etc); writes details to projectblueprint and populates databases; init complete; if already initialized (start from this point) gets status from aifp_run(is_new_session=true); settings autostart (provided in status) no: ask user if ready to begin esle:begins;
-with status identify current open and active completion path step. If all open none active, activate first completion path step in db (???helper for this???); identify current open and active milestone, if none active -open first/next, if none exist, generate milestones for completeion path step; indentify current open and active task/subtask/sidequest, if none active check for first/next task but should not have multiple open tasks if none exist create one task for milestone -create items for task; order of operations sidequest must be completed first; then subtask; then task; identify open task/subtask/sidequest items, should have been created when task/subtask/sidequest created; if none, create items else, begin work on items; settings in memmory show use id_in_file (???review???) omit id only if set; if omit, always define parameter in setters tools/helpers; need new file get file_write directive from db if not in memmory, reserve, get ID; create file append ID to name; finalize file in db; plan code; reserve functions singluar or batch, get id's; write code, append id's to function(s); code done; finalize function(s) in db single or batch; continue until item complete; status complete item; next item; continue; all items complete, status complete task; (??? REVIEW DIRECTIVES many tasks no items, tasks one by one??);review milestone; need new task create task, create task items, work and track; don't need new task, status complete milestone; next milestone; continue; milestones complete for completion path? status complete completion_path; next completion path; continue; all completion paths complete? project done; user prompts to modify ideas/themes/infrastructure/discuss big fixes/etc.; discuss with user; decisions made; create note; link approprately; work needs to be done; create sidequest; create sidequest items; continue; if directly related to task, but should not modify task, create subtask; create subtask items; continue; user prompts to change or discuss; shift in goals, project outcome or features, infrastructure, etc.; evolve projectblueprint if needed; attach note; evlolve themes if needed; attach note; evolve flow(s) if needed; attach note; evolve completion path if needed, add new paths only after current state; attach note; user prompts to change the way directive is carried out; create directive setting (??? name of this in db???); attach note; user prompts to change system wide or non-related directive setting; create sytem setting (??? name of this in db???); attach note; user prompts a request for a certain behavior and AI determines this behavior adjustment exists after a tool/helper call; add custom_return_statements for helper; attach notes;
+=== 14. FULL WORKFLOW EXAMPLE (reference — rely on directives for definitive steps) ===
+
+Example: user says "help me create a calculator"
+
+PHASE: SESSION START
+  1. has context? no → aifp_run(is_new_session=true) → full bundle
+     has context? yes → aifp_run(is_new_session=false) → lightweight guidance
+  2. from bundle: cache directive names, settings, project status, supportive context
+  3. need directive details? → get_directive_by_name(directive_name, project_root)
+     need deeper context? → read md file (path in directive's md_file_path field)
+  4. need directive routing? → get_flows_from_directive(directive_name) → condition-based next step
+
+PHASE: INITIALIZATION (status shows .aifp-project/ missing)
+  5. route: aifp_status → aifp_init (directive flow: aifp_initialized=false)
+  6. Phase 1 — call aifp_init(project_root) helper → creates dirs, DBs, blueprint template
+  7. Phase 2 — AI detects language/tools, prompts user for name/purpose/goals
+     → populates infrastructure table, updates ProjectBlueprint.md
+  8. route: aifp_init → project_discovery (directive workflow: next_directive="project_discovery")
+  9. discovery — collaborate with user:
+     → blueprint refinement, themes, flows, completion path, milestones (NO tasks yet)
+     → populate DB via add_completion_path, add_milestone, etc.
+     → add_note(note_type='evolution', directive_name='project_discovery') for decisions
+  10. route: project_discovery → aifp_status → project_progression
+
+PHASE: WORK LOOP (project_progression state machine)
+  11. identify active completion_path step via get_all_completion_paths
+      if none active → update_completion_path(id, status='in_progress') on first open
+  12. identify active milestone via get_milestones_by_completion_path
+      if none active → update_milestone(id, status='in_progress') on first open
+      if none exist → create milestones for this path step
+  13. identify active work — priority order: sidequest > subtask > task
+      if no active task → create ONE task for milestone:
+        add_task(milestone_id, name, flow_ids, priority)
+        then create items: add_project_entry(table='items', data={reference_table:'tasks', reference_id, name, description})
+  14. work on items:
+      a. need new file?
+         → reserve_file(name, path, language) → returns {id, id_in_name}
+           (use skip_id_naming=true for __init__.py, .db, config files)
+         → write file with _id_XX in name (unless skip_id_naming)
+         → finalize_file(file_id, name, path, language)
+      b. plan code → reserve functions (single or batch):
+         → reserve_function(name, file_id) or reserve_functions([...]) → returns IDs
+         → only PUBLIC functions — private _underscore functions not tracked
+      c. write FP-compliant code with _id_XX in function names
+      d. finalize: finalize_function(function_id, name, file_id) or finalize_functions([...])
+      e. item done → update_project_entry(table='items', id, data={status:'completed'})
+         → next item → repeat 14a-e
+  15. all items done → update_task(id, status='completed')
+      → add_note(note_type='task_context', content='task completed: ...')
+  16. more tasks needed for milestone?
+      yes → create next task (goto 13) — tasks created ONE at a time
+      no  → update_milestone(id, status='completed')
+  17. more milestones for this path step?
+      yes → activate next milestone (goto 12)
+      no  → update_completion_path(id, status='completed')
+  18. more path steps?
+      yes → activate next step (goto 11)
+      no  → project_completion_check → project_archive → done
+
+  Alternative: update_project_state(project_root, action, target_type, target_id, data)
+    actions: 'start_milestone', 'complete_milestone', 'start_task', 'complete_task',
+             'start_path', 'complete_path' — single orchestrator for common state changes
+
+PHASE: MID-WORK CHANGES (can occur at any point during work loop)
+  19. user changes scope/goals/themes/infrastructure:
+      → discuss with user → update ProjectBlueprint.md if needed
+      → add_note(note_type='evolution', directive_name='project_blueprint_update')
+      → evolve themes/flows if needed → add_note per change
+      → evolve completion path if needed (add new paths AFTER current state only)
+      → route: project_evolution → project_progression (reviews path adjustments)
+  20. unexpected unrelated work discovered:
+      → add_sidequest(paused_task_id, flow_ids, name, priority='critical')
+      → create items for sidequest via add_project_entry(table='items', data={reference_table:'sidequests', ...})
+      → complete sidequest before resuming paused task
+  21. work related to current task but shouldn't modify it:
+      → add_subtask(name, parent_task_id, priority='high')
+      → create items via add_project_entry(table='items', data={reference_table:'subtasks', ...})
+      → complete subtask before parent task
+
+PHASE: USER PREFERENCE CHANGES
+  22. user changes how a directive behaves (e.g., "always add docstrings"):
+      → user_preferences_update directive
+      → table: directive_preferences (directive_name, preference_key, preference_value)
+      → add_note(note_type='decision')
+  23. user changes project-wide AI behavior (e.g., "continue on start"):
+      → user_preferences_update directive
+      → table: user_settings (setting_key, setting_value)
+      → add_note(note_type='decision')
+  24. user requests custom helper behavior extension:
+      → table: custom_return_statements (helper_name, statement, active)
+      → add_note(note_type='decision')
+
+PHASE: USE CASE 2 — CUSTOM DIRECTIVE AUTOMATION (if detected during discovery)
+  Detection: user describes automation BEHAVIOR ("when X do Y") not software to BUILD
+    → present Case 1/2 choice → set project.user_directives_status='pending_discovery'
+  Status: NULL → pending_discovery → pending_parse → in_progress → active → (disabled)
+  Directive pipeline (see directives-user-system for full workflow details):
+    25. project_discovery (Case 2 context) → conversational onboarding (pending_parse)
+    26. user_directive_parse → user_directive_validate → status='in_progress'
+    27. user_directive_implement — uses WORK LOOP above (phases 11-18):
+        same reserve → write → finalize, tracked in project.db, code goes to src/
+    28. user_directive_approve → user_directive_activate → status='active'
+    29. user_directive_monitor (ongoing) | user_directive_update (if source files change)
+        changes trigger full re-pipeline: deactivate → parse → validate → implement → approve
 
 === END SUPPORTIVE CONTEXT ===

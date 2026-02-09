@@ -45,7 +45,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Consider creating items for this subtask"
+        "Create items for this subtask: add_project_entry(table='items', data={reference_table:'subtasks', reference_id:<subtask_id>, name:<name>, description:<desc>})"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -328,7 +328,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If status changed: call add_note(note_type='task_context', reference_table='subtasks', reference_id=<subtask_id>) describing the change",
+        "If status='completed': check get_incomplete_subtasks_by_task(task_id) — if empty, parent task can resume"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -432,7 +435,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Consider creating items for this sidequest"
+        "Create items for this sidequest: add_project_entry(table='items', data={reference_table:'sidequests', reference_id:<sidequest_id>, name:<name>, description:<desc>})"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -723,7 +726,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "If status changed: call add_note(note_type='task_context', reference_table='sidequests', reference_id=<sidequest_id>) describing the change",
+        "If status='completed': paused task/subtask can now resume (check paused_task_id/paused_subtask_id)"
+      ],
       "target_database": "project",
       "used_by_directives": [
         {

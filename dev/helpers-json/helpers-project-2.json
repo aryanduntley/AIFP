@@ -39,7 +39,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned ID for file naming: {name}_id_{id}.{ext}",
-        "After finalization, ensure this file is linked to appropriate flows via file_flows table"
+        "After finalization, ensure this file is linked to appropriate flows via file_flows table",
+        "Next: write file to disk with ID in name → finalize_file(file_id, name, path, language)"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -85,7 +86,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned IDs for file naming: {name}_id_{id}.{ext}",
-        "After finalization, ensure all files are linked to appropriate flows via file_flows table"
+        "After finalization, ensure all files are linked to appropriate flows via file_flows table",
+        "Next: write files to disk with IDs in names → finalize_files([{file_id, name, path, language}, ...])"
       ],
       "target_database": "project",
       "used_by_directives": [],
@@ -143,7 +145,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Verify flows are added in file_flows table.",
-        "If called during project_reserve_finalize: proceed to project_update_db to sync reserved IDs with database."
+        "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
+        "After file write operations: route to git_sync_state directive to update last_known_git_hash"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -198,7 +201,9 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Verify flows are added in file_flows table for all files"
+        "Verify flows are added in file_flows table for all files",
+        "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
+        "After file write operations: route to git_sync_state directive to update last_known_git_hash"
       ],
       "target_database": "project",
       "used_by_directives": [],

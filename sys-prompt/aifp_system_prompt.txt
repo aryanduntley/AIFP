@@ -87,6 +87,11 @@ All directives use **trunk → branches → fallback** pattern. User preferences
 
 **Helpers ARE the primary way to interact with databases.** Query the database to discover them.
 
+**Tool vs Helper distinction**:
+- **is_tool=true** → Available as MCP server tool. Call via MCP tool call.
+- **is_tool=false, is_sub_helper=false** → Called by directives (AI follows directive workflow).
+- **is_tool=false, is_sub_helper=true** → Internal only (called by other helpers, never by AI directly).
+
 **Priority**: Helpers FIRST (99%) → Orchestrators → Directives → Direct SQL (last resort, reads only).
 **Exception**: user_directives.db allows free SQL (AI-managed).
 
