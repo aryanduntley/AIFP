@@ -1,7 +1,7 @@
 """
 Tests for aifp.mcp_server.registry
 
-Verifies all 219 registry entries are valid: modules importable,
+Verifies all 220 registry entries are valid: modules importable,
 functions exist, helper functions work correctly.
 """
 
@@ -21,8 +21,8 @@ from aifp.mcp_server.registry import (
 # Registry Structure Tests
 # ============================================================================
 
-def test_registry_has_219_entries():
-    assert len(TOOL_REGISTRY) == 219
+def test_registry_has_220_entries():
+    assert len(TOOL_REGISTRY) == 220
 
 
 def test_registry_values_are_tuples():

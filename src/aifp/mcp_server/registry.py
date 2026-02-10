@@ -272,8 +272,9 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "query_user_custom": ("aifp.helpers.user_directives.crud", "query_user_custom"),
     "search_user_directives": ("aifp.helpers.user_directives.crud", "search_user_directives"),
     "update_user_custom_entry": ("aifp.helpers.user_directives.crud", "update_user_custom_entry"),
-    # helpers/user_directives/management.py (6 tools)
+    # helpers/user_directives/management.py (7 tools)
     "activate_user_directive": ("aifp.helpers.user_directives.management", "activate_user_directive"),
+    "init_user_directives_db": ("aifp.helpers.user_directives.management", "init_user_directives_db"),
     "add_user_directive_note": ("aifp.helpers.user_directives.management", "add_user_directive_note"),
     "deactivate_user_directive": ("aifp.helpers.user_directives.management", "deactivate_user_directive"),
     "get_user_directive_by_name": ("aifp.helpers.user_directives.management", "get_user_directive_by_name"),

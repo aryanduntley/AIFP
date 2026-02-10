@@ -55,7 +55,7 @@ from aifp.database.connection import (
 
 @pytest.fixture(scope="module", autouse=True)
 def load_tools():
-    """Load and cache all 219 tools once for the entire test module."""
+    """Load and cache all 220 tools once for the entire test module."""
     _effect_load_and_cache_tools()
 
 
@@ -110,10 +110,10 @@ class TestProtocol:
         assert result["serverInfo"]["version"] == SERVER_VERSION
         assert "tools" in result["capabilities"]
 
-    def test_tools_list_returns_219_tools(self):
+    def test_tools_list_returns_220_tools(self):
         resp = handle_list_tools(1)
         tools = resp["result"]["tools"]
-        assert len(tools) == 219, f"Expected 219 tools, got {len(tools)}"
+        assert len(tools) == 220, f"Expected 220 tools, got {len(tools)}"
 
     def test_all_tools_have_required_fields(self):
         resp = handle_list_tools(1)

@@ -846,11 +846,37 @@
         "Additional filters (note_type, reference_type, severity) are exact match AND conditions",
         "Order by created_at DESC (newest first)"
       ]
+    },
+    {
+      "name": "init_user_directives_db",
+      "file_path": "helpers/user_directives/management.py",
+      "parameters": [],
+      "purpose": "Initialize user_directives.db for Case 2 (custom directive automation) projects. Creates the database from schema. Call when project transitions to Case 2.",
+      "error_handling": "Returns error if DB already exists, project not initialized, or schema file missing. Cleans up partial DB on failure.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "user_directives",
+      "used_by_directives": [
+        {
+          "directive_name": "user_directive_parse",
+          "execution_context": "initialize_database",
+          "sequence_order": 1,
+          "description": "Create user_directives.db before storing parsed directives"
+        }
+      ],
+      "implementation_notes": [
+        "Requires project to be initialized first (.aifp-project/ must exist)",
+        "Loads user_directives.sql schema and executes it to create all 11 tables",
+        "Returns success with table count on completion",
+        "Idempotent guard: returns error if DB already exists (will not overwrite)",
+        "Uses get_cached_project_root() for project path resolution"
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-user-custom.json",
-    "count": 19,
+    "count": 20,
     "first_helper": "user_directives_allowed_check_constraints",
     "status": "REFACTORED 2026-01-28 - Removed 6 orchestrator helpers, added 5 CRUD helpers",
     "mapped_helpers": 8,

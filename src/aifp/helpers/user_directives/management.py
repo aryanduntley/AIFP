@@ -7,6 +7,7 @@ These are typed, domain-specific operations for common directive workflows.
 All functions are pure FP - immutable data, explicit parameters, Result types.
 
 Helpers in this file:
+- init_user_directives_db: Initialize user_directives.db for Case 2 projects
 - get_user_directive_by_name: Get single directive by unique name
 - activate_user_directive: Set directive status to 'active' (DB only)
 - deactivate_user_directive: Set directive status to 'paused' (DB only)
@@ -17,6 +18,7 @@ Helpers in this file:
 
 import sqlite3
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
 
 from ..utils import get_return_statements, rows_to_tuple, row_to_dict
@@ -24,6 +26,7 @@ from ..utils import get_return_statements, rows_to_tuple, row_to_dict
 # Import common user_directives utilities (DRY principle)
 from ._common import (
     get_cached_project_root,
+    get_user_directives_db_path,
     _open_directives_connection,
     _directive_exists_by_id,
     _directive_is_approved,
@@ -78,6 +81,89 @@ class NotesResult:
     notes: Tuple[Note, ...] = ()
     error: Optional[str] = None
     return_statements: Tuple[str, ...] = ()
+
+
+# ============================================================================
+# Public Helper Functions - Database Initialization
+# ============================================================================
+
+def _get_schema_path(schema_file: str) -> str:
+    """Pure: Get path to a database schema file."""
+    helpers_dir = Path(__file__).parent.parent  # src/aifp/helpers/
+    return str(helpers_dir.parent / "database" / "schemas" / schema_file)
+
+
+def init_user_directives_db() -> MutationResult:
+    """
+    Initialize user_directives.db for Case 2 (custom directive automation) projects.
+
+    Creates the user_directives database from schema. Call this when a project
+    transitions to Case 2 (user_directives_status set to pending_discovery).
+    Requires the project to be initialized first (.aifp-project/ must exist).
+
+    Returns:
+        MutationResult with success status and table names created
+    """
+    project_root = get_cached_project_root()
+    db_path = get_user_directives_db_path(project_root)
+
+    # Check if already exists
+    if Path(db_path).is_file():
+        return MutationResult(
+            success=False,
+            error=f"user_directives.db already exists at {db_path}"
+        )
+
+    # Verify .aifp-project/ directory exists
+    aifp_dir = Path(db_path).parent
+    if not aifp_dir.is_dir():
+        return MutationResult(
+            success=False,
+            error=f"Project not initialized: {aifp_dir} does not exist. Run aifp_init first."
+        )
+
+    # Load schema
+    schema_path = _get_schema_path("user_directives.sql")
+    if not Path(schema_path).is_file():
+        return MutationResult(
+            success=False,
+            error=f"Schema file not found: {schema_path}"
+        )
+
+    try:
+        with open(schema_path, 'r') as f:
+            schema_sql = f.read()
+
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            conn.executescript(schema_sql)
+            conn.commit()
+
+            # Get created table names
+            cursor = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
+            )
+            table_names = tuple(row['name'] for row in cursor.fetchall())
+        finally:
+            conn.close()
+
+        return_stmts = get_return_statements("init_user_directives_db")
+
+        return MutationResult(
+            success=True,
+            message=f"user_directives.db created with {len(table_names)} tables",
+            return_statements=return_stmts
+        )
+
+    except Exception as e:
+        # Clean up partial DB on failure
+        if Path(db_path).is_file():
+            Path(db_path).unlink()
+        return MutationResult(
+            success=False,
+            error=f"Database initialization failed: {str(e)}"
+        )
 
 
 # ============================================================================

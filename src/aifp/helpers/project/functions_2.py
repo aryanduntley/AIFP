@@ -794,10 +794,10 @@ def update_function_file_location(
                 error=f"Function {function_id} does not belong to file {old_file_id}"
             )
 
-        # Check for name conflict at destination file
+        # Check for name conflict at destination file (exclude the function being moved)
         cursor = conn.execute(
-            "SELECT id FROM functions WHERE name = (SELECT name FROM functions WHERE id = ?) AND file_id = ?",
-            (function_id, new_file_id)
+            "SELECT id FROM functions WHERE name = (SELECT name FROM functions WHERE id = ?) AND file_id = ? AND id != ?",
+            (function_id, new_file_id, function_id)
         )
         if cursor.fetchone():
             return LocationUpdateResult(
