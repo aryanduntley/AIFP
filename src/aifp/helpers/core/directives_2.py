@@ -428,7 +428,7 @@ def get_directives_for_helper(helper_name: str) -> DirectivesResult:
                 """
                 SELECT DISTINCT d.* FROM directives d
                 JOIN directive_helpers dh ON d.id = dh.directive_id
-                JOIN helper_functions hf ON dh.helper_id = hf.id
+                JOIN helper_functions hf ON dh.helper_function_id = hf.id
                 WHERE hf.name = ?
                 ORDER BY d.type, d.name
                 """,
