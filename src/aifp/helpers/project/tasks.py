@@ -35,6 +35,8 @@ from ..utils import get_return_statements
 # Import common project utilities (DRY principle)
 from ._common import (
     _open_connection,
+    get_cached_project_root,
+    _open_project_connection,
     _check_entity_exists,
     _create_deletion_note,
     _validate_status,
@@ -704,7 +706,6 @@ def _delete_task(conn: sqlite3.Connection, task_id: int) -> None:
 # ============================================================================
 
 def add_milestone(
-    db_path: str,
     completion_path_id: int,
     name: str,
     status: str = "pending",
@@ -714,7 +715,6 @@ def add_milestone(
     Add milestone to completion path.
 
     Args:
-        db_path: Path to project.db
         completion_path_id: Completion path ID this milestone belongs to
         name: Milestone name
         status: Milestone status ('pending', 'in_progress', 'completed', 'blocked')
@@ -731,7 +731,8 @@ def add_milestone(
         )
 
     # Open connection and insert
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check completion path exists
@@ -764,20 +765,19 @@ def add_milestone(
 
 
 def get_milestones_by_path(
-    db_path: str,
     completion_path_id: int
 ) -> MilestoneQueryResult:
     """
     Get all milestones for a completion path.
 
     Args:
-        db_path: Path to project.db
         completion_path_id: Completion path ID
 
     Returns:
         MilestoneQueryResult with milestones
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         milestones = _query_milestones_by_path(conn, completion_path_id)
@@ -797,14 +797,12 @@ def get_milestones_by_path(
 
 
 def get_milestones_by_status(
-    db_path: str,
     status: str
 ) -> MilestoneQueryResult:
     """
     Get milestones filtered by status.
 
     Args:
-        db_path: Path to project.db
         status: Milestone status ('pending', 'in_progress', 'completed', 'blocked')
 
     Returns:
@@ -817,7 +815,8 @@ def get_milestones_by_status(
             error=f"Invalid status: {status}. Must be one of: {', '.join(VALID_MILESTONE_STATUSES)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         milestones = _query_milestones_by_status(conn, status)
@@ -836,17 +835,15 @@ def get_milestones_by_status(
         )
 
 
-def get_incomplete_milestones(db_path: str) -> MilestoneQueryResult:
+def get_incomplete_milestones() -> MilestoneQueryResult:
     """
     Get all non-completed milestones.
-
-    Args:
-        db_path: Path to project.db
 
     Returns:
         MilestoneQueryResult with incomplete milestones
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         milestones = _query_incomplete_milestones(conn)
@@ -866,7 +863,6 @@ def get_incomplete_milestones(db_path: str) -> MilestoneQueryResult:
 
 
 def update_milestone(
-    db_path: str,
     id: int,
     name: Optional[str] = None,
     completion_path_id: Optional[int] = None,
@@ -877,7 +873,6 @@ def update_milestone(
     Update milestone metadata.
 
     Args:
-        db_path: Path to project.db
         id: Milestone ID
         name: New name (None = don't update)
         completion_path_id: New completion path ID (None = don't update)
@@ -894,7 +889,8 @@ def update_milestone(
             error=f"Invalid status: {status}. Must be one of: {', '.join(VALID_MILESTONE_STATUSES)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check milestone exists
@@ -934,7 +930,6 @@ def update_milestone(
 
 
 def delete_milestone(
-    db_path: str,
     id: int,
     note_reason: str,
     note_severity: str,
@@ -945,7 +940,6 @@ def delete_milestone(
     Delete milestone with task validation.
 
     Args:
-        db_path: Path to project.db
         id: Milestone ID
         note_reason: Deletion reason
         note_severity: Note severity ('info', 'warning', 'error')
@@ -955,7 +949,8 @@ def delete_milestone(
     Returns:
         DeleteResult with success status
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check milestone exists
@@ -999,7 +994,6 @@ def delete_milestone(
 
 
 def add_task(
-    db_path: str,
     milestone_id: int,
     name: str,
     status: str = "pending",
@@ -1011,7 +1005,6 @@ def add_task(
     Add task to milestone.
 
     Args:
-        db_path: Path to project.db
         milestone_id: Milestone ID
         name: Task name
         status: Task status ('pending', 'in_progress', 'completed', 'blocked')
@@ -1036,7 +1029,8 @@ def add_task(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check milestone exists
@@ -1069,7 +1063,6 @@ def add_task(
 
 
 def get_incomplete_tasks_by_milestone(
-    db_path: str,
     milestone_id: int,
     skip_pending: bool = False
 ) -> TaskQueryResult:
@@ -1077,14 +1070,14 @@ def get_incomplete_tasks_by_milestone(
     Get open tasks for a milestone with related subtasks/sidequests.
 
     Args:
-        db_path: Path to project.db
         milestone_id: Milestone ID
         skip_pending: If true, excludes pending tasks
 
     Returns:
         TaskQueryResult with incomplete tasks
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         tasks = _query_incomplete_tasks_by_milestone(conn, milestone_id, skip_pending)
@@ -1103,17 +1096,15 @@ def get_incomplete_tasks_by_milestone(
         )
 
 
-def get_incomplete_tasks(db_path: str) -> TaskQueryResult:
+def get_incomplete_tasks() -> TaskQueryResult:
     """
     Get all incomplete tasks with subtasks/sidequests.
-
-    Args:
-        db_path: Path to project.db
 
     Returns:
         TaskQueryResult with all incomplete tasks
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         tasks = _query_incomplete_tasks(conn)
@@ -1133,20 +1124,19 @@ def get_incomplete_tasks(db_path: str) -> TaskQueryResult:
 
 
 def get_tasks_by_milestone(
-    db_path: str,
     milestone_id: int
 ) -> TaskQueryResult:
     """
     Get all tasks for a milestone (any status).
 
     Args:
-        db_path: Path to project.db
         milestone_id: Milestone ID
 
     Returns:
         TaskQueryResult with all tasks for milestone
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         tasks = _query_tasks_by_milestone(conn, milestone_id)
@@ -1166,7 +1156,6 @@ def get_tasks_by_milestone(
 
 
 def get_tasks_comprehensive(
-    db_path: str,
     status: Optional[str] = None,
     limit: Optional[int] = None,
     date_range_created: Optional[List[str]] = None,
@@ -1178,7 +1167,6 @@ def get_tasks_comprehensive(
     Advanced task search with multiple filters.
 
     Args:
-        db_path: Path to project.db
         status: Optional status filter ('pending', 'in_progress', 'completed', 'blocked')
         limit: Optional maximum results
         date_range_created: Optional created date range [start_date, end_date]
@@ -1203,7 +1191,8 @@ def get_tasks_comprehensive(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         tasks = _query_tasks_comprehensive(
@@ -1225,20 +1214,19 @@ def get_tasks_comprehensive(
 
 
 def get_task_flows(
-    db_path: str,
     task_id: int
 ) -> FlowIdsResult:
     """
     Get flow IDs for a task.
 
     Args:
-        db_path: Path to project.db
         task_id: Task ID
 
     Returns:
         FlowIdsResult with flow IDs array
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check task exists
@@ -1267,20 +1255,19 @@ def get_task_flows(
 
 
 def get_task_files(
-    db_path: str,
     task_id: int
 ) -> FilesResult:
     """
     Get all files related to task via flows (orchestrator).
 
     Args:
-        db_path: Path to project.db
         task_id: Task ID
 
     Returns:
         FilesResult with related files
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check task exists
@@ -1319,7 +1306,6 @@ def get_task_files(
 
 
 def update_task(
-    db_path: str,
     id: int,
     name: Optional[str] = None,
     milestone_id: Optional[int] = None,
@@ -1332,7 +1318,6 @@ def update_task(
     Update task metadata.
 
     Args:
-        db_path: Path to project.db
         id: Task ID
         name: New name (None = don't update)
         milestone_id: New milestone ID (None = don't update)
@@ -1358,7 +1343,8 @@ def update_task(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check task exists
@@ -1398,7 +1384,6 @@ def update_task(
 
 
 def delete_task(
-    db_path: str,
     id: int,
     note_reason: str,
     note_severity: str,
@@ -1409,7 +1394,6 @@ def delete_task(
     Delete task with item validation.
 
     Args:
-        db_path: Path to project.db
         id: Task ID
         note_reason: Deletion reason
         note_severity: Note severity ('info', 'warning', 'error')
@@ -1419,7 +1403,8 @@ def delete_task(
     Returns:
         DeleteResult with success status
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check task exists

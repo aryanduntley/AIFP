@@ -20,7 +20,7 @@ from typing import Optional, Tuple, Dict
 from ..utils import get_return_statements
 
 # Import common user_preferences utilities (DRY principle)
-from ._common import _open_connection
+from ._common import _open_connection, get_cached_project_root, _open_preferences_connection
 
 
 # ============================================================================
@@ -120,23 +120,21 @@ def _query_table_info(conn: sqlite3.Connection, table: str) -> Tuple[FieldInfo, 
 # Public Helper Functions
 # ============================================================================
 
-def get_settings_tables(db_path: str) -> TablesResult:
+def get_settings_tables() -> TablesResult:
     """
     List all tables in user_preferences database.
-
-    Args:
-        db_path: Path to user_preferences.db
 
     Returns:
         TablesResult with table names
 
     Example:
-        >>> result = get_settings_tables("/path/to/user_preferences.db")
+        >>> result = get_settings_tables()
         >>> result.tables
         ('ai_interaction_log', 'directive_preferences', 'fp_flow_tracking',
          'issue_reports', 'tracking_notes', 'tracking_settings', 'user_settings')
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         tables = _query_tables(conn)
@@ -155,19 +153,18 @@ def get_settings_tables(db_path: str) -> TablesResult:
         )
 
 
-def get_settings_fields(db_path: str, table: str) -> FieldsResult:
+def get_settings_fields(table: str) -> FieldsResult:
     """
     Get field names and types for a specific table.
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name to get fields for
 
     Returns:
         FieldsResult with field information
 
     Example:
-        >>> result = get_settings_fields("/path/to/user_preferences.db", "user_settings")
+        >>> result = get_settings_fields("user_settings")
         >>> for field in result.fields:
         ...     print(f"{field.name}: {field.type}")
         setting_key: TEXT
@@ -175,7 +172,8 @@ def get_settings_fields(db_path: str, table: str) -> FieldsResult:
         description: TEXT
         scope: TEXT
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists
@@ -204,22 +202,20 @@ def get_settings_fields(db_path: str, table: str) -> FieldsResult:
         )
 
 
-def get_settings_schema(db_path: str) -> SchemaResult:
+def get_settings_schema() -> SchemaResult:
     """
     Get complete schema for user_preferences database.
-
-    Args:
-        db_path: Path to user_preferences.db
 
     Returns:
         SchemaResult with full schema (table_name -> fields mapping)
 
     Example:
-        >>> result = get_settings_schema("/path/to/user_preferences.db")
+        >>> result = get_settings_schema()
         >>> for table, fields in result.schema.items():
         ...     print(f"{table}: {len(fields)} fields")
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Get all tables
@@ -246,25 +242,25 @@ def get_settings_schema(db_path: str) -> SchemaResult:
         )
 
 
-def get_settings_json_parameters(db_path: str, table: str) -> JsonParametersResult:
+def get_settings_json_parameters(table: str) -> JsonParametersResult:
     """
     Get available fields for table to use with generic add/update operations.
     Filters out id, created_at, updated_at fields.
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name to get available fields for
 
     Returns:
         JsonParametersResult with field_name -> type_hint mapping
 
     Example:
-        >>> result = get_settings_json_parameters("/path/to/user_preferences.db", "directive_preferences")
+        >>> result = get_settings_json_parameters("directive_preferences")
         >>> result.parameters
         {'directive_name': 'TEXT', 'preference_key': 'TEXT',
          'preference_value': 'TEXT', 'active': 'BOOLEAN', 'description': 'TEXT'}
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists

@@ -25,7 +25,7 @@ from typing import Optional, List, Tuple, Dict, Any
 from ..utils import get_return_statements
 
 # Import update_file_timestamp from files_2
-from ._common import _open_connection, _check_file_exists, _check_type_exists, _create_deletion_note
+from ._common import _check_file_exists, _check_type_exists, _create_deletion_note, get_cached_project_root, _open_project_connection
 from .files_2 import update_file_timestamp
 
 
@@ -525,7 +525,6 @@ def _delete_type_effect(
 # ============================================================================
 
 def reserve_type(
-    db_path: str,
     name: str,
     definition_json: Dict[str, Any],
     description: Optional[str] = None,
@@ -540,7 +539,6 @@ def reserve_type(
     Returns ID that should be embedded in type name: {TypeName}_id_{id}
 
     Args:
-        db_path: Path to project.db
         name: Preliminary type name (will have _id_xxx appended unless skip_id_naming=True)
         definition_json: ADT definition (e.g., {'type': 'enum', 'variants': ['A', 'B']})
         description: Type description (optional)
@@ -553,7 +551,6 @@ def reserve_type(
 
     Example:
         >>> result = reserve_type(
-        ...     "project.db",
         ...     "Maybe",
         ...     {"type": "enum", "variants": ["Just", "Nothing"]},
         ...     description="Optional value type"
@@ -565,7 +562,8 @@ def reserve_type(
         # Use result.id to create: Maybe_id_7 (unless skip_id_naming=True)
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file_id provided and exists
@@ -605,7 +603,6 @@ def reserve_type(
 
 
 def reserve_types(
-    db_path: str,
     types: List[Dict[str, Any]]
 ) -> ReserveBatchResult:
     """
@@ -615,7 +612,6 @@ def reserve_types(
     All reservations succeed or all fail (atomic operation).
 
     Args:
-        db_path: Path to project.db
         types: List of type objects with keys: name, definition_json, description, links, file_id, skip_id_naming
                skip_id_naming is optional (defaults to False) and controls per-type ID embedding
 
@@ -628,7 +624,7 @@ def reserve_types(
         ...     {"name": "Maybe", "definition_json": {"type": "enum", "variants": ["Just", "Nothing"]}},
         ...     {"name": "ReserveResult", "definition_json": {...}, "skip_id_naming": True}  # MCP type
         ... ]
-        >>> result = reserve_types("project.db", types)
+        >>> result = reserve_types(types)
         >>> result.success
         True
         >>> result.ids
@@ -642,7 +638,8 @@ def reserve_types(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Validate all file IDs if provided
@@ -693,7 +690,6 @@ def reserve_types(
 
 
 def finalize_type(
-    db_path: str,
     type_id: int,
     name: str,
     definition_json: Dict[str, Any],
@@ -709,7 +705,6 @@ def finalize_type(
     Automatically updates file timestamp if file_id provided.
 
     Args:
-        db_path: Path to project.db
         type_id: Reserved type ID
         name: Final type name with _id_xx suffix (unless skip_id_naming=True)
         definition_json: ADT definition
@@ -724,7 +719,6 @@ def finalize_type(
     Example:
         >>> # After writing Maybe_id_7 in code
         >>> result = finalize_type(
-        ...     "project.db",
         ...     type_id=7,
         ...     name="Maybe_id_7",
         ...     definition_json={"type": "enum", "variants": ["Just", "Nothing"]},
@@ -741,7 +735,8 @@ def finalize_type(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file_id provided and exists
@@ -770,7 +765,7 @@ def finalize_type(
 
         # Effect: update file timestamp if file_id provided
         if file_id is not None:
-            timestamp_result = update_file_timestamp(db_path, file_id)
+            timestamp_result = update_file_timestamp(file_id)
             if not timestamp_result.success:
                 return FinalizeResult(
                     success=False,
@@ -799,7 +794,6 @@ def finalize_type(
 
 
 def finalize_types(
-    db_path: str,
     types: List[Dict[str, Any]]
 ) -> FinalizeBatchResult:
     """
@@ -809,7 +803,6 @@ def finalize_types(
     All finalizations succeed or all fail (atomic operation).
 
     Args:
-        db_path: Path to project.db
         types: List of type objects with keys: type_id, name, definition_json, description, links, file_id, skip_id_naming
                skip_id_naming is optional (defaults to False) and controls per-type validation
 
@@ -821,7 +814,7 @@ def finalize_types(
         ...     {"type_id": 7, "name": "Maybe_id_7", "definition_json": {...}, "file_id": 42},
         ...     {"type_id": 8, "name": "ReserveResult", "definition_json": {...}, "file_id": 42, "skip_id_naming": True}
         ... ]
-        >>> result = finalize_types("project.db", types)
+        >>> result = finalize_types(types)
         >>> result.success
         True
         >>> result.finalized_ids
@@ -868,7 +861,8 @@ def finalize_types(
             file_ids.add(file_id)
 
     # Effect: open connection and finalize batch
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Validate all file IDs exist
@@ -886,7 +880,7 @@ def finalize_types(
 
         # Effect: update timestamps for all affected files
         for file_id in file_ids:
-            timestamp_result = update_file_timestamp(db_path, file_id)
+            timestamp_result = update_file_timestamp(file_id)
             if not timestamp_result.success:
                 return FinalizeBatchResult(
                     success=False,
@@ -914,7 +908,6 @@ def finalize_types(
 
 
 def update_type(
-    db_path: str,
     type_id: int,
     name: Optional[str] = None,
     file_id: Optional[int] = None,
@@ -928,7 +921,6 @@ def update_type(
     Automatically updates file timestamp if file_id is in database.
 
     Args:
-        db_path: Path to project.db
         type_id: Type ID to update
         name: New type name (None = don't update)
         file_id: New file_id (None = don't update)
@@ -940,13 +932,12 @@ def update_type(
 
     Example:
         >>> # Update only the description
-        >>> result = update_type("project.db", 7, description="Optional value type")
+        >>> result = update_type(7, description="Optional value type")
         >>> result.success
         True
 
         >>> # Update name and definition
         >>> result = update_type(
-        ...     "project.db",
         ...     7,
         ...     name="Maybe_id_7",
         ...     definition_json={"type": "enum", "variants": ["Just", "Nothing"]}
@@ -962,7 +953,8 @@ def update_type(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if type exists
@@ -1009,7 +1001,7 @@ def update_type(
 
         # Effect: update file timestamp if file_id exists
         if timestamp_file_id is not None:
-            timestamp_result = update_file_timestamp(db_path, timestamp_file_id)
+            timestamp_result = update_file_timestamp(timestamp_file_id)
             if not timestamp_result.success:
                 return UpdateResult(
                     success=False,
@@ -1038,7 +1030,6 @@ def update_type(
 
 
 def delete_type(
-    db_path: str,
     type_id: int,
     note_reason: str,
     note_severity: str,
@@ -1052,7 +1043,6 @@ def delete_type(
     from types_functions first.
 
     Args:
-        db_path: Path to project.db
         type_id: Type ID to delete
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
@@ -1064,7 +1054,6 @@ def delete_type(
 
     Example:
         >>> result = delete_type(
-        ...     "project.db",
         ...     7,
         ...     note_reason="Type no longer needed",
         ...     note_severity="info",
@@ -1078,7 +1067,8 @@ def delete_type(
         42
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if type exists
@@ -1170,7 +1160,6 @@ def _get_type_by_name_effect(conn: sqlite3.Connection, type_name: str) -> List[s
 
 
 def get_type_by_name(
-    db_path: str,
     type_name: str
 ) -> TypeQueryResult:
     """
@@ -1180,14 +1169,13 @@ def get_type_by_name(
     included via JOIN. Multiple types may share a name across different files.
 
     Args:
-        db_path: Path to project.db
         type_name: Type name to search for
 
     Returns:
         TypeQueryResult with tuple of matching TypeRecords
 
     Example:
-        >>> result = get_type_by_name("project.db", "Maybe_id_7")
+        >>> result = get_type_by_name("Maybe_id_7")
         >>> result.success
         True
         >>> len(result.types)
@@ -1196,7 +1184,8 @@ def get_type_by_name(
         'src/types.py'
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Effect: query types by name

@@ -20,7 +20,7 @@ from typing import Optional, Tuple, Dict
 from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
-from ._common import _open_connection
+from ._common import _open_connection, get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -120,17 +120,15 @@ def _query_table_info(conn: sqlite3.Connection, table: str) -> Tuple[FieldInfo, 
 # Public Helper Functions
 # ============================================================================
 
-def get_project_tables(db_path: str) -> TablesResult:
+def get_project_tables() -> TablesResult:
     """
     List all tables in project database.
-
-    Args:
-        db_path: Path to project.db
 
     Returns:
         TablesResult with table names
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         tables = _query_tables(conn)
@@ -149,18 +147,18 @@ def get_project_tables(db_path: str) -> TablesResult:
         )
 
 
-def get_project_fields(db_path: str, table: str) -> FieldsResult:
+def get_project_fields(table: str) -> FieldsResult:
     """
     Get field names and types for a specific table.
 
     Args:
-        db_path: Path to project.db
         table: Table name to get fields for
 
     Returns:
         FieldsResult with field information
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if table exists
@@ -189,17 +187,15 @@ def get_project_fields(db_path: str, table: str) -> FieldsResult:
         )
 
 
-def get_project_schema(db_path: str) -> SchemaResult:
+def get_project_schema() -> SchemaResult:
     """
     Get complete schema for project database.
-
-    Args:
-        db_path: Path to project.db
 
     Returns:
         SchemaResult with full schema (table_name -> fields mapping)
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Get all tables
@@ -226,19 +222,19 @@ def get_project_schema(db_path: str) -> SchemaResult:
         )
 
 
-def get_project_json_parameters(db_path: str, table: str) -> JsonParametersResult:
+def get_project_json_parameters(table: str) -> JsonParametersResult:
     """
     Get available fields for table to use with generic add/update operations.
     Filters out id, created_at, updated_at fields.
 
     Args:
-        db_path: Path to project.db
         table: Table name to get available fields for
 
     Returns:
         JsonParametersResult with field_name -> type_hint mapping
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if table exists

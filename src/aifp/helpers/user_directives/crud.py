@@ -25,7 +25,12 @@ from typing import Optional, Tuple, Dict, Any, List
 from ..utils import get_return_statements, rows_to_tuple
 
 # Import common user_directives utilities (DRY principle)
-from ._common import _open_connection, _table_exists, _record_exists
+from ._common import (
+    get_cached_project_root,
+    _open_directives_connection,
+    _table_exists,
+    _record_exists,
+)
 
 
 # ============================================================================
@@ -56,7 +61,6 @@ class MutationResult:
 # ============================================================================
 
 def get_from_user_custom(
-    db_path: str,
     table: str,
     id_array: List[int]
 ) -> QueryResult:
@@ -64,7 +68,6 @@ def get_from_user_custom(
     Get records by ID(s) from user_directives database.
 
     Args:
-        db_path: Path to user_directives.db
         table: Table name in user_directives.db
         id_array: List of IDs to fetch (MUST contain at least one ID)
 
@@ -81,7 +84,8 @@ def get_from_user_custom(
             error="id_array must contain at least one ID"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if table exists
@@ -115,7 +119,6 @@ def get_from_user_custom(
 
 
 def get_from_user_custom_where(
-    db_path: str,
     table: str,
     conditions: Dict[str, Any]
 ) -> QueryResult:
@@ -124,7 +127,6 @@ def get_from_user_custom_where(
     All conditions are ANDed together.
 
     Args:
-        db_path: Path to user_directives.db
         table: Table name in user_directives.db
         conditions: Field-value pairs (AND logic)
 
@@ -133,7 +135,6 @@ def get_from_user_custom_where(
 
     Example:
         >>> result = get_from_user_custom_where(
-        ...     "/path/to/user_directives.db",
         ...     "user_directives",
         ...     {"status": "active", "trigger_type": "time"}
         ... )
@@ -144,7 +145,8 @@ def get_from_user_custom_where(
             error="conditions must not be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if table exists
@@ -183,7 +185,6 @@ def get_from_user_custom_where(
 
 
 def query_user_custom(
-    db_path: str,
     table: str,
     where_clause: Optional[str] = None
 ) -> QueryResult:
@@ -191,7 +192,6 @@ def query_user_custom(
     Execute complex SQL WHERE clause (advanced, rare use).
 
     Args:
-        db_path: Path to user_directives.db
         table: Table name in user_directives.db
         where_clause: Optional SQL WHERE clause (without 'WHERE' keyword)
 
@@ -200,12 +200,12 @@ def query_user_custom(
 
     Example:
         >>> result = query_user_custom(
-        ...     "/path/to/user_directives.db",
         ...     "user_directives",
         ...     "status IN ('active', 'paused') AND domain = 'home_automation'"
         ... )
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if table exists
@@ -240,7 +240,6 @@ def query_user_custom(
 
 
 def add_user_custom_entry(
-    db_path: str,
     table: str,
     data: Dict[str, Any]
 ) -> MutationResult:
@@ -248,7 +247,6 @@ def add_user_custom_entry(
     Add entry to user_directives database table.
 
     Args:
-        db_path: Path to user_directives.db
         table: Table name in user_directives.db
         data: Field-value pairs to insert
 
@@ -257,7 +255,6 @@ def add_user_custom_entry(
 
     Example:
         >>> result = add_user_custom_entry(
-        ...     "/path/to/user_directives.db",
         ...     "user_directives",
         ...     {"name": "lights_off", "trigger_type": "time", "action_type": "api_call",
         ...      "status": "pending_validation"}
@@ -269,7 +266,8 @@ def add_user_custom_entry(
             error="data must not be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if table exists
@@ -318,7 +316,6 @@ def add_user_custom_entry(
 
 
 def update_user_custom_entry(
-    db_path: str,
     table: str,
     record_id: int,
     data: Dict[str, Any]
@@ -327,7 +324,6 @@ def update_user_custom_entry(
     Update entry in user_directives database table.
 
     Args:
-        db_path: Path to user_directives.db
         table: Table name in user_directives.db
         record_id: ID of record to update
         data: Field-value pairs to update
@@ -337,7 +333,6 @@ def update_user_custom_entry(
 
     Example:
         >>> result = update_user_custom_entry(
-        ...     "/path/to/user_directives.db",
         ...     "user_directives",
         ...     1,
         ...     {"status": "validated", "validated_content": "{...}"}
@@ -349,7 +344,8 @@ def update_user_custom_entry(
             error="data must not be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if table exists
@@ -401,7 +397,6 @@ def update_user_custom_entry(
 
 
 def delete_user_custom_entry(
-    db_path: str,
     table: str,
     record_id: int
 ) -> MutationResult:
@@ -409,7 +404,6 @@ def delete_user_custom_entry(
     Delete entry from user_directives database table.
 
     Args:
-        db_path: Path to user_directives.db
         table: Table name in user_directives.db
         record_id: ID of record to delete
 
@@ -418,12 +412,12 @@ def delete_user_custom_entry(
 
     Example:
         >>> result = delete_user_custom_entry(
-        ...     "/path/to/user_directives.db",
         ...     "user_directives",
         ...     5
         ... )
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if table exists
@@ -464,23 +458,21 @@ def delete_user_custom_entry(
 # Public Helper Functions - Convenience Queries
 # ============================================================================
 
-def get_active_user_directives(db_path: str) -> QueryResult:
+def get_active_user_directives() -> QueryResult:
     """
     Get all user directives with status='active'.
     Convenience query for checking active directive count.
-
-    Args:
-        db_path: Path to user_directives.db
 
     Returns:
         QueryResult with active directive rows
 
     Example:
-        >>> result = get_active_user_directives("/path/to/user_directives.db")
+        >>> result = get_active_user_directives()
         >>> len(result.rows)  # Number of active directives
         3
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -506,7 +498,6 @@ def get_active_user_directives(db_path: str) -> QueryResult:
 
 
 def search_user_directives(
-    db_path: str,
     name: Optional[str] = None,
     domain: Optional[str] = None,
     status: Optional[str] = None,
@@ -517,7 +508,6 @@ def search_user_directives(
     Search user directives with optional filters. At least one filter required.
 
     Args:
-        db_path: Path to user_directives.db
         name: Filter by directive name (LIKE match, case-insensitive)
         domain: Filter by domain (exact match)
         status: Filter by status (exact match)
@@ -529,7 +519,6 @@ def search_user_directives(
 
     Example:
         >>> result = search_user_directives(
-        ...     "/path/to/user_directives.db",
         ...     status="active",
         ...     trigger_type="time"
         ... )
@@ -541,7 +530,8 @@ def search_user_directives(
             error="At least one filter parameter required"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         where_parts = []

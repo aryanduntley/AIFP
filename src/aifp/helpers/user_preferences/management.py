@@ -33,6 +33,8 @@ from ..utils import get_return_statements, rows_to_tuple
 # Import common user_preferences utilities (DRY principle)
 from ._common import (
     _open_connection,
+    get_cached_project_root,
+    _open_preferences_connection,
     _check_setting_exists,
     _check_directive_preference_exists,
     _check_tracking_feature_exists,
@@ -153,14 +155,12 @@ class MutationResult:
 # ============================================================================
 
 def load_directive_preferences(
-    db_path: str,
     directive_name: str
 ) -> DirectivePreferencesResult:
     """
     Load all active preferences for a directive (high-frequency).
 
     Args:
-        db_path: Path to user_preferences.db
         directive_name: Directive name to load preferences for
 
     Returns:
@@ -168,13 +168,13 @@ def load_directive_preferences(
 
     Example:
         >>> result = load_directive_preferences(
-        ...     "/path/to/user_preferences.db",
         ...     "project_file_write"
         ... )
         >>> for pref in result.preferences:
         ...     print(f"{pref.preference_key}: {pref.preference_value}")
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -219,7 +219,6 @@ def load_directive_preferences(
 
 
 def add_directive_preference(
-    db_path: str,
     directive_name: str,
     preference_key: str,
     preference_value: str,
@@ -230,7 +229,6 @@ def add_directive_preference(
     Add new directive preference (or update if exists).
 
     Args:
-        db_path: Path to user_preferences.db
         directive_name: Directive name
         preference_key: Preference key
         preference_value: Preference value
@@ -243,7 +241,8 @@ def add_directive_preference(
     Note:
         Uses INSERT OR REPLACE for upsert behavior.
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Use INSERT OR REPLACE for upsert behavior
@@ -277,7 +276,6 @@ def add_directive_preference(
 
 
 def update_directive_preference(
-    db_path: str,
     directive_name: str,
     preference_key: str,
     preference_value: Optional[str] = None,
@@ -288,7 +286,6 @@ def update_directive_preference(
     Update existing directive preference.
 
     Args:
-        db_path: Path to user_preferences.db
         directive_name: Directive name
         preference_key: Preference key to update (must exist)
         preference_value: New preference value (optional)
@@ -301,7 +298,8 @@ def update_directive_preference(
     Note:
         Only updates fields that are provided (non-None).
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if preference exists
@@ -370,20 +368,19 @@ def update_directive_preference(
 # ============================================================================
 
 def get_user_setting(
-    db_path: str,
     setting_key: str
 ) -> UserSettingResult:
     """
     Get project-wide user setting by key (fairly frequent).
 
     Args:
-        db_path: Path to user_preferences.db
         setting_key: Setting key to retrieve
 
     Returns:
         UserSettingResult with setting or null if not found
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -424,7 +421,6 @@ def get_user_setting(
 
 
 def add_user_setting(
-    db_path: str,
     setting_key: str,
     setting_value: str,
     description: Optional[str] = None,
@@ -434,7 +430,6 @@ def add_user_setting(
     Add new project-wide user setting to user_settings table.
 
     Args:
-        db_path: Path to user_preferences.db
         setting_key: Setting key (must be unique)
         setting_value: Setting value
         description: Description of the setting (optional)
@@ -453,7 +448,8 @@ def add_user_setting(
             error=f"Invalid scope: {scope}. Must be one of: project, global"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if setting already exists
@@ -493,7 +489,6 @@ def add_user_setting(
 
 
 def update_user_setting(
-    db_path: str,
     setting_key: str,
     setting_value: Optional[str] = None,
     description: Optional[str] = None,
@@ -503,7 +498,6 @@ def update_user_setting(
     Update existing project-wide user setting in user_settings table.
 
     Args:
-        db_path: Path to user_preferences.db
         setting_key: Setting key to update (must exist)
         setting_value: New setting value (optional)
         description: New description (optional)
@@ -523,7 +517,8 @@ def update_user_setting(
             error=f"Invalid scope: {scope}. Must be one of: project, global"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if setting exists
@@ -583,12 +578,9 @@ def update_user_setting(
         )
 
 
-def get_user_settings(db_path: str) -> UserSettingsResult:
+def get_user_settings() -> UserSettingsResult:
     """
     Get all user settings from user_settings table.
-
-    Args:
-        db_path: Path to user_preferences.db
 
     Returns:
         UserSettingsResult with all settings
@@ -598,7 +590,8 @@ def get_user_settings(db_path: str) -> UserSettingsResult:
         Used for bundling all settings at session startup.
         Typically only 3-5 project-wide settings.
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -641,12 +634,9 @@ def get_user_settings(db_path: str) -> UserSettingsResult:
 # Tracking Settings Helpers
 # ============================================================================
 
-def get_tracking_settings(db_path: str) -> TrackingSettingsResult:
+def get_tracking_settings() -> TrackingSettingsResult:
     """
     Get all tracking feature flags.
-
-    Args:
-        db_path: Path to user_preferences.db
 
     Returns:
         TrackingSettingsResult with all tracking settings
@@ -656,7 +646,8 @@ def get_tracking_settings(db_path: str) -> TrackingSettingsResult:
         Features: fp_flow_tracking, ai_interaction_log, helper_function_logging,
                   issue_reports, compliance_checking
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -695,7 +686,6 @@ def get_tracking_settings(db_path: str) -> TrackingSettingsResult:
 
 
 def toggle_tracking_feature(
-    db_path: str,
     feature_name: str,
     enabled: bool
 ) -> MutationResult:
@@ -703,7 +693,6 @@ def toggle_tracking_feature(
     Enable/disable tracking feature.
 
     Args:
-        db_path: Path to user_preferences.db
         feature_name: Tracking feature name
         enabled: Enable or disable
 
@@ -721,7 +710,8 @@ def toggle_tracking_feature(
             error=f"Invalid feature: {feature_name}. Must be one of: {', '.join(sorted(VALID_TRACKING_FEATURES))}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if feature exists in table
@@ -783,7 +773,6 @@ def toggle_tracking_feature(
 # ============================================================================
 
 def add_tracking_note(
-    db_path: str,
     content: str,
     note_type: str,
     reference_type: Optional[str] = None,
@@ -797,7 +786,6 @@ def add_tracking_note(
     Add tracking note to user_preferences.db (only when tracking enabled).
 
     Args:
-        db_path: Path to user_preferences.db
         content: Note content/message
         note_type: 'fp_analysis', 'user_interaction', 'validation', 'performance', 'debug'
         reference_type: Type of reference (e.g., 'function', 'file', 'directive')
@@ -824,7 +812,8 @@ def add_tracking_note(
             error=f"Invalid severity: {severity}. Must be one of: info, warning, error"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -859,7 +848,6 @@ def add_tracking_note(
 
 
 def get_tracking_notes(
-    db_path: str,
     note_type: Optional[str] = None,
     reference_type: Optional[str] = None,
     reference_name: Optional[str] = None,
@@ -870,7 +858,6 @@ def get_tracking_notes(
     Get tracking notes with optional filters.
 
     Args:
-        db_path: Path to user_preferences.db
         note_type: Filter by note_type
         reference_type: Filter by reference_type
         reference_name: Filter by reference_name
@@ -880,7 +867,8 @@ def get_tracking_notes(
     Returns:
         TrackingNotesResult with matching notes
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Build query with optional filters
@@ -956,7 +944,6 @@ def get_tracking_notes(
 
 
 def search_tracking_notes(
-    db_path: str,
     search_string: str,
     note_type: Optional[str] = None,
     reference_type: Optional[str] = None,
@@ -966,7 +953,6 @@ def search_tracking_notes(
     Search tracking note content with optional filters.
 
     Args:
-        db_path: Path to user_preferences.db
         search_string: Search string for note content
         note_type: Optional filter by note_type
         reference_type: Optional filter by reference_type
@@ -975,7 +961,8 @@ def search_tracking_notes(
     Returns:
         TrackingNotesResult with matching notes
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Build query with search and optional filters
@@ -1067,7 +1054,6 @@ class CustomReturnStatementsResult:
 # ============================================================================
 
 def set_custom_return_statement(
-    db_path: str,
     helper_name: str,
     statement: str,
     description: Optional[str] = None,
@@ -1083,7 +1069,6 @@ def set_custom_return_statement(
     To modify an existing statement: delete it first, then set the new one.
 
     Args:
-        db_path: Path to user_preferences.db
         helper_name: Helper function name (should match aifp_core.db helper_functions.name)
         statement: Custom return statement text
         description: Why this was added (optional context)
@@ -1094,7 +1079,6 @@ def set_custom_return_statement(
 
     Example:
         >>> set_custom_return_statement(
-        ...     "/path/to/user_preferences.db",
         ...     "reserve_file_name",
         ...     "User requests no IDs in names for files, functions, types",
         ...     description="User preference for clean naming"
@@ -1112,7 +1096,8 @@ def set_custom_return_statement(
             error="statement is required and cannot be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -1151,7 +1136,6 @@ def set_custom_return_statement(
 
 
 def delete_custom_return_statement(
-    db_path: str,
     helper_name: str,
     statement: Optional[str] = None,
     statement_id: Optional[int] = None
@@ -1165,7 +1149,6 @@ def delete_custom_return_statement(
     - If neither: delete ALL custom return statements for the helper
 
     Args:
-        db_path: Path to user_preferences.db
         helper_name: Helper function name
         statement: Specific statement text to delete (optional)
         statement_id: Specific row ID to delete (optional)
@@ -1179,7 +1162,8 @@ def delete_custom_return_statement(
             error="helper_name is required and cannot be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         if statement_id is not None:
@@ -1221,7 +1205,6 @@ def delete_custom_return_statement(
 
 
 def get_custom_return_statements(
-    db_path: str,
     helper_name: str
 ) -> CustomReturnStatementsResult:
     """
@@ -1231,7 +1214,6 @@ def get_custom_return_statements(
     Also available for AI to inspect what custom return statements exist for a helper.
 
     Args:
-        db_path: Path to user_preferences.db
         helper_name: Helper function name to get custom statements for
 
     Returns:
@@ -1243,7 +1225,8 @@ def get_custom_return_statements(
             error="helper_name is required and cannot be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         cursor = conn.execute(

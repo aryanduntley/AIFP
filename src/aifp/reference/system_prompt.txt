@@ -87,6 +87,11 @@ All directives use **trunk → branches → fallback** pattern. User preferences
 
 **Helpers ARE the primary way to interact with databases.** Query the database to discover them.
 
+**Tool vs Helper distinction**:
+- **is_tool=true** → Available as MCP server tool. Call via MCP tool call.
+- **is_tool=false, is_sub_helper=false** → Called by directives (AI follows directive workflow).
+- **is_tool=false, is_sub_helper=true** → Internal only (called by other helpers, never by AI directly).
+
 **Priority**: Helpers FIRST (99%) → Orchestrators → Directives → Direct SQL (last resort, reads only).
 **Exception**: user_directives.db allows free SQL (AI-managed).
 
@@ -111,11 +116,14 @@ All directives use **trunk → branches → fallback** pattern. User preferences
 2. **Always Track Code**: project_file_write after writing any file
 3. **Reserve Before Write**: Get IDs → embed in names → finalize after writing. EXCEPTIONS: `__init__.py`/`.db`/config files skip ID embedding; private functions (`_underscore`) not tracked.
 4. **Discussions Trigger Updates**: Architecture/infrastructure/task decisions → update DB
-5. **Recovery**: Stale/compressed context → aifp_status() for fresh DB pull + supportive context. Need reference only → get_supportive_context(). Log decisions → project_notes_log.
+5. **Evolution Notes**: Any change to ProjectBlueprint.md, completion paths, themes, flows, or milestones
+   MUST be accompanied by a notes table entry (note_type='evolution', source='ai') describing what changed
+   and why. Use add_note helper. This is non-negotiable — the database is the project's memory.
+6. **Recovery**: Stale/compressed context → aifp_status() for fresh DB pull + supportive context. Need reference only → get_supportive_context(). Log decisions → project_notes_log.
    **Staleness check**: If you cannot recall the current milestone name and active task, your context is stale — call aifp_status().
-6. **Session End**: "done"/"wrap up" → aifp_end for audit
-7. **Two Use Cases, Never Mixed**: Case 1 (software dev) or Case 2 (automation). Check project.user_directives_status.
-8. **Case 2 Detection**: During project_discovery, if user describes automation BEHAVIOR (not software to build), present Case 1/2 choice. Query user_directive_* directives for workflow details.
+7. **Session End**: "done"/"wrap up" → aifp_end for audit
+8. **Two Use Cases, Never Mixed**: Case 1 (software dev) or Case 2 (automation). Check project.user_directives_status.
+9. **Case 2 Detection**: During project_discovery, if user describes automation BEHAVIOR (not software to build), present Case 1/2 choice. Query user_directive_* directives for workflow details.
 
 === BEHAVIOR LOOP ===
 

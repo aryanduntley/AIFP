@@ -22,7 +22,7 @@ from typing import Optional, Tuple, Dict, Any, List
 from ..utils import get_return_statements, rows_to_tuple
 
 # Import common user_preferences utilities (DRY principle)
-from ._common import _open_connection
+from ._common import _open_connection, get_cached_project_root, _open_preferences_connection
 
 
 # ============================================================================
@@ -105,7 +105,6 @@ def _record_exists(conn: sqlite3.Connection, table: str, record_id: int) -> bool
 # ============================================================================
 
 def get_from_settings(
-    db_path: str,
     table: str,
     id_array: List[int]
 ) -> QueryResult:
@@ -113,7 +112,6 @@ def get_from_settings(
     Get records by ID(s) from user_preferences database.
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name
         id_array: List of IDs to fetch (MUST contain at least one ID)
 
@@ -130,7 +128,8 @@ def get_from_settings(
             error="id_array must contain at least one ID"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists
@@ -164,7 +163,6 @@ def get_from_settings(
 
 
 def get_from_settings_where(
-    db_path: str,
     table: str,
     conditions: Dict[str, Any]
 ) -> QueryResult:
@@ -173,7 +171,6 @@ def get_from_settings_where(
     All conditions are ANDed together.
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name
         conditions: Field-value pairs (AND logic)
 
@@ -182,7 +179,6 @@ def get_from_settings_where(
 
     Example:
         >>> result = get_from_settings_where(
-        ...     "/path/to/user_preferences.db",
         ...     "directive_preferences",
         ...     {"directive_name": "project_file_write", "active": 1}
         ... )
@@ -193,7 +189,8 @@ def get_from_settings_where(
             error="conditions must not be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists
@@ -232,7 +229,6 @@ def get_from_settings_where(
 
 
 def query_settings(
-    db_path: str,
     table: str,
     where_clause: Optional[str] = None
 ) -> QueryResult:
@@ -240,7 +236,6 @@ def query_settings(
     Execute complex SQL WHERE clause (advanced, rare use).
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name
         where_clause: Optional SQL WHERE clause (without 'WHERE' keyword)
 
@@ -249,12 +244,12 @@ def query_settings(
 
     Example:
         >>> result = query_settings(
-        ...     "/path/to/user_preferences.db",
         ...     "directive_preferences",
         ...     "directive_name = 'project_file_write' AND active = 1"
         ... )
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists
@@ -289,7 +284,6 @@ def query_settings(
 
 
 def add_settings_entry(
-    db_path: str,
     table: str,
     data: Dict[str, Any]
 ) -> MutationResult:
@@ -297,7 +291,6 @@ def add_settings_entry(
     Add entry to user_preferences database table.
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name
         data: Field-value pairs to insert
 
@@ -306,7 +299,6 @@ def add_settings_entry(
 
     Example:
         >>> result = add_settings_entry(
-        ...     "/path/to/user_preferences.db",
         ...     "user_settings",
         ...     {"setting_key": "theme", "setting_value": "dark", "scope": "project"}
         ... )
@@ -317,7 +309,8 @@ def add_settings_entry(
             error="data must not be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists
@@ -363,7 +356,6 @@ def add_settings_entry(
 
 
 def update_settings_entry(
-    db_path: str,
     table: str,
     record_id: int,
     data: Dict[str, Any]
@@ -372,7 +364,6 @@ def update_settings_entry(
     Update entry in user_preferences database table.
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name
         record_id: ID of record to update
         data: Field-value pairs to update
@@ -382,7 +373,6 @@ def update_settings_entry(
 
     Example:
         >>> result = update_settings_entry(
-        ...     "/path/to/user_preferences.db",
         ...     "user_settings",
         ...     1,
         ...     {"setting_value": "light"}
@@ -394,7 +384,8 @@ def update_settings_entry(
             error="data must not be empty"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists
@@ -446,7 +437,6 @@ def update_settings_entry(
 
 
 def delete_settings_entry(
-    db_path: str,
     table: str,
     record_id: int
 ) -> MutationResult:
@@ -454,7 +444,6 @@ def delete_settings_entry(
     Delete entry from user_preferences database table.
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name
         record_id: ID of record to delete
 
@@ -463,12 +452,12 @@ def delete_settings_entry(
 
     Example:
         >>> result = delete_settings_entry(
-        ...     "/path/to/user_preferences.db",
         ...     "tracking_notes",
         ...     42
         ... )
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists

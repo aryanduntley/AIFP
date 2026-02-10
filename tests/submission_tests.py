@@ -45,6 +45,7 @@ from aifp.database.connection import (
     AIFP_PROJECT_DIR,
     PROJECT_DB_NAME,
     USER_PREFERENCES_DB_NAME,
+    clear_project_root_cache,
 )
 
 
@@ -56,6 +57,13 @@ from aifp.database.connection import (
 def load_tools():
     """Load and cache all 207 tools once for the entire test module."""
     _effect_load_and_cache_tools()
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    """Clear the project root cache after every test to prevent cross-test bleed."""
+    yield
+    clear_project_root_cache()
 
 
 @pytest.fixture
@@ -364,12 +372,10 @@ class TestProjectLifecycle:
     """Verify the full reserve -> finalize -> query cycle for project entities."""
 
     def test_reserve_file_returns_id(self, project_dir):
-        _, db_path, _ = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "reserve_file",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "test_conversions",
                     "path": "src/test_conversions.py",
                     "language": "python",
@@ -381,13 +387,11 @@ class TestProjectLifecycle:
         assert data.get("id") is not None
 
     def test_finalize_file(self, project_dir, tmp_path):
-        _, db_path, _ = project_dir
         # Reserve first
         reserve_data, _ = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "reserve_file",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "converter",
                     "path": "src/converter.py",
                     "language": "python",
@@ -406,7 +410,6 @@ class TestProjectLifecycle:
             handle_call_tool(1, {
                 "name": "finalize_file",
                 "arguments": {
-                    "db_path": db_path,
                     "file_id": file_id,
                     "name": f"converter_id_{file_id}",
                     "path": str(file_path),
@@ -418,13 +421,11 @@ class TestProjectLifecycle:
         assert finalize_data.get("success") is True
 
     def test_get_file_by_name(self, project_dir):
-        _, db_path, _ = project_dir
         # Reserve and finalize
         reserve_data, _ = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "reserve_file",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "lookup_test",
                     "path": "src/lookup_test.py",
                     "language": "python",
@@ -435,7 +436,6 @@ class TestProjectLifecycle:
         handle_call_tool(1, {
             "name": "finalize_file",
             "arguments": {
-                "db_path": db_path,
                 "file_id": file_id,
                 "name": f"lookup_test_id_{file_id}",
                 "path": f"src/lookup_test_id_{file_id}.py",
@@ -447,7 +447,6 @@ class TestProjectLifecycle:
             handle_call_tool(1, {
                 "name": "get_file_by_name",
                 "arguments": {
-                    "db_path": db_path,
                     "file_name": f"lookup_test_id_{file_id}",
                 },
             })
@@ -456,13 +455,11 @@ class TestProjectLifecycle:
         assert query_data.get("success") is True
 
     def test_reserve_function_returns_id(self, project_dir):
-        _, db_path, _ = project_dir
         # Need a file first
         reserve_file_data, _ = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "reserve_file",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "func_test_file",
                     "path": "src/func_test_file.py",
                     "language": "python",
@@ -476,7 +473,6 @@ class TestProjectLifecycle:
             handle_call_tool(1, {
                 "name": "reserve_function",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "celsius_to_fahrenheit",
                     "file_id": file_id,
                 },
@@ -487,12 +483,10 @@ class TestProjectLifecycle:
         assert func_data.get("id") is not None
 
     def test_add_theme(self, project_dir):
-        _, db_path, _ = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "add_theme",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "Core Conversions",
                     "description": "Temperature conversion functions",
                 },
@@ -502,12 +496,10 @@ class TestProjectLifecycle:
         assert data.get("success") is True
 
     def test_add_flow(self, project_dir):
-        _, db_path, _ = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "add_flow",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "Conversion Flow",
                     "description": "Validate -> Convert -> Format",
                 },
@@ -517,12 +509,10 @@ class TestProjectLifecycle:
         assert data.get("success") is True
 
     def test_add_completion_path(self, project_dir):
-        _, db_path, _ = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "add_completion_path",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "Foundation",
                 },
             })
@@ -531,13 +521,11 @@ class TestProjectLifecycle:
         assert data.get("success") is True
 
     def test_add_milestone_to_completion_path(self, project_dir):
-        _, db_path, _ = project_dir
         # Create completion path first
         cp_data, _ = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "add_completion_path",
                 "arguments": {
-                    "db_path": db_path,
                     "name": "Development Stage",
                 },
             })
@@ -549,7 +537,6 @@ class TestProjectLifecycle:
             handle_call_tool(1, {
                 "name": "add_milestone",
                 "arguments": {
-                    "db_path": db_path,
                     "completion_path_id": cp_id,
                     "name": "Core Conversion Functions",
                 },
@@ -560,19 +547,17 @@ class TestProjectLifecycle:
         assert ms_data.get("id") is not None
 
     def test_add_task_to_milestone(self, project_dir):
-        _, db_path, _ = project_dir
         # Create completion path -> milestone -> task
         cp_data, _ = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "add_completion_path",
-                "arguments": {"db_path": db_path, "name": "Task Test Stage"},
+                "arguments": {"name": "Task Test Stage"},
             })
         )
         ms_data, _ = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "add_milestone",
                 "arguments": {
-                    "db_path": db_path,
                     "completion_path_id": cp_data["id"],
                     "name": "Task Test Milestone",
                 },
@@ -582,7 +567,6 @@ class TestProjectLifecycle:
             handle_call_tool(1, {
                 "name": "add_task",
                 "arguments": {
-                    "db_path": db_path,
                     "milestone_id": ms_data["id"],
                     "name": "Implement celsius_to_fahrenheit",
                 },
@@ -593,12 +577,10 @@ class TestProjectLifecycle:
         assert task_data.get("id") is not None
 
     def test_add_note(self, project_dir):
-        _, db_path, _ = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "add_note",
                 "arguments": {
-                    "db_path": db_path,
                     "content": "Project initialized with temperature converter scope",
                     "note_type": "evolution",
                     "source": "ai",
@@ -609,37 +591,33 @@ class TestProjectLifecycle:
         assert data.get("success") is True
 
     def test_get_all_themes(self, project_dir):
-        _, db_path, _ = project_dir
         # Add a theme first
         handle_call_tool(1, {
             "name": "add_theme",
             "arguments": {
-                "db_path": db_path,
                 "name": "Query Test Theme",
             },
         })
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "get_all_themes",
-                "arguments": {"db_path": db_path},
+                "arguments": {},
             })
         )
         assert is_error is False
         assert data.get("success") is True
 
     def test_get_all_flows(self, project_dir):
-        _, db_path, _ = project_dir
         handle_call_tool(1, {
             "name": "add_flow",
             "arguments": {
-                "db_path": db_path,
                 "name": "Query Test Flow",
             },
         })
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "get_all_flows",
-                "arguments": {"db_path": db_path},
+                "arguments": {},
             })
         )
         assert is_error is False
@@ -654,34 +632,30 @@ class TestUserPreferences:
     """Verify user preference operations work correctly."""
 
     def test_get_user_settings(self, project_dir):
-        _, _, prefs_db = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "get_user_settings",
-                "arguments": {"db_path": prefs_db},
+                "arguments": {},
             })
         )
         assert is_error is False
         assert data.get("success") is True
 
     def test_get_tracking_settings(self, project_dir):
-        _, _, prefs_db = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "get_tracking_settings",
-                "arguments": {"db_path": prefs_db},
+                "arguments": {},
             })
         )
         assert is_error is False
         assert data.get("success") is True
 
     def test_add_directive_preference(self, project_dir):
-        _, _, prefs_db = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "add_directive_preference",
                 "arguments": {
-                    "db_path": prefs_db,
                     "directive_name": "project_file_write",
                     "preference_key": "always_add_docstrings",
                     "preference_value": "true",
@@ -692,12 +666,10 @@ class TestUserPreferences:
         assert data.get("success") is True
 
     def test_load_directive_preferences(self, project_dir):
-        _, _, prefs_db = project_dir
         # Add a preference, then load
         handle_call_tool(1, {
             "name": "add_directive_preference",
             "arguments": {
-                "db_path": prefs_db,
                 "directive_name": "project_file_write",
                 "preference_key": "test_pref",
                 "preference_value": "test_value",
@@ -707,7 +679,6 @@ class TestUserPreferences:
             handle_call_tool(1, {
                 "name": "load_directive_preferences",
                 "arguments": {
-                    "db_path": prefs_db,
                     "directive_name": "project_file_write",
                 },
             })

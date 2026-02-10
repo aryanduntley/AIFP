@@ -27,6 +27,8 @@ from ..utils import get_return_statements
 # Import common project utilities (DRY principle)
 from ._common import (
     _open_connection,
+    get_cached_project_root,
+    _open_project_connection,
     _check_entity_exists,
     _create_deletion_note
 )
@@ -249,12 +251,11 @@ def _is_reserved(conn: sqlite3.Connection, table: str, id: int) -> bool:
 # Public Helper Functions
 # ============================================================================
 
-def get_from_project(db_path: str, table: str, id_array: List[int]) -> QueryResult:
+def get_from_project(table: str, id_array: List[int]) -> QueryResult:
     """
     Get records by ID(s) - EMPTY ARRAY NOT ALLOWED.
 
     Args:
-        db_path: Path to project.db
         table: Table name
         id_array: List of IDs (must contain at least one ID)
 
@@ -267,7 +268,8 @@ def get_from_project(db_path: str, table: str, id_array: List[int]) -> QueryResu
             error="id_array must contain at least one ID"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         records = _query_by_ids(conn, table, id_array)
@@ -287,7 +289,6 @@ def get_from_project(db_path: str, table: str, id_array: List[int]) -> QueryResu
 
 
 def get_from_project_where(
-    db_path: str,
     table: str,
     conditions: Dict[str, Any],
     limit: Optional[int] = None,
@@ -297,7 +298,6 @@ def get_from_project_where(
     Flexible filtering with structured JSON conditions.
 
     Args:
-        db_path: Path to project.db
         table: Table name
         conditions: Field-value pairs (AND logic)
         limit: Optional maximum rows to return
@@ -306,7 +306,8 @@ def get_from_project_where(
     Returns:
         QueryResult with records (empty array if no matches)
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         records = _query_where(conn, table, conditions, limit, orderby)
@@ -325,19 +326,19 @@ def get_from_project_where(
         )
 
 
-def query_project(db_path: str, table: str, query: str) -> QueryResult:
+def query_project(table: str, query: str) -> QueryResult:
     """
     Execute complex SQL WHERE clause (advanced, rare use).
 
     Args:
-        db_path: Path to project.db
         table: Table name
         query: WHERE clause without "WHERE" keyword
 
     Returns:
         QueryResult with records (empty array if no matches)
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         records = _query_raw(conn, table, query)
@@ -356,7 +357,7 @@ def query_project(db_path: str, table: str, query: str) -> QueryResult:
         )
 
 
-def add_project_entry(db_path: str, table: str, data: Dict[str, Any]) -> AddResult:
+def add_project_entry(table: str, data: Dict[str, Any]) -> AddResult:
     """
     Add new entry to project database.
 
@@ -364,7 +365,6 @@ def add_project_entry(db_path: str, table: str, data: Dict[str, Any]) -> AddResu
     Use reserve_file/reserve_function/reserve_type helpers instead.
 
     Args:
-        db_path: Path to project.db
         table: Table name
         data: Field-value pairs
 
@@ -379,7 +379,8 @@ def add_project_entry(db_path: str, table: str, data: Dict[str, Any]) -> AddResu
             error=f"Cannot insert directly into '{table}' table. Use {helper_name}() helper instead to maintain reserve/finalize workflow."
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         new_id = _insert_record(conn, table, data)
@@ -402,7 +403,7 @@ def add_project_entry(db_path: str, table: str, data: Dict[str, Any]) -> AddResu
         )
 
 
-def update_project_entry(db_path: str, table: str, id: int, data: Dict[str, Any]) -> UpdateResult:
+def update_project_entry(table: str, id: int, data: Dict[str, Any]) -> UpdateResult:
     """
     Update existing entry.
 
@@ -410,7 +411,6 @@ def update_project_entry(db_path: str, table: str, id: int, data: Dict[str, Any]
     Use finalize_file/finalize_function/finalize_type for reserved records.
 
     Args:
-        db_path: Path to project.db
         table: Table name
         id: Record ID
         data: Field-value pairs to update
@@ -418,7 +418,8 @@ def update_project_entry(db_path: str, table: str, id: int, data: Dict[str, Any]
     Returns:
         UpdateResult with success status
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check record exists
@@ -461,7 +462,6 @@ def update_project_entry(db_path: str, table: str, id: int, data: Dict[str, Any]
 
 
 def delete_project_entry(
-    db_path: str,
     table: str,
     id: int,
     note_reason: str,
@@ -473,7 +473,6 @@ def delete_project_entry(
     Smart delete with automatic routing to specialized functions when needed.
 
     Args:
-        db_path: Path to project.db
         table: Table name
         id: Record ID
         note_reason: Deletion reason
@@ -508,7 +507,8 @@ def delete_project_entry(
         )
 
     # Generic delete for tables without specialized helpers
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check record exists
@@ -545,7 +545,6 @@ def delete_project_entry(
 
 
 def delete_reserved(
-    db_path: str,
     table: str,
     id: int,
     note_reason: str,
@@ -560,7 +559,6 @@ def delete_reserved(
     SCENARIO: AI reserves file/function/type, user says 'cancel that', AI needs way to delete.
 
     Args:
-        db_path: Path to project.db
         table: Table name (must be 'files', 'functions', or 'types')
         id: Reserved record ID to delete
         note_reason: Deletion reason (e.g., 'User cancelled operation')
@@ -578,7 +576,8 @@ def delete_reserved(
             error=f"delete_reserved only allowed for tables: {', '.join(RESERVED_WORKFLOW_TABLES)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check record exists

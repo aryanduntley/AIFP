@@ -23,7 +23,7 @@ from typing import Optional, List, Tuple
 from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
-from ._common import _open_connection, _check_file_exists, _create_deletion_note
+from ._common import _open_connection, _check_file_exists, _create_deletion_note, get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -363,7 +363,6 @@ def _delete_file_effect(conn: sqlite3.Connection, file_id: int) -> None:
 # ============================================================================
 
 def update_file(
-    db_path: str,
     file_id: int,
     name: Optional[str] = None,
     path: Optional[str] = None,
@@ -376,7 +375,6 @@ def update_file(
     Automatically updates timestamp.
 
     Args:
-        db_path: Path to project.db
         file_id: File ID to update
         name: New file name (None = don't update)
         path: New file path (None = don't update)
@@ -387,13 +385,12 @@ def update_file(
 
     Example:
         >>> # Update only the language
-        >>> result = update_file("project.db", 42, language="typescript")
+        >>> result = update_file(42, language="typescript")
         >>> result.success
         True
 
         >>> # Update name and path
         >>> result = update_file(
-        ...     "project.db",
         ...     42,
         ...     name="calculator_id_42.ts",
         ...     path="src/calculator_id_42.ts"
@@ -409,7 +406,8 @@ def update_file(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file exists
@@ -455,7 +453,6 @@ def update_file(
 
 
 def file_has_changed(
-    db_path: str,
     file_id: int
 ) -> ChangeDetectionResult:
     """
@@ -464,14 +461,13 @@ def file_has_changed(
     Prefers Git method for accuracy. Falls back to filesystem timestamp comparison.
 
     Args:
-        db_path: Path to project.db
         file_id: File ID to check
 
     Returns:
         ChangeDetectionResult with changed flag and detection method
 
     Example:
-        >>> result = file_has_changed("project.db", 42)
+        >>> result = file_has_changed(42)
         >>> result.success
         True
         >>> result.changed
@@ -480,7 +476,8 @@ def file_has_changed(
         'git'
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file exists
@@ -551,7 +548,6 @@ def file_has_changed(
 
 
 def update_file_timestamp(
-    db_path: str,
     file_id: int
 ) -> TimestampUpdateResult:
     """
@@ -561,7 +557,6 @@ def update_file_timestamp(
     update operations to mark files as recently modified.
 
     Args:
-        db_path: Path to project.db
         file_id: File ID to update timestamp for
 
     Returns:
@@ -569,12 +564,13 @@ def update_file_timestamp(
 
     Example:
         >>> # Internal use only - called by update_function helper
-        >>> result = update_file_timestamp("project.db", 42)
+        >>> result = update_file_timestamp(42)
         >>> result.success
         True
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file exists
@@ -600,7 +596,6 @@ def update_file_timestamp(
 
 
 def delete_file(
-    db_path: str,
     file_id: int,
     note_reason: str,
     note_severity: str,
@@ -614,7 +609,6 @@ def delete_file(
     of functions, types, and file_flows entries first.
 
     Args:
-        db_path: Path to project.db
         file_id: File ID to delete
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
@@ -626,7 +620,6 @@ def delete_file(
 
     Example:
         >>> result = delete_file(
-        ...     "project.db",
         ...     42,
         ...     note_reason="File no longer needed after refactor",
         ...     note_severity="info",
@@ -638,7 +631,8 @@ def delete_file(
         42
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file exists

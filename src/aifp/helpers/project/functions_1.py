@@ -23,7 +23,7 @@ from typing import Optional, List, Tuple, Dict, Any
 from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
-from ._common import _open_connection, _check_file_exists
+from ._common import _open_connection, _check_file_exists, get_cached_project_root, _open_project_connection
 
 from .files_2 import update_file_timestamp
 
@@ -383,7 +383,6 @@ def _get_function_by_name_effect(
 # ============================================================================
 
 def reserve_function(
-    db_path: str,
     name: str,
     file_id: int,
     purpose: Optional[str] = None,
@@ -398,7 +397,6 @@ def reserve_function(
     Returns ID that should be embedded in function name: {name}_id_{id}
 
     Args:
-        db_path: Path to project.db
         name: Preliminary function name (will have _id_xxx appended unless skip_id_naming=True)
         file_id: File ID where function will be defined
         purpose: Function purpose (optional)
@@ -411,7 +409,6 @@ def reserve_function(
 
     Example:
         >>> result = reserve_function(
-        ...     "project.db",
         ...     "calculate_sum",
         ...     file_id=42,
         ...     purpose="Add two numbers"
@@ -423,7 +420,8 @@ def reserve_function(
         # Use result.id to create: calculate_sum_id_99 (unless skip_id_naming=True)
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file exists
@@ -463,7 +461,6 @@ def reserve_function(
 
 
 def reserve_functions(
-    db_path: str,
     functions: List[Dict[str, Any]]
 ) -> ReserveBatchResult:
     """
@@ -473,20 +470,19 @@ def reserve_functions(
     All reservations succeed or all fail (atomic operation).
 
     Args:
-        db_path: Path to project.db
         functions: List of function objects with keys: name, file_id, purpose, parameters, returns, skip_id_naming
                    skip_id_naming is optional (defaults to False) and controls per-function ID embedding
 
     Returns:
         ReserveBatchResult with success status and reserved IDs
-        IDs correspond to input indices: functions[0] → ids[0], functions[1] → ids[1]
+        IDs correspond to input indices: functions[0] -> ids[0], functions[1] -> ids[1]
 
     Example:
         >>> functions = [
         ...     {"name": "add", "file_id": 42, "purpose": "Add numbers"},
         ...     {"name": "reserve_file", "file_id": 42, "skip_id_naming": True}  # MCP tool
         ... ]
-        >>> result = reserve_functions("project.db", functions)
+        >>> result = reserve_functions(functions)
         >>> result.success
         True
         >>> result.ids
@@ -500,7 +496,8 @@ def reserve_functions(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Validate all file IDs exist
@@ -552,7 +549,6 @@ def reserve_functions(
 
 
 def finalize_function(
-    db_path: str,
     function_id: int,
     name: str,
     file_id: int,
@@ -568,7 +564,6 @@ def finalize_function(
     Automatically updates file timestamp.
 
     Args:
-        db_path: Path to project.db
         function_id: Reserved function ID
         name: Final function name with _id_xx suffix (unless skip_id_naming=True)
         file_id: File ID
@@ -583,7 +578,6 @@ def finalize_function(
     Example:
         >>> # After writing calculate_sum_id_99 in code
         >>> result = finalize_function(
-        ...     "project.db",
         ...     function_id=99,
         ...     name="calculate_sum_id_99",
         ...     file_id=42,
@@ -600,7 +594,8 @@ def finalize_function(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file exists
@@ -627,7 +622,7 @@ def finalize_function(
         conn.close()
 
         # Effect: update file timestamp (uses separate connection)
-        timestamp_result = update_file_timestamp(db_path, file_id)
+        timestamp_result = update_file_timestamp(file_id)
         if not timestamp_result.success:
             return FinalizeResult(
                 success=False,
@@ -656,7 +651,6 @@ def finalize_function(
 
 
 def finalize_functions(
-    db_path: str,
     functions: List[Dict[str, Any]]
 ) -> FinalizeBatchResult:
     """
@@ -666,7 +660,6 @@ def finalize_functions(
     All finalizations succeed or all fail (atomic operation).
 
     Args:
-        db_path: Path to project.db
         functions: List of function objects with keys: function_id, name, file_id, purpose, parameters, returns, skip_id_naming
                    skip_id_naming is optional (defaults to False) and controls per-function validation
 
@@ -678,7 +671,7 @@ def finalize_functions(
         ...     {"function_id": 99, "name": "add_id_99", "file_id": 42},
         ...     {"function_id": 100, "name": "reserve_file", "file_id": 42, "skip_id_naming": True}
         ... ]
-        >>> result = finalize_functions("project.db", functions)
+        >>> result = finalize_functions(functions)
         >>> result.success
         True
         >>> result.finalized_ids
@@ -723,7 +716,8 @@ def finalize_functions(
         file_ids.add(file_id)
 
     # Effect: open connection and finalize batch
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Validate all file IDs exist
@@ -741,7 +735,7 @@ def finalize_functions(
 
         # Effect: update timestamps for all affected files
         for file_id in file_ids:
-            timestamp_result = update_file_timestamp(db_path, file_id)
+            timestamp_result = update_file_timestamp(file_id)
             if not timestamp_result.success:
                 return FinalizeBatchResult(
                     success=False,
@@ -769,7 +763,6 @@ def finalize_functions(
 
 
 def get_function_by_name(
-    db_path: str,
     function_name: str
 ) -> FunctionQueryResult:
     """
@@ -780,14 +773,13 @@ def get_function_by_name(
     across different files (e.g., main() in multiple __main__.py files).
 
     Args:
-        db_path: Path to project.db
         function_name: Function name to look up (e.g., 'calculate_sum_id_42' or 'main')
 
     Returns:
         FunctionQueryResult with tuple of function records including file_name and file_path
 
     Example:
-        >>> result = get_function_by_name("project.db", "main")
+        >>> result = get_function_by_name("main")
         >>> result.success
         True
         >>> len(result.functions)
@@ -798,7 +790,8 @@ def get_function_by_name(
         'src/aifp/__main__.py'
     """
     # Effect: open connection and query
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_function_by_name_effect(conn, function_name)

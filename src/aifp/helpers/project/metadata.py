@@ -33,7 +33,7 @@ from pathlib import Path
 from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
-from ._common import _open_connection
+from ._common import _open_connection, get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -434,7 +434,6 @@ def _update_project_root(conn: sqlite3.Connection, new_project_root: str) -> Non
 # ============================================================================
 
 def create_project(
-    db_path: str,
     name: str,
     purpose: str,
     goals: List[str],
@@ -446,7 +445,6 @@ def create_project(
     Initialize project entry (one per database).
 
     Args:
-        db_path: Path to project.db
         name: Project name (e.g., 'MatrixCalculator')
         purpose: Project purpose
         goals: Array of goal strings
@@ -471,7 +469,8 @@ def create_project(
             error=f"Invalid user_directives_status: {user_directives_status}. Must be one of: {', '.join(VALID_USER_DIRECTIVES_STATUSES)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if project already exists
@@ -504,17 +503,15 @@ def create_project(
         )
 
 
-def get_project(db_path: str) -> ProjectResult:
+def get_project() -> ProjectResult:
     """
     Get project metadata (single entry).
-
-    Args:
-        db_path: Path to project.db
 
     Returns:
         ProjectResult with project metadata or None if not initialized
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         project = _query_project(conn)
@@ -534,7 +531,6 @@ def get_project(db_path: str) -> ProjectResult:
 
 
 def update_project(
-    db_path: str,
     name: Optional[str] = None,
     purpose: Optional[str] = None,
     goals: Optional[List[str]] = None,
@@ -546,7 +542,6 @@ def update_project(
     Update project metadata.
 
     Args:
-        db_path: Path to project.db
         name: New name (None = don't update)
         purpose: New purpose (None = don't update)
         goals: New goals array (None = don't update)
@@ -567,7 +562,8 @@ def update_project(
     # Validate user_directives_status if provided (allow explicit None to clear)
     # Note: This allows setting it to None, which is valid
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if project exists
@@ -599,18 +595,18 @@ def update_project(
         )
 
 
-def blueprint_has_changed(db_path: str, blueprint_path: str) -> BlueprintChangeResult:
+def blueprint_has_changed(blueprint_path: str) -> BlueprintChangeResult:
     """
     Check if ProjectBlueprint.md has changed using Git or filesystem timestamp.
 
     Args:
-        db_path: Path to project.db
         blueprint_path: Path to ProjectBlueprint.md file
 
     Returns:
         BlueprintChangeResult with changed status and method
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Get project record
@@ -661,18 +657,18 @@ def blueprint_has_changed(db_path: str, blueprint_path: str) -> BlueprintChangeR
         )
 
 
-def get_infrastructure_by_type(db_path: str, type: str) -> InfrastructureResult:
+def get_infrastructure_by_type(type: str) -> InfrastructureResult:
     """
     Get all infrastructure of specific type.
 
     Args:
-        db_path: Path to project.db
         type: Infrastructure type (e.g., 'language', 'package', 'testing')
 
     Returns:
         InfrastructureResult with infrastructure entries (empty if none found)
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         infrastructure = _query_infrastructure_by_type(conn, type)
@@ -691,20 +687,18 @@ def get_infrastructure_by_type(db_path: str, type: str) -> InfrastructureResult:
         )
 
 
-def get_all_infrastructure(db_path: str) -> InfrastructureResult:
+def get_all_infrastructure() -> InfrastructureResult:
     """
     Get all infrastructure entries including standard fields (even if empty).
 
     Returns complete infrastructure table for session bundling and status reports.
     Used by aifp_run to bundle infrastructure in session context.
 
-    Args:
-        db_path: Path to project.db
-
     Returns:
         InfrastructureResult with all infrastructure entries (empty tuple if table doesn't exist)
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         infrastructure = _query_all_infrastructure(conn)

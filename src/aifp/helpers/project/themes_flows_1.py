@@ -27,7 +27,14 @@ from dataclasses import dataclass
 from typing import Optional, List, Tuple
 
 from ..utils import get_return_statements
-from ._common import _open_connection, _check_theme_exists, _check_flow_exists, _create_deletion_note
+from ._common import (
+    _open_connection,
+    get_cached_project_root,
+    _open_project_connection,
+    _check_theme_exists,
+    _check_flow_exists,
+    _create_deletion_note
+)
 
 
 # ============================================================================
@@ -639,7 +646,6 @@ def _delete_flow_effect(conn: sqlite3.Connection, flow_id: int) -> None:
 # ============================================================================
 
 def get_theme_by_name(
-    db_path: str,
     theme_name: str
 ) -> ThemeQueryResult:
     """
@@ -648,20 +654,20 @@ def get_theme_by_name(
     Queries themes table for exact name match.
 
     Args:
-        db_path: Path to project.db
         theme_name: Theme name to look up
 
     Returns:
         ThemeQueryResult with theme record or None if not found
 
     Example:
-        >>> result = get_theme_by_name("project.db", "Authentication")
+        >>> result = get_theme_by_name("Authentication")
         >>> result.success
         True
         >>> result.theme.id
         1
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         row = _get_theme_by_name_effect(conn, theme_name)
@@ -690,7 +696,6 @@ def get_theme_by_name(
 
 
 def get_flow_by_name(
-    db_path: str,
     flow_name: str
 ) -> FlowQueryResult:
     """
@@ -699,20 +704,20 @@ def get_flow_by_name(
     Queries flows table for exact name match.
 
     Args:
-        db_path: Path to project.db
         flow_name: Flow name to look up
 
     Returns:
         FlowQueryResult with flow record or None if not found
 
     Example:
-        >>> result = get_flow_by_name("project.db", "User Registration")
+        >>> result = get_flow_by_name("User Registration")
         >>> result.success
         True
         >>> result.flow.id
         5
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         row = _get_flow_by_name_effect(conn, flow_name)
@@ -740,26 +745,24 @@ def get_flow_by_name(
         conn.close()
 
 
-def get_all_themes(db_path: str) -> ThemesQueryResult:
+def get_all_themes() -> ThemesQueryResult:
     """
     Get all project themes.
 
     Queries all records from themes table.
 
-    Args:
-        db_path: Path to project.db
-
     Returns:
         ThemesQueryResult with tuple of theme records
 
     Example:
-        >>> result = get_all_themes("project.db")
+        >>> result = get_all_themes()
         >>> result.success
         True
         >>> len(result.themes)
         5
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_all_themes_effect(conn)
@@ -780,26 +783,24 @@ def get_all_themes(db_path: str) -> ThemesQueryResult:
         conn.close()
 
 
-def get_all_flows(db_path: str) -> FlowsQueryResult:
+def get_all_flows() -> FlowsQueryResult:
     """
     Get all project flows.
 
     Queries all records from flows table.
 
-    Args:
-        db_path: Path to project.db
-
     Returns:
         FlowsQueryResult with tuple of flow records
 
     Example:
-        >>> result = get_all_flows("project.db")
+        >>> result = get_all_flows()
         >>> result.success
         True
         >>> len(result.flows)
         15
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_all_flows_effect(conn)
@@ -821,7 +822,6 @@ def get_all_flows(db_path: str) -> FlowsQueryResult:
 
 
 def add_theme(
-    db_path: str,
     name: str,
     description: Optional[str] = None,
     ai_generated: bool = True,
@@ -833,7 +833,6 @@ def add_theme(
     Creates new theme record in themes table.
 
     Args:
-        db_path: Path to project.db
         name: Theme name
         description: Theme description (optional)
         ai_generated: True if AI-generated (default: True)
@@ -844,7 +843,6 @@ def add_theme(
 
     Example:
         >>> result = add_theme(
-        ...     "project.db",
         ...     "Authentication",
         ...     description="User authentication and authorization",
         ...     ai_generated=True,
@@ -855,7 +853,8 @@ def add_theme(
         >>> result.id
         1
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         theme_id = _add_theme_effect(
@@ -885,7 +884,6 @@ def add_theme(
 
 
 def update_theme(
-    db_path: str,
     theme_id: int,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -897,7 +895,6 @@ def update_theme(
     Only updates non-NULL parameters.
 
     Args:
-        db_path: Path to project.db
         theme_id: Theme ID to update
         name: New name (None = don't update)
         description: New description (None = don't update)
@@ -907,7 +904,7 @@ def update_theme(
         UpdateThemeResult with success status
 
     Example:
-        >>> result = update_theme("project.db", 1, confidence_score=0.98)
+        >>> result = update_theme(1, confidence_score=0.98)
         >>> result.success
         True
     """
@@ -918,7 +915,8 @@ def update_theme(
             error="At least one parameter must be provided for update"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         if not _check_theme_exists(conn, theme_id):
@@ -948,7 +946,6 @@ def update_theme(
 
 
 def delete_theme(
-    db_path: str,
     theme_id: int,
     note_reason: str,
     note_severity: str,
@@ -961,7 +958,6 @@ def delete_theme(
     Validates no flows are linked to theme before deletion.
 
     Args:
-        db_path: Path to project.db
         theme_id: Theme ID to delete
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
@@ -973,7 +969,6 @@ def delete_theme(
 
     Example:
         >>> result = delete_theme(
-        ...     "project.db",
         ...     1,
         ...     note_reason="Theme no longer relevant",
         ...     note_severity="info",
@@ -982,7 +977,8 @@ def delete_theme(
         >>> result.success
         True
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         if not _check_theme_exists(conn, theme_id):
@@ -1032,7 +1028,6 @@ def delete_theme(
 
 
 def add_flow(
-    db_path: str,
     name: str,
     description: Optional[str] = None,
     ai_generated: bool = True,
@@ -1044,7 +1039,6 @@ def add_flow(
     Creates new flow record in flows table.
 
     Args:
-        db_path: Path to project.db
         name: Flow name
         description: Flow description (optional)
         ai_generated: True if AI-generated (default: True)
@@ -1055,7 +1049,6 @@ def add_flow(
 
     Example:
         >>> result = add_flow(
-        ...     "project.db",
         ...     "User Registration",
         ...     description="Handle user signup and email verification",
         ...     ai_generated=True,
@@ -1066,7 +1059,8 @@ def add_flow(
         >>> result.id
         5
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         flow_id = _add_flow_effect(
@@ -1096,7 +1090,6 @@ def add_flow(
 
 
 def get_file_ids_from_flows(
-    db_path: str,
     flow_ids: List[int]
 ) -> FileIdsResult:
     """
@@ -1105,14 +1098,13 @@ def get_file_ids_from_flows(
     Queries file_flows junction table and returns deduplicated file IDs.
 
     Args:
-        db_path: Path to project.db
         flow_ids: List of flow IDs
 
     Returns:
         FileIdsResult with tuple of file IDs
 
     Example:
-        >>> result = get_file_ids_from_flows("project.db", [1, 3, 5])
+        >>> result = get_file_ids_from_flows([1, 3, 5])
         >>> result.success
         True
         >>> result.file_ids
@@ -1124,7 +1116,8 @@ def get_file_ids_from_flows(
             file_ids=()
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         file_ids = _get_file_ids_from_flows_effect(conn, flow_ids)
@@ -1148,7 +1141,6 @@ def get_file_ids_from_flows(
 
 
 def update_flow(
-    db_path: str,
     flow_id: int,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -1160,7 +1152,6 @@ def update_flow(
     Only updates non-NULL parameters.
 
     Args:
-        db_path: Path to project.db
         flow_id: Flow ID to update
         name: New name (None = don't update)
         description: New description (None = don't update)
@@ -1170,7 +1161,7 @@ def update_flow(
         UpdateFlowResult with success status
 
     Example:
-        >>> result = update_flow("project.db", 5, confidence_score=0.95)
+        >>> result = update_flow(5, confidence_score=0.95)
         >>> result.success
         True
     """
@@ -1181,7 +1172,8 @@ def update_flow(
             error="At least one parameter must be provided for update"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         if not _check_flow_exists(conn, flow_id):
@@ -1211,7 +1203,6 @@ def update_flow(
 
 
 def delete_flow(
-    db_path: str,
     flow_id: int,
     note_reason: str,
     note_severity: str,
@@ -1224,7 +1215,6 @@ def delete_flow(
     Validates no open tasks/sidequests reference flow and no files are linked.
 
     Args:
-        db_path: Path to project.db
         flow_id: Flow ID to delete
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
@@ -1236,7 +1226,6 @@ def delete_flow(
 
     Example:
         >>> result = delete_flow(
-        ...     "project.db",
         ...     5,
         ...     note_reason="Flow no longer relevant",
         ...     note_severity="info",
@@ -1245,7 +1234,8 @@ def delete_flow(
         >>> result.success
         True
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         if not _check_flow_exists(conn, flow_id):

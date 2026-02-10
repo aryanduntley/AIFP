@@ -46,6 +46,11 @@ from ..utils import (
     PROJECT_DB_NAME,
     USER_PREFERENCES_DB_NAME,
     USER_DIRECTIVES_DB_NAME,
+    # Project root cache (set by orchestrators, read by helpers)
+    set_project_root,
+    get_cached_project_root,
+    clear_project_root_cache,
+    _discover_project_root,
     # Connection openers now come from foundation layer
     _open_project_connection,
     _open_preferences_connection,
@@ -79,6 +84,11 @@ __all__ = [
     'USER_DIRECTIVES_DB_NAME',
     'BLUEPRINT_FILENAME',
     'BACKUPS_DIR_NAME',
+    # Project root cache (set by orchestrators, read by helpers)
+    'set_project_root',
+    'get_cached_project_root',
+    'clear_project_root_cache',
+    '_discover_project_root',
     # Connection openers (from foundation layer)
     '_open_project_connection',
     '_open_preferences_connection',

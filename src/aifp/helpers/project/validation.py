@@ -17,7 +17,7 @@ from typing import Optional, Tuple
 from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
-from ._common import _open_connection
+from ._common import _open_connection, get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -123,7 +123,6 @@ def _check_field_exists(conn: sqlite3.Connection, table_name: str, field_name: s
 # ============================================================================
 
 def project_allowed_check_constraints(
-    db_path: str,
     table: str,
     field: str
 ) -> CheckConstraintResult:
@@ -132,14 +131,14 @@ def project_allowed_check_constraints(
     Parses schema to extract CHECK(field IN (...)) constraints.
 
     Args:
-        db_path: Path to project.db
         table: Table name to check for CHECK constraints
         field: Field name to get allowed values for
 
     Returns:
         CheckConstraintResult with allowed values or error
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if table exists

@@ -17,7 +17,7 @@ from typing import Optional, Tuple
 from ..utils import get_return_statements
 
 # Import common user_preferences utilities (DRY principle)
-from ._common import _open_connection
+from ._common import _open_connection, get_cached_project_root, _open_preferences_connection
 
 
 # ============================================================================
@@ -123,7 +123,6 @@ def _check_field_exists(conn: sqlite3.Connection, table_name: str, field_name: s
 # ============================================================================
 
 def user_preferences_allowed_check_constraints(
-    db_path: str,
     table: str,
     field: str
 ) -> CheckConstraintResult:
@@ -132,7 +131,6 @@ def user_preferences_allowed_check_constraints(
     Parses schema to extract CHECK(field IN (...)) constraints.
 
     Args:
-        db_path: Path to user_preferences.db
         table: Table name to check for CHECK constraints
         field: Field name to get allowed values for
 
@@ -141,7 +139,6 @@ def user_preferences_allowed_check_constraints(
 
     Examples:
         >>> result = user_preferences_allowed_check_constraints(
-        ...     "/path/to/user_preferences.db",
         ...     "tracking_settings",
         ...     "feature_name"
         ... )
@@ -149,7 +146,8 @@ def user_preferences_allowed_check_constraints(
         ('fp_flow_tracking', 'ai_interaction_log', 'helper_function_logging',
          'issue_reports', 'compliance_checking')
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_preferences_connection(project_root)
 
     try:
         # Check if table exists

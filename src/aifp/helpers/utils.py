@@ -36,6 +36,11 @@ from ..database.connection import (
     get_user_preferences_db_path,
     get_user_directives_db_path,
     database_exists,
+    # Project root cache
+    set_project_root,
+    get_cached_project_root,
+    clear_project_root_cache,
+    _discover_project_root,
     # Connection management
     _open_connection,
     _close_connection,
@@ -83,6 +88,11 @@ __all__ = [
     'get_user_preferences_db_path',
     'get_user_directives_db_path',
     'database_exists',
+    # Project root cache
+    'set_project_root',
+    'get_cached_project_root',
+    'clear_project_root_cache',
+    '_discover_project_root',
     # Connection management
     '_open_connection',
     '_close_connection',

@@ -23,7 +23,8 @@ from ..utils import get_return_statements, rows_to_tuple, row_to_dict
 
 # Import common user_directives utilities (DRY principle)
 from ._common import (
-    _open_connection,
+    get_cached_project_root,
+    _open_directives_connection,
     _directive_exists_by_id,
     _directive_is_approved,
     _validate_note_type,
@@ -84,14 +85,12 @@ class NotesResult:
 # ============================================================================
 
 def get_user_directive_by_name(
-    db_path: str,
     name: str
 ) -> DirectiveResult:
     """
     Get a single user directive by its unique name.
 
     Args:
-        db_path: Path to user_directives.db
         name: Directive name (exact match)
 
     Returns:
@@ -99,13 +98,13 @@ def get_user_directive_by_name(
 
     Example:
         >>> result = get_user_directive_by_name(
-        ...     "/path/to/user_directives.db",
         ...     "lights_off_at_midnight"
         ... )
         >>> result.directive['status']
         'active'
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -142,7 +141,6 @@ def get_user_directive_by_name(
 # ============================================================================
 
 def activate_user_directive(
-    db_path: str,
     directive_id: int
 ) -> MutationResult:
     """
@@ -150,7 +148,6 @@ def activate_user_directive(
     Does NOT deploy services - AI handles deployment via directive workflow.
 
     Args:
-        db_path: Path to user_directives.db
         directive_id: ID of the directive to activate
 
     Returns:
@@ -161,7 +158,8 @@ def activate_user_directive(
         Only updates DB status. Actual deployment is AI's responsibility
         via the user_directive_activate directive workflow.
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if directive exists
@@ -210,7 +208,6 @@ def activate_user_directive(
 
 
 def deactivate_user_directive(
-    db_path: str,
     directive_id: int
 ) -> MutationResult:
     """
@@ -218,7 +215,6 @@ def deactivate_user_directive(
     Does NOT stop services - AI handles service shutdown via directive workflow.
 
     Args:
-        db_path: Path to user_directives.db
         directive_id: ID of the directive to deactivate
 
     Returns:
@@ -228,7 +224,8 @@ def deactivate_user_directive(
         Only updates DB status. Actual service shutdown is AI's responsibility
         via the user_directive_deactivate directive workflow.
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if directive exists
@@ -280,7 +277,6 @@ def deactivate_user_directive(
 # ============================================================================
 
 def add_user_directive_note(
-    db_path: str,
     content: str,
     note_type: str,
     reference_type: Optional[str] = None,
@@ -293,7 +289,6 @@ def add_user_directive_note(
     Add note to user_directives.db notes table for AI record-keeping.
 
     Args:
-        db_path: Path to user_directives.db
         content: Note content/message
         note_type: 'implementation', 'validation', 'execution', 'dependency',
                    'error', 'optimization', 'user_feedback', 'lifecycle',
@@ -321,7 +316,8 @@ def add_user_directive_note(
             error=f"Invalid severity: {severity}. Must be one of: {', '.join(sorted(VALID_SEVERITY_LEVELS))}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         cursor = conn.execute(
@@ -356,7 +352,6 @@ def add_user_directive_note(
 
 
 def get_user_directive_notes(
-    db_path: str,
     note_type: Optional[str] = None,
     reference_type: Optional[str] = None,
     reference_name: Optional[str] = None,
@@ -369,7 +364,6 @@ def get_user_directive_notes(
     All filters are AND logic. No filters returns all notes.
 
     Args:
-        db_path: Path to user_directives.db
         note_type: Filter by note_type
         reference_type: Filter by reference_type
         reference_name: Filter by reference_name
@@ -380,7 +374,8 @@ def get_user_directive_notes(
     Returns:
         NotesResult with matching notes
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Build query with optional filters
@@ -455,7 +450,6 @@ def get_user_directive_notes(
 
 
 def search_user_directive_notes(
-    db_path: str,
     search_string: str,
     note_type: Optional[str] = None,
     reference_type: Optional[str] = None,
@@ -466,7 +460,6 @@ def search_user_directive_notes(
     Search note content in user_directives.db with optional additional filters.
 
     Args:
-        db_path: Path to user_directives.db
         search_string: Search string for note content (case-insensitive LIKE match)
         note_type: Optional filter by note_type
         reference_type: Optional filter by reference_type
@@ -476,7 +469,8 @@ def search_user_directive_notes(
     Returns:
         NotesResult with matching notes
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Build query with search and optional filters

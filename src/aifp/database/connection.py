@@ -51,6 +51,68 @@ MCP_RUNTIME_DB_NAME: Final[str] = "mcp_runtime.db"
 
 
 # ============================================================================
+# Project Root Cache (set once per server session)
+# ============================================================================
+
+_cached_project_root: Optional[str] = None
+
+
+def set_project_root(project_root: str) -> None:
+    """Effect: Cache the project root for the current server session."""
+    global _cached_project_root
+    _cached_project_root = project_root
+
+
+def get_cached_project_root() -> str:
+    """
+    Get cached project root. Raises RuntimeError if not set.
+
+    Called by helpers to resolve their database path without parameters.
+    """
+    if _cached_project_root is None:
+        raise RuntimeError(
+            "Project root not established. "
+            "Call aifp_init or aifp_run first."
+        )
+    return _cached_project_root
+
+
+def clear_project_root_cache() -> None:
+    """Effect: Clear the cache (for testing)."""
+    global _cached_project_root
+    _cached_project_root = None
+
+
+def _discover_project_root() -> Optional[str]:
+    """
+    Effect: Discover project root from CWD's .aifp-project/ database.
+
+    Checks if .aifp-project/project.db exists in current working directory.
+    If found, reads project_root from the infrastructure table.
+    If not found, returns None (project not initialized).
+
+    Does NOT walk up parent directories — the MCP server process
+    is started in the project directory by the AI client.
+    """
+    aifp_dir = Path.cwd() / AIFP_PROJECT_DIR
+    if not aifp_dir.is_dir():
+        return None
+
+    db_path = str(aifp_dir / PROJECT_DB_NAME)
+    if not os.path.exists(db_path):
+        return None
+
+    conn = _open_connection(db_path)
+    try:
+        row = conn.execute(
+            "SELECT value FROM infrastructure WHERE type = 'project_root'"
+        ).fetchone()
+        return row['value'] if row else str(Path.cwd())
+    finally:
+        conn.close()
+
+
+# ============================================================================
 # Result Types (Immutable)
 # ============================================================================
 

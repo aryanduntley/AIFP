@@ -29,10 +29,11 @@ from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
 from ._common import (
-    _open_connection,
     _check_entity_exists,
     _create_deletion_note,
     _validate_severity,
+    get_cached_project_root,
+    _open_project_connection,
     VALID_MILESTONE_STATUSES,
     VALID_NOTE_TYPES,
     VALID_NOTE_SOURCES,
@@ -578,7 +579,6 @@ def _delete_note(conn: sqlite3.Connection, note_id: int) -> None:
 # ============================================================================
 
 def get_items_for_task(
-    db_path: str,
     task_id: int,
     status: Optional[str] = None
 ) -> ItemQueryResult:
@@ -586,7 +586,6 @@ def get_items_for_task(
     Get items for task, optionally filtered by status.
 
     Args:
-        db_path: Path to project.db
         task_id: Task ID
         status: Optional status filter ('pending', 'in_progress', 'completed')
 
@@ -600,7 +599,8 @@ def get_items_for_task(
             error=f"Invalid status: {status}. Must be one of: {', '.join(VALID_ITEM_STATUSES)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         items = _query_items_by_reference(conn, "tasks", task_id, status)
@@ -620,7 +620,6 @@ def get_items_for_task(
 
 
 def get_items_for_subtask(
-    db_path: str,
     subtask_id: int,
     status: Optional[str] = None
 ) -> ItemQueryResult:
@@ -628,7 +627,6 @@ def get_items_for_subtask(
     Get items for subtask, optionally filtered by status.
 
     Args:
-        db_path: Path to project.db
         subtask_id: Subtask ID
         status: Optional status filter ('pending', 'in_progress', 'completed')
 
@@ -642,7 +640,8 @@ def get_items_for_subtask(
             error=f"Invalid status: {status}. Must be one of: {', '.join(VALID_ITEM_STATUSES)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         items = _query_items_by_reference(conn, "subtasks", subtask_id, status)
@@ -662,7 +661,6 @@ def get_items_for_subtask(
 
 
 def get_items_for_sidequest(
-    db_path: str,
     sidequest_id: int,
     status: Optional[str] = None
 ) -> ItemQueryResult:
@@ -670,7 +668,6 @@ def get_items_for_sidequest(
     Get items for sidequest, optionally filtered by status.
 
     Args:
-        db_path: Path to project.db
         sidequest_id: Sidequest ID
         status: Optional status filter ('pending', 'in_progress', 'completed')
 
@@ -684,7 +681,8 @@ def get_items_for_sidequest(
             error=f"Invalid status: {status}. Must be one of: {', '.join(VALID_ITEM_STATUSES)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         items = _query_items_by_reference(conn, "sidequests", sidequest_id, status)
@@ -704,7 +702,6 @@ def get_items_for_sidequest(
 
 
 def get_incomplete_items(
-    db_path: str,
     for_table: str,
     for_id: int
 ) -> ItemQueryResult:
@@ -712,7 +709,6 @@ def get_incomplete_items(
     Get incomplete items for any parent type.
 
     Args:
-        db_path: Path to project.db
         for_table: Reference table ("tasks", "subtasks", "sidequests" - accepts singular)
         for_id: Parent ID
 
@@ -730,7 +726,8 @@ def get_incomplete_items(
             error=f"Invalid table: {for_table}. Must be one of: {', '.join(valid_tables)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         items = _query_incomplete_items_by_reference(conn, normalized_table, for_id)
@@ -750,7 +747,6 @@ def get_incomplete_items(
 
 
 def delete_item(
-    db_path: str,
     id: int,
     note_reason: str,
     note_severity: str,
@@ -761,7 +757,6 @@ def delete_item(
     Delete item with status validation (only pending items can be deleted).
 
     Args:
-        db_path: Path to project.db
         id: Item ID
         note_reason: Deletion reason
         note_severity: Note severity ('info', 'warning', 'error')
@@ -771,7 +766,8 @@ def delete_item(
     Returns:
         DeleteResult with success status
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check item exists
@@ -822,7 +818,6 @@ def delete_item(
 # ============================================================================
 
 def add_note(
-    db_path: str,
     content: str,
     note_type: str,
     reference_table: Optional[str] = None,
@@ -836,7 +831,6 @@ def add_note(
     Add note to project database.
 
     Args:
-        db_path: Path to project.db
         content: Note content/message
         note_type: Note type ('clarification', 'pivot', 'research', 'entry_deletion', etc.)
         reference_table: Optional table name this note references
@@ -877,7 +871,8 @@ def add_note(
             error="send_with_directive=True requires directive_name to be set"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Insert note
@@ -905,7 +900,6 @@ def add_note(
 
 
 def get_notes_comprehensive(
-    db_path: str,
     note_type: Optional[str] = None,
     reference_table: Optional[str] = None,
     reference_id: Optional[int] = None,
@@ -917,7 +911,6 @@ def get_notes_comprehensive(
     Advanced note search with filters.
 
     Args:
-        db_path: Path to project.db
         note_type: Optional filter by note_type
         reference_table: Optional filter by reference table
         reference_id: Optional filter by reference ID
@@ -947,7 +940,8 @@ def get_notes_comprehensive(
             error=f"Invalid severity: {severity}. Must be one of: {', '.join(VALID_SEVERITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         notes = _query_notes_comprehensive(
@@ -969,7 +963,6 @@ def get_notes_comprehensive(
 
 
 def search_notes(
-    db_path: str,
     search_string: str,
     note_type: Optional[str] = None,
     reference_table: Optional[str] = None,
@@ -982,7 +975,6 @@ def search_notes(
     Search note content with optional filters.
 
     Args:
-        db_path: Path to project.db
         search_string: Search string for note content
         note_type: Optional filter by note_type
         reference_table: Optional filter by reference table
@@ -1013,7 +1005,8 @@ def search_notes(
             error=f"Invalid severity: {severity}. Must be one of: {', '.join(VALID_SEVERITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         notes = _search_notes(
@@ -1035,7 +1028,6 @@ def search_notes(
 
 
 def update_note(
-    db_path: str,
     id: int,
     content: Optional[str] = None,
     note_type: Optional[str] = None,
@@ -1050,7 +1042,6 @@ def update_note(
     Update note metadata.
 
     Args:
-        db_path: Path to project.db
         id: Note ID to update
         content: New content (None = don't update)
         note_type: New note_type (None = don't update)
@@ -1083,7 +1074,8 @@ def update_note(
             error=f"Invalid severity: {severity}. Must be one of: {', '.join(VALID_SEVERITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check note exists
@@ -1118,20 +1110,19 @@ def update_note(
 
 
 def delete_note(
-    db_path: str,
     id: int
 ) -> DeleteResult:
     """
     Delete note (discouraged - notes should be preserved for audit trail).
 
     Args:
-        db_path: Path to project.db
         id: Note ID to delete
 
     Returns:
         DeleteResult with success status
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check note exists

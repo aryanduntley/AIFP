@@ -39,6 +39,9 @@ from ._common import (
     BLUEPRINT_FILENAME,
     BACKUPS_DIR_NAME,
     VALID_STATUS_TYPES,
+    # Project root cache
+    set_project_root,
+    _discover_project_root,
 )
 
 from .backup import check_and_run_backup
@@ -231,7 +234,10 @@ def aifp_init(project_root: str) -> Result:
             if not os.path.exists(expected_path):
                 raise RuntimeError(f"Post-init check failed: expected file not found: {expected_path}")
 
-        # Step 8: Return success
+        # Step 8: Cache project root for helper functions
+        set_project_root(project_root)
+
+        # Step 9: Return success
         files_created = (
             f'{AIFP_PROJECT_DIR}/',
             f'{AIFP_PROJECT_DIR}/{BACKUPS_DIR_NAME}/',
@@ -341,6 +347,9 @@ def aifp_status(
             success=False,
             error=f"Invalid type '{type}'. Valid: {sorted(VALID_STATUS_TYPES)}",
         )
+
+    # Cache project root for helper functions
+    set_project_root(project_root)
 
     aifp_dir = get_aifp_project_dir(project_root)
     if not os.path.isdir(aifp_dir):
@@ -498,6 +507,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
             project_root = _discover_project_root()
             watchdog_data = {'status': 'no_project', 'reminders': (), 'notice': None}
             if project_root is not None:
+                set_project_root(project_root)
                 watchdog_data = _read_and_clear_reminders(project_root)
 
             return Result(
@@ -545,6 +555,9 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 },
                 return_statements=get_return_statements("aifp_run"),
             )
+
+        # Cache project root for helper functions
+        set_project_root(project_root)
 
         # Watchdog: kill previous, start fresh, read any accumulated reminders
         watchdog_start = _start_watchdog(project_root)
@@ -721,26 +734,6 @@ def _read_and_clear_reminders(project_root: str) -> Dict[str, Any]:
     }
 
 
-def _discover_project_root() -> Optional[str]:
-    """
-    Effect: Discover project root by searching for .aifp-project/ directory.
-
-    Walks up from current working directory looking for .aifp-project/.
-
-    Returns:
-        Project root path, or None if not found
-    """
-    current = Path.cwd()
-    for _ in range(20):  # Max 20 levels up
-        aifp_dir = current / AIFP_PROJECT_DIR
-        if aifp_dir.is_dir():
-            return str(current)
-        parent = current.parent
-        if parent == current:
-            break
-        current = parent
-    return None
-
 
 def _get_case_2_phase(status: str) -> str:
     """Pure: Get human-readable phase name for Case 2 status."""
@@ -791,8 +784,7 @@ def _get_user_settings_safe(project_root: str) -> Dict[str, Any]:
     """Effect: Get user settings, returning empty dict on failure."""
     try:
         from ..user_preferences.management import get_user_settings
-        prefs_db_path = get_user_preferences_db_path(project_root)
-        result = get_user_settings(prefs_db_path)
+        result = get_user_settings()
         if result.success:
             return result.data if hasattr(result, 'data') and result.data else {}
         return {}
@@ -840,8 +832,7 @@ def _get_infrastructure_safe(project_root: str) -> Tuple[Dict[str, Any], ...]:
     """Effect: Get infrastructure data, returning empty tuple on failure."""
     try:
         from ..project.metadata import get_all_infrastructure
-        db_path = get_project_db_path(project_root)
-        result = get_all_infrastructure(db_path)
+        result = get_all_infrastructure()
         if result.success:
             return result.data if hasattr(result, 'data') and result.data else ()
         return ()
@@ -871,6 +862,9 @@ def aifp_end(project_root: str) -> Result:
             project_state: dict (from get_project_status)
         }
     """
+    # Cache project root for helper functions
+    set_project_root(project_root)
+
     aifp_dir = get_aifp_project_dir(project_root)
     if not os.path.isdir(aifp_dir):
         return Result(

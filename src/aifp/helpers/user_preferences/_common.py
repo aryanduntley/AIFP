@@ -28,8 +28,12 @@ import sqlite3
 from typing import Final, Tuple
 
 # Import global utilities (DRY - avoid duplication)
-from ..utils import _open_connection  # noqa: F401 - re-exported for convenience
-from ..utils import get_user_preferences_db_path  # noqa: F401 - re-exported
+from ..utils import (  # noqa: F401 - re-exported for convenience
+    _open_connection,
+    _open_preferences_connection,
+    get_cached_project_root,
+    get_user_preferences_db_path,
+)
 
 
 # ============================================================================
@@ -212,7 +216,7 @@ def _is_tracking_enabled(conn: sqlite3.Connection, feature_name: str) -> bool:
 # Custom Return Statements Sub-Helper
 # ============================================================================
 
-def _get_custom_return_statements(db_path: str, helper_name: str) -> Tuple[str, ...]:
+def _get_custom_return_statements(helper_name: str) -> Tuple[str, ...]:
     """
     Effect: Get active custom return statements for a helper from user_preferences.db.
 
@@ -220,7 +224,6 @@ def _get_custom_return_statements(db_path: str, helper_name: str) -> Tuple[str, 
     user-defined return statements with core statements from aifp_core.db.
 
     Args:
-        db_path: Path to user_preferences.db
         helper_name: Helper function name to get custom statements for
 
     Returns:
@@ -228,9 +231,8 @@ def _get_custom_return_statements(db_path: str, helper_name: str) -> Tuple[str, 
         Graceful degradation: never raises, always returns a tuple.
     """
     try:
-        if not os.path.exists(db_path):
-            return ()
-        conn = _open_connection(db_path)
+        project_root = get_cached_project_root()
+        conn = _open_preferences_connection(project_root)
         try:
             cursor = conn.execute(
                 "SELECT statement FROM custom_return_statements "

@@ -35,7 +35,11 @@ import sqlite3
 from typing import Optional, Final
 
 # Import global utilities (DRY - avoid duplication)
-from ..utils import _open_connection  # noqa: F401 - re-exported for convenience
+from ..utils import (  # noqa: F401 - re-exported for convenience
+    _open_connection,
+    _open_project_connection,
+    get_cached_project_root,
+)
 
 
 # ============================================================================

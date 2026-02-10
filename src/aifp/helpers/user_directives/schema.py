@@ -20,7 +20,11 @@ from typing import Optional, Tuple, Dict
 from ..utils import get_return_statements
 
 # Import common user_directives utilities (DRY principle)
-from ._common import _open_connection, _table_exists
+from ._common import (
+    get_cached_project_root,
+    _open_directives_connection,
+    _table_exists,
+)
 
 
 # ============================================================================
@@ -120,24 +124,22 @@ def _query_table_info(conn: sqlite3.Connection, table: str) -> Tuple[FieldInfo, 
 # Public Helper Functions
 # ============================================================================
 
-def get_user_custom_tables(db_path: str) -> TablesResult:
+def get_user_custom_tables() -> TablesResult:
     """
     List all tables in user_directives database.
-
-    Args:
-        db_path: Path to user_directives.db
 
     Returns:
         TablesResult with table names
 
     Example:
-        >>> result = get_user_custom_tables("/path/to/user_directives.db")
+        >>> result = get_user_custom_tables()
         >>> result.tables
         ('directive_dependencies', 'directive_executions', 'directive_helpers',
          'directive_implementations', 'directive_relationships', 'helper_functions',
          'logging_config', 'notes', 'schema_version', 'source_files', 'user_directives')
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         tables = _query_tables(conn)
@@ -156,23 +158,23 @@ def get_user_custom_tables(db_path: str) -> TablesResult:
         )
 
 
-def get_user_custom_fields(db_path: str, table: str) -> FieldsResult:
+def get_user_custom_fields(table: str) -> FieldsResult:
     """
     Get field names and types for a specific table in user_directives.db.
 
     Args:
-        db_path: Path to user_directives.db
         table: Table name to get fields for
 
     Returns:
         FieldsResult with field information
 
     Example:
-        >>> result = get_user_custom_fields("/path/to/user_directives.db", "user_directives")
+        >>> result = get_user_custom_fields("user_directives")
         >>> for field in result.fields:
         ...     print(f"{field.name}: {field.type}")
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if table exists
@@ -200,22 +202,20 @@ def get_user_custom_fields(db_path: str, table: str) -> FieldsResult:
         )
 
 
-def get_user_custom_schema(db_path: str) -> SchemaResult:
+def get_user_custom_schema() -> SchemaResult:
     """
     Get complete schema for user_directives database.
-
-    Args:
-        db_path: Path to user_directives.db
 
     Returns:
         SchemaResult with full schema (table_name -> fields mapping)
 
     Example:
-        >>> result = get_user_custom_schema("/path/to/user_directives.db")
+        >>> result = get_user_custom_schema()
         >>> for table, fields in result.schema.items():
         ...     print(f"{table}: {len(fields)} fields")
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Get all tables
@@ -242,24 +242,24 @@ def get_user_custom_schema(db_path: str) -> SchemaResult:
         )
 
 
-def get_user_custom_json_parameters(db_path: str, table: str) -> JsonParametersResult:
+def get_user_custom_json_parameters(table: str) -> JsonParametersResult:
     """
     Get available fields for table to use with generic add/update operations.
     Filters out id, created_at, updated_at fields.
 
     Args:
-        db_path: Path to user_directives.db
         table: Table name to get available fields for
 
     Returns:
         JsonParametersResult with field_name -> type_hint mapping
 
     Example:
-        >>> result = get_user_custom_json_parameters("/path/to/user_directives.db", "user_directives")
+        >>> result = get_user_custom_json_parameters("user_directives")
         >>> result.parameters
         {'name': 'TEXT', 'description': 'TEXT', 'domain': 'TEXT', ...}
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_directives_connection(project_root)
 
     try:
         # Check if table exists

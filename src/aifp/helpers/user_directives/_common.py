@@ -29,8 +29,12 @@ import sqlite3
 from typing import Final
 
 # Import global utilities (DRY - avoid duplication)
-from ..utils import _open_connection  # noqa: F401 - re-exported for convenience
-from ..utils import get_user_directives_db_path  # noqa: F401 - re-exported
+from ..utils import (  # noqa: F401 - re-exported for convenience
+    _open_connection,
+    _open_directives_connection,
+    get_cached_project_root,
+    get_user_directives_db_path,
+)
 
 
 # ============================================================================

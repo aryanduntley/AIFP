@@ -20,7 +20,7 @@ from typing import Optional, List, Tuple, Dict, Any
 
 # Import global utilities
 from ..utils import get_return_statements
-from ._common import _open_connection, _check_function_exists, _create_deletion_note
+from ._common import _check_function_exists, _create_deletion_note, get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -299,7 +299,6 @@ def _delete_interaction_effect(
 # ============================================================================
 
 def add_interaction(
-    db_path: str,
     source: str,
     target: str,
     interaction_type: str
@@ -311,7 +310,6 @@ def add_interaction(
     resolved to IDs internally.
 
     Args:
-        db_path: Path to project.db
         source: Source function name (the function making the call/reference)
         target: Target function name (the function being called/referenced)
         interaction_type: Interaction type ('call', 'chain', 'borrow', 'compose', 'pipe')
@@ -322,7 +320,6 @@ def add_interaction(
     Example:
         >>> # Function 'process_data' calls 'validate_input'
         >>> result = add_interaction(
-        ...     "project.db",
         ...     source="process_data_id_42",
         ...     target="validate_input_id_15",
         ...     interaction_type="call"
@@ -340,7 +337,8 @@ def add_interaction(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Resolve source function name to ID
@@ -405,7 +403,6 @@ def add_interaction(
 
 
 def add_interactions(
-    db_path: str,
     interactions: List[Tuple[int, int, str, Optional[str]]]
 ) -> AddInteractionsResult:
     """
@@ -415,7 +412,6 @@ def add_interactions(
     directly instead of names for better performance.
 
     Args:
-        db_path: Path to project.db
         interactions: List of (source_function_id, target_function_id, interaction_type, description) tuples
             Interaction types: 'call', 'chain', 'borrow', 'compose', 'pipe'
 
@@ -429,7 +425,7 @@ def add_interactions(
         ...     (42, 16, 'call', 'Transforms data'),
         ...     (42, 17, 'pipe', 'Pipes to formatter')
         ... ]
-        >>> result = add_interactions("project.db", interactions)
+        >>> result = add_interactions(interactions)
         >>> result.success
         True
         >>> len(result.ids)
@@ -451,7 +447,8 @@ def add_interactions(
             )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Validate all function IDs exist
@@ -491,7 +488,6 @@ def add_interactions(
 
 
 def update_interaction(
-    db_path: str,
     interaction_id: int,
     source_function_id: Optional[int] = None,
     target_function_id: Optional[int] = None,
@@ -504,7 +500,6 @@ def update_interaction(
     Only updates non-NULL parameters. Can change source, target, type, or description.
 
     Args:
-        db_path: Path to project.db
         interaction_id: Interaction ID to update
         source_function_id: New source function ID (None = don't update)
         target_function_id: New target function ID (None = don't update)
@@ -516,13 +511,12 @@ def update_interaction(
 
     Example:
         >>> # Update interaction type from 'call' to 'compose'
-        >>> result = update_interaction("project.db", 1, interaction_type='compose')
+        >>> result = update_interaction(1, interaction_type='compose')
         >>> result.success
         True
 
         >>> # Update description only
         >>> result = update_interaction(
-        ...     "project.db",
         ...     1,
         ...     description="Composes validation with transformation"
         ... )
@@ -544,7 +538,8 @@ def update_interaction(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if interaction exists
@@ -592,7 +587,6 @@ def update_interaction(
 
 
 def delete_interaction(
-    db_path: str,
     interaction_id: int,
     note_reason: str,
     note_severity: str,
@@ -605,7 +599,6 @@ def delete_interaction(
     Removes interaction from database and creates audit note.
 
     Args:
-        db_path: Path to project.db
         interaction_id: Interaction ID to delete
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
@@ -617,7 +610,6 @@ def delete_interaction(
 
     Example:
         >>> result = delete_interaction(
-        ...     "project.db",
         ...     1,
         ...     note_reason="Function dependency removed from code",
         ...     note_severity="info",
@@ -627,7 +619,8 @@ def delete_interaction(
         True
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if interaction exists

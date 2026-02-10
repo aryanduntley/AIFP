@@ -24,7 +24,7 @@ from typing import Optional, List, Tuple
 from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
-from ._common import _open_connection
+from ._common import _open_connection, get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -333,7 +333,6 @@ def _get_file_by_path_effect(
 # ============================================================================
 
 def reserve_file(
-    db_path: str,
     name: str,
     path: str,
     language: str,
@@ -346,7 +345,6 @@ def reserve_file(
     Returns ID that should be embedded in filename: {name}_id_{id}.{ext}
 
     Args:
-        db_path: Path to project.db
         name: Preliminary file name (will have _id_xxx appended unless skip_id_naming=True)
         path: File path relative to project root
         language: Programming language (e.g., 'python', 'javascript')
@@ -356,7 +354,7 @@ def reserve_file(
         ReserveResult with success status and reserved ID
 
     Example:
-        >>> result = reserve_file("project.db", "calculator", "src/calc.py", "python")
+        >>> result = reserve_file("calculator", "src/calc.py", "python")
         >>> result.success
         True
         >>> result.id
@@ -364,7 +362,8 @@ def reserve_file(
         # Use result.id to create: calculator_id_42.py (unless skip_id_naming=True)
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if path already exists
@@ -393,7 +392,6 @@ def reserve_file(
 
 
 def reserve_files(
-    db_path: str,
     files: List[Tuple[str, str, str, bool]]
 ) -> ReserveBatchResult:
     """
@@ -403,20 +401,19 @@ def reserve_files(
     All reservations succeed or all fail (atomic operation).
 
     Args:
-        db_path: Path to project.db
         files: List of (name, path, language, skip_id_naming) tuples
                skip_id_naming: If True for item, skip ID embedding for that file
 
     Returns:
         ReserveBatchResult with success status and reserved IDs
-        IDs correspond to input indices: files[0] → ids[0], files[1] → ids[1]
+        IDs correspond to input indices: files[0] -> ids[0], files[1] -> ids[1]
 
     Example:
         >>> files = [
         ...     ("calculator", "src/calc.py", "python", False),
         ...     ("__init__", "src/__init__.py", "python", True)  # skip ID for __init__
         ... ]
-        >>> result = reserve_files("project.db", files)
+        >>> result = reserve_files(files)
         >>> result.success
         True
         >>> result.ids
@@ -430,7 +427,8 @@ def reserve_files(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if any paths already exist
@@ -471,7 +469,6 @@ def reserve_files(
 
 
 def finalize_file(
-    db_path: str,
     file_id: int,
     name: str,
     path: str,
@@ -485,7 +482,6 @@ def finalize_file(
     Sets is_reserved=0 to mark file as finalized.
 
     Args:
-        db_path: Path to project.db
         file_id: Reserved file ID
         name: Final file name with _id_xx suffix (unless skip_id_naming=True)
         path: File path (must exist on filesystem)
@@ -498,7 +494,6 @@ def finalize_file(
     Example:
         >>> # After creating calculator_id_42.py on filesystem
         >>> result = finalize_file(
-        ...     "project.db",
         ...     42,
         ...     "calculator_id_42.py",
         ...     "src/calculator_id_42.py",
@@ -522,7 +517,8 @@ def finalize_file(
         )
 
     # Effect: open connection and finalize
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         _finalize_file_effect(conn, file_id, name, path, language)
@@ -547,7 +543,6 @@ def finalize_file(
 
 
 def finalize_files(
-    db_path: str,
     files: List[Tuple[int, str, str, str, bool]]
 ) -> FinalizeBatchResult:
     """
@@ -557,7 +552,6 @@ def finalize_files(
     All finalizations succeed or all fail (atomic operation).
 
     Args:
-        db_path: Path to project.db
         files: List of (file_id, name, path, language, skip_id_naming) tuples
                skip_id_naming: If True for item, skip ID pattern validation for that file
 
@@ -569,7 +563,7 @@ def finalize_files(
         ...     (42, "calculator_id_42.py", "src/calc_id_42.py", "python", False),
         ...     (43, "__init__.py", "src/__init__.py", "python", True)  # skip validation
         ... ]
-        >>> result = finalize_files("project.db", files)
+        >>> result = finalize_files(files)
         >>> result.success
         True
         >>> result.finalized_ids
@@ -603,7 +597,8 @@ def finalize_files(
         finalizations.append((file_id, name, path, language))
 
     # Effect: open connection and finalize batch
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         _finalize_files_batch_effect(conn, finalizations)
@@ -628,7 +623,6 @@ def finalize_files(
 
 
 def get_file_by_name(
-    db_path: str,
     file_name: str
 ) -> FilesQueryResult:
     """
@@ -638,14 +632,13 @@ def get_file_by_name(
     multiple files can share the same name (e.g., __init__.py in different directories).
 
     Args:
-        db_path: Path to project.db
         file_name: File name to look up (e.g., 'calculator_id_42.py' or '__init__.py')
 
     Returns:
         FilesQueryResult with tuple of file records (empty if none found)
 
     Example:
-        >>> result = get_file_by_name("project.db", "__init__.py")
+        >>> result = get_file_by_name("__init__.py")
         >>> result.success
         True
         >>> len(result.files)
@@ -654,7 +647,8 @@ def get_file_by_name(
         'src/aifp/__init__.py'
     """
     # Effect: open connection and query
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_file_by_name_effect(conn, file_name)
@@ -678,7 +672,6 @@ def get_file_by_name(
 
 
 def get_file_by_path(
-    db_path: str,
     file_path: str
 ) -> FileQueryResult:
     """
@@ -688,14 +681,13 @@ def get_file_by_path(
     Returns full file record with metadata.
 
     Args:
-        db_path: Path to project.db
         file_path: File path to look up (e.g., 'src/calculator.py')
 
     Returns:
         FileQueryResult with file record or None if not found
 
     Example:
-        >>> result = get_file_by_path("project.db", "src/calculator_id_42.py")
+        >>> result = get_file_by_path("src/calculator_id_42.py")
         >>> result.success
         True
         >>> result.file.id
@@ -704,7 +696,8 @@ def get_file_by_path(
         'calculator_id_42.py'
     """
     # Effect: open connection and query
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         row = _get_file_by_path_effect(conn, file_path)

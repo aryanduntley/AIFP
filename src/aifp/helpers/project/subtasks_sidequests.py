@@ -35,6 +35,8 @@ from ..utils import get_return_statements
 # Import common project utilities (DRY principle)
 from ._common import (
     _open_connection,
+    get_cached_project_root,
+    _open_project_connection,
     _check_entity_exists,
     _create_deletion_note,
     _validate_status,
@@ -739,7 +741,6 @@ def _delete_sidequest(conn: sqlite3.Connection, sidequest_id: int) -> None:
 # ============================================================================
 
 def add_subtask(
-    db_path: str,
     parent_task_id: int,
     name: str,
     status: str = "pending",
@@ -750,7 +751,6 @@ def add_subtask(
     Add subtask to task.
 
     Args:
-        db_path: Path to project.db
         parent_task_id: Parent task ID
         name: Subtask name
         status: Subtask status ('pending', 'in_progress', 'completed', 'blocked')
@@ -774,7 +774,8 @@ def add_subtask(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check parent task exists
@@ -806,17 +807,15 @@ def add_subtask(
         )
 
 
-def get_incomplete_subtasks(db_path: str) -> SubtaskQueryResult:
+def get_incomplete_subtasks() -> SubtaskQueryResult:
     """
     Get all non-completed subtasks.
-
-    Args:
-        db_path: Path to project.db
 
     Returns:
         SubtaskQueryResult with incomplete subtasks
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         subtasks = _query_incomplete_subtasks(conn)
@@ -836,20 +835,19 @@ def get_incomplete_subtasks(db_path: str) -> SubtaskQueryResult:
 
 
 def get_incomplete_subtasks_by_task(
-    db_path: str,
     task_id: int
 ) -> SubtaskQueryResult:
     """
     Get incomplete subtasks for specific task.
 
     Args:
-        db_path: Path to project.db
         task_id: Task ID
 
     Returns:
         SubtaskQueryResult with incomplete subtasks for task
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         subtasks = _query_incomplete_subtasks_by_task(conn, task_id)
@@ -869,7 +867,6 @@ def get_incomplete_subtasks_by_task(
 
 
 def get_subtasks_by_task(
-    db_path: str,
     task_id: int,
     status: Optional[str] = None
 ) -> SubtaskQueryResult:
@@ -877,7 +874,6 @@ def get_subtasks_by_task(
     Get subtasks for task, optionally filtered by status.
 
     Args:
-        db_path: Path to project.db
         task_id: Task ID
         status: Optional status filter ('pending', 'in_progress', 'completed', 'blocked')
 
@@ -891,7 +887,8 @@ def get_subtasks_by_task(
             error=f"Invalid status: {status}. Must be one of: {', '.join(VALID_TASK_STATUSES)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         subtasks = _query_subtasks_by_task(conn, task_id, status)
@@ -911,7 +908,6 @@ def get_subtasks_by_task(
 
 
 def get_subtasks_comprehensive(
-    db_path: str,
     status: Optional[str] = None,
     limit: Optional[int] = None,
     date_range_created: Optional[List[str]] = None,
@@ -923,7 +919,6 @@ def get_subtasks_comprehensive(
     Advanced subtask search with multiple filters.
 
     Args:
-        db_path: Path to project.db
         status: Optional status filter ('pending', 'in_progress', 'completed', 'blocked')
         limit: Optional maximum results
         date_range_created: Optional created date range [start_date, end_date]
@@ -948,7 +943,8 @@ def get_subtasks_comprehensive(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         subtasks = _query_subtasks_comprehensive(
@@ -970,7 +966,6 @@ def get_subtasks_comprehensive(
 
 
 def update_subtask(
-    db_path: str,
     id: int,
     name: Optional[str] = None,
     task_id: Optional[int] = None,
@@ -982,7 +977,6 @@ def update_subtask(
     Update subtask metadata.
 
     Args:
-        db_path: Path to project.db
         id: Subtask ID
         name: New name (None = don't update)
         task_id: New task ID (None = don't update)
@@ -1007,7 +1001,8 @@ def update_subtask(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check subtask exists
@@ -1047,7 +1042,6 @@ def update_subtask(
 
 
 def delete_subtask(
-    db_path: str,
     id: int,
     note_reason: str,
     note_severity: str,
@@ -1058,7 +1052,6 @@ def delete_subtask(
     Delete subtask with item validation.
 
     Args:
-        db_path: Path to project.db
         id: Subtask ID
         note_reason: Deletion reason
         note_severity: Note severity ('info', 'warning', 'error')
@@ -1068,7 +1061,8 @@ def delete_subtask(
     Returns:
         DeleteResult with success status
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check subtask exists
@@ -1122,7 +1116,6 @@ def delete_subtask(
 # ============================================================================
 
 def add_sidequest(
-    db_path: str,
     paused_task_id: int,
     name: str,
     status: str = "pending",
@@ -1135,7 +1128,6 @@ def add_sidequest(
     Add sidequest (urgent interruption).
 
     Args:
-        db_path: Path to project.db
         paused_task_id: Paused task ID
         name: Sidequest name
         status: Sidequest status ('pending', 'in_progress', 'completed', 'blocked')
@@ -1161,7 +1153,8 @@ def add_sidequest(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check paused task exists
@@ -1203,17 +1196,15 @@ def add_sidequest(
         )
 
 
-def get_incomplete_sidequests(db_path: str) -> SidequestQueryResult:
+def get_incomplete_sidequests() -> SidequestQueryResult:
     """
     Get all non-completed sidequests.
-
-    Args:
-        db_path: Path to project.db
 
     Returns:
         SidequestQueryResult with incomplete sidequests
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         sidequests = _query_incomplete_sidequests(conn)
@@ -1233,7 +1224,6 @@ def get_incomplete_sidequests(db_path: str) -> SidequestQueryResult:
 
 
 def get_sidequests_comprehensive(
-    db_path: str,
     status: Optional[str] = None,
     limit: Optional[int] = None,
     date_range_created: Optional[List[str]] = None,
@@ -1246,7 +1236,6 @@ def get_sidequests_comprehensive(
     Advanced sidequest search with multiple filters.
 
     Args:
-        db_path: Path to project.db
         status: Optional status filter ('pending', 'in_progress', 'completed', 'blocked')
         limit: Optional maximum results
         date_range_created: Optional created date range [start_date, end_date]
@@ -1272,7 +1261,8 @@ def get_sidequests_comprehensive(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         sidequests = _query_sidequests_comprehensive(
@@ -1294,20 +1284,19 @@ def get_sidequests_comprehensive(
 
 
 def get_sidequest_flows(
-    db_path: str,
     sidequest_id: int
 ) -> FlowIdsResult:
     """
     Get flow IDs for a sidequest.
 
     Args:
-        db_path: Path to project.db
         sidequest_id: Sidequest ID
 
     Returns:
         FlowIdsResult with flow IDs array
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check sidequest exists
@@ -1336,20 +1325,19 @@ def get_sidequest_flows(
 
 
 def get_sidequest_files(
-    db_path: str,
     sidequest_id: int
 ) -> FilesResult:
     """
     Get all files related to sidequest via flows (orchestrator).
 
     Args:
-        db_path: Path to project.db
         sidequest_id: Sidequest ID
 
     Returns:
         FilesResult with related files
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check sidequest exists
@@ -1388,7 +1376,6 @@ def get_sidequest_files(
 
 
 def update_sidequest(
-    db_path: str,
     id: int,
     name: Optional[str] = None,
     paused_task_id: Optional[int] = None,
@@ -1402,7 +1389,6 @@ def update_sidequest(
     Update sidequest metadata.
 
     Args:
-        db_path: Path to project.db
         id: Sidequest ID
         name: New name (None = don't update)
         paused_task_id: New paused task ID (None = don't update)
@@ -1429,7 +1415,8 @@ def update_sidequest(
             error=f"Invalid priority: {priority}. Must be one of: {', '.join(VALID_PRIORITY_LEVELS)}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check sidequest exists
@@ -1479,7 +1466,6 @@ def update_sidequest(
 
 
 def delete_sidequest(
-    db_path: str,
     id: int,
     note_reason: str,
     note_severity: str,
@@ -1490,7 +1476,6 @@ def delete_sidequest(
     Delete sidequest with item validation.
 
     Args:
-        db_path: Path to project.db
         id: Sidequest ID
         note_reason: Deletion reason
         note_severity: Note severity ('info', 'warning', 'error')
@@ -1500,7 +1485,8 @@ def delete_sidequest(
     Returns:
         DeleteResult with success status
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check sidequest exists

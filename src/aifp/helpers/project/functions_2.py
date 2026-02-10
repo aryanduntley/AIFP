@@ -25,7 +25,7 @@ from ..utils import get_return_statements
 
 # Import update_file_timestamp from files_2
 from .files_2 import update_file_timestamp
-from ._common import _open_connection, _check_file_exists, _check_function_exists, _create_deletion_note
+from ._common import _open_connection, _check_file_exists, _check_function_exists, _create_deletion_note, get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -447,7 +447,6 @@ def _delete_function_effect(
 # ============================================================================
 
 def get_functions_by_file(
-    db_path: str,
     file_id: int
 ) -> FunctionsQueryResult:
     """
@@ -457,14 +456,13 @@ def get_functions_by_file(
     Returns functions ordered by creation time.
 
     Args:
-        db_path: Path to project.db
         file_id: File ID to get functions for
 
     Returns:
         FunctionsQueryResult with tuple of function records (empty if no functions)
 
     Example:
-        >>> result = get_functions_by_file("project.db", 42)
+        >>> result = get_functions_by_file(42)
         >>> result.success
         True
         >>> len(result.functions)
@@ -473,7 +471,8 @@ def get_functions_by_file(
         'calculate_sum_id_99'
     """
     # Effect: open connection and query
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file exists
@@ -504,7 +503,6 @@ def get_functions_by_file(
 
 
 def update_function(
-    db_path: str,
     function_id: int,
     name: Optional[str] = None,
     purpose: Optional[str] = None,
@@ -518,7 +516,6 @@ def update_function(
     Automatically updates file timestamp.
 
     Args:
-        db_path: Path to project.db
         function_id: Function ID to update
         name: New function name (None = don't update)
         purpose: New purpose (None = don't update)
@@ -530,13 +527,12 @@ def update_function(
 
     Example:
         >>> # Update only the purpose
-        >>> result = update_function("project.db", 99, purpose="Add two numbers")
+        >>> result = update_function(99, purpose="Add two numbers")
         >>> result.success
         True
 
         >>> # Update name and parameters
         >>> result = update_function(
-        ...     "project.db",
         ...     99,
         ...     name="calculate_sum_id_99",
         ...     parameters=[{"name": "a", "type": "int"}, {"name": "b", "type": "int"}]
@@ -552,7 +548,8 @@ def update_function(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if function exists
@@ -593,7 +590,7 @@ def update_function(
         conn.close()
 
         # Effect: update file timestamp (uses separate connection)
-        timestamp_result = update_file_timestamp(db_path, file_id)
+        timestamp_result = update_file_timestamp(file_id)
         if not timestamp_result.success:
             return UpdateResult(
                 success=False,
@@ -622,7 +619,6 @@ def update_function(
 
 
 def update_functions_for_file(
-    db_path: str,
     file_id: int,
     functions: List[Dict[str, Any]]
 ) -> BatchUpdateResult:
@@ -633,7 +629,6 @@ def update_functions_for_file(
     All updates succeed or all fail (atomic operation).
 
     Args:
-        db_path: Path to project.db
         file_id: File ID
         functions: List of function update objects with keys: function_id, name, purpose, parameters, returns
 
@@ -645,7 +640,7 @@ def update_functions_for_file(
         ...     {"function_id": 99, "purpose": "Add two numbers"},
         ...     {"function_id": 100, "purpose": "Subtract two numbers"}
         ... ]
-        >>> result = update_functions_for_file("project.db", 42, functions)
+        >>> result = update_functions_for_file(42, functions)
         >>> result.success
         True
         >>> result.updated_count
@@ -659,7 +654,8 @@ def update_functions_for_file(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if file exists
@@ -713,7 +709,7 @@ def update_functions_for_file(
         conn.close()
 
         # Effect: update file timestamp once (uses separate connection)
-        timestamp_result = update_file_timestamp(db_path, file_id)
+        timestamp_result = update_file_timestamp(file_id)
         if not timestamp_result.success:
             return BatchUpdateResult(
                 success=False,
@@ -741,7 +737,6 @@ def update_functions_for_file(
 
 
 def update_function_file_location(
-    db_path: str,
     function_id: int,
     old_file_id: int,
     new_file_id: int
@@ -753,7 +748,6 @@ def update_function_file_location(
     Rarely used - for refactoring scenarios.
 
     Args:
-        db_path: Path to project.db
         function_id: Function ID to move
         old_file_id: Current file ID
         new_file_id: New file ID
@@ -763,12 +757,13 @@ def update_function_file_location(
 
     Example:
         >>> # Internal use only - move function from file 42 to file 43
-        >>> result = update_function_file_location("project.db", 99, 42, 43)
+        >>> result = update_function_file_location(99, 42, 43)
         >>> result.success
         True
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Validate function exists
@@ -816,14 +811,14 @@ def update_function_file_location(
         conn.close()
 
         # Effect: update timestamps for both files
-        old_timestamp_result = update_file_timestamp(db_path, old_file_id)
+        old_timestamp_result = update_file_timestamp(old_file_id)
         if not old_timestamp_result.success:
             return LocationUpdateResult(
                 success=False,
                 error=f"Updated but old file timestamp update failed: {old_timestamp_result.error}"
             )
 
-        new_timestamp_result = update_file_timestamp(db_path, new_file_id)
+        new_timestamp_result = update_file_timestamp(new_file_id)
         if not new_timestamp_result.success:
             return LocationUpdateResult(
                 success=False,
@@ -850,7 +845,6 @@ def update_function_file_location(
 
 
 def delete_function(
-    db_path: str,
     function_id: int,
     note_reason: str,
     note_severity: str,
@@ -864,7 +858,6 @@ def delete_function(
     from types_functions first. Interactions cascade automatically via SQL.
 
     Args:
-        db_path: Path to project.db
         function_id: Function ID to delete
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
@@ -876,7 +869,6 @@ def delete_function(
 
     Example:
         >>> result = delete_function(
-        ...     "project.db",
         ...     99,
         ...     note_reason="Function no longer needed",
         ...     note_severity="info",
@@ -890,7 +882,8 @@ def delete_function(
         42
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if function exists

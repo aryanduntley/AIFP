@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Optional, List, Tuple
 
 from ..utils import get_return_statements
-from ._common import _open_connection, _check_type_exists, _check_function_exists, _create_deletion_note
+from ._common import _check_type_exists, _check_function_exists, _create_deletion_note, get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -217,7 +217,6 @@ def _delete_relationship_effect(
 # ============================================================================
 
 def add_types_functions(
-    db_path: str,
     relationships: List[Tuple[int, int, str]]
 ) -> AddRelationshipsResult:
     """
@@ -227,7 +226,6 @@ def add_types_functions(
     understand type usage patterns.
 
     Args:
-        db_path: Path to project.db
         relationships: List of (type_id, function_id, role) tuples
             Roles: 'factory', 'transformer', 'operator', 'pattern_matcher',
                    'accessor', 'validator', 'combinator'
@@ -238,7 +236,6 @@ def add_types_functions(
     Example:
         >>> # Single relationship
         >>> result = add_types_functions(
-        ...     "project.db",
         ...     [(7, 99, 'factory')]  # Maybe_id_7, create_maybe_id_99
         ... )
         >>> result.success
@@ -252,7 +249,7 @@ def add_types_functions(
         ...     (7, 100, 'transformer'), # map_maybe
         ...     (7, 101, 'accessor')     # unwrap_maybe
         ... ]
-        >>> result = add_types_functions("project.db", relationships)
+        >>> result = add_types_functions(relationships)
         >>> result.success
         True
         >>> len(result.ids)
@@ -274,7 +271,8 @@ def add_types_functions(
             )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Validate all type_ids and function_ids exist
@@ -326,7 +324,6 @@ def add_types_functions(
 
 
 def update_type_function_role(
-    db_path: str,
     type_id: int,
     function_id: int,
     role: str
@@ -338,7 +335,6 @@ def update_type_function_role(
     For type_id or function_id changes, delete the old relationship and add a new one.
 
     Args:
-        db_path: Path to project.db
         type_id: Type ID
         function_id: Function ID
         role: New role ('factory', 'transformer', 'operator', 'pattern_matcher',
@@ -349,7 +345,7 @@ def update_type_function_role(
 
     Example:
         >>> # Change role from 'factory' to 'transformer'
-        >>> result = update_type_function_role("project.db", 7, 99, 'transformer')
+        >>> result = update_type_function_role(7, 99, 'transformer')
         >>> result.success
         True
     """
@@ -361,7 +357,8 @@ def update_type_function_role(
         )
 
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Validate type and function exist
@@ -399,7 +396,6 @@ def update_type_function_role(
 
 
 def delete_type_function(
-    db_path: str,
     id: int,
     note_reason: str,
     note_severity: str,
@@ -412,7 +408,6 @@ def delete_type_function(
     Deletes relationship from types_functions table and creates audit note.
 
     Args:
-        db_path: Path to project.db
         id: types_functions junction table ID
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
@@ -424,7 +419,6 @@ def delete_type_function(
 
     Example:
         >>> result = delete_type_function(
-        ...     "project.db",
         ...     1,
         ...     note_reason="Relationship no longer valid",
         ...     note_severity="info",
@@ -434,7 +428,8 @@ def delete_type_function(
         True
     """
     # Effect: open connection
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if relationship exists

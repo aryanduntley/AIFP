@@ -33,6 +33,8 @@ from ..utils import get_return_statements
 # Import common project utilities (DRY principle)
 from ._common import (
     _open_connection,
+    get_cached_project_root,
+    _open_project_connection,
     _create_deletion_note,
     _validate_status,
     VALID_MILESTONE_STATUSES
@@ -688,7 +690,6 @@ def _swap_completion_paths_order_effect(
 # ============================================================================
 
 def get_flows_for_theme(
-    db_path: str,
     theme_id: int
 ) -> FlowsQueryResult:
     """
@@ -697,20 +698,20 @@ def get_flows_for_theme(
     Queries flow_themes junction table to find flows associated with theme.
 
     Args:
-        db_path: Path to project.db
         theme_id: Theme ID
 
     Returns:
         FlowsQueryResult with tuple of flow records
 
     Example:
-        >>> result = get_flows_for_theme("project.db", 1)
+        >>> result = get_flows_for_theme(1)
         >>> result.success
         True
         >>> len(result.flows)
         3
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_flows_for_theme_effect(conn, theme_id)
@@ -732,7 +733,6 @@ def get_flows_for_theme(
 
 
 def get_themes_for_flow(
-    db_path: str,
     flow_id: int
 ) -> ThemesQueryResult:
     """
@@ -741,20 +741,20 @@ def get_themes_for_flow(
     Queries flow_themes junction table to find themes associated with flow.
 
     Args:
-        db_path: Path to project.db
         flow_id: Flow ID
 
     Returns:
         ThemesQueryResult with tuple of theme records
 
     Example:
-        >>> result = get_themes_for_flow("project.db", 5)
+        >>> result = get_themes_for_flow(5)
         >>> result.success
         True
         >>> len(result.themes)
         2
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_themes_for_flow_effect(conn, flow_id)
@@ -776,7 +776,6 @@ def get_themes_for_flow(
 
 
 def get_files_by_flow(
-    db_path: str,
     flow_id: int
 ) -> FilesQueryResult:
     """
@@ -785,20 +784,20 @@ def get_files_by_flow(
     Queries file_flows junction table to find files associated with flow.
 
     Args:
-        db_path: Path to project.db
         flow_id: Flow ID
 
     Returns:
         FilesQueryResult with tuple of file records
 
     Example:
-        >>> result = get_files_by_flow("project.db", 5)
+        >>> result = get_files_by_flow(5)
         >>> result.success
         True
         >>> len(result.files)
         8
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_files_by_flow_effect(conn, flow_id)
@@ -820,7 +819,6 @@ def get_files_by_flow(
 
 
 def get_flows_for_file(
-    db_path: str,
     file_id: int
 ) -> FlowsQueryResult:
     """
@@ -829,20 +827,20 @@ def get_flows_for_file(
     Queries file_flows junction table to find flows associated with file.
 
     Args:
-        db_path: Path to project.db
         file_id: File ID
 
     Returns:
         FlowsQueryResult with tuple of flow records
 
     Example:
-        >>> result = get_flows_for_file("project.db", 42)
+        >>> result = get_flows_for_file(42)
         >>> result.success
         True
         >>> len(result.flows)
         2
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_flows_for_file_effect(conn, file_id)
@@ -864,7 +862,6 @@ def get_flows_for_file(
 
 
 def add_completion_path(
-    db_path: str,
     name: str,
     status: str = "pending",
     description: Optional[str] = None,
@@ -876,7 +873,6 @@ def add_completion_path(
     Creates new completion path record in completion_path table.
 
     Args:
-        db_path: Path to project.db
         name: Completion path name (e.g., 'setup', 'core dev', 'finish')
         status: Status ('pending', 'in_progress', 'completed')
         description: Description (optional)
@@ -887,7 +883,6 @@ def add_completion_path(
 
     Example:
         >>> result = add_completion_path(
-        ...     "project.db",
         ...     "Core Development",
         ...     status="pending",
         ...     order_index=2
@@ -905,7 +900,8 @@ def add_completion_path(
             error=f"Invalid status '{status}', must be one of: {valid_statuses}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         path_id = _add_completion_path_effect(
@@ -934,26 +930,24 @@ def add_completion_path(
         conn.close()
 
 
-def get_all_completion_paths(db_path: str) -> CompletionPathsQueryResult:
+def get_all_completion_paths() -> CompletionPathsQueryResult:
     """
     Get all completion paths ordered by order_index.
 
     Queries all records from completion_path table ordered by order_index ASC.
 
-    Args:
-        db_path: Path to project.db
-
     Returns:
         CompletionPathsQueryResult with tuple of completion path records
 
     Example:
-        >>> result = get_all_completion_paths("project.db")
+        >>> result = get_all_completion_paths()
         >>> result.success
         True
         >>> len(result.paths)
         5
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_all_completion_paths_effect(conn)
@@ -977,26 +971,24 @@ def get_all_completion_paths(db_path: str) -> CompletionPathsQueryResult:
         conn.close()
 
 
-def get_next_completion_path(db_path: str) -> CompletionPathQueryResult:
+def get_next_completion_path() -> CompletionPathQueryResult:
     """
     Get lowest order_index with status != completed.
 
     Queries for next incomplete completion path.
 
-    Args:
-        db_path: Path to project.db
-
     Returns:
         CompletionPathQueryResult with completion path record or None
 
     Example:
-        >>> result = get_next_completion_path("project.db")
+        >>> result = get_next_completion_path()
         >>> result.success
         True
         >>> result.path.name
         'Core Development'
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         row = _get_next_completion_path_effect(conn)
@@ -1028,7 +1020,6 @@ def get_next_completion_path(db_path: str) -> CompletionPathQueryResult:
 
 
 def get_completion_paths_by_status(
-    db_path: str,
     status: str
 ) -> CompletionPathsQueryResult:
     """
@@ -1037,20 +1028,20 @@ def get_completion_paths_by_status(
     Queries completion paths with specific status ordered by order_index.
 
     Args:
-        db_path: Path to project.db
         status: Status to filter by ('pending', 'in_progress', 'completed')
 
     Returns:
         CompletionPathsQueryResult with tuple of completion path records
 
     Example:
-        >>> result = get_completion_paths_by_status("project.db", "in_progress")
+        >>> result = get_completion_paths_by_status("in_progress")
         >>> result.success
         True
         >>> len(result.paths)
         1
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_completion_paths_by_status_effect(conn, status)
@@ -1074,26 +1065,24 @@ def get_completion_paths_by_status(
         conn.close()
 
 
-def get_incomplete_completion_paths(db_path: str) -> CompletionPathsQueryResult:
+def get_incomplete_completion_paths() -> CompletionPathsQueryResult:
     """
     Get all non-completed paths.
 
     Queries completion paths where status != 'completed' ordered by order_index.
 
-    Args:
-        db_path: Path to project.db
-
     Returns:
         CompletionPathsQueryResult with tuple of completion path records
 
     Example:
-        >>> result = get_incomplete_completion_paths("project.db")
+        >>> result = get_incomplete_completion_paths()
         >>> result.success
         True
         >>> len(result.paths)
         3
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         rows = _get_incomplete_completion_paths_effect(conn)
@@ -1118,7 +1107,6 @@ def get_incomplete_completion_paths(db_path: str) -> CompletionPathsQueryResult:
 
 
 def update_completion_path(
-    db_path: str,
     id: int,
     name: Optional[str] = None,
     status: Optional[str] = None,
@@ -1130,7 +1118,6 @@ def update_completion_path(
     Only updates non-NULL parameters. Order_index cannot be updated here - use reorder helpers.
 
     Args:
-        db_path: Path to project.db
         id: Completion path ID
         name: New name (None = don't update)
         status: New status (None = don't update)
@@ -1140,7 +1127,7 @@ def update_completion_path(
         UpdateCompletionPathResult with success status
 
     Example:
-        >>> result = update_completion_path("project.db", 2, status="in_progress")
+        >>> result = update_completion_path(2, status="in_progress")
         >>> result.success
         True
     """
@@ -1159,7 +1146,8 @@ def update_completion_path(
             error=f"Invalid status '{status}', must be one of: {valid_statuses}"
         )
 
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         if not _check_completion_path_exists(conn, id):
@@ -1189,7 +1177,6 @@ def update_completion_path(
 
 
 def delete_completion_path(
-    db_path: str,
     id: int,
     note_reason: str,
     note_severity: str,
@@ -1202,7 +1189,6 @@ def delete_completion_path(
     Validates no milestones are linked to completion path before deletion.
 
     Args:
-        db_path: Path to project.db
         id: Completion path ID to delete
         note_reason: Deletion reason
         note_severity: 'info', 'warning', 'error'
@@ -1214,7 +1200,6 @@ def delete_completion_path(
 
     Example:
         >>> result = delete_completion_path(
-        ...     "project.db",
         ...     2,
         ...     note_reason="Path no longer needed",
         ...     note_severity="info",
@@ -1223,7 +1208,8 @@ def delete_completion_path(
         >>> result.success
         True
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         if not _check_completion_path_exists(conn, id):
@@ -1273,7 +1259,6 @@ def delete_completion_path(
 
 
 def reorder_completion_path(
-    db_path: str,
     id: int,
     new_order_index: int
 ) -> ReorderResult:
@@ -1283,7 +1268,6 @@ def reorder_completion_path(
     Updates order_index field only. May create gaps in sequence - consider reorder_all after use.
 
     Args:
-        db_path: Path to project.db
         id: Completion path ID
         new_order_index: New order position
 
@@ -1291,11 +1275,12 @@ def reorder_completion_path(
         ReorderResult with success status
 
     Example:
-        >>> result = reorder_completion_path("project.db", 3, 1)
+        >>> result = reorder_completion_path(3, 1)
         >>> result.success
         True
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         if not _check_completion_path_exists(conn, id):
@@ -1323,26 +1308,24 @@ def reorder_completion_path(
         conn.close()
 
 
-def reorder_all_completion_paths(db_path: str) -> ReorderAllResult:
+def reorder_all_completion_paths() -> ReorderAllResult:
     """
     Fix gaps and duplicates in order_index.
 
     Renumbers all completion paths to 1, 2, 3, 4... sequence. Preserves relative order while closing gaps.
 
-    Args:
-        db_path: Path to project.db
-
     Returns:
         ReorderAllResult with renumbered_count and duplicates_found
 
     Example:
-        >>> result = reorder_all_completion_paths("project.db")
+        >>> result = reorder_all_completion_paths()
         >>> result.success
         True
         >>> result.renumbered_count
         2
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         renumbered_count, duplicates = _reorder_all_completion_paths_effect(conn)
@@ -1367,7 +1350,6 @@ def reorder_all_completion_paths(db_path: str) -> ReorderAllResult:
 
 
 def swap_completion_paths_order(
-    db_path: str,
     id1: int,
     id2: int
 ) -> ReorderResult:
@@ -1377,7 +1359,6 @@ def swap_completion_paths_order(
     Exchanges order_index values between two paths. Temporarily allows duplicates during swap - atomic operation.
 
     Args:
-        db_path: Path to project.db
         id1: First completion path ID
         id2: Second completion path ID
 
@@ -1385,11 +1366,12 @@ def swap_completion_paths_order(
         ReorderResult with success status
 
     Example:
-        >>> result = swap_completion_paths_order("project.db", 1, 3)
+        >>> result = swap_completion_paths_order(1, 3)
         >>> result.success
         True
     """
-    conn = _open_connection(db_path)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         if not _check_completion_path_exists(conn, id1):
