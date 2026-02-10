@@ -416,6 +416,41 @@
       "file_path": "helpers/project/subtasks_sidequests.py",
       "parameters": [
         {
+          "name": "paused_task_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "ID of the task being paused for this sidequest"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Sidequest name"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": "pending",
+          "description": "Sidequest status (default: pending)"
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "required": false,
+          "default": "critical",
+          "description": "Sidequest priority (default: critical)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Sidequest description"
+        },
+        {
           "name": "paused_subtask_id",
           "type": "integer",
           "required": false,
@@ -425,7 +460,7 @@
         {
           "name": "flow_ids",
           "type": "array",
-          "required": true,
+          "required": false,
           "default": null,
           "description": "JSON array of flow IDs"
         }

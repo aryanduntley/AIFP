@@ -300,7 +300,7 @@
           "description": "Table name in user_directives.db"
         },
         {
-          "name": "id",
+          "name": "record_id",
           "type": "integer",
           "required": true,
           "default": null,
@@ -389,7 +389,7 @@
           "description": "Table name in user_directives.db"
         },
         {
-          "name": "id",
+          "name": "record_id",
           "type": "integer",
           "required": true,
           "default": null,

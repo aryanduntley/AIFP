@@ -331,7 +331,7 @@ def _create_action_note(
     cursor = conn.execute(
         """
         INSERT INTO notes (content, source, severity, note_type, reference_table, reference_id)
-        VALUES (?, 'ai', 'info', 'ai_decision', ?, ?)
+        VALUES (?, 'ai', 'info', 'task_context', ?, ?)
         """,
         (content, ref_table, target_id)
     )

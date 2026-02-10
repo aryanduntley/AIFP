@@ -165,6 +165,26 @@ def _validate_user_directives_status(status: Optional[str]) -> bool:
     return status is None or status in VALID_USER_DIRECTIVES_STATUSES
 
 
+def _make_relative_source_dir(source_dir: str, project_root: str) -> str:
+    """
+    Pure: Convert absolute source directory to relative if it's under project_root.
+
+    Args:
+        source_dir: Source directory path (absolute or relative)
+        project_root: Project root directory (absolute)
+
+    Returns:
+        Relative path if convertible, original path otherwise
+    """
+    if source_dir.startswith('/'):
+        # Normalize both paths (remove trailing slashes)
+        normalized_root = project_root.rstrip('/')
+        normalized_dir = source_dir.rstrip('/')
+        if normalized_dir.startswith(normalized_root + '/'):
+            return normalized_dir[len(normalized_root) + 1:]
+    return source_dir
+
+
 def _validate_source_dir(source_dir: str) -> Optional[str]:
     """
     Pure: Validate source directory path.
@@ -175,13 +195,13 @@ def _validate_source_dir(source_dir: str) -> Optional[str]:
     Returns:
         Error message if invalid, None if valid
     """
-    # Check for absolute paths
+    # Check for absolute paths (after relative conversion attempt)
     if source_dir.startswith('/'):
-        return f"Invalid source directory: {source_dir}. Must be relative path."
+        return f"Invalid source directory: {source_dir}. Must be relative path (or absolute path under project root)."
 
     # Check for parent references
     if '..' in source_dir:
-        return f"Invalid source directory: {source_dir}. Must be relative path."
+        return f"Invalid source directory: {source_dir}. Must not contain parent references."
 
     return None
 
@@ -770,12 +790,14 @@ def update_source_directory(new_source_dir: str) -> SourceDirResult:
     Returns:
         SourceDirResult with success status
     """
+    # Auto-convert absolute paths to relative
+    project_root = get_cached_project_root()
+    new_source_dir = _make_relative_source_dir(new_source_dir, project_root)
+
     # Validate new_source_dir
     error = _validate_source_dir(new_source_dir)
     if error:
         return SourceDirResult(success=False, error=error)
-
-    project_root = get_cached_project_root()
     conn = _open_project_connection(project_root)
 
     try:

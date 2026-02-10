@@ -692,7 +692,15 @@
     {
       "name": "blueprint_has_changed",
       "file_path": "helpers/project/metadata.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "blueprint_path",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Absolute path to ProjectBlueprint.md file"
+        }
+      ],
       "purpose": "Check if ProjectBlueprint.md has changed using Git or filesystem timestamp",
       "error_handling": "",
       "is_tool": true,

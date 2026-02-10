@@ -548,6 +548,18 @@ claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/paren
 
 > **Note**: All flags (`--transport`, `--scope`, `--env`) must come **before** the server name. The `--` separates the name from the command. Verify the server is connected with `/mcp` inside Claude Code.
 
+#### Claude Code: Pre-Approve All AIFP Tools (Optional)
+
+Claude Code prompts you to approve each new MCP tool the first time it's called. With 207 tools, this means 207 approval prompts. To skip this, copy the pre-built permissions file from the `documentation/` folder into your project root:
+
+```bash
+cp -r documentation/.claude/ /path/to/your/project/
+```
+
+This places a `.claude/settings.local.json` in your project that pre-allows every AIFP tool. Claude Code will read it automatically — no approval prompts needed.
+
+> **Note**: The file also includes `enableAllProjectMcpServers` and `enabledMcpjsonServers` settings so the AIFP server starts automatically if you have a `.mcp.json` in the project.
+
 #### Other MCP Clients
 
 The server uses **stdio transport**. Point your client at `python3 -m aifp` (or the full path to your venv's Python). For manual installs, ensure `PYTHONPATH` includes the parent directory of the `aifp/` folder. No API keys or authentication required.
@@ -957,6 +969,12 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 - **Git integration** — FP-powered branch management and conflict resolution
 - **Minimal dependencies** — One runtime package (`watchdog`), custom JSON-RPC server uses stdlib only
 - **Cost-conscious design** — All tracking/analytics features disabled by default
+
+### Token Overhead
+
+AIFP's project management adds token overhead to each session. Database operations (tracking files, updating tasks, managing milestones) consume tokens beyond the code-writing itself. We work to minimize this — continuation calls are lightweight (~2k tokens), batch helpers reduce round-trips, and all optional tracking is off by default.
+
+The payoff comes with project scale. Without AIFP, every new session requires the AI to re-scan directories, re-read source files, and rebuild context from scratch — costs that grow with codebase size. With AIFP, the database provides instant structured context: the AI knows exactly which files exist, what functions they contain, where work left off, and what comes next. For projects beyond a handful of files, the up-front tracking cost is recovered many times over through eliminated re-discovery work.
 
 ---
 

@@ -180,6 +180,13 @@
           "required": true,
           "default": null,
           "description": "Branch purpose description"
+        },
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project root directory"
         }
       ],
       "purpose": "Create work branch following aifp-{user}-{number} convention",
@@ -238,7 +245,15 @@
     {
       "name": "list_active_branches",
       "file_path": "helpers/git/operations.py",
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Project root directory"
+        }
+      ],
       "purpose": "List all AIFP work branches from work_branches table",
       "error_handling": "Return empty array if table doesn't exist",
       "is_tool": true,

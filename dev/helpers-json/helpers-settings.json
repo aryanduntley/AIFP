@@ -136,6 +136,13 @@
       "file_path": "helpers/user_preferences/crud.py",
       "parameters": [
         {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Table name in user_preferences.db"
+        },
+        {
           "name": "conditions",
           "type": "object",
           "required": true,
@@ -262,11 +269,18 @@
           "description": "Table name in user_preferences.db"
         },
         {
-          "name": "entry_json",
+          "name": "record_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Record ID to update"
+        },
+        {
+          "name": "data",
           "type": "object",
           "required": true,
           "default": null,
-          "description": "JSON object with fields to update/insert (upsert)"
+          "description": "Field-value pairs to update"
         }
       ],
       "purpose": "Update entry in user settings database",
@@ -312,7 +326,7 @@
           "description": "Table name in user_preferences.db"
         },
         {
-          "name": "id",
+          "name": "record_id",
           "type": "integer",
           "required": true,
           "default": null,

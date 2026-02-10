@@ -371,6 +371,13 @@ def add_project_entry(table: str, data: Dict[str, Any]) -> AddResult:
     Returns:
         AddResult with new ID on success
     """
+    # Handle JSON string deserialization (MCP may send data as JSON string)
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (json.JSONDecodeError, TypeError):
+            return AddResult(success=False, error="Invalid data: expected dict or JSON string")
+
     # Check for workflow protection
     if table in RESERVED_WORKFLOW_TABLES:
         helper_name = f"reserve_{table[:-1]}"  # files -> reserve_file
@@ -418,6 +425,20 @@ def update_project_entry(table: str, id: int, data: Dict[str, Any]) -> UpdateRes
     Returns:
         UpdateResult with success status
     """
+    # Handle JSON string deserialization (MCP may send data as JSON string)
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (json.JSONDecodeError, TypeError):
+            return UpdateResult(success=False, error="Invalid data: expected dict or JSON string")
+
+    # Handle id as string (MCP may send as string)
+    if isinstance(id, str):
+        try:
+            id = int(id)
+        except (ValueError, TypeError):
+            return UpdateResult(success=False, error=f"Invalid id: expected integer, got '{id}'")
+
     project_root = get_cached_project_root()
     conn = _open_project_connection(project_root)
 

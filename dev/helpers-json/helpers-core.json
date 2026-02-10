@@ -695,10 +695,17 @@
       "file_path": "helpers/core/directives_2.py",
       "parameters": [
         {
-          "name": "include_helpers_data",
-          "type": "boolean",
+          "name": "directive_name",
+          "type": "string",
           "required": true,
           "default": null,
+          "description": "Name of the directive to get helpers for"
+        },
+        {
+          "name": "include_helpers_data",
+          "type": "boolean",
+          "required": false,
+          "default": true,
           "description": "If true, includes full helper_functions data"
         }
       ],

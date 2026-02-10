@@ -299,18 +299,46 @@
       "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
-          "name": "flow_ids",
-          "type": "array",
+          "name": "milestone_id",
+          "type": "integer",
           "required": true,
           "default": null,
-          "description": "JSON array of flow IDs"
+          "description": "ID of the milestone this task belongs to"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Task name"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": "pending",
+          "description": "Task status (default: pending)"
         },
         {
           "name": "priority",
           "type": "string",
-          "required": true,
+          "required": false,
+          "default": "medium",
+          "description": "Task priority (default: medium)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
           "default": null,
-          "description": "Default if not specified"
+          "description": "Task description"
+        },
+        {
+          "name": "flow_ids",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "JSON array of flow IDs"
         }
       ],
       "purpose": "Add task to milestone",
@@ -362,10 +390,17 @@
       "file_path": "helpers/project/tasks.py",
       "parameters": [
         {
-          "name": "skip_pending",
-          "type": "boolean",
+          "name": "milestone_id",
+          "type": "integer",
           "required": true,
           "default": null,
+          "description": "ID of the milestone to query tasks for"
+        },
+        {
+          "name": "skip_pending",
+          "type": "boolean",
+          "required": false,
+          "default": false,
           "description": "If true, excludes pending tasks"
         }
       ],

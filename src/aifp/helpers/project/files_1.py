@@ -19,12 +19,50 @@ Helpers in this file:
 import os
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional, List, Tuple
+from typing import Any, Dict, Optional, List, Tuple, Union
 
 from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
 from ._common import _open_connection, get_cached_project_root, _open_project_connection
+
+
+# ============================================================================
+# MCP Input Normalization (JSON sends dicts, functions expect tuples)
+# ============================================================================
+
+def _normalize_reserve_files_input(
+    files: Union[List[Tuple[str, str, str, bool]], List[Dict[str, Any]]]
+) -> List[Tuple[str, str, str, bool]]:
+    """Pure: Convert list of dicts to list of tuples for reserve_files."""
+    if not files:
+        return files
+    if isinstance(files[0], dict):
+        return [
+            (f["name"], f["path"], f["language"], f.get("skip_id_naming", False))
+            for f in files
+        ]
+    return files
+
+
+def _normalize_finalize_files_input(
+    files: Union[List[Tuple[int, str, str, str, bool]], List[Dict[str, Any]]]
+) -> List[Tuple[int, str, str, str, bool]]:
+    """Pure: Convert list of dicts to list of tuples for finalize_files."""
+    if not files:
+        return files
+    if isinstance(files[0], dict):
+        return [
+            (
+                f["file_id"],
+                f["name"],
+                f["path"],
+                f.get("language", ""),
+                f.get("skip_id_naming", False),
+            )
+            for f in files
+        ]
+    return files
 
 
 # ============================================================================
@@ -392,7 +430,7 @@ def reserve_file(
 
 
 def reserve_files(
-    files: List[Tuple[str, str, str, bool]]
+    files: Union[List[Tuple[str, str, str, bool]], List[Dict[str, Any]]]
 ) -> ReserveBatchResult:
     """
     Reserve multiple file IDs at once.
@@ -401,7 +439,7 @@ def reserve_files(
     All reservations succeed or all fail (atomic operation).
 
     Args:
-        files: List of (name, path, language, skip_id_naming) tuples
+        files: List of (name, path, language, skip_id_naming) tuples or dicts
                skip_id_naming: If True for item, skip ID embedding for that file
 
     Returns:
@@ -419,6 +457,9 @@ def reserve_files(
         >>> result.ids
         (42, 43)
     """
+    # Normalize input (MCP sends list of dicts, function expects list of tuples)
+    files = _normalize_reserve_files_input(files)
+
     # Validate input
     if not files:
         return ReserveBatchResult(
@@ -543,7 +584,7 @@ def finalize_file(
 
 
 def finalize_files(
-    files: List[Tuple[int, str, str, str, bool]]
+    files: Union[List[Tuple[int, str, str, str, bool]], List[Dict[str, Any]]]
 ) -> FinalizeBatchResult:
     """
     Finalize multiple reserved files.
@@ -552,7 +593,7 @@ def finalize_files(
     All finalizations succeed or all fail (atomic operation).
 
     Args:
-        files: List of (file_id, name, path, language, skip_id_naming) tuples
+        files: List of (file_id, name, path, language, skip_id_naming) tuples or dicts
                skip_id_naming: If True for item, skip ID pattern validation for that file
 
     Returns:
@@ -569,6 +610,9 @@ def finalize_files(
         >>> result.finalized_ids
         (42, 43)
     """
+    # Normalize input (MCP sends list of dicts, function expects list of tuples)
+    files = _normalize_finalize_files_input(files)
+
     # Validate input
     if not files:
         return FinalizeBatchResult(
