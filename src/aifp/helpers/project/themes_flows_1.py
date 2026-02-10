@@ -438,7 +438,9 @@ def _get_flows_for_theme_effect(conn: sqlite3.Connection, theme_id: int) -> List
         List of flow names
     """
     cursor = conn.execute(
-        "SELECT name FROM flows WHERE theme_id = ?",
+        """SELECT f.name FROM flows f
+           JOIN flow_themes ft ON f.id = ft.flow_id
+           WHERE ft.theme_id = ?""",
         (theme_id,)
     )
     return [row["name"] for row in cursor.fetchall()]

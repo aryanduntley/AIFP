@@ -117,10 +117,10 @@
         },
         {
           "name": "id_array",
-          "type": "integer",
+          "type": "array",
           "required": true,
           "default": null,
-          "description": "**MUST contain at least one ID**"
+          "description": "Array of integer IDs - **MUST contain at least one ID**"
         }
       ],
       "purpose": "Get records by ID(s) - **EMPTY ARRAY NOT ALLOWED**",

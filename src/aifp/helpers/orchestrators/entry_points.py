@@ -41,6 +41,7 @@ from ._common import (
     VALID_STATUS_TYPES,
     # Project root cache
     set_project_root,
+    get_cached_project_root,
     _discover_project_root,
 )
 
@@ -234,8 +235,12 @@ def aifp_init(project_root: str) -> Result:
             if not os.path.exists(expected_path):
                 raise RuntimeError(f"Post-init check failed: expected file not found: {expected_path}")
 
-        # Step 8: Cache project root for helper functions
-        set_project_root(project_root)
+        # Step 8: Cache project root for helper functions (only if not already set)
+        try:
+            get_cached_project_root()
+            # Already set — don't overwrite (prevents session hijacking)
+        except RuntimeError:
+            set_project_root(project_root)
 
         # Step 9: Return success
         files_created = (

@@ -452,7 +452,7 @@
       ],
       "purpose": "Change order_index for a completion path",
       "error_handling": "",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
@@ -469,7 +469,7 @@
       "parameters": [],
       "purpose": "Fix gaps and duplicates in order_index",
       "error_handling": "",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
@@ -501,7 +501,7 @@
       ],
       "purpose": "Swap order_index of two completion paths",
       "error_handling": "",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [

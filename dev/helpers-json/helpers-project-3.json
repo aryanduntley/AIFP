@@ -523,7 +523,7 @@
       ],
       "purpose": "Move function to different file (rarely used)",
       "error_handling": "Return error if function_id/file_ids not found",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "Ensure all calls or references to this function have updated import paths"

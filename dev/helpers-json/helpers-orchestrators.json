@@ -550,7 +550,7 @@
       ],
       "purpose": "Get all files for a flow with functions embedded in each file dict.",
       "error_handling": "Returns error if flow not found or project.db not accessible.",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [

@@ -99,10 +99,10 @@
         },
         {
           "name": "id_array",
-          "type": "integer",
+          "type": "array",
           "required": true,
           "default": null,
-          "description": "IDs to fetch, **empty array [] returns ALL records**"
+          "description": "Array of integer IDs to fetch, **empty array [] returns ALL records**"
         }
       ],
       "purpose": "Get records by ID(s), or all records if empty array",
@@ -359,7 +359,7 @@
       ],
       "purpose": "Find directive IDs matching one or more intent keywords (direct keyword lookup)",
       "error_handling": "",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "target_database": "core",

@@ -200,9 +200,9 @@
           "description": "Table name in user_directives.db"
         },
         {
-          "name": "query",
+          "name": "where_clause",
           "type": "string",
-          "required": true,
+          "required": false,
           "default": null,
           "description": "WHERE clause without 'WHERE' keyword"
         }

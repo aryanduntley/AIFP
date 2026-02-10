@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS types (
     file_id INTEGER,                            -- File where type is defined
     definition_json TEXT NOT NULL,              -- JSON schema for ADT (e.g., {"type": "enum", "variants": ["A", "B"]})
     description TEXT,
+    links TEXT,                                 -- JSON string for type relationships/links
     is_reserved BOOLEAN DEFAULT 0,              -- TRUE during reservation, FALSE after finalization
     id_in_name BOOLEAN DEFAULT 1,               -- TRUE if name contains _id_XX pattern, FALSE if ID naming skipped
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

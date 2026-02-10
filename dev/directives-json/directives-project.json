@@ -762,8 +762,7 @@
             "reason": "MCP tool functions must have clean names for external tool calls",
             "action": "Reserve with skip_id_naming=True - function tracked but name stays clean",
             "database_field": "id_in_name=0 for all MCP tools",
-            "examples": ["reserve_file", "finalize_function", "get_file_by_path"],
-            "helper_flag": "is_tool=true in helper JSON"
+            "examples": ["reserve_file", "finalize_function", "get_file_by_path"]
           }
         },
         {

@@ -548,7 +548,7 @@
       ],
       "purpose": "Delete note (discouraged)",
       "error_handling": "",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "target_database": "project",

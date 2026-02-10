@@ -360,7 +360,7 @@ def get_helpers_for_directive(
                         dh.description as usage_description,
                         hf.*
                     FROM directive_helpers dh
-                    JOIN helper_functions hf ON dh.helper_id = hf.id
+                    JOIN helper_functions hf ON dh.helper_function_id = hf.id
                     JOIN directives d ON dh.directive_id = d.id
                     WHERE d.name = ?
                     ORDER BY dh.sequence_order
@@ -377,7 +377,7 @@ def get_helpers_for_directive(
                         dh.is_required,
                         dh.description as usage_description
                     FROM directive_helpers dh
-                    JOIN helper_functions hf ON dh.helper_id = hf.id
+                    JOIN helper_functions hf ON dh.helper_function_id = hf.id
                     JOIN directives d ON dh.directive_id = d.id
                     WHERE d.name = ?
                     ORDER BY dh.sequence_order

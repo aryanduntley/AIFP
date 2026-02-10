@@ -396,10 +396,19 @@ def get_all_directives() -> DirectivesResult:
         conn = _open_core_connection()
 
         try:
-            cursor = conn.execute("SELECT * FROM directives ORDER BY type, name")
+            cursor = conn.execute(
+                """SELECT id, name, type, level, parent_directive, description,
+                          md_file_path, confidence_threshold
+                   FROM directives ORDER BY type, name"""
+            )
             rows = cursor.fetchall()
             directives = tuple(row_to_directive(row) for row in rows)
             return_statements = get_return_statements("get_all_directives")
+            return_statements = (
+                *return_statements,
+                "Workflow and roadblocks JSON excluded for token efficiency. "
+                "Query individual directives by name for full workflow details.",
+            )
 
             return DirectivesResult(
                 success=True,

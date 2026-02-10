@@ -4,7 +4,7 @@ AIFP MCP Server - Tool Registry
 Static dict mapping tool names to (module_path, function_name) tuples.
 Uses importlib for lazy loading — modules are only imported on first call.
 
-207 is_tool=true helpers registered. Generated from aifp_core.db.
+219 is_tool=true helpers registered. Generated from aifp_core.db.
 
 Why static, not DB-driven:
 - Predictable tool list, no runtime DB dependency for tool listing
@@ -38,6 +38,7 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_directives_with_intent_keywords": ("aifp.helpers.core.directives_1", "get_directives_with_intent_keywords"),
     "get_fp_directive_index": ("aifp.helpers.core.directives_1", "get_fp_directive_index"),
     "search_directives": ("aifp.helpers.core.directives_1", "search_directives"),
+    "find_directives_by_intent_keyword": ("aifp.helpers.core.directives_1", "find_directives_by_intent_keyword"),
     # helpers/core/directives_2.py (9 tools)
     "get_categories": ("aifp.helpers.core.directives_2", "get_categories"),
     "get_category_by_name": ("aifp.helpers.core.directives_2", "get_category_by_name"),
@@ -77,6 +78,8 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_git_status": ("aifp.helpers.git.operations", "get_git_status"),
     "list_active_branches": ("aifp.helpers.git.operations", "list_active_branches"),
     "sync_git_state": ("aifp.helpers.git.operations", "sync_git_state"),
+    "get_current_commit_hash": ("aifp.helpers.git.operations", "get_current_commit_hash"),
+    "get_current_branch": ("aifp.helpers.git.operations", "get_current_branch"),
 
     # ── Orchestrators ────────────────────────────────────────────────────
     # helpers/orchestrators/entry_points.py (4 tools)
@@ -86,6 +89,7 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "aifp_status": ("aifp.helpers.orchestrators.entry_points", "aifp_status"),
     # helpers/orchestrators/query.py (1 tool)
     "query_project_state": ("aifp.helpers.orchestrators.query", "query_project_state"),
+    "get_files_by_flow_context": ("aifp.helpers.orchestrators.query", "get_files_by_flow_context"),
     # helpers/orchestrators/state.py (3 tools)
     "batch_update_progress": ("aifp.helpers.orchestrators.state", "batch_update_progress"),
     "get_current_progress": ("aifp.helpers.orchestrators.state", "get_current_progress"),
@@ -128,12 +132,14 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_functions_by_file": ("aifp.helpers.project.functions_2", "get_functions_by_file"),
     "update_function": ("aifp.helpers.project.functions_2", "update_function"),
     "update_functions_for_file": ("aifp.helpers.project.functions_2", "update_functions_for_file"),
+    "update_function_file_location": ("aifp.helpers.project.functions_2", "update_function_file_location"),
 
     # ── Project: Interactions ────────────────────────────────────────────
     # helpers/project/interactions.py (3 tools)
     "add_interaction": ("aifp.helpers.project.interactions", "add_interaction"),
     "add_interactions": ("aifp.helpers.project.interactions", "add_interactions"),
     "update_interaction": ("aifp.helpers.project.interactions", "update_interaction"),
+    "delete_interaction": ("aifp.helpers.project.interactions", "delete_interaction"),
 
     # ── Project: Items & Notes ───────────────────────────────────────────
     # helpers/project/items_notes.py (9 tools)
@@ -146,6 +152,7 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_notes_comprehensive": ("aifp.helpers.project.items_notes", "get_notes_comprehensive"),
     "search_notes": ("aifp.helpers.project.items_notes", "search_notes"),
     "update_note": ("aifp.helpers.project.items_notes", "update_note"),
+    "delete_note": ("aifp.helpers.project.items_notes", "delete_note"),
 
     # ── Project: Metadata ────────────────────────────────────────────────
     # helpers/project/metadata.py (10 tools)
@@ -231,6 +238,9 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_next_completion_path": ("aifp.helpers.project.themes_flows_2", "get_next_completion_path"),
     "get_themes_for_flow": ("aifp.helpers.project.themes_flows_2", "get_themes_for_flow"),
     "update_completion_path": ("aifp.helpers.project.themes_flows_2", "update_completion_path"),
+    "reorder_completion_path": ("aifp.helpers.project.themes_flows_2", "reorder_completion_path"),
+    "reorder_all_completion_paths": ("aifp.helpers.project.themes_flows_2", "reorder_all_completion_paths"),
+    "swap_completion_paths_order": ("aifp.helpers.project.themes_flows_2", "swap_completion_paths_order"),
 
     # ── Project: Types ───────────────────────────────────────────────────
     # helpers/project/types_1.py (7 tools)
@@ -241,8 +251,10 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "reserve_type": ("aifp.helpers.project.types_1", "reserve_type"),
     "reserve_types": ("aifp.helpers.project.types_1", "reserve_types"),
     "update_type": ("aifp.helpers.project.types_1", "update_type"),
-    # helpers/project/types_2.py (1 tool)
+    # helpers/project/types_2.py (3 tools)
     "add_types_functions": ("aifp.helpers.project.types_2", "add_types_functions"),
+    "update_type_function_role": ("aifp.helpers.project.types_2", "update_type_function_role"),
+    "delete_type_function": ("aifp.helpers.project.types_2", "delete_type_function"),
 
     # ── Shared ───────────────────────────────────────────────────────────
     # helpers/shared/database_info.py (1 tool)

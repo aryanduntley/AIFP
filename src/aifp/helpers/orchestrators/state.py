@@ -298,17 +298,24 @@ def update_project_state(
         return Result(success=False, error=f"Failed to update state: {str(e)}")
 
 
+_TABLE_SAFE_FIELDS: Dict[str, frozenset] = {
+    'tasks': frozenset({'description', 'priority', 'name', 'blocked_by'}),
+    'subtasks': frozenset({'description', 'priority', 'name'}),
+    'sidequests': frozenset({'description', 'priority', 'name', 'flow_ids'}),
+    'milestones': frozenset({'description', 'name'}),
+    'completion_path': frozenset({'description', 'name'}),
+    'items': frozenset({'description', 'name', 'status'}),
+}
+
+
 def _apply_additional_data(
     conn: sqlite3.Connection,
     table: str,
     target_id: int,
     data: Dict[str, Any],
 ) -> None:
-    """Effect: Apply additional data fields to entity. Only updates known safe fields."""
-    safe_fields = {
-        'blocked_by', 'completion_notes', 'description', 'priority',
-        'name', 'title', 'summary',
-    }
+    """Effect: Apply additional data fields to entity. Only updates known safe fields per table."""
+    safe_fields = _TABLE_SAFE_FIELDS.get(table, frozenset())
     for field, value in data.items():
         if field in safe_fields:
             conn.execute(
@@ -406,7 +413,8 @@ def batch_update_progress(
                     new_status = ACTION_STATUS_MAP.get(action)
                     table_map = {
                         'task': 'tasks', 'subtask': 'subtasks',
-                        'sidequest': 'sidequests', 'milestone': 'milestones',
+                        'sidequest': 'sidequests', 'item': 'items',
+                        'milestone': 'milestones',
                         'completion_path': 'completion_path',
                     }
                     table = table_map.get(target_type)

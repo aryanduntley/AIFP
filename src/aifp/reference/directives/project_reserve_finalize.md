@@ -398,7 +398,6 @@ Certain files and functions follow the reserve → finalize pattern but **skip t
    - Examples: `reserve_file`, `finalize_function`, `get_file_by_path`
    - These ARE tracked in database with `id_in_name=0`
    - Use `skip_id_naming=True` when reserving and finalizing
-   - Identified by `is_tool=true` in helper JSON
 
 ### Functions That Skip Tracking Entirely
 

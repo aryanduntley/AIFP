@@ -129,6 +129,7 @@ TASK_TABLE_MAP: Final[Dict[str, str]] = {
     'task': 'tasks',
     'subtask': 'subtasks',
     'sidequest': 'sidequests',
+    'item': 'items',
 }
 
 # Valid actions for update_project_state
@@ -138,6 +139,7 @@ VALID_STATE_ACTIONS: Final[frozenset[str]] = frozenset([
     'start_subtask', 'complete_subtask', 'pause_subtask', 'resume_subtask',
     'block_subtask', 'unblock_subtask',
     'start_sidequest', 'complete_sidequest', 'pause_sidequest', 'resume_sidequest',
+    'start_item', 'complete_item',
     'start_milestone', 'complete_milestone',
     'start_path', 'complete_path',
 ])
@@ -160,6 +162,8 @@ ACTION_STATUS_MAP: Final[Dict[str, str]] = {
     'complete_sidequest': 'completed',
     'pause_sidequest': 'paused',
     'resume_sidequest': 'in_progress',
+    'start_item': 'in_progress',
+    'complete_item': 'completed',
     'start_milestone': 'in_progress',
     'complete_milestone': 'completed',
     'start_path': 'in_progress',
@@ -176,6 +180,7 @@ ACTION_TARGET_MAP: Final[Dict[str, str]] = {
     'block_subtask': 'subtasks', 'unblock_subtask': 'subtasks',
     'start_sidequest': 'sidequests', 'complete_sidequest': 'sidequests',
     'pause_sidequest': 'sidequests', 'resume_sidequest': 'sidequests',
+    'start_item': 'items', 'complete_item': 'items',
     'start_milestone': 'milestones', 'complete_milestone': 'milestones',
     'start_path': 'completion_path', 'complete_path': 'completion_path',
 }

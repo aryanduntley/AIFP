@@ -489,7 +489,7 @@
       ],
       "purpose": "Update relationship role only",
       "error_handling": "",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
@@ -542,7 +542,7 @@
       ],
       "purpose": "Remove type-function relationship",
       "error_handling": "",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
@@ -747,7 +747,7 @@
       ],
       "purpose": "Delete interaction",
       "error_handling": "",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "Ensure the function dependency/call has been removed from the code, not just the database"

@@ -181,10 +181,9 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 - Enables flexible helper reuse and clear execution flow
 - Defined in `directive_helpers` junction table in `aifp_core.db`
 
-**Helper Classification** (New in v1.4):
-- `is_tool = TRUE`: Exposed as MCP tool (AI can call directly via MCP)
-- `is_sub_helper = TRUE`: Sub-helper (only called by other helpers, no directive mapping)
-- Both FALSE: Helper used by directives (AI calls via directive workflows)
+**Helper Classification**:
+- **Tool**: All helpers are exposed as MCP tools (AI calls directly via MCP)
+- **Sub-helper** (`is_sub_helper = TRUE`): Internal utility called by other helpers only (not exposed to AI)
 
 **Helper Registry** (Development Staging):
 - Helper definitions maintained in `docs/helpers/json/*.json` during development

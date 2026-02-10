@@ -460,10 +460,9 @@ When user says "end session", "wrap up", "I'm done":
 - Confirms to user: safe to close
 - If user closes without aifp_end: watchdog catches drift next session
 
-**Helper Categories** (three types):
-1. Directive-used helpers: Called BY directives (has used_by_directives entries)
-2. AI-only tools (is_tool=true): Direct AI database tools (schema, query, batch, delete)
-3. Sub-helpers (is_sub_helper=true): Called by other helpers only (not exposed to AI)
+**Helper Categories** (two types):
+1. Tools: All helpers exposed as MCP tools — call directly via tool calls
+2. Sub-helpers: Internal utilities called by other helpers automatically (never call these directly)
 
 **Database Interaction Policy**:
 1. ✅ Use helpers FIRST (99% of cases) — validation, formatting, error handling

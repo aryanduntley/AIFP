@@ -201,8 +201,8 @@ def row_to_helper(row: sqlite3.Row) -> HelperRecord:
         return_statements=json_to_tuple(row['return_statements']) if 'return_statements' in row.keys() else (),
         implementation_notes=json_to_tuple(row['implementation_notes']) if 'implementation_notes' in row.keys() else (),
         error_handling=row['error_handling'] if 'error_handling' in row.keys() else None,
-        created_at=row['created_at'],
-        updated_at=row['updated_at'],
+        created_at=row['created_at'] if 'created_at' in row.keys() else '',
+        updated_at=row['updated_at'] if 'updated_at' in row.keys() else '',
     )
 
 

@@ -14,7 +14,7 @@
       ],
       "purpose": "Get current Git HEAD commit hash",
       "error_handling": "Return null if not Git repository",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
@@ -56,7 +56,7 @@
       ],
       "purpose": "Get current Git branch name",
       "error_handling": "Return null if Git unavailable",
-      "is_tool": false,
+      "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
