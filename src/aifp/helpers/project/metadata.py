@@ -33,7 +33,7 @@ from pathlib import Path
 from ..utils import get_return_statements
 
 # Import common project utilities (DRY principle)
-from ._common import _open_connection, get_cached_project_root, _open_project_connection
+from ._common import get_cached_project_root, _open_project_connection
 
 
 # ============================================================================
@@ -45,9 +45,6 @@ from typing import Final
 # Infrastructure types
 INFRASTRUCTURE_TYPE_PROJECT_ROOT: Final[str] = 'project_root'
 INFRASTRUCTURE_TYPE_SOURCE_DIR: Final[str] = 'source_directory'
-
-# Project database path
-PROJECT_DB_PATH: Final[str] = '.aifp-project/project.db'
 
 # Project statuses
 VALID_PROJECT_STATUSES: Final[frozenset[str]] = frozenset([
@@ -730,7 +727,8 @@ def get_source_directory() -> SourceDirResult:
     Returns:
         SourceDirResult with source directory path or error
     """
-    conn = _open_connection(PROJECT_DB_PATH)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         source_dir = _get_source_dir_value(conn)
@@ -777,7 +775,8 @@ def update_source_directory(new_source_dir: str) -> SourceDirResult:
     if error:
         return SourceDirResult(success=False, error=error)
 
-    conn = _open_connection(PROJECT_DB_PATH)
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
 
     try:
         # Check if exists
@@ -816,7 +815,8 @@ def get_project_root() -> SourceDirResult:
     Returns:
         SourceDirResult with project root path or error
     """
-    conn = _open_connection(PROJECT_DB_PATH)
+    cached_root = get_cached_project_root()
+    conn = _open_project_connection(cached_root)
 
     try:
         project_root = _get_project_root_value(conn)
@@ -825,7 +825,10 @@ def get_project_root() -> SourceDirResult:
         if project_root is None:
             return SourceDirResult(
                 success=False,
-                error="Project root not configured. Must call update_project_root() first."
+                error="Project root not set in infrastructure table. "
+                      "This indicates aifp_init did not complete correctly — "
+                      "the project_root row should be populated during initialization. "
+                      "Re-run aifp_init or manually call update_project_root()."
             )
 
         return SourceDirResult(
@@ -861,7 +864,8 @@ def update_project_root(new_project_root: str) -> SourceDirResult:
             error=f"Project root must be an absolute path, got: {new_project_root}"
         )
 
-    conn = _open_connection(PROJECT_DB_PATH)
+    cached_root = get_cached_project_root()
+    conn = _open_project_connection(cached_root)
 
     try:
         # Check if exists

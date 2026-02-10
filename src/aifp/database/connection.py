@@ -107,7 +107,7 @@ def _discover_project_root() -> Optional[str]:
         row = conn.execute(
             "SELECT value FROM infrastructure WHERE type = 'project_root'"
         ).fetchone()
-        return row['value'] if row else str(Path.cwd())
+        return row['value'] if row else None
     finally:
         conn.close()
 
@@ -430,13 +430,11 @@ def _parse_check_constraint(sql: str, field_name: str) -> Optional[Tuple[str, ..
 # Return Statements Fetcher
 # ============================================================================
 
-def get_return_statements(
-    helper_name: str,
-    user_preferences_db_path: str = ""
-) -> Tuple[str, ...]:
+def get_return_statements(helper_name: str) -> Tuple[str, ...]:
     """
     Fetch return statements for a helper from core database,
-    optionally merging with custom user-defined return statements.
+    automatically merging with custom user-defined return statements
+    when a project is initialized (cached project root available).
 
     Return statements are forward-thinking guidance for AI,
     providing next steps and context after a helper executes.
@@ -444,12 +442,9 @@ def get_return_statements(
 
     Args:
         helper_name: Name of the helper function
-        user_preferences_db_path: Optional path to user_preferences.db.
-            When provided and file exists, custom return statements from
-            the custom_return_statements table are appended to core statements.
 
     Returns:
-        Tuple of return statement strings (core + custom if path provided)
+        Tuple of return statement strings (core + custom if project active)
     """
     # Fetch core return statements from aifp_core.db
     core_stmts: Tuple[str, ...] = ()
@@ -479,10 +474,11 @@ def get_return_statements(
     except Exception:
         pass
 
-    # Merge custom return statements from user_preferences.db if path provided
-    if user_preferences_db_path and os.path.exists(user_preferences_db_path):
-        try:
-            prefs_conn = _open_connection(user_preferences_db_path)
+    # Merge custom return statements from user_preferences.db if project is active
+    try:
+        prefs_db = get_user_preferences_db_path(_cached_project_root)
+        if _cached_project_root and prefs_db and os.path.exists(prefs_db):
+            prefs_conn = _open_connection(prefs_db)
             try:
                 cursor = prefs_conn.execute(
                     "SELECT statement FROM custom_return_statements "
@@ -494,7 +490,7 @@ def get_return_statements(
                 return core_stmts + custom_stmts
             finally:
                 prefs_conn.close()
-        except Exception:
-            return core_stmts
+    except Exception:
+        pass
 
     return core_stmts
