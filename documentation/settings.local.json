@@ -223,8 +223,7 @@
       "mcp__aifp__update_user_custom_entry", 
       "mcp__aifp__update_user_setting", 
       "mcp__aifp__user_directives_allowed_check_constraints", 
-      "mcp__aifp__user_preferences_allowed_check_constraints",
-      "Bash(python3:*)"
+      "mcp__aifp__user_preferences_allowed_check_constraints"
     ]
   },
   "enableAllProjectMcpServers": true,
