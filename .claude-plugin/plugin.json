@@ -1,0 +1,23 @@
+{
+  "name": "aifp",
+  "description": "AI Functional Procedural — database-driven FP enforcement and project management for AI-assisted development. 220 MCP tools, 4 SQLite databases, directive-driven workflows.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Aryan Duntley"
+  },
+  "homepage": "https://github.com/aryanduntley/AIFP",
+  "repository": "https://github.com/aryanduntley/AIFP",
+  "license": "MIT",
+  "keywords": [
+    "functional-programming",
+    "project-management",
+    "mcp",
+    "ai-development",
+    "code-quality",
+    "sqlite"
+  ],
+  "commands": "./aifp-plugin/commands",
+  "skills": "./aifp-plugin/skills",
+  "hooks": "./aifp-plugin/hooks",
+  "mcpServers": "./aifp-plugin/.mcp.json"
+}

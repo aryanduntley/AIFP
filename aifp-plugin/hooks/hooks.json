@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'AIFP plugin active. The AIFP MCP server provides 220 tools for FP-compliant development and project management. Call aifp_run() as your first action on every interaction. See the aifp-mode skill for full behavioral rules.'",
+            "statusMessage": "Loading AIFP context..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A file was just written or edited via the Write or Edit tool. AIFP requires all source code files to be tracked in project.db via the reserve-write-finalize workflow. Check the tool input from $ARGUMENTS: is this a source code file in an active AIFP project (one with .aifp-project/)? If yes and the file has not been reserved/finalized, you should track it. If this is not a source code file (README, config, docs, etc.) or no AIFP project is active, no action needed. Respond with {\"ok\": true} if no action needed, or {\"ok\": false, \"reason\": \"File should be tracked in project.db via reserve_file/finalize_file\"} if tracking is needed.",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before stopping, check: did the user explicitly request to end the session (said 'done', 'wrap up', 'end session', or similar)? If so, has aifp_end been called for the session audit? If the user requested session end but aifp_end was not called, respond with {\"decision\": \"block\", \"reason\": \"Call aifp_end for session audit before stopping.\"}. If this is just a natural end to a response (not an explicit session end request), or if aifp_end was already called, respond with {\"ok\": true}. Context: $ARGUMENTS",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
