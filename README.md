@@ -550,13 +550,17 @@ claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/paren
 
 #### Claude Code: Pre-Approve All AIFP Tools (Optional)
 
-Claude Code prompts you to approve each new MCP tool the first time it's called. With 207 tools, this means 207 approval prompts. To skip this, copy the pre-built permissions file from the `documentation/` folder into your project root:
+Claude Code prompts you to approve each new MCP tool the first time it's called. With 207 tools, this means 207 approval prompts. To skip this, copy the pre-built permissions file into your project's `.claude/` folder:
 
 ```bash
-cp -r documentation/.claude/ /path/to/your/project/
+# Create the .claude/ folder in your project root if it doesn't exist
+mkdir -p /path/to/your/project/.claude
+
+# Copy the permissions file
+cp documentation/settings.local.json /path/to/your/project/.claude/
 ```
 
-This places a `.claude/settings.local.json` in your project that pre-allows every AIFP tool. Claude Code will read it automatically — no approval prompts needed.
+This places a `settings.local.json` in your project's `.claude/` folder that pre-allows every AIFP tool. Claude Code will read it automatically — no approval prompts needed.
 
 > **Note**: The file also includes `enableAllProjectMcpServers` and `enabledMcpjsonServers` settings so the AIFP server starts automatically if you have a `.mcp.json` in the project.
 
