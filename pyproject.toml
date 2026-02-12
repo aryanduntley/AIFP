@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
-    {name = "AIFP Contributors"}
+    {name = "Aryan Duntley", email = "aryanduntley@gmail.com"}
 ]
 keywords = ["mcp", "functional-programming", "ai", "code-generation"]
 classifiers = [
