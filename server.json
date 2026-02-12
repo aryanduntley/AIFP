@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "io.github.aryanduntley/aifp",
   "description": "Database-driven FP enforcement and project management for AI-maintained codebases",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": {
     "url": "https://github.com/aryanduntley/AIFP",
     "source": "github",
@@ -12,7 +12,7 @@
     {
       "registryType": "pypi",
       "identifier": "aifp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "transport": {
         "type": "stdio"
       },
