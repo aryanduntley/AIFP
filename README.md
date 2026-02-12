@@ -1,5 +1,7 @@
 # AIFP: AI Functional Procedural Programming
 
+[![PyPI](https://img.shields.io/pypi/v/aifp)](https://pypi.org/project/aifp/)
+
 > **A language-agnostic programming paradigm designed for AI-generated and AI-maintained codebases**
 
 ---
