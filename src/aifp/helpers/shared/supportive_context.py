@@ -33,17 +33,17 @@ SUPPORTIVE_CONTEXT_PATH: str = str(
 
 def get_supportive_context() -> Result:
     """
-    Read and return the full supportive context reference document.
+    Read and return the concise supportive context reference document.
 
-    Contains: FP code examples, state database patterns, DRY scope levels,
-    project discovery/progression details, directive execution details,
-    reserve-write-finalize flow, Use Case 2 architecture, user preferences
-    system, Git+FP collaboration, edge case recovery, session management.
+    Contains: FP directive pointers, state database patterns, DRY scope levels,
+    project discovery/progression summary, directive execution overview,
+    reserve-write-finalize flow, Use Case 2 pipeline, user preferences,
+    Git+FP collaboration, evolution notes, edge case recovery, session management.
 
     Returns:
         Result with data={
             content: str (full text of supportive_context.txt),
-            token_estimate: int (approximate token count),
+            token_estimate: int (approximate token count, ~1500-2000),
             source: str (file path)
         }
 
@@ -54,7 +54,7 @@ def get_supportive_context() -> Result:
         >>> result = get_supportive_context()
         >>> if result.success:
         ...     print(result.data['token_estimate'])
-        3500
+        1800
     """
     try:
         context_path = Path(SUPPORTIVE_CONTEXT_PATH)

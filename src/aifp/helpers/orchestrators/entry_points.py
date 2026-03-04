@@ -340,7 +340,7 @@ def aifp_status(
             infrastructure: tuple,
             work_hierarchy: dict (from get_project_status),
             user_directives_status: str or None,
-            recent_warnings: tuple,
+            recent_notes: tuple,
             git_state: tuple
         }
 
@@ -376,7 +376,7 @@ def aifp_status(
         project_metadata = {}
         infrastructure = ()
         user_directives_status = None
-        recent_warnings = ()
+        recent_notes = ()
         git_state = ()
 
         project_db_path = get_project_db_path(project_root)
@@ -398,13 +398,15 @@ def aifp_status(
                     'user_directives_status'
                 )
 
-                # Recent warnings/errors (last 5)
+                # Recent notes (last 10, metadata only, 7-day window)
                 cursor = conn.execute(
-                    "SELECT * FROM notes "
-                    "WHERE severity IN ('warning', 'error') "
-                    "ORDER BY created_at DESC LIMIT 5"
+                    "SELECT id, note_type, reference_table, reference_id, "
+                    "source, directive_name, severity, created_at "
+                    "FROM notes "
+                    "WHERE created_at >= datetime('now', '-7 days') "
+                    "ORDER BY created_at DESC LIMIT 10"
                 )
-                recent_warnings = rows_to_tuple(cursor.fetchall())
+                recent_notes = rows_to_tuple(cursor.fetchall())
 
                 # Git state
                 cursor = conn.execute(
@@ -457,7 +459,12 @@ def aifp_status(
             'user_directives_status': user_directives_status,
             'user_directives_data': user_directives_data,
             'case_2_routing': case_2_routing,
-            'recent_warnings': recent_warnings,
+            'recent_notes': recent_notes,
+            'notes_guidance': (
+                'Review note metadata (note_type, severity, reference_table, directive_name, date) '
+                'to assess relevance to current work. Query full content with '
+                'get_notes_comprehensive(note_id=X) for any note that may be useful.'
+            ),
             'git_state': git_state,
             'supportive_context': supportive_context,
         }
@@ -481,8 +488,8 @@ def aifp_run(is_new_session: bool = False) -> Result:
     Main entry point orchestrator. Called on every AI interaction.
 
     When is_new_session=True, bundles comprehensive startup data including
-    status, user settings, FP directive index, all directive names,
-    infrastructure data, and guidance.
+    status (with infrastructure, warnings, supportive context), user settings,
+    FP directive index, all directive names, and guidance.
 
     When is_new_session=False, returns lightweight guidance only.
 
@@ -492,11 +499,10 @@ def aifp_run(is_new_session: bool = False) -> Result:
     Returns:
         If is_new_session=True:
             Result with data={
-                status: dict (from aifp_status, includes supportive_context),
+                status: dict (from aifp_status, includes infrastructure + supportive_context),
                 user_settings: dict,
                 fp_directive_index: dict,
                 all_directive_names: tuple,
-                infrastructure_data: tuple,
                 guidance: dict
             }
 
@@ -588,9 +594,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
         # Bundle: all directive names
         all_directive_names = _get_all_directive_names_safe()
 
-        # Bundle: infrastructure
-        infrastructure_data = _get_infrastructure_safe(project_root)
-
+        # Note: infrastructure already included via aifp_status() — not duplicated here
         # Note: supportive_context is included via aifp_status() — not called separately
 
         # Bundle: Case 2 context (if this is a Case 2 project)
@@ -625,7 +629,6 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 'user_settings': user_settings,
                 'fp_directive_index': fp_directive_index,
                 'all_directive_names': all_directive_names,
-                'infrastructure_data': infrastructure_data,
                 'guidance': _get_guidance(),
                 'watchdog': watchdog_data,
                 'case_2_context': case_2_context,
@@ -791,7 +794,7 @@ def _get_user_settings_safe(project_root: str) -> Dict[str, Any]:
         from ..user_preferences.management import get_user_settings
         result = get_user_settings()
         if result.success:
-            return result.data if hasattr(result, 'data') and result.data else {}
+            return result.settings if hasattr(result, 'settings') and result.settings else {}
         return {}
     except Exception:
         return {}
@@ -803,7 +806,7 @@ def _get_fp_directive_index_safe() -> Dict[str, Any]:
         from ..core.directives_1 import get_fp_directive_index
         result = get_fp_directive_index()
         if result.success:
-            return result.data if hasattr(result, 'data') and result.data else {}
+            return result.index if hasattr(result, 'index') and result.index else {}
         return {}
     except Exception:
         return {}
@@ -815,7 +818,7 @@ def _get_all_directive_names_safe() -> Tuple[str, ...]:
         from ..core.directives_1 import get_all_directive_names
         result = get_all_directive_names()
         if result.success:
-            return result.data if hasattr(result, 'data') and result.data else ()
+            return result.names if hasattr(result, 'names') and result.names else ()
         return ()
     except Exception:
         return ()
@@ -839,7 +842,7 @@ def _get_infrastructure_safe(project_root: str) -> Tuple[Dict[str, Any], ...]:
         from ..project.metadata import get_all_infrastructure
         result = get_all_infrastructure()
         if result.success:
-            return result.data if hasattr(result, 'data') and result.data else ()
+            return result.infrastructure if hasattr(result, 'infrastructure') and result.infrastructure else ()
         return ()
     except Exception:
         return ()

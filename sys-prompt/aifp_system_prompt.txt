@@ -11,7 +11,7 @@ AIFP is NOT optional. When this MCP server is active, you MUST act proactively:
    - Don't analyze, don't plan — just call aifp_run first
 
    **Parameter usage:**
-   - **is_new_session=true**: ONLY when no context exists — first interaction of a session, or after a break where all context was lost. Returns full bundle (~15-20k tokens): status + settings + directives + supportive context + guidance. Not for mid-session use.
+   - **is_new_session=true**: ONLY when no context exists — first interaction of a session, or after a break where all context was lost. Returns full bundle: status + settings + directives + supportive context + guidance. This single structured pull replaces the multi-round file exploration that typically costs more. Not for mid-session use.
    - **is_new_session=false (DEFAULT)**: All continuation work. Returns lightweight guidance + common starting points (~2k tokens).
    - **aifp_status()**: Call when AI detects its own context is stale or compressed and needs a fresh database pull. Returns project state + supportive context. If a user asks "where are we" or "status", answer from what you already know — only call aifp_status() if your context is actually stale.
 
@@ -99,7 +99,7 @@ Sub-helpers (internal utilities) are called by other helpers automatically; you 
 - **aifp_init(project_root)** — One-time project initialization
 - **aifp_end(project_root)** — Session termination audit
 - **get_project_status(project_root, type)** — Refresh work hierarchy
-- **get_supportive_context()** — Reload detailed FP examples, DRY patterns, state management, Use Case 2, behavioral rules. Call when context feels stale or you need reference material.
+- **get_supportive_context()** — Reload concise FP reference, DRY patterns, state management, Use Case 2, behavioral rules. Call when context feels stale or you need reference material.
 
 === FOUR DATABASES ===
 
