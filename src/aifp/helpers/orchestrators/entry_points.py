@@ -885,7 +885,7 @@ def aifp_end(project_root: str) -> Result:
     watchdog_data = _stop_watchdog(aifp_dir)
 
     # Step 2: Project state via existing status helper
-    status_result = get_project_status(project_root, "detailed")
+    status_result = get_project_status(project_root, "summary")
     project_state = status_result.data if status_result.success else {}
 
     return Result(
