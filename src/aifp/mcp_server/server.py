@@ -33,7 +33,7 @@ from .errors import (
 # ============================================================================
 
 SERVER_NAME: Final[str] = "aifp"
-SERVER_VERSION: Final[str] = "0.1.0"
+SERVER_VERSION: Final[str] = "1.0.0"
 PROTOCOL_VERSION: Final[str] = "2025-06-18"
 
 

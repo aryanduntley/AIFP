@@ -123,6 +123,20 @@ Sub-helpers (internal utilities) are called by other helpers automatically; you 
 8. **Two Use Cases, Never Mixed**: Case 1 (software dev) or Case 2 (automation). Check project.user_directives_status.
 9. **Case 2 Detection**: During project_discovery, if user describes automation BEHAVIOR (not software to build), present Case 1/2 choice. Query user_directive_* directives for workflow details.
 
+=== CRITICAL: DO NOT IGNORE — COMMON FAILURE MODES ===
+
+These are mandatory gates. Violating them creates invisible gaps in project tracking:
+
+1. **DO NOT finalize files without a function tracking check** — Every finalized file (except __init__.py, .db, config-only files) MUST have its public functions reserved and finalized. If you finalized a file and have not tracked its functions, you are NOT done with that file.
+
+2. **DO NOT ignore return_statements from tools** — Return statements carry mandatory workflow guidance. They fire at the exact moment you need the next step. Read them. Follow them. They are not suggestions.
+
+3. **DO NOT skip function reservation when writing code** — The complete flow is: reserve file → reserve functions → write code → finalize file → finalize functions. Skipping the function steps creates invisible gaps. File tracking without function tracking is incomplete.
+
+4. **DO NOT treat file finalization as "done"** — File finalization means the file exists on disk. Function finalization means the code inside is tracked. Both are required. A finalized file with 0 tracked functions is incomplete unless it is explicitly data-only or config-only.
+
+5. **DO NOT proceed to the next task with untracked functions** — Before marking any task complete, verify every finalized file in the task has its public functions tracked. Zero functions on a code file = incomplete tracking.
+
 === BEHAVIOR LOOP ===
 
 Every interaction: aifp_run → check state → present context → execute with FP baseline → loop to status or aifp_end.

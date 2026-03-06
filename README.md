@@ -927,6 +927,16 @@ dev/
 
 **Dev workflow**: Modify JSON files in `dev/` → run `sync-directives.py` to rebuild `aifp_core.db` → test → release. End users only interact with the pre-populated `aifp_core.db`, never the JSON files directly.
 
+### Version Locations
+
+**All three must be kept in sync when bumping versions:**
+
+| File | Variable | Purpose |
+|------|----------|---------|
+| `pyproject.toml` | `version = "X.Y.Z"` | Package version (PyPI, pip install) |
+| `src/aifp/__init__.py` | `__version__ = "X.Y.Z"` | Runtime version (`import aifp; aifp.__version__`) |
+| `src/aifp/mcp_server/server.py` | `SERVER_VERSION = "X.Y.Z"` | MCP `initialize` handshake response (`serverInfo.version`) |
+
 ---
 
 ## Design Philosophy

@@ -122,6 +122,12 @@ Purpose: Get database IDs BEFORE coding so names are instantly queryable.
 
 Batch helpers available (reserve_files, finalize_files).
 
+MANDATORY COUPLING — files and functions are tracked TOGETHER:
+- The complete flow is: reserve file → reserve functions → write code → finalize file → finalize functions
+- Never finalize a file without also reserving+finalizing its public functions
+- A finalized file with 0 tracked functions is INCOMPLETE (unless data-only/config-only)
+- Return statements from these tools carry mandatory next-step guidance — DO NOT ignore them
+
 EXCEPTIONS — skip ID embedding:
 - Files: __init__.py, .db files, pyproject.toml, setup.py, conftest.py
 - Private functions (_underscore prefix): do NOT reserve or track
