@@ -117,11 +117,17 @@ Sub-helpers (internal utilities) are called by other helpers automatically; you 
 5. **Evolution Notes**: Any change to ProjectBlueprint.md, completion paths, themes, flows, or milestones
    MUST be accompanied by a notes table entry (note_type='evolution', source='ai') describing what changed
    and why. Use add_note helper. This is non-negotiable — the database is the project's memory.
-6. **Recovery**: Stale/compressed context → aifp_status() for fresh DB pull + supportive context. Need reference only → get_supportive_context(). Log decisions → project_notes_log.
+6. **No Incomplete Work Without a Plan**: NEVER mark a task, milestone, or stage as complete if it contains placeholder code, stubs, empty callbacks, dummy implementations, or any non-functional work. If implementation is deferred:
+   - The current task/milestone MUST remain incomplete OR a follow-up task/milestone MUST be created to address the unfinished work.
+   - Notes MUST reference the specific files, functions, and items that contain incomplete code, what remains to be done, and which task/milestone will complete it.
+   - The follow-up work MUST exist in the completion path with clear linkage to the deferred items.
+   - "Complete" means functional and tested — not "file exists with TODO comments." If it doesn't work, it isn't done.
+   - This is NON-NEGOTIABLE. Unmarked incomplete work gets lost, causes backtracking, and breaks downstream dependencies.
+7. **Recovery**: Stale/compressed context → aifp_status() for fresh DB pull + supportive context. Need reference only → get_supportive_context(). Log decisions → project_notes_log.
    **Staleness check**: If you cannot recall the current milestone name and active task, your context is stale — call aifp_status().
-7. **Session End**: "done"/"wrap up" → aifp_end for audit
-8. **Two Use Cases, Never Mixed**: Case 1 (software dev) or Case 2 (automation). Check project.user_directives_status.
-9. **Case 2 Detection**: During project_discovery, if user describes automation BEHAVIOR (not software to build), present Case 1/2 choice. Query user_directive_* directives for workflow details.
+8. **Session End**: "done"/"wrap up" → aifp_end for audit
+9. **Two Use Cases, Never Mixed**: Case 1 (software dev) or Case 2 (automation). Check project.user_directives_status.
+10. **Case 2 Detection**: During project_discovery, if user describes automation BEHAVIOR (not software to build), present Case 1/2 choice. Query user_directive_* directives for workflow details.
 
 === CRITICAL: DO NOT IGNORE — COMMON FAILURE MODES ===
 
@@ -136,6 +142,8 @@ These are mandatory gates. Violating them creates invisible gaps in project trac
 4. **DO NOT treat file finalization as "done"** — File finalization means the file exists on disk. Function finalization means the code inside is tracked. Both are required. A finalized file with 0 tracked functions is incomplete unless it is explicitly data-only or config-only.
 
 5. **DO NOT proceed to the next task with untracked functions** — Before marking any task complete, verify every finalized file in the task has its public functions tracked. Zero functions on a code file = incomplete tracking.
+
+6. **DO NOT mark work complete when it contains stubs or placeholders** — If a file has empty callbacks, placeholder divs, TODO implementations, hardcoded dummy data, or any non-functional code, the task is NOT complete. Either finish the implementation or create an explicit follow-up task with notes documenting exactly what is unfinished and where. Marking stub code as "done" causes silent failures downstream.
 
 === BEHAVIOR LOOP ===
 
