@@ -170,7 +170,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Consider creating milestones for this completion path: add_milestone(completion_path_id=<id>, name, status='pending', description)"
+        "Consider creating milestones for this completion path: add_milestone(completion_path_id=<id>, name, status='pending', description)",
+        "During project_discovery, after creating all user-defined paths and milestones, ensure two default post-completion paths exist: 'Added Features' (status='completed', order_index=998) and 'Updates' (status='completed', order_index=999). These enable post-completion development cycles without leaving the progression system."
       ],
       "implementation_notes": [
         "Returns: {success: true, id: int} - new completion path ID",
@@ -359,7 +360,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Call add_note(note_type='evolution', directive_name='project_evolution', reference_table='completion_path', reference_id=<id>) describing the change",
-        "If status='completed': check get_incomplete_completion_paths() — if empty, route to project_completion_check directive"
+        "If status='completed': check get_incomplete_completion_paths() — if empty, route to project_completion_check directive",
+        "If reopening a completed post-completion path (status changing from 'completed' to 'in_progress' on 'Added Features' or 'Updates'): the project is no longer complete — update project status accordingly. Create milestones and tasks on-demand as work is defined for the reopened path. When the reopened path is completed again, check if all paths are complete to restore project completion."
       ],
       "implementation_notes": [
         "Returns: {success: true}",
@@ -520,8 +522,8 @@
     "description": "Flow-theme relationships, file-flow relationships, and completion path management",
     "first_helper": "get_flows_for_theme",
     "last_helper": "swap_completion_paths_order",
-    "status": "return_statements complete - 0 helpers enhanced",
-    "last_updated": "2026-01-02",
-    "notes": "All helpers are straightforward relationship queries and metadata operations - no return_statements needed"
+    "status": "return_statements complete - 2 helpers enhanced (add_completion_path, update_completion_path)",
+    "last_updated": "2026-03-09",
+    "notes": "Added post-completion development cycle guidance to add_completion_path and update_completion_path return_statements"
   }
 }

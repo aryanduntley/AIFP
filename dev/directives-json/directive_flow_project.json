@@ -375,6 +375,28 @@
       "flow_category": "project"
     },
     {
+      "from_directive": "project_completion_check",
+      "to_directive": "project_progression",
+      "flow_type": "conditional",
+      "condition_key": "post_completion_path_reopened",
+      "condition_value": "true",
+      "condition_description": "A post-completion path (Added Features or Updates) was reopened, project completion reverted",
+      "priority": 85,
+      "description": "Post-completion path reopened - route to progression to create milestones and tasks for the reopened path",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "aifp_status",
+      "to_directive": "project_progression",
+      "flow_type": "conditional",
+      "condition_key": "post_completion_work_requested",
+      "condition_value": "true",
+      "condition_description": "User requests features or updates after project completion - reopen appropriate post-completion path",
+      "priority": 88,
+      "description": "Post-completion work requested - route to progression for path reopen and task creation",
+      "flow_category": "project"
+    },
+    {
       "from_directive": "aifp_status",
       "to_directive": "project_task_create",
       "flow_type": "conditional",

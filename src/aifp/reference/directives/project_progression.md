@@ -150,6 +150,30 @@ Determine which progression action is needed by reading current project state:
 
 ---
 
+### Branch 6: Reopen Post-Completion Path (post-completion work)
+
+**Condition**: User requests new features or bug fixes/updates after project completion. The "Added Features" or "Updates" post-completion path needs to be reopened.
+
+**Steps**:
+1. Identify which post-completion path to reopen:
+   - **"Added Features"** — for new feature work, enhancements, or new capabilities
+   - **"Updates"** — for bug fixes, patches, maintenance, and dependency updates
+2. Call `update_completion_path(id=<path_id>, status='in_progress')` to reopen the path
+3. Project completion status automatically reverts to incomplete (handled by completion check cascade)
+4. Discuss scope with user: what features or fixes are needed?
+5. Create milestones for the reopened path based on the work discussed
+6. Set first milestone to `in_progress`
+7. Create first task with items for the active milestone
+8. Log: `add_note(note_type='evolution', directive_name='project_progression', content='Reopened post-completion path: <path_name> for <reason>')`
+
+**Key principles**:
+- Post-completion paths follow the same progression rules as regular paths: one task at a time, milestones created as needed
+- When all work is done, the path is completed again and project returns to complete status
+- Multiple reopen cycles are supported — the same path can be reopened and completed many times
+- Both paths can be open simultaneously if needed (e.g., fixing bugs while also adding features)
+
+---
+
 ### Fallback: Route to Status
 
 No progression action needed at this time. Return to `aifp_status`.
@@ -207,6 +231,16 @@ themes/flows evolve
       → continues normal flow
 ```
 
+Post-completion development cycles:
+```
+project complete
+  → user needs features or fixes
+    → progression reopens post-completion path (Added Features or Updates)
+      → project status reverts to incomplete
+        → create milestones → create tasks → work → complete
+          → path completed again → project returns to complete
+```
+
 ---
 
 ## Edge Cases
@@ -236,6 +270,10 @@ Theme/flow changes make existing milestones irrelevant.
 ### Case 5: All Stages Complete Unexpectedly
 
 **Response**: Route to `project_completion_check`. If completion check fails (gaps found), create missing work via new milestones.
+
+### Case 6: Post-Completion Work Requested
+
+**Response**: User wants to add features or fix bugs after project completion. Identify which post-completion path to reopen ("Added Features" or "Updates"), change its status to `in_progress`, and create milestones/tasks on-demand. The project automatically reverts to incomplete status.
 
 ---
 
@@ -278,6 +316,7 @@ Theme/flow changes make existing milestones irrelevant.
 
 ## Version History
 
+- **v1.1** (2026-03-09): Added Branch 6 — reopen post-completion paths for post-completion development cycles
 - **v1.0** (2026-01-30): Initial creation — formalizes the incremental milestone/task state machine
 
 ---

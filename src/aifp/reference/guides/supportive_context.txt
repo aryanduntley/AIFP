@@ -69,6 +69,15 @@ Bridge between initialization and active development. Collaborative conversation
   - Themes/flows evolve → review completion path
   - Repeat until all stages complete
 
+**Post-Completion Development Cycles**:
+  - Two default paths created during discovery: "Added Features" (order 998) and "Updates" (order 999)
+  - Both marked 'completed' by default — they don't block initial project completion
+  - When post-completion work needed: reopen the appropriate path (status → 'in_progress')
+  - Reopening reverts project completion status to incomplete
+  - Milestones, tasks, items created on-demand within the reopened path
+  - Same progression rules apply — one task at a time, standard workflow
+  - When done, path completes again → project returns to complete status
+
   State machine: aifp_status detects current state → project_progression determines
   what to create next → execute → loop back to status.
 

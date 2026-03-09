@@ -1025,6 +1025,20 @@
           }
         },
         {
+          "if": "post_completion_path_reopened",
+          "then": "revert_project_completion",
+          "details": {
+            "condition": "A post-completion path ('Added Features' or 'Updates') has been reopened (status changed from 'completed' to 'in_progress')",
+            "action": "Revert project completion status to incomplete and enter progression loop for the reopened path",
+            "steps": [
+              "Update project status to 'in_progress' if it was 'completed'",
+              "Log note: add_note(note_type='evolution', directive_name='project_completion_check', content='Project completion reverted: post-completion path reopened for new work')",
+              "Route to project_progression to create milestones and tasks for the reopened path"
+            ],
+            "note": "Post-completion paths (Added Features, Updates) are created during discovery as completed-by-default containers. When reopened, the project naturally re-enters the progression loop. When all paths are completed again, the project returns to complete status."
+          }
+        },
+        {
           "fallback": "prompt_user",
           "details": {
             "clarify": "Adjust roadmap or tasks?"
@@ -1043,6 +1057,10 @@
       {
         "issue": "incomplete_tasks",
         "resolution": "Auto-mark pending subtasks or prompt user"
+      },
+      {
+        "issue": "post_completion_path_confusion",
+        "resolution": "Added Features and Updates paths are completed by default. They do NOT block initial project completion. They are reopened only when post-completion work is needed. When reopened, project status reverts to incomplete until the path is completed again."
       }
     ],
     "intent_keywords_json": [
@@ -3323,6 +3341,22 @@
         },
         {
           "if": "milestones_created",
+          "then": "create_post_completion_paths",
+          "details": {
+            "action": "Create default post-completion development paths",
+            "steps": [
+              "After all user-defined completion paths and milestones are created, add two default post-completion paths at the tail end of the ordering",
+              "Create 'Added Features' path: add_completion_path(name='Added Features', status='completed', description='Post-completion path for new features and enhancements. Reopen when new feature work is needed.', order_index=998)",
+              "Create 'Updates' path: add_completion_path(name='Updates', status='completed', description='Post-completion path for bug fixes, patches, and maintenance updates. Reopen when update work is needed.', order_index=999)",
+              "Both paths are marked 'completed' by default — they exist as ready-to-reopen containers for future development cycles",
+              "No milestones or tasks are created for these paths — they are populated on-demand when a path is reopened",
+              "Log creation in notes: add_note(note_type='evolution', directive_name='project_discovery', content='Created default post-completion paths: Added Features (order 998) and Updates (order 999), both marked completed by default')"
+            ],
+            "note": "These two paths enable post-completion development cycles. When bugs or features arise after project completion, the appropriate path is reopened (status changed to 'in_progress'), which reverts project completion status. Milestones, tasks, and items are then created on-demand within the reopened path. This keeps all work within the existing progression system."
+          }
+        },
+        {
+          "if": "post_completion_paths_created",
           "then": "finalize_discovery",
           "details": {
             "action": "Wrap up discovery and prepare for work",
@@ -3635,6 +3669,25 @@
               "If no changes needed: log 'Evolution reviewed, no completion path changes required'"
             ],
             "note": "This is a thoughtful review, not automatic restructuring. AI should consider whether changes are necessary before making them."
+          }
+        },
+        {
+          "if": "post_completion_work_requested",
+          "then": "reopen_post_completion_path",
+          "details": {
+            "action": "Reopen a completed post-completion path for new development work",
+            "condition": "User requests new features or bug fixes/updates after project completion, OR user explicitly asks to reopen a post-completion path",
+            "steps": [
+              "Identify which post-completion path to reopen: 'Added Features' for new feature work, 'Updates' for bug fixes and maintenance",
+              "Call update_completion_path(id=<path_id>, status='in_progress') to reopen the path",
+              "Project completion status automatically reverts to incomplete (handled by completion check cascade)",
+              "Discuss scope with user: what features or fixes are needed?",
+              "Create milestones for the reopened path based on the work discussed",
+              "Set first milestone to 'in_progress'",
+              "Create first task with items for the active milestone",
+              "Log: add_note(note_type='evolution', directive_name='project_progression', content='Reopened post-completion path: <path_name> for <reason>')"
+            ],
+            "note": "Post-completion paths follow the same progression rules as regular paths: one task at a time, milestones created as needed. When all work is done, the path is completed again and project returns to complete status."
           }
         },
         {

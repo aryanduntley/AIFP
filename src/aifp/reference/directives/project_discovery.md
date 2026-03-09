@@ -241,6 +241,24 @@ This is a **conversation**, not a form fill. AI should ask open-ended questions 
 
 ---
 
+### Branch 6.5: Create Post-Completion Paths
+
+**Action**: Create two default post-completion development paths at the tail end of the completion path ordering.
+
+**Steps**:
+1. After all user-defined completion paths and milestones are created, add two default post-completion paths:
+   - **"Added Features"**: `add_completion_path(name='Added Features', status='completed', description='Post-completion path for new features and enhancements. Reopen when new feature work is needed.', order_index=998)`
+   - **"Updates"**: `add_completion_path(name='Updates', status='completed', description='Post-completion path for bug fixes, patches, and maintenance updates. Reopen when update work is needed.', order_index=999)`
+2. Both paths are marked `completed` by default — they exist as ready-to-reopen containers for future development cycles
+3. No milestones or tasks are created for these paths — they are populated on-demand when a path is reopened
+4. Log creation: `add_note(note_type='evolution', directive_name='project_discovery', content='Created default post-completion paths: Added Features (order 998) and Updates (order 999), both marked completed by default')`
+
+**Why these exist**: After project completion, new features or bug fixes may arise. Instead of working outside the system, the appropriate path is reopened (status changed to `in_progress`), which automatically reverts project completion status. Milestones, tasks, and items are then created on-demand within the reopened path, following the same progression rules as regular development. When the work is done, the path is completed again and the project returns to complete status.
+
+**Note**: These paths use high `order_index` values (998, 999) so they always appear at the end, after all user-defined stages.
+
+---
+
 ### Branch 7: Finalize Discovery
 
 **Action**: Wrap up and prepare for active work.
@@ -252,6 +270,7 @@ This is a **conversation**, not a form fill. AI should ask open-ended questions 
    - Project shape overview
    - Stages and milestones
    - Themes and flows
+   - Post-completion paths (Added Features, Updates) ready for future use
    - First milestone is open
 4. Inform user: "Project shape defined. First milestone is open. Ready to begin work."
 5. Flow to `aifp_status` — status routes to `project_progression` for first task creation
@@ -311,7 +330,7 @@ Ask user for missing information needed to define the project shape. If user wan
 
 - **`project_catalog`** — Delegates to catalog for pre-existing FP codebases
 - **`project_blueprint_update`** — Updates ProjectBlueprint.md
-- **Helpers**: `create_theme`, `create_flow`, `create_completion_path`, `create_milestone`, `update_infrastructure_entry`, `project_notes_log`, `create_state_database`
+- **Helpers**: `create_theme`, `create_flow`, `add_completion_path`, `add_milestone`, `update_infrastructure_entry`, `project_notes_log`, `create_state_database`, `add_note`
 
 ### Flows To
 
@@ -389,6 +408,7 @@ If discovery is interrupted mid-conversation, the partially completed state pers
 
 ## Version History
 
+- **v1.1** (2026-03-09): Added Branch 6.5 — post-completion paths ("Added Features" and "Updates") created during discovery as completed-by-default containers for future development cycles
 - **v1.0** (2026-01-30): Initial creation — bridges gap between init and active development
 
 ---
@@ -399,3 +419,4 @@ If discovery is interrupted mid-conversation, the partially completed state pers
 - Replaces the implicit init-to-task-decomposition gap that previously existed
 - Catalog is optional — only triggered for pre-existing codebases
 - The completion path created here is the project's roadmap, but it can evolve via `project_evolution` and `project_progression`
+- Two post-completion paths ("Added Features" and "Updates") are created as completed-by-default containers for future development cycles

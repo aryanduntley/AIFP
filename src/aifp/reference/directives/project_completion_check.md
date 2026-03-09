@@ -129,6 +129,18 @@ Evaluates completion status at various levels (items → subtasks → tasks → 
 **IMPORTANT**: Never use direct SQL for project.db - always use helpers or call project directives (like project_file_write).
 - **Result**: User alerted to alignment issue
 
+**Branch 6.5: If post_completion_path_reopened**
+- **Then**: `revert_project_completion`
+- **Details**: A post-completion path ("Added Features" or "Updates") has been reopened
+  - These paths are created during `project_discovery` as completed-by-default containers
+  - When reopened (status changed from `completed` to `in_progress`), project completion must revert
+  - Update project status to `in_progress` if it was `completed`
+  - Log: `add_note(note_type='evolution', directive_name='project_completion_check', content='Project completion reverted: post-completion path reopened for new work')`
+  - Route to `project_progression` to create milestones and tasks for the reopened path
+- **Result**: Project re-enters progression loop for post-completion work
+
+**Note on post-completion paths**: "Added Features" and "Updates" paths are `completed` by default and do NOT block initial project completion. They only affect completion status when explicitly reopened. When all paths (including reopened ones) are completed again, the project returns to complete status.
+
 **Branch 7: If all_stages_complete**
 - **Then**: `mark_project_complete`
 - **Details**: All completion path stages are done
@@ -401,7 +413,13 @@ Project (100% = all stages complete)
 - **Task**: Complete when all items complete AND all subtasks complete
 - **Milestone**: Complete when all tasks complete
 - **Stage**: Complete when all milestones complete
-- **Project**: Complete when all stages complete
+- **Project**: Complete when all stages complete (including post-completion paths, which are completed by default)
+
+**Post-Completion Paths**:
+- "Added Features" and "Updates" are created during discovery as `completed` by default
+- They do NOT block initial project completion
+- When reopened (`status='in_progress'`), project completion reverts to incomplete
+- When completed again, project returns to complete status if all paths are complete
 
 ---
 
