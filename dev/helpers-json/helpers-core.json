@@ -1041,24 +1041,55 @@
       ],
       "target_database": "core",
       "used_by_directives": []
+    },
+    {
+      "name": "get_directive_content",
+      "file_path": "helpers/core/directives_1.py",
+      "parameters": [
+        {
+          "name": "directive_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Directive name (e.g., 'fp_purity', 'aifp_init', 'project_file_write')"
+        }
+      ],
+      "purpose": "Read and return the full MD documentation file for a directive. Resolves the md_file_path from aifp_core.db to an absolute path within the installed package, reads the file, and returns content + absolute path + token estimate.",
+      "error_handling": "Returns error if directive not found, md_file_path is null, or file cannot be read",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Returns directive MD content, absolute file path, and token estimate",
+        "Use for deep context on edge cases, complex workflows, FP compliance questions, and cross-directive relationships",
+        "For routine directive usage, the JSON workflow steps from get_directive_by_name are sufficient"
+      ],
+      "target_database": "core",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Looks up md_file_path from directives table in aifp_core.db",
+        "Resolves to absolute path: Path(__file__).parent.parent.parent / 'reference' / md_file_path",
+        "Reads file with UTF-8 encoding, estimates tokens at ~1 token per 4 characters",
+        "Returns Result with data={content, absolute_path, token_estimate, directive_name}",
+        "Largest directive MD is ~27KB (~7K tokens), most are 8-23KB (2-6K tokens)"
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-core.json",
-    "count": 34,
+    "count": 35,
     "first_helper": "core_allowed_check_constraints",
     "status": "JSON updated - code refactor pending",
     "mapped_helpers": 10,
-    "unmapped_helpers": 26,
-    "note": "Refactored flows.py: Removed deep logic helpers (get_next_directives_from_status, get_matching_next_directives, get_conditional_work_paths, search_fp_references, get_contextual_utilities). Added simple query helpers (get_flows_from_directive, get_flows_to_directive, get_wildcard_flows). MCP server is for data retrieval, AI handles logic/decisions.",
+    "unmapped_helpers": 27,
+    "note": "Refactored flows.py: Removed deep logic helpers (get_next_directives_from_status, get_matching_next_directives, get_conditional_work_paths, search_fp_references, get_contextual_utilities). Added simple query helpers (get_flows_from_directive, get_flows_to_directive, get_wildcard_flows). MCP server is for data retrieval, AI handles logic/decisions. Added get_directive_content for reading directive MD documentation files.",
     "total_mappings": 16,
     "implementation": {
       "validation.py": 1,
       "schema.py": 6,
-      "directives_1.py": 15,
+      "directives_1.py": 16,
       "directives_2.py": 9,
       "flows.py": 5
     },
-    "last_updated": "2026-01-27"
+    "last_updated": "2026-03-09"
   }
 }

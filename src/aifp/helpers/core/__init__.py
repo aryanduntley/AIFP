@@ -6,11 +6,11 @@ Helpers for querying the aifp_core.db database (read-only, global).
 This package contains:
 - validation.py: CHECK constraint parsing (1 helper)
 - schema.py: Schema introspection and generic queries (6 helpers)
-- directives_1.py: Directive queries, search, and intent keywords (13 helpers)
+- directives_1.py: Directive queries, search, intent keywords, and content (14 helpers)
 - directives_2.py: Helper queries and category operations (9 helpers)
 - flows.py: Directive flow navigation and routing (5 helpers)
 
-Total: 34 helpers
+Total: 35 helpers
 
 All helpers follow FP principles:
 - Pure functions where possible
@@ -44,6 +44,7 @@ from .schema import (
 # Directives Part 1
 from .directives_1 import (
     get_directive_by_name,
+    get_directive_content,
     get_all_directives,
     search_directives,
     find_directive_by_intent,
@@ -124,6 +125,7 @@ __all__ = [
 
     # Directives Part 1
     'get_directive_by_name',
+    'get_directive_content',
     'get_all_directives',
     'search_directives',
     'find_directive_by_intent',

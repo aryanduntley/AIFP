@@ -25,13 +25,14 @@ from typing import Final, Dict, Tuple, Callable, Any
 TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
 
     # ── Core: Directives ─────────────────────────────────────────────────
-    # helpers/core/directives_1.py (12 tools)
+    # helpers/core/directives_1.py (13 tools)
     "find_directive_by_intent": ("aifp.helpers.core.directives_1", "find_directive_by_intent"),
     "get_all_directive_keywords": ("aifp.helpers.core.directives_1", "get_all_directive_keywords"),
     "get_all_directive_names": ("aifp.helpers.core.directives_1", "get_all_directive_names"),
     "get_all_directives": ("aifp.helpers.core.directives_1", "get_all_directives"),
     "get_all_intent_keywords_with_counts": ("aifp.helpers.core.directives_1", "get_all_intent_keywords_with_counts"),
     "get_directive_by_name": ("aifp.helpers.core.directives_1", "get_directive_by_name"),
+    "get_directive_content": ("aifp.helpers.core.directives_1", "get_directive_content"),
     "get_directive_keywords": ("aifp.helpers.core.directives_1", "get_directive_keywords"),
     "get_directives_by_category": ("aifp.helpers.core.directives_1", "get_directives_by_category"),
     "get_directives_by_type": ("aifp.helpers.core.directives_1", "get_directives_by_type"),

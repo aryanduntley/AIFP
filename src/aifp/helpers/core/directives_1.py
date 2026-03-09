@@ -19,12 +19,14 @@ Helpers in this file:
 - get_directives_by_category: Get all directives in a category
 - get_directives_by_type: Get all directives by type
 - get_fp_directive_index: Get lightweight FP directive index grouped by category
+- get_directive_content: Read directive MD documentation file by name
 
 All functions are pure FP - immutable data, explicit parameters, Result types.
 Database operations isolated as effects with clear naming conventions.
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
 
 # Import core utilities
@@ -38,6 +40,17 @@ from ._common import (
     DirectiveRecord,
     row_to_directive,
     json_to_tuple,
+)
+
+from ..utils import Result
+
+
+# ============================================================================
+# Constants
+# ============================================================================
+
+REFERENCE_DIR: str = str(
+    Path(__file__).parent.parent.parent / "reference"
 )
 
 
@@ -1066,3 +1079,93 @@ def get_fp_directive_index() -> DirectiveIndexResult:
         return DirectiveIndexResult(success=False, error=str(e))
     except Exception as e:
         return DirectiveIndexResult(success=False, error=f"Query failed: {str(e)}")
+
+
+def get_directive_content(directive_name: str) -> Result:
+    """
+    Read and return the full MD documentation for a directive.
+
+    Looks up the directive in aifp_core.db to get its md_file_path,
+    resolves to an absolute path within the installed package, reads
+    the file, and returns both content and absolute path.
+
+    Args:
+        directive_name: Directive name (e.g., 'fp_purity', 'aifp_init')
+
+    Returns:
+        Result with data={
+            content: str (full markdown text),
+            absolute_path: str (resolved file path on disk),
+            token_estimate: int (approximate token count),
+            directive_name: str (echoed back for reference)
+        }
+
+    On error:
+        Result with error message if directive not found, md_file_path
+        is null, or file cannot be read.
+
+    Example:
+        >>> result = get_directive_content("fp_purity")
+        >>> result.success
+        True
+        >>> result.data['token_estimate']
+        4200
+        >>> result.data['absolute_path']
+        '/path/to/site-packages/aifp/reference/directives/fp_purity.md'
+    """
+    try:
+        conn = _open_core_connection()
+
+        try:
+            cursor = conn.execute(
+                "SELECT md_file_path FROM directives WHERE name = ?",
+                (directive_name,)
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return Result(
+                    success=False,
+                    error=f"Directive '{directive_name}' not found in aifp_core.db",
+                )
+
+            md_file_path = row['md_file_path']
+
+            if not md_file_path:
+                return Result(
+                    success=False,
+                    error=f"Directive '{directive_name}' has no md_file_path set",
+                )
+
+        finally:
+            conn.close()
+
+        # Resolve relative path to absolute using package location
+        absolute_path = Path(REFERENCE_DIR) / md_file_path
+
+        if not absolute_path.is_file():
+            return Result(
+                success=False,
+                error=f"MD file not found at: {absolute_path}. "
+                      f"Expected relative path '{md_file_path}' under src/aifp/reference/",
+            )
+
+        content = absolute_path.read_text(encoding="utf-8")
+        token_estimate = len(content) // 4
+
+        return Result(
+            success=True,
+            data={
+                'content': content,
+                'absolute_path': str(absolute_path),
+                'token_estimate': token_estimate,
+                'directive_name': directive_name,
+            },
+            return_statements=get_return_statements("get_directive_content"),
+        )
+
+    except Exception as e:
+        return Result(
+            success=False,
+            error=f"Error reading directive content: {str(e)}",
+        )
