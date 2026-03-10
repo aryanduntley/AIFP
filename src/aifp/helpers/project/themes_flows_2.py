@@ -22,6 +22,8 @@ Helpers in this file:
 - reorder_completion_path: Change order_index for a completion path
 - reorder_all_completion_paths: Fix gaps and duplicates in order_index
 - swap_completion_paths_order: Swap order_index of two completion paths
+- add_file_to_flow: Link a file to a flow
+- add_file_flows: Link multiple files to flows (batch)
 """
 
 import sqlite3
@@ -175,6 +177,24 @@ class ReorderAllResult:
     success: bool
     renumbered_count: int = 0
     duplicates_found: Tuple[dict, ...] = ()
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class AddFileFlowResult:
+    """Result of adding a file-flow link."""
+    success: bool
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class AddFileFlowsBatchResult:
+    """Result of adding multiple file-flow links."""
+    success: bool
+    added_count: int = 0
+    skipped_count: int = 0
     error: Optional[str] = None
     return_statements: Tuple[str, ...] = ()
 
@@ -1399,6 +1419,176 @@ def swap_completion_paths_order(
         return ReorderResult(
             success=False,
             error=f"Failed to swap completion paths order: {str(e)}"
+        )
+
+    finally:
+        conn.close()
+
+
+# ============================================================================
+# File-Flow Linking Functions
+# ============================================================================
+
+def _check_file_exists(conn: sqlite3.Connection, file_id: int) -> bool:
+    """Effect: Check if file ID exists in database."""
+    cursor = conn.execute("SELECT id FROM files WHERE id = ?", (file_id,))
+    return cursor.fetchone() is not None
+
+
+def _check_flow_exists(conn: sqlite3.Connection, flow_id: int) -> bool:
+    """Effect: Check if flow ID exists in database."""
+    cursor = conn.execute("SELECT id FROM flows WHERE id = ?", (flow_id,))
+    return cursor.fetchone() is not None
+
+
+def _check_file_flow_exists(conn: sqlite3.Connection, file_id: int, flow_id: int) -> bool:
+    """Effect: Check if file-flow link already exists."""
+    cursor = conn.execute(
+        "SELECT 1 FROM file_flows WHERE file_id = ? AND flow_id = ?",
+        (file_id, flow_id)
+    )
+    return cursor.fetchone() is not None
+
+
+def _add_file_flow_effect(conn: sqlite3.Connection, file_id: int, flow_id: int) -> None:
+    """Effect: Insert file-flow link into junction table."""
+    conn.execute(
+        "INSERT INTO file_flows (file_id, flow_id) VALUES (?, ?)",
+        (file_id, flow_id)
+    )
+    conn.commit()
+
+
+def add_file_to_flow(
+    file_id: int,
+    flow_id: int,
+) -> AddFileFlowResult:
+    """
+    Link a file to a flow in the file_flows junction table.
+
+    Every file should be linked to at least one flow after finalization.
+    This connects the file to the project's architectural structure.
+
+    Args:
+        file_id: File ID (from reserve_file/finalize_file)
+        flow_id: Flow ID (from add_flow or get_all_flows)
+
+    Returns:
+        AddFileFlowResult with success status
+
+    Example:
+        >>> result = add_file_to_flow(file_id=42, flow_id=3)
+        >>> result.success
+        True
+    """
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        if not _check_file_exists(conn, file_id):
+            return AddFileFlowResult(
+                success=False,
+                error=f"File with ID {file_id} not found"
+            )
+
+        if not _check_flow_exists(conn, flow_id):
+            return AddFileFlowResult(
+                success=False,
+                error=f"Flow with ID {flow_id} not found"
+            )
+
+        if _check_file_flow_exists(conn, file_id, flow_id):
+            return AddFileFlowResult(
+                success=False,
+                error=f"File {file_id} is already linked to flow {flow_id}"
+            )
+
+        _add_file_flow_effect(conn, file_id, flow_id)
+
+        return_statements = get_return_statements("add_file_to_flow")
+
+        return AddFileFlowResult(
+            success=True,
+            return_statements=return_statements,
+        )
+
+    except Exception as e:
+        return AddFileFlowResult(
+            success=False,
+            error=f"Failed to link file to flow: {str(e)}",
+        )
+
+    finally:
+        conn.close()
+
+
+def add_file_flows(
+    links: List[Tuple[int, int]],
+) -> AddFileFlowsBatchResult:
+    """
+    Link multiple files to flows in the file_flows junction table (batch).
+
+    More efficient than multiple single calls. Skips duplicates silently.
+
+    Args:
+        links: List of (file_id, flow_id) tuples to create
+
+    Returns:
+        AddFileFlowsBatchResult with added/skipped counts
+
+    Example:
+        >>> result = add_file_flows([(42, 3), (42, 5), (43, 3)])
+        >>> result.success
+        True
+        >>> result.added_count
+        3
+    """
+    if not links:
+        return AddFileFlowsBatchResult(
+            success=False,
+            error="Links list cannot be empty",
+        )
+
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        added = 0
+        skipped = 0
+
+        for file_id, flow_id in links:
+            if not _check_file_exists(conn, file_id):
+                return AddFileFlowsBatchResult(
+                    success=False,
+                    error=f"File with ID {file_id} not found",
+                )
+
+            if not _check_flow_exists(conn, flow_id):
+                return AddFileFlowsBatchResult(
+                    success=False,
+                    error=f"Flow with ID {flow_id} not found",
+                )
+
+            if _check_file_flow_exists(conn, file_id, flow_id):
+                skipped += 1
+                continue
+
+            _add_file_flow_effect(conn, file_id, flow_id)
+            added += 1
+
+        return_statements = get_return_statements("add_file_flows")
+
+        return AddFileFlowsBatchResult(
+            success=True,
+            added_count=added,
+            skipped_count=skipped,
+            return_statements=return_statements,
+        )
+
+    except Exception as e:
+        return AddFileFlowsBatchResult(
+            success=False,
+            error=f"Batch link failed: {str(e)}",
         )
 
     finally:

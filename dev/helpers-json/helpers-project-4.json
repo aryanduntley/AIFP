@@ -768,16 +768,92 @@
       ],
       "target_database": "project",
       "used_by_directives": []
+    },
+    {
+      "name": "get_interactions_by_function",
+      "file_path": "helpers/project/interactions.py",
+      "parameters": [
+        {
+          "name": "function_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Function name to look up interactions for"
+        }
+      ],
+      "purpose": "Get all interactions for a function (both as source and target) — trace dependency graphs",
+      "error_handling": "Return error if query fails",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DB-FIRST: Use this to trace dependency graphs BEFORE reading source files. Shows what a function calls (source) and what calls it (target) — often answers investigation questions without reading code."
+      ],
+      "implementation_notes": [
+        "Returns: {success, interactions: [{id, source_function_id, source_function_name, source_file_name, source_file_path, target_function_id, target_function_name, target_file_name, target_file_path, interaction_type, description, created_at, updated_at}, ...]}",
+        "SQL JOINs interactions with functions and files tables to resolve names and paths",
+        "Returns both directions: interactions where function is source AND where function is target",
+        "Interaction types: 'call', 'chain', 'borrow', 'compose', 'pipe'",
+        "Empty interactions tuple (not error) if function exists but has no interactions"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "trace_dependency_graph",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Trace function dependency graph during investigation — query interactions before reading source files"
+        }
+      ]
+    },
+    {
+      "name": "get_interactions_by_file",
+      "file_path": "helpers/project/interactions.py",
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to look up interactions for"
+        }
+      ],
+      "purpose": "Get all interactions for functions in a file — understand file's dependency role",
+      "error_handling": "Return error if query fails",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "DB-FIRST: Use this to understand a file's dependencies BEFORE reading it. Shows all function relationships involving this file — often answers 'how is this file connected?' without reading source code."
+      ],
+      "implementation_notes": [
+        "Returns: {success, interactions: [{id, source_function_id, source_function_name, source_file_name, source_file_path, target_function_id, target_function_name, target_file_name, target_file_path, interaction_type, description, created_at, updated_at}, ...]}",
+        "SQL JOINs interactions with functions and files tables to resolve names and paths",
+        "Returns interactions where ANY function in the file is source OR target",
+        "Interaction types: 'call', 'chain', 'borrow', 'compose', 'pipe'",
+        "Empty interactions tuple (not error) if file has functions but no interactions"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_dependency_map",
+          "execution_context": "trace_file_dependencies",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Trace file-level dependency graph during investigation — query all interactions for functions in a file"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-project-4.json",
-    "count": 14,
-    "range": "helpers 36-49 of 113",
+    "count": 16,
+    "range": "helpers 36-51 of 115",
     "description": "Type reservation/finalization, type-function relationships, and interaction management",
     "first_helper": "reserve_type",
-    "last_helper": "delete_interaction",
-    "status": "return_statements complete - 8 helpers enhanced",
-    "last_updated": "2026-01-02"
+    "last_helper": "get_interactions_by_file",
+    "status": "return_statements complete - 10 helpers enhanced",
+    "last_updated": "2026-03-09"
   }
 }

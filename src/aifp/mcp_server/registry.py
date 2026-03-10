@@ -136,11 +136,13 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "update_function_file_location": ("aifp.helpers.project.functions_2", "update_function_file_location"),
 
     # ── Project: Interactions ────────────────────────────────────────────
-    # helpers/project/interactions.py (3 tools)
+    # helpers/project/interactions.py (6 tools)
     "add_interaction": ("aifp.helpers.project.interactions", "add_interaction"),
     "add_interactions": ("aifp.helpers.project.interactions", "add_interactions"),
     "update_interaction": ("aifp.helpers.project.interactions", "update_interaction"),
     "delete_interaction": ("aifp.helpers.project.interactions", "delete_interaction"),
+    "get_interactions_by_function": ("aifp.helpers.project.interactions", "get_interactions_by_function"),
+    "get_interactions_by_file": ("aifp.helpers.project.interactions", "get_interactions_by_file"),
 
     # ── Project: Items & Notes ───────────────────────────────────────────
     # helpers/project/items_notes.py (9 tools)
@@ -227,8 +229,10 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_theme_by_name": ("aifp.helpers.project.themes_flows_1", "get_theme_by_name"),
     "update_flow": ("aifp.helpers.project.themes_flows_1", "update_flow"),
     "update_theme": ("aifp.helpers.project.themes_flows_1", "update_theme"),
-    # helpers/project/themes_flows_2.py (11 tools)
+    # helpers/project/themes_flows_2.py (16 tools)
     "add_completion_path": ("aifp.helpers.project.themes_flows_2", "add_completion_path"),
+    "add_file_to_flow": ("aifp.helpers.project.themes_flows_2", "add_file_to_flow"),
+    "add_file_flows": ("aifp.helpers.project.themes_flows_2", "add_file_flows"),
     "delete_completion_path": ("aifp.helpers.project.themes_flows_2", "delete_completion_path"),
     "get_all_completion_paths": ("aifp.helpers.project.themes_flows_2", "get_all_completion_paths"),
     "get_completion_paths_by_status": ("aifp.helpers.project.themes_flows_2", "get_completion_paths_by_status"),

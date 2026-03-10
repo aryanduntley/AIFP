@@ -41,7 +41,7 @@
         "Use returned ID for file naming: {name}_id_{id}.{ext}",
         "IMPORTANT: Plan ALL reservations for this file — all public functions MUST be reserved via reserve_function/reserve_functions AND all exported types MUST be reserved via reserve_type/reserve_types BEFORE writing code. File tracking without function+type tracking is incomplete.",
         "MANDATORY FIELDS: When reserving functions, include purpose, parameters, and returns. When reserving types, include definition_json and description. These fields are the AI's primary lookup mechanism across sessions — null fields make entities invisible to future discovery.",
-        "After finalization, ensure this file is linked to appropriate flows via file_flows table",
+        "After finalization, link this file to flow(s) via add_file_to_flow(file_id, flow_id). Use get_all_flows() or get_task_flows(task_id) to identify the correct flow(s).",
         "Next: write file to disk with ID in name → finalize_file(file_id, name, path, language)"
       ],
       "target_database": "project",
@@ -90,7 +90,7 @@
         "Use returned IDs for file naming: {name}_id_{id}.{ext}",
         "IMPORTANT: Plan ALL reservations for ALL files — all public functions MUST be reserved via reserve_functions AND all exported types MUST be reserved via reserve_types BEFORE writing code. File tracking without function+type tracking is incomplete.",
         "MANDATORY FIELDS: When reserving functions, include purpose, parameters, and returns. When reserving types, include definition_json and description. These fields are the AI's primary lookup mechanism across sessions — null fields make entities invisible to future discovery.",
-        "After finalization, ensure all files are linked to appropriate flows via file_flows table",
+        "After finalization, link all files to flow(s) via add_file_flows([(file_id, flow_id), ...]). Use get_all_flows() or get_task_flows(task_id) to identify the correct flow(s).",
         "Next: write files to disk with IDs in names → finalize_files([{file_id, name, path, language}, ...])"
       ],
       "target_database": "project",
@@ -149,7 +149,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "BLOCKED: Do NOT proceed until all public functions AND all exported types in this file are reserved and finalized. Functions via reserve_function/finalize_function WITH complete fields (purpose, parameters, returns). Types via reserve_type/finalize_type WITH complete fields (definition_json, description). A finalized file with 0 tracked functions or untracked types is incomplete (unless data-only or config-only).",
-        "Verify flows are added in file_flows table.",
+        "BLOCKED: Link this file to its flow(s) via add_file_to_flow(file_id, flow_id) or add_file_flows([(file_id, flow_id), ...]). A finalized file with 0 flow assignments is architecturally disconnected. Use get_all_flows() or get_task_flows(task_id) to identify the correct flow(s).",
         "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
         "After file write operations: route to git_sync_state directive to update last_known_git_hash"
       ],
@@ -207,7 +207,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "BLOCKED: Do NOT proceed until all public functions AND all exported types in ALL finalized files are reserved and finalized. Functions via reserve_functions/finalize_functions WITH complete fields (purpose, parameters, returns). Types via reserve_types/finalize_types WITH complete fields (definition_json, description). Finalized files with 0 tracked functions or untracked types are incomplete (unless data-only or config-only).",
-        "Verify flows are added in file_flows table for all files",
+        "BLOCKED: Link ALL finalized files to their flow(s) via add_file_to_flow(file_id, flow_id) or add_file_flows([(file_id, flow_id), ...]). Finalized files with 0 flow assignments are architecturally disconnected. Use get_all_flows() or get_task_flows(task_id) to identify the correct flow(s).",
         "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
         "After file write operations: route to git_sync_state directive to update last_known_git_hash"
       ],

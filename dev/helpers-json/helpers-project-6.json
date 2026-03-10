@@ -513,17 +513,105 @@
       ],
       "target_database": "project",
       "used_by_directives": []
+    },
+    {
+      "name": "add_file_to_flow",
+      "file_path": "helpers/project/themes_flows_2.py",
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID (from reserve_file/finalize_file)"
+        },
+        {
+          "name": "flow_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Flow ID (from add_flow or get_all_flows)"
+        }
+      ],
+      "purpose": "Link a file to a flow in the file_flows junction table",
+      "error_handling": "Return error if file or flow not found, or if link already exists",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "File is now linked to a project flow. Verify all finalized files in the current task have flow assignments — a finalized file with 0 flows is architecturally disconnected."
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Inserts into file_flows junction table (composite PK: file_id, flow_id)",
+        "Returns error (not silent skip) if link already exists — use add_file_flows for batch with skip behavior"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_theme_flow_mapping",
+          "execution_context": "update_file_flows",
+          "sequence_order": 4,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Link file to flow during theme-flow mapping — assigns files to architectural flows"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "update_file_flows",
+          "sequence_order": 5,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Link file to flow after writing — ensures all written files have flow assignments"
+        }
+      ]
+    },
+    {
+      "name": "add_file_flows",
+      "file_path": "helpers/project/themes_flows_2.py",
+      "parameters": [
+        {
+          "name": "links",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of [file_id, flow_id] tuples to create"
+        }
+      ],
+      "purpose": "Link multiple files to flows (batch) — skips existing links silently",
+      "error_handling": "Return error if any file or flow ID not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Files are now linked to project flows. Verify all finalized files in the current task have flow assignments — a finalized file with 0 flows is architecturally disconnected."
+      ],
+      "implementation_notes": [
+        "Returns: {success: true, added_count: int, skipped_count: int}",
+        "Skips existing links silently (increments skipped_count)",
+        "Validates all file_id and flow_id values exist before inserting",
+        "More efficient than multiple add_file_to_flow calls"
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_theme_flow_mapping",
+          "execution_context": "update_file_flows",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch link files to flows during theme-flow mapping — efficient for multiple file assignments"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-project-6.json",
-    "count": 14,
-    "range": "helpers 60-73 of 112",
+    "count": 16,
+    "range": "helpers 60-75 of 117",
     "description": "Flow-theme relationships, file-flow relationships, and completion path management",
     "first_helper": "get_flows_for_theme",
-    "last_helper": "swap_completion_paths_order",
-    "status": "return_statements complete - 2 helpers enhanced (add_completion_path, update_completion_path)",
+    "last_helper": "add_file_flows",
+    "status": "return_statements complete - 4 helpers enhanced",
     "last_updated": "2026-03-09",
-    "notes": "Added post-completion development cycle guidance to add_completion_path and update_completion_path return_statements"
+    "notes": "Added add_file_to_flow and add_file_flows for file-flow junction table management"
   }
 }

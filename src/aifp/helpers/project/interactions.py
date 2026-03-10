@@ -12,6 +12,8 @@ Helpers in this file:
 - add_interactions: Add multiple interactions at once (by function IDs)
 - update_interaction: Update interaction metadata
 - delete_interaction: Delete interaction with audit trail
+- get_interactions_by_function: Get all interactions for a function (both directions)
+- get_interactions_by_file: Get all interactions for functions in a file
 """
 
 import sqlite3
@@ -59,6 +61,32 @@ class DeleteInteractionResult:
     success: bool
     error: Optional[str] = None
     return_statements: Tuple[str, ...] = ()  # AI guidance for next steps
+
+
+@dataclass(frozen=True)
+class InteractionRecord:
+    """Immutable interaction record from database with resolved function/file names."""
+    id: int
+    source_function_id: int
+    source_function_name: Optional[str]
+    source_file_name: Optional[str]
+    source_file_path: Optional[str]
+    target_function_id: int
+    target_function_name: Optional[str]
+    target_file_name: Optional[str]
+    target_file_path: Optional[str]
+    interaction_type: str
+    description: Optional[str]
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True)
+class InteractionQueryResult:
+    """Result of interaction lookup that may return multiple matches."""
+    success: bool
+    interactions: Tuple[InteractionRecord, ...] = ()
+    error: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -136,6 +164,35 @@ def build_update_query(
     params_list.append(interaction_id)
 
     return (sql, tuple(params_list))
+
+
+def row_to_interaction_record(row: sqlite3.Row) -> InteractionRecord:
+    """
+    Convert a database row to an immutable InteractionRecord.
+
+    Pure function - deterministic conversion.
+
+    Args:
+        row: SQLite Row object from interaction query with JOINed function/file data
+
+    Returns:
+        InteractionRecord with all fields populated from row
+    """
+    return InteractionRecord(
+        id=row["id"],
+        source_function_id=row["source_function_id"],
+        source_function_name=row["source_function_name"],
+        source_file_name=row["source_file_name"],
+        source_file_path=row["source_file_path"],
+        target_function_id=row["target_function_id"],
+        target_function_name=row["target_function_name"],
+        target_file_name=row["target_file_name"],
+        target_file_path=row["target_file_path"],
+        interaction_type=row["interaction_type"],
+        description=row["description"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 # ============================================================================
@@ -292,6 +349,68 @@ def _delete_interaction_effect(
     """
     conn.execute("DELETE FROM interactions WHERE id = ?", (interaction_id,))
     conn.commit()
+
+
+_INTERACTION_QUERY_BASE: str = """
+    SELECT
+        i.id, i.source_function_id, i.target_function_id,
+        i.interaction_type, i.description, i.created_at, i.updated_at,
+        sf.name AS source_function_name,
+        sfi.name AS source_file_name,
+        sfi.path AS source_file_path,
+        tf.name AS target_function_name,
+        tfi.name AS target_file_name,
+        tfi.path AS target_file_path
+    FROM interactions i
+    LEFT JOIN functions sf ON i.source_function_id = sf.id
+    LEFT JOIN files sfi ON sf.file_id = sfi.id
+    LEFT JOIN functions tf ON i.target_function_id = tf.id
+    LEFT JOIN files tfi ON tf.file_id = tfi.id
+"""
+
+
+def _get_interactions_by_function_effect(
+    conn: sqlite3.Connection,
+    function_name: str,
+) -> List[sqlite3.Row]:
+    """
+    Effect: Query all interactions where function appears as source or target.
+
+    Args:
+        conn: Database connection
+        function_name: Function name to look up
+
+    Returns:
+        List of Row objects with full interaction + function/file data
+    """
+    sql = _INTERACTION_QUERY_BASE + """
+    WHERE sf.name = ? OR tf.name = ?
+    ORDER BY i.created_at
+    """
+    cursor = conn.execute(sql, (function_name, function_name))
+    return cursor.fetchall()
+
+
+def _get_interactions_by_file_effect(
+    conn: sqlite3.Connection,
+    file_id: int,
+) -> List[sqlite3.Row]:
+    """
+    Effect: Query all interactions involving functions in a specific file.
+
+    Args:
+        conn: Database connection
+        file_id: File ID to look up interactions for
+
+    Returns:
+        List of Row objects with full interaction + function/file data
+    """
+    sql = _INTERACTION_QUERY_BASE + """
+    WHERE sf.file_id = ? OR tf.file_id = ?
+    ORDER BY i.created_at
+    """
+    cursor = conn.execute(sql, (file_id, file_id))
+    return cursor.fetchall()
 
 
 # ============================================================================
@@ -656,6 +775,100 @@ def delete_interaction(
         return DeleteInteractionResult(
             success=False,
             error=f"Failed to delete interaction: {str(e)}"
+        )
+
+    finally:
+        conn.close()
+
+
+def get_interactions_by_function(
+    function_name: str,
+) -> InteractionQueryResult:
+    """
+    Get all interactions for a function (both as source and target).
+
+    Returns interactions where the named function is the caller (source) or
+    the callee (target). Use to trace dependency graphs — what does this
+    function call, and what calls it?
+
+    Args:
+        function_name: Function name to look up (e.g., 'validate_input_id_15')
+
+    Returns:
+        InteractionQueryResult with tuple of InteractionRecord objects including
+        resolved function names and file paths for both source and target
+
+    Example:
+        >>> result = get_interactions_by_function("validate_input_id_15")
+        >>> result.success
+        True
+        >>> for i in result.interactions:
+        ...     print(f"{i.source_function_name} --{i.interaction_type}--> {i.target_function_name}")
+        process_data_id_42 --call--> validate_input_id_15
+        validate_input_id_15 --chain--> format_output_id_23
+    """
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        rows = _get_interactions_by_function_effect(conn, function_name)
+        records = tuple(row_to_interaction_record(row) for row in rows)
+
+        return InteractionQueryResult(
+            success=True,
+            interactions=records,
+        )
+
+    except Exception as e:
+        return InteractionQueryResult(
+            success=False,
+            error=f"Query failed: {str(e)}",
+        )
+
+    finally:
+        conn.close()
+
+
+def get_interactions_by_file(
+    file_id: int,
+) -> InteractionQueryResult:
+    """
+    Get all interactions for functions in a file.
+
+    Returns all interactions where any function belonging to the given file
+    is the source or target. Use to understand a file's role in the broader
+    dependency graph.
+
+    Args:
+        file_id: File ID to look up interactions for
+
+    Returns:
+        InteractionQueryResult with tuple of InteractionRecord objects including
+        resolved function names and file paths for both source and target
+
+    Example:
+        >>> result = get_interactions_by_file(5)
+        >>> result.success
+        True
+        >>> len(result.interactions)
+        7
+    """
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        rows = _get_interactions_by_file_effect(conn, file_id)
+        records = tuple(row_to_interaction_record(row) for row in rows)
+
+        return InteractionQueryResult(
+            success=True,
+            interactions=records,
+        )
+
+    except Exception as e:
+        return InteractionQueryResult(
+            success=False,
+            error=f"Query failed: {str(e)}",
         )
 
     finally:

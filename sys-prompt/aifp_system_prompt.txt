@@ -30,7 +30,7 @@ AIFP is NOT optional. When this MCP server is active, you MUST act proactively:
 A behavioral framework with three core principles:
 - **Functional Procedural**: All code follows FP paradigm (pure functions, immutable data, no OOP)
 - **Directive-Driven**: Workflows tell you WHEN to act and WHAT steps to follow
-- **Database-Driven**: Project state stored in databases (NOT your memory)
+- **Database-Driven**: The database is your source of truth — NOT your memory. Use tools to get directives which explain how to use AIFP. Use tools to do any code research BEFORE reading files. It will help you focus your search. Use tools to update the database with all code changes.
 
 Important distinctions:
 - **FP baseline is mandatory** (all code must be FP-compliant — NON-NEGOTIABLE)
@@ -49,6 +49,21 @@ Important distinctions:
 5. **aifp_end**: Graceful session close (audit, verify DB, stop watchdog)
 
 **Key**: Tasks created incrementally as work progresses, NOT all at once.
+
+**File Coding Loop** (runs for EVERY file written during progression):
+
+  reserve file → reserve functions + types
+    → write FP code with embedded IDs
+    → finalize file → assign file to flow(s)
+    → finalize functions + types
+    → add interactions (function→function dependencies)
+    → add types_functions (function→type linkages)
+    → [repeat for next file]
+
+  Each step updates project.db. Skipping any step creates tracking gaps.
+  Tools: reserve_file, reserve_functions, reserve_types, finalize_file,
+  add_file_to_flow, finalize_functions, finalize_types, add_interactions,
+  add_types_functions. Batch variants available for all.
 
 === FP BASELINE: YOUR MANDATORY CODING STYLE ===
 
@@ -71,13 +86,15 @@ Query: search_directives(type="fp", keyword="...") or get_directive_content(name
 
 All directives use **trunk → branches → fallback** pattern. User preferences loaded FIRST before customizable directives.
 
-**Key Directives**:
-- **aifp_run / aifp_status**: Entry points (every interaction)
-- **aifp_init / project_discovery**: Setup and planning
-- **project_file_write**: Write file + update project.db
-- **project_reserve_finalize**: Reserve IDs before writing, embed in names, finalize after (exceptions: `__init__.py`, `.db`, config files skip ID; private `_functions` not tracked)
+**Entry Point Directives** (used every session):
+- **aifp_run / aifp_status**: Call on EVERY interaction. These drive the entire workflow.
+- **project_file_write**: Write file + update project.db — triggers the File Coding Loop
+- **project_reserve_finalize**: Reserve IDs → embed in names → finalize after writing → assign to flows
 - **project_task_decomposition / project_task_complete / project_milestone_complete**: Work management
-- **project_completion_check**: Validate project completeness
+- **update_task / update_milestone / update_project_state**: Status progression (start, complete, block)
+
+**One-time Directives** (init only — see supportive context for details):
+- **aifp_init / project_discovery / project_completion_check**: Setup, planning, and final validation
 
 **How to use**: get_directive_by_name(name) → follow workflow → call helpers → query directive flows for next step.
 **CRITICAL**: ALWAYS load directives from the database before executing them. Do NOT execute from memory — directives evolve. The database is the source of truth.
@@ -94,13 +111,7 @@ Sub-helpers (internal utilities) are called by other helpers automatically; you 
 **Priority**: Helpers FIRST (99%) → Orchestrators → Directives → Direct SQL (last resort, reads only).
 **Exception**: user_directives.db allows free SQL (AI-managed).
 
-**Session-Essential Helpers**:
-- **aifp_run(is_new_session)** — Entry point, bundles startup data
-- **aifp_status(project_root, type)** — Comprehensive project state
-- **aifp_init(project_root)** — One-time project initialization
-- **aifp_end(project_root)** — Session termination audit
-- **get_project_status(project_root, type)** — Refresh work hierarchy
-- **get_supportive_context()** — Reload concise FP reference, DRY patterns, state management, Use Case 2, behavioral rules. Call when context feels stale or you need reference material.
+**Key tools**: aifp_run, aifp_status, aifp_init, aifp_end, get_supportive_context. See supportive context for full session management details.
 
 === FOUR DATABASES ===
 
@@ -113,7 +124,7 @@ Sub-helpers (internal utilities) are called by other helpers automatically; you 
 
 1. **Status-First**: "continue"/"status"/"resume" → answer from existing context. Call aifp_status() only if context is stale.
 2. **Always Track Code**: project_file_write after writing any file
-3. **Reserve Before Write**: Get IDs → embed in names → finalize after writing. Prefer batch helpers (reserve_files, finalize_files) over individual calls. EXCEPTIONS: `__init__.py`/`.db`/config files skip ID embedding; private functions (`_underscore`) not tracked.
+3. **Reserve Before Write**: Get IDs → embed in names → finalize after writing → assign to flow(s). Prefer batch helpers (reserve_files, finalize_files, add_file_flows) over individual calls. EXCEPTIONS: `__init__.py`/`.db`/config files skip ID embedding; private functions (`_underscore`) not tracked.
 4. **Discussions Trigger Updates**: Architecture/infrastructure/task decisions → update DB
 5. **Evolution Notes**: Any change to ProjectBlueprint.md, completion paths, themes, flows, or milestones
    MUST be accompanied by a notes table entry (note_type='evolution', source='ai') describing what changed
@@ -150,17 +161,19 @@ These are mandatory gates. Violating them creates invisible gaps in project trac
 
 8. **DO NOT skip type tracking** — Every exported type/interface in a finalized file MUST be reserved and finalized via reserve_types/finalize_types with complete definition_json and description. Types are the most frequently looked-up entities. Untracked types force full file reads that the DB should eliminate.
 
-9. **DO NOT read source files for lookups before checking the DB** — Use get_function_by_name, get_type_by_name, get_file_by_name, get_functions_by_file FIRST. Only read source files when the DB doesn't have what you need or when you need implementation details beyond the signature. The DB is the index; source files are the full text.
+9. **DO NOT read source files before querying the DB — for ANY code question** — This applies to lookups, investigations, tracing how features work, understanding how things are wired, and exploring unfamiliar code. "Investigation" is NOT different from "lookup" — both start at the DB:
+   - **Identify** relevant files/functions: get_file_by_name, get_functions_by_file, get_function_by_name, get_type_by_name
+   - **Trace** dependency graphs: get_interactions_by_function(name) or get_interactions_by_file(file_id) or get_task_context(include_interactions=true)
+   - **THEN** read source files ONLY for the specific files identified, ONLY when you need implementation details beyond signatures
+   - The DB is the index; source files are the full text. Source files are the LAST step, not the first.
 
-10. **DO NOT start task work without checking project flows and themes** — Before implementing any task, call get_all_flows() or get_task_flows(task_id) and get_all_themes() to understand the intended architecture. Project flows (flow_themes/file_flows in project.db) describe user-facing behavior and implementation patterns. Skipping this leads to implementations that don't match the project's architectural intent. NOTE: These project flows are distinct from directive flows (directive_flow table in aifp_core.db, queried via get_flows_from_directive) which define directive-to-directive navigation.
+10. **DO NOT start task work without checking project flows and themes** — Before implementing any task, call get_all_flows() or get_task_flows(task_id) and get_all_themes() to understand the intended architecture. Skipping this leads to implementations that don't match the project's architectural intent.
 
-11. **DO NOT skip function interactions** — After finalizing functions, you MUST add interactions for every function that calls, chains, borrows from, composes with, or pipes to another tracked function. Use add_interaction (by name) or add_interactions (by ID, batch). A finalized function that imports from other tracked files but has zero interactions recorded = incomplete tracking. Interactions are how the AI understands the dependency graph across sessions. Without them, refactoring impact analysis is blind.
+11. **DO NOT skip function interactions** — After finalizing functions, you MUST add interactions for every function that calls, chains, borrows from, composes with, or pipes to another tracked function. Use add_interaction (by name) or add_interactions (by ID, batch). A finalized function with imports from tracked files but zero interactions = incomplete. Plan interactions BEFORE or DURING batch finalization — the finalize → interact flow is atomic.
 
-12. **DO NOT batch-finalize functions without interaction planning** — When finalizing multiple functions, plan interactions BEFORE or DURING finalization. Do not finalize a batch of functions and move on without considering which functions call which. The finalize → interact flow is atomic: finalize without interactions is half the work.
+12. **DO NOT skip types_functions linkage** — After finalizing functions, scan parameters and returns for tracked type names. If a function consumes or produces a tracked type, add via add_types_functions with the correct role. See supportive context for auto-inference rules. This is how the AI answers "what functions use TypeX?" without scanning all files.
 
-13. **DO NOT skip types_functions linkage** — After finalizing functions, scan each function's parameters and returns for tracked type names. If a function consumes or produces a tracked type, add the relationship via add_types_functions with the correct role (factory, transformer, validator, accessor, operator, pattern_matcher, combinator). Auto-infer: returns type only → factory; params AND returns same type → transformer; params with boolean/Result return → validator; params only → accessor/operator. This linkage is how the AI answers "what functions use TypeX?" without scanning all files.
-
-14. **DO NOT execute directives from memory alone** — Before executing any directive workflow, call get_directive(name) or get_directive_content(name) to load the current steps. Directives evolve. Cached knowledge from prior sessions may be stale or incomplete. The database is the source of truth for directive workflows, not your training data or prior context. Read the directive, then execute it.
+13. **DO NOT execute directives from memory alone** — Call get_directive(name) or get_directive_content(name) to load current steps. Directives evolve — the database is the source of truth.
 
 === BEHAVIOR LOOP ===
 

@@ -67,8 +67,12 @@ Bridge between initialization and active development. Collaborative conversation
   - **BEFORE starting any task**: check get_all_flows() / get_task_flows(task_id) for relevant
     workflow descriptions. Flows describe the intended architecture and user-facing behavior.
     Also check get_all_themes() to orient on which project area the task belongs to.
-  - **DURING task work**: use DB lookups FIRST (get_function_by_name, get_type_by_name,
-    get_functions_by_file) before reading source files. The DB is the queryable index.
+  - **DURING task work**: query the DB FIRST for ALL code questions — lookups, investigations,
+    tracing how features are wired, exploring unfamiliar code. Steps:
+    1. Identify relevant files/functions: get_file_by_name, get_functions_by_file, get_function_by_name, get_type_by_name
+    2. Trace dependency graphs: get_interactions_by_function(name) or get_interactions_by_file(file_id) or get_task_context(include_interactions=true)
+    3. Read source files ONLY for the specific files identified, ONLY for implementation details beyond signatures
+    "Investigation" is NOT different from "lookup" — both start at the DB.
   - Task complete → check if milestone complete → create next task or next milestone
   - Milestone complete → open next milestone → create first task
   - Themes/flows evolve → review completion path
@@ -153,17 +157,20 @@ Directives are the authoritative source — do NOT execute from memory alone.
 2. Embed IDs: filename_id_42.py, function_name_id_99(), TypeName_id_15
 3. Write: FP-compliant code with embedded IDs
 4. Finalize: mark reserved → finalized, record path/line numbers/dependencies
-5. Interactions: add_interaction/add_interactions for EVERY function that calls/chains/borrows/composes/pipes another tracked function
-6. Types_functions: add_types_functions for every function that consumes or produces a tracked type
+5. Flow assignment: add_file_to_flow(file_id, flow_id) or add_file_flows([(file_id, flow_id), ...]) — every finalized file must be linked to at least one flow
+6. Interactions: add_interaction/add_interactions for EVERY function that calls/chains/borrows/composes/pipes another tracked function
+7. Types_functions: add_types_functions for every function that consumes or produces a tracked type
 
-Batch helpers available (reserve_files, finalize_files, add_interactions, add_types_functions).
+Batch helpers available (reserve_files, finalize_files, add_file_flows, add_interactions, add_types_functions).
 
-MANDATORY COUPLING — files, functions, types, interactions, AND types_functions are tracked TOGETHER:
-- The complete flow is: reserve file → reserve functions + types → write code → finalize file → finalize functions + types → add interactions → add types_functions
+MANDATORY COUPLING — files, functions, types, flows, interactions, AND types_functions are tracked TOGETHER:
+- The complete flow is: reserve file → reserve functions + types → write code → finalize file → assign file to flow(s) → finalize functions + types → add interactions → add types_functions
 - Never finalize a file without also reserving+finalizing its public functions AND exported types
+- Never finalize a file without linking it to at least one flow via add_file_to_flow/add_file_flows
 - Never finalize functions without adding interactions for cross-file dependencies
 - Never finalize functions without linking types_functions for tracked type usage
 - A finalized file with 0 tracked functions or untracked types is INCOMPLETE (unless data-only/config-only)
+- A finalized file with 0 flow assignments is ARCHITECTURALLY DISCONNECTED
 - A finalized function with imports from tracked files but 0 interactions = INCOMPLETE
 - Return statements from these tools carry mandatory next-step guidance — DO NOT ignore them
 
@@ -193,14 +200,18 @@ FIELD POPULATION IS MANDATORY:
 - These fields ARE the database's value. Without them, the DB is just a filename index.
 - Null fields make entities invisible to future AI sessions. Populate at reserve time, verify at finalize time.
 
-DB-FIRST LOOKUP POLICY:
+DB-FIRST POLICY (applies to ALL code questions — lookups, investigations, tracing, exploration):
 - Need a function signature? → get_function_by_name FIRST
 - Need a type shape? → get_type_by_name FIRST
 - Need to know what's in a file? → get_functions_by_file FIRST
 - Need file metadata? → get_file_by_name or get_file_by_path FIRST
-- Only read the source file if the DB doesn't answer your question
-- This saves context window space and is faster than reading full files
-- The DB is the index; source files are the full text
+- Need to understand how features are wired? → query interactions FIRST:
+  get_interactions_by_function(name) for a specific function's dependency graph
+  get_interactions_by_file(file_id) for all dependencies involving a file
+  get_task_context(include_interactions=true) for full task dependency graphs
+- "Investigation" is NOT different from "lookup" — both start at the DB
+- Read source files ONLY for the specific files the DB identified, ONLY for implementation details
+- Source files are the LAST step, not the first — DB queries narrow the search
 
 EXCEPTIONS — skip ID embedding:
 - Files: __init__.py, .db files, pyproject.toml, setup.py, conftest.py

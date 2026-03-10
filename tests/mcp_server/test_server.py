@@ -81,7 +81,7 @@ def test_build_tool_dict():
 def test_load_and_cache_tools_populates_cache():
     _effect_load_and_cache_tools()
     from aifp.mcp_server import server
-    assert len(server._cached_tool_dicts) == 221
+    assert len(server._cached_tool_dicts) == 225
 
 
 def test_cached_tools_are_dicts():
@@ -154,7 +154,7 @@ def test_handle_list_tools_returns_220():
     resp = handle_list_tools(2)
     assert resp["jsonrpc"] == "2.0"
     assert resp["id"] == 2
-    assert len(resp["result"]["tools"]) == 221
+    assert len(resp["result"]["tools"]) == 225
 
 
 # ============================================================================
