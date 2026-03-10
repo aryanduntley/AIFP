@@ -53,6 +53,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned ID for type naming: {TypeName}_id_{id}",
+        "MANDATORY: Include definition_json (full type shape) AND description (what it represents, 5-10 words). Types are the MOST frequently looked-up entities — they are how AI understands data shapes without reading files. Incomplete type entries force full file reads that the DB should eliminate. Example: definition_json={'kind': 'union', 'variants': [{'kind': 'handle', 'handle': 'Handle'}, {'kind': 'direct', 'address': 'string'}]}, description='Payment recipient — handle or direct address'",
         "Next: write type definition with ID in name → finalize_type(type_id, name, definition_json)"
       ],
       "target_database": "project",
@@ -99,6 +100,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned IDs for type naming: {TypeName}_id_{id}",
+        "MANDATORY: Include definition_json (full type shape) AND description for EVERY type. Types are the MOST frequently looked-up entities — they are how AI understands data shapes without reading files. Incomplete type entries force full file reads that the DB should eliminate.",
         "Next: write type definitions with IDs in names → finalize_types([{type_id, name, definition_json}, ...])"
       ],
       "target_database": "project",
@@ -170,6 +172,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
+        "WARNING: Verify definition_json and description are populated. Types with null description are incomplete tracking entries — future AI sessions cannot understand the type shape from the DB. If description is null, populate it NOW via update_type(). This is your last chance before the type is considered 'tracked'.",
         "Do any type-function relationships need to be added in types_functions table?",
         "If called during project_reserve_finalize: follow project_update_db directive to sync type registrations."
       ],
@@ -225,6 +228,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
+        "WARNING: Verify definition_json and description are populated for ALL types. Types with null description are incomplete tracking entries — future AI sessions cannot understand type shapes from the DB. If any description is null, populate it NOW via update_type(). This is your last chance before types are considered 'tracked'.",
         "Do any type-function relationships need to be added in types_functions table?",
         "If called during project_reserve_finalize: follow project_update_db directive to sync type registrations."
       ],
@@ -399,7 +403,9 @@
       "error_handling": "Return error if no types found with that name",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "DB-FIRST: Use this lookup BEFORE reading source files. Type definitions (definition_json, description) in the DB provide the full type shape — often eliminating the need to read the file. Only read source files when the DB doesn't have what you need."
+      ],
       "target_database": "project",
       "used_by_directives": [
         {

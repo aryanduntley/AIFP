@@ -39,7 +39,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned ID for file naming: {name}_id_{id}.{ext}",
-        "IMPORTANT: Plan function reservations for this file — all public functions MUST be reserved via reserve_function/reserve_functions BEFORE writing code. File tracking without function tracking is incomplete.",
+        "IMPORTANT: Plan ALL reservations for this file — all public functions MUST be reserved via reserve_function/reserve_functions AND all exported types MUST be reserved via reserve_type/reserve_types BEFORE writing code. File tracking without function+type tracking is incomplete.",
+        "MANDATORY FIELDS: When reserving functions, include purpose, parameters, and returns. When reserving types, include definition_json and description. These fields are the AI's primary lookup mechanism across sessions — null fields make entities invisible to future discovery.",
         "After finalization, ensure this file is linked to appropriate flows via file_flows table",
         "Next: write file to disk with ID in name → finalize_file(file_id, name, path, language)"
       ],
@@ -87,7 +88,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned IDs for file naming: {name}_id_{id}.{ext}",
-        "IMPORTANT: Plan function reservations for ALL files — all public functions MUST be reserved via reserve_functions BEFORE writing code. File tracking without function tracking is incomplete.",
+        "IMPORTANT: Plan ALL reservations for ALL files — all public functions MUST be reserved via reserve_functions AND all exported types MUST be reserved via reserve_types BEFORE writing code. File tracking without function+type tracking is incomplete.",
+        "MANDATORY FIELDS: When reserving functions, include purpose, parameters, and returns. When reserving types, include definition_json and description. These fields are the AI's primary lookup mechanism across sessions — null fields make entities invisible to future discovery.",
         "After finalization, ensure all files are linked to appropriate flows via file_flows table",
         "Next: write files to disk with IDs in names → finalize_files([{file_id, name, path, language}, ...])"
       ],
@@ -146,7 +148,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "BLOCKED: Do NOT proceed until all public functions in this file are reserved and finalized via reserve_function/finalize_function. A finalized file with 0 tracked functions is incomplete (unless data-only or config-only).",
+        "BLOCKED: Do NOT proceed until all public functions AND all exported types in this file are reserved and finalized. Functions via reserve_function/finalize_function WITH complete fields (purpose, parameters, returns). Types via reserve_type/finalize_type WITH complete fields (definition_json, description). A finalized file with 0 tracked functions or untracked types is incomplete (unless data-only or config-only).",
         "Verify flows are added in file_flows table.",
         "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
         "After file write operations: route to git_sync_state directive to update last_known_git_hash"
@@ -204,7 +206,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "BLOCKED: Do NOT proceed until all public functions in ALL finalized files are reserved and finalized via reserve_functions/finalize_functions. Finalized files with 0 tracked functions are incomplete (unless data-only or config-only).",
+        "BLOCKED: Do NOT proceed until all public functions AND all exported types in ALL finalized files are reserved and finalized. Functions via reserve_functions/finalize_functions WITH complete fields (purpose, parameters, returns). Types via reserve_types/finalize_types WITH complete fields (definition_json, description). Finalized files with 0 tracked functions or untracked types are incomplete (unless data-only or config-only).",
         "Verify flows are added in file_flows table for all files",
         "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
         "After file write operations: route to git_sync_state directive to update last_known_git_hash"
@@ -237,7 +239,9 @@
       "error_handling": "Return error if no files found with that name",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "DB-FIRST: Use this lookup BEFORE reading source files. The DB provides file metadata, path, and associated functions/types — often eliminating the need to read the full file. Only read source files when you need implementation details beyond what the DB provides."
+      ],
       "target_database": "project",
       "used_by_directives": [
         {
@@ -280,7 +284,9 @@
       "error_handling": "Return null if not found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "DB-FIRST: Use this lookup BEFORE reading source files. The DB provides file metadata and associated functions/types — often eliminating the need to read the full file. Follow up with get_functions_by_file(file_id) for function signatures. Only read source files when you need implementation details beyond what the DB provides."
+      ],
       "target_database": "project",
       "used_by_directives": [
         {

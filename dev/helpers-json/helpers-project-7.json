@@ -346,7 +346,9 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Create items for this task: add_project_entry(table='items', data={reference_table:'tasks', reference_id:<task_id>, name:<name>, description:<desc>})"
+        "BEFORE STARTING WORK: Check get_all_flows() and get_all_themes() for relevant workflow descriptions. Flows describe the intended architecture and user-facing behavior your implementation should match. Themes identify which area of the project this work belongs to. Consulting these BEFORE coding prevents architectural mismatches.",
+        "Create items for this task: add_project_entry(table='items', data={reference_table:'tasks', reference_id:<task_id>, name:<name>, description:<desc>})",
+        "DB-FIRST LOOKUP: When working on this task, use get_function_by_name, get_type_by_name, get_file_by_name, get_functions_by_file to understand existing code BEFORE reading source files. The DB is the index; source files are the full text."
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -719,6 +721,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
+        "If status='in_progress': BEFORE STARTING WORK — check get_all_flows() and get_task_flows(task_id) for relevant workflow descriptions. Flows describe the intended architecture and user-facing behavior. Use DB lookups (get_function_by_name, get_type_by_name, get_functions_by_file) to understand existing code BEFORE reading source files.",
         "If task status changed: call add_note(note_type='task_context', reference_table='tasks', reference_id=<task_id>) describing the status change",
         "If status='completed': call get_incomplete_tasks_by_milestone(milestone_id, skip_pending=false) — if empty, call update_milestone(id, status='completed')"
       ],

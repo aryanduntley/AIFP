@@ -18,7 +18,9 @@
       "is_sub_helper": false,
       "return_statements": [
         "If user setting project_continue_on_start=true and is_new_session=true: Automatically continue project work with bundled context instead of waiting for user command",
-        "When autostart enabled: Load pending tasks from status, present with priority order, proactively suggest next steps for project completion"
+        "When autostart enabled: Load pending tasks from status, present with priority order, proactively suggest next steps for project completion",
+        "DB-FIRST LOOKUP POLICY: Throughout this session, use get_function_by_name, get_type_by_name, get_file_by_name, get_functions_by_file to research existing code BEFORE reading source files. The project DB is a queryable index of all tracked files, functions, and types — use it as your first stop for lookups. Only read source files when the DB doesn't answer your question or you need implementation details beyond signatures.",
+        "FLOWS & THEMES: Before starting work on any task, check get_all_flows() and get_all_themes() for relevant workflow descriptions. Flows describe the intended architecture and user-facing behavior your implementation should match."
       ],
       "implementation_notes": [
         "Returns: If is_new_session=true → bundles {status, user_settings, fp_directive_index, all_directive_names[], infrastructure_data, guidance, watchdog: {started, start_error, status, reminders[], notice}}",
@@ -131,7 +133,8 @@
         "AI should interpret status data and determine next directive to execute based on project state.",
         "If not initialized: route to aifp_init directive.",
         "If validation has errors: AI should address structural issues before continuing work.",
-        "Priority order for current focus: sidequests \u2192 subtasks \u2192 tasks."
+        "Priority order for current focus: sidequests → subtasks → tasks.",
+        "FLOWS & THEMES: Review get_all_flows() and get_all_themes() to orient on project architecture before diving into work. Flows describe intended user-facing behavior and implementation architecture. Themes identify project areas. Consult these when picking up work or starting a new task."
       ],
       "implementation_notes": [
         "Returns status object with: project_metadata, infrastructure, work_hierarchy (counts + tree), user_directives_status, recent_warnings, git_state, supportive_context",
@@ -193,7 +196,8 @@
       "is_tool": false,
       "is_sub_helper": true,
       "return_statements": [
-        "Files and functions may be reserved (is_reserved=1) but not finalized. Complete the reserve → write with ID in name → finalize flow before continuing."
+        "Files and functions may be reserved (is_reserved=1) but not finalized. Complete the reserve → write with ID in name → finalize flow before continuing.",
+        "Check reserved_entities for any functions/types with null fields (purpose, parameters, returns for functions; description for types). Populate missing fields via update_function/update_type before continuing."
       ],
       "implementation_notes": [
         "Summary returns: {counts{}, hierarchy{active_path, active_milestone, active_tasks[], active_subtasks[], active_sidequests[], current_focus, active_items[], historical{}, recent_files[], reserved_entities{}}, blocked_items[]}",
@@ -265,7 +269,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Task context loaded. AI should review items to determine where to resume.",
-        "If task is blocked: check blocked_by field and resolve blockers first."
+        "If task is blocked: check blocked_by field and resolve blockers first.",
+        "BEFORE RESUMING WORK: Review the flows[] in the returned context — they describe the intended architecture and user-facing behavior. Use the returned functions[] data (purpose, parameters, returns) as your lookup index BEFORE reading source files."
       ],
       "implementation_notes": [
         "Returns: {task_item{}, items[], flows[], files[], functions[], interactions[]?, notes[]?}",
@@ -396,7 +401,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "State updated. If task completed: check if all tasks in milestone are complete, consider marking milestone complete.",
-        "If task blocked: create sidequest to resolve blocker, then unblock and resume."
+        "If task blocked: create sidequest to resolve blocker, then unblock and resume.",
+        "If task started (action=start_task): BEFORE CODING — check get_all_flows() and get_task_flows(task_id) for relevant workflow descriptions. Use DB lookups (get_function_by_name, get_type_by_name, get_functions_by_file) to understand existing code BEFORE reading source files."
       ],
       "implementation_notes": [
         "Returns: {success, updated_entity{}, note_created?, note_id?}",

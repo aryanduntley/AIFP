@@ -145,6 +145,14 @@ These are mandatory gates. Violating them creates invisible gaps in project trac
 
 6. **DO NOT mark work complete when it contains stubs or placeholders** — If a file has empty callbacks, placeholder divs, TODO implementations, hardcoded dummy data, or any non-functional code, the task is NOT complete. Either finish the implementation or create an explicit follow-up task with notes documenting exactly what is unfinished and where. Marking stub code as "done" causes silent failures downstream.
 
+7. **DO NOT leave function fields empty** — Every reserved/finalized function MUST have purpose, parameters, and returns populated. These fields are the AI's primary lookup mechanism across sessions. Null fields make functions invisible to future discovery — the DB becomes just a filename index. If unsure of the signature, plan first, then reserve.
+
+8. **DO NOT skip type tracking** — Every exported type/interface in a finalized file MUST be reserved and finalized via reserve_types/finalize_types with complete definition_json and description. Types are the most frequently looked-up entities. Untracked types force full file reads that the DB should eliminate.
+
+9. **DO NOT read source files for lookups before checking the DB** — Use get_function_by_name, get_type_by_name, get_file_by_name, get_functions_by_file FIRST. Only read source files when the DB doesn't have what you need or when you need implementation details beyond the signature. The DB is the index; source files are the full text.
+
+10. **DO NOT start task work without checking flows and themes** — Before implementing any task, call get_all_flows() or get_task_flows(task_id) and get_all_themes() to understand the intended architecture. Flows describe user-facing behavior and implementation patterns. Skipping this leads to implementations that don't match the project's architectural intent.
+
 === BEHAVIOR LOOP ===
 
 Every interaction: aifp_run → check state → present context → execute with FP baseline → loop to status or aifp_end.

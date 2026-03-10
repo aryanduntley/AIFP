@@ -64,6 +64,11 @@ Bridge between initialization and active development. Collaborative conversation
 **Project Progression** (the work loop):
   - ONE task (with items) created at a time per milestone
   - Priority-based work hierarchy: sidequests > subtasks > tasks
+  - **BEFORE starting any task**: check get_all_flows() / get_task_flows(task_id) for relevant
+    workflow descriptions. Flows describe the intended architecture and user-facing behavior.
+    Also check get_all_themes() to orient on which project area the task belongs to.
+  - **DURING task work**: use DB lookups FIRST (get_function_by_name, get_type_by_name,
+    get_functions_by_file) before reading source files. The DB is the queryable index.
   - Task complete → check if milestone complete → create next task or next milestone
   - Milestone complete → open next milestone → create first task
   - Themes/flows evolve → review completion path
@@ -131,11 +136,28 @@ Purpose: Get database IDs BEFORE coding so names are instantly queryable.
 
 Batch helpers available (reserve_files, finalize_files).
 
-MANDATORY COUPLING — files and functions are tracked TOGETHER:
-- The complete flow is: reserve file → reserve functions → write code → finalize file → finalize functions
-- Never finalize a file without also reserving+finalizing its public functions
-- A finalized file with 0 tracked functions is INCOMPLETE (unless data-only/config-only)
+MANDATORY COUPLING — files, functions, AND types are tracked TOGETHER:
+- The complete flow is: reserve file → reserve functions + types → write code → finalize file → finalize functions + types
+- Never finalize a file without also reserving+finalizing its public functions AND exported types
+- A finalized file with 0 tracked functions or untracked types is INCOMPLETE (unless data-only/config-only)
 - Return statements from these tools carry mandatory next-step guidance — DO NOT ignore them
+
+FIELD POPULATION IS MANDATORY:
+- Functions: purpose (what it does, 5-10 words), parameters (full signature string), returns (return type string)
+  Example: purpose="Build UI coin selection entry from CoinEntry", parameters="coin: CoinEntry", returns="CoinSelectionEntry"
+- Types: definition_json (full type shape as JSON), description (what it represents, 5-10 words)
+  Example: definition_json={"kind": "union", "variants": [...]}, description="Payment recipient — handle or direct address"
+- These fields ARE the database's value. Without them, the DB is just a filename index.
+- Null fields make entities invisible to future AI sessions. Populate at reserve time, verify at finalize time.
+
+DB-FIRST LOOKUP POLICY:
+- Need a function signature? → get_function_by_name FIRST
+- Need a type shape? → get_type_by_name FIRST
+- Need to know what's in a file? → get_functions_by_file FIRST
+- Need file metadata? → get_file_by_name or get_file_by_path FIRST
+- Only read the source file if the DB doesn't answer your question
+- This saves context window space and is faster than reading full files
+- The DB is the index; source files are the full text
 
 EXCEPTIONS — skip ID embedding:
 - Files: __init__.py, .db files, pyproject.toml, setup.py, conftest.py
