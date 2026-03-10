@@ -448,7 +448,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Verify all functions that consume or produce tracked types have been linked. Missing type-function relationships make 'what functions use TypeX?' queries incomplete — the AI loses refactoring impact analysis for that type.",
+        "Role auto-inference guide: returns type only → 'factory'; params AND returns same type → 'transformer'; params with boolean/Result return → 'validator'; params only → 'accessor' or 'operator'. For complex cases: 'pattern_matcher' (destructures type variants), 'combinator' (combines multiple instances of type). Correct auto-inferred roles if needed via update_type_function_role."
+      ],
       "implementation_notes": [
         "Returns: {success: true, ids: [int, ...]} - inserted relationship IDs",
         "For single relationship: pass [(type_id, function_id, role)]",

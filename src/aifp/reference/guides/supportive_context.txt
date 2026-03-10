@@ -91,11 +91,17 @@ Bridge between initialization and active development. Collaborative conversation
 
 === 5. DIRECTIVE EXECUTION ===
 
+**CRITICAL: ALWAYS load directives before executing them.**
+Call get_directive_by_name(name) to get the current workflow steps from the database.
+Do NOT execute directive workflows from memory or training data — directives evolve and
+the database is the source of truth. Cached knowledge from prior sessions may be stale.
+
 **Execution Order** (for ALL directives):
-1. User preferences loaded FIRST (user_preferences_sync auto-called if customizable)
-2. Preferences applied to directive parameters
-3. Directive executes with modified behavior
-4. Results returned
+1. Load directive: get_directive_by_name(directive_name) → read workflow steps
+2. User preferences loaded FIRST (user_preferences_sync auto-called if customizable)
+3. Preferences applied to directive parameters
+4. Directive executes with modified behavior per loaded workflow steps
+5. Results returned
 
 **Trunk → Branches → Fallback Pattern**:
 - trunk: Main analysis step
@@ -106,41 +112,78 @@ Bridge between initialization and active development. Collaborative conversation
 - Location: src/aifp/reference/directives/{category}/{directive_name}.md
 - Contains: Complete workflows, examples, edge cases, FP compliance notes, cross-directive relationships
 - When to read: Complex edge cases, ambiguity in workflow, FP compliance questions, cross-directive relationships
-- NOT for routine usage (directive JSON has workflow steps — use those)
 - Access: get_directive_content(directive_name) returns full MD documentation
+- Directives have guidance for ALL aspects of AIFP — file operations, interactions, types,
+  task management, FP compliance, git, user preferences, reserve/finalize, and more.
+  If you're uncertain about a workflow, there is almost certainly a directive for it.
 
-**Directive Flows** (navigation system):
-- Stored in directive_flow table
-- Define "what comes next" based on current state
-- Query: get_flows_from_directive(directive_name)
+**Directive Flows** (navigation system — distinct from project themes/flows):
+- Stored in directive_flow table in aifp_core.db
+- Define "what directive comes next" based on current state
+- Query: get_flows_from_directive(directive_name) — returns directive flow navigation data
 - All completion directives loop back to aifp_status
+- NOTE: "Directive flows" (navigation between directives) are separate from "project flows"
+  (user-facing behavior/architecture stored in flow_themes/file_flows tables in project.db).
+  Do not confuse the two.
 
 === 6. PROJECT FILE WRITE WORKFLOW ===
 
+**FIRST**: Call get_directive_by_name("project_file_write") to load the current workflow steps.
+Directives evolve — do NOT execute from memory. The database is the source of truth.
+
 When writing any file:
-1. Reserve file/function names via project_reserve_finalize → get database IDs
+1. Reserve file/function/type names via project_reserve_finalize → get database IDs
 2. Write FP-compliant code with IDs embedded in names
 3. Call project_file_write directive → updates project.db (files, functions, interactions tables)
 4. Finalize reserved names via project_reserve_finalize
+5. Add interactions for ALL finalized functions that call/chain/compose/pipe other tracked functions
+6. Add types_functions linkages for functions that consume or produce tracked types
 
 Never write code without tracking it in project.db.
+Never finalize functions without adding interactions and types_functions linkages.
 
-=== 7. RESERVE → WRITE → FINALIZE FLOW ===
+=== 7. RESERVE → WRITE → FINALIZE → INTERACT → LINK FLOW ===
 
 Purpose: Get database IDs BEFORE coding so names are instantly queryable.
+
+**FIRST**: Call get_directive_by_name("project_reserve_finalize") to load the current workflow.
+Directives are the authoritative source — do NOT execute from memory alone.
 
 1. Reserve: file → file_id, functions → function_ids (PUBLIC only), types → type_ids
 2. Embed IDs: filename_id_42.py, function_name_id_99(), TypeName_id_15
 3. Write: FP-compliant code with embedded IDs
 4. Finalize: mark reserved → finalized, record path/line numbers/dependencies
+5. Interactions: add_interaction/add_interactions for EVERY function that calls/chains/borrows/composes/pipes another tracked function
+6. Types_functions: add_types_functions for every function that consumes or produces a tracked type
 
-Batch helpers available (reserve_files, finalize_files).
+Batch helpers available (reserve_files, finalize_files, add_interactions, add_types_functions).
 
-MANDATORY COUPLING — files, functions, AND types are tracked TOGETHER:
-- The complete flow is: reserve file → reserve functions + types → write code → finalize file → finalize functions + types
+MANDATORY COUPLING — files, functions, types, interactions, AND types_functions are tracked TOGETHER:
+- The complete flow is: reserve file → reserve functions + types → write code → finalize file → finalize functions + types → add interactions → add types_functions
 - Never finalize a file without also reserving+finalizing its public functions AND exported types
+- Never finalize functions without adding interactions for cross-file dependencies
+- Never finalize functions without linking types_functions for tracked type usage
 - A finalized file with 0 tracked functions or untracked types is INCOMPLETE (unless data-only/config-only)
+- A finalized function with imports from tracked files but 0 interactions = INCOMPLETE
 - Return statements from these tools carry mandatory next-step guidance — DO NOT ignore them
+
+INTERACTIONS ENFORCEMENT:
+- After finalizing functions, check: does this function call/chain/borrow/compose/pipe any other tracked function?
+- If yes → add_interaction(source_name, target_name, type) or add_interactions([(source_id, target_id, type, desc), ...])
+- Types: 'call' (direct invocation), 'chain' (sequential composition), 'borrow' (uses return value), 'compose' (function composition), 'pipe' (data pipeline)
+- Interactions are how the AI understands the dependency graph. Without them, refactoring impact is blind.
+- Do NOT batch-finalize functions and skip interactions — the finalize → interact flow is atomic.
+
+TYPES_FUNCTIONS AUTO-INFERENCE (after function finalization):
+- Scan finalized function's parameters and returns for tracked type names
+- If matches found, auto-infer role and call add_types_functions:
+  - appears only in returns → 'factory'
+  - appears in params AND returns (same type) → 'transformer'
+  - appears in params, returns boolean/Result → 'validator'
+  - appears only in params → 'accessor' or 'operator'
+  - Complex cases: 'pattern_matcher' (destructures variants), 'combinator' (combines instances)
+- Auto-inference covers ~80% of cases. Correct or add remaining roles manually.
+- This linkage answers "what functions use TypeX?" without scanning all files.
 
 FIELD POPULATION IS MANDATORY:
 - Functions: purpose (what it does, 5-10 words), parameters (full signature string), returns (return type string)

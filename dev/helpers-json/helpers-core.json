@@ -204,7 +204,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Directives contain authoritative workflow guidance for ALL aspects of AIFP — file operations, task management, FP compliance, reserve/finalize flows, interactions, types, git, user preferences, and more. Follow the returned workflow steps. Do NOT execute directive workflows from memory alone — always load the directive first.",
+        "For deeper context (edge cases, cross-directive relationships, complex scenarios), call get_directive_content(directive_name) to read the full MD documentation."
+      ],
       "implementation_notes": [
         "Returns: Directive object with workflow, description, category, preferences, and linked notes",
         "When project_root provided: queries user_preferences.db for directive_preferences (by directive_name) and project.db for notes with send_with_directive=1",
@@ -232,7 +235,10 @@
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Directives are the authoritative source for ALL AIFP workflows. Do NOT rely on cached knowledge or training data — directives evolve and the database is the source of truth. When executing any workflow, load the specific directive first via get_directive_by_name.",
+        "For any workflow step you're uncertain about, consult the directive. They cover: file operations, function tracking, interactions, types, task management, FP compliance, git, user preferences, reserve/finalize flows, and more."
+      ],
       "implementation_notes": [
         "Returns: Array of all directive objects with workflow, description, category, etc.",
         "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
@@ -279,7 +285,10 @@
       "error_handling": "Returns empty array if no matches found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Directives exist for ALL aspects of AIFP — if you're unsure how to handle a workflow step, there is almost certainly a directive for it. Search by keyword or type to find relevant guidance. Do NOT assume you know the workflow from memory — load and follow the directive.",
+        "For full workflow details on a matched directive, call get_directive_by_name(name). For deep edge-case context, call get_directive_content(name) to read the MD documentation."
+      ],
       "implementation_notes": [
         "Returns: Array of matching directive objects with workflow, description, category, etc.",
         "Implementation should also query and include directive-specific preferences from directive_preferences table (if any exist for each directive)"
@@ -515,7 +524,11 @@
       "error_handling": "Returns empty array if no flows found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Directive flows define the directive-to-directive navigation system — 'what directive comes next' based on current state. Evaluate the condition_key/condition_value fields against current project state to determine which directive flow to follow. Do NOT guess the next directive from memory — use get_flows_from_directive.",
+        "After identifying the next directive from directive flows, load it via get_directive_by_name before executing. Directives contain step-by-step workflow guidance — always read them from the database, never execute from cached memory.",
+        "NOTE: Directive flows (directive_flow table in aifp_core.db) are distinct from project flows (flow_themes/file_flows in project.db). This tool queries directive flows only."
+      ],
       "implementation_notes": [
         "Simple query: SELECT * FROM directive_flow WHERE from_directive = ? ORDER BY priority",
         "Returns all flow fields including condition_key, condition_value for AI to evaluate",
@@ -537,11 +550,14 @@
           "description": "Target directive name"
         }
       ],
-      "purpose": "Get all flows leading to a directive (what leads here?). Useful for understanding directive prerequisites.",
-      "error_handling": "Returns empty array if no flows found",
+      "purpose": "Get all directive flows leading to a directive (what leads here?). Useful for understanding directive prerequisites.",
+      "error_handling": "Returns empty array if no directive flows found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Directive flows show which directives route to this one and under what conditions. Use to understand prerequisites and entry points for any directive workflow.",
+        "NOTE: Directive flows (aifp_core.db) are distinct from project flows (project.db flow_themes/file_flows)."
+      ],
       "implementation_notes": [
         "Simple query: SELECT * FROM directive_flow WHERE to_directive = ? ORDER BY priority",
         "Returns all flow fields",
@@ -939,7 +955,9 @@
       "error_handling": "Returns empty array if no directives found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "These directive names represent the complete AIFP guidance system. For any workflow you need to execute, find the matching directive name here, then load it via get_directive_by_name(name) BEFORE executing. Directives are authoritative — do not execute workflows from memory alone."
+      ],
       "implementation_notes": [
         "Returns: Array of directive names as strings ['aifp_run', 'aifp_status', 'aifp_init', 'fp_purity', ...]",
         "If types provided: Filters to only those types (e.g., types=['fp', 'project'] returns only FP and project directives)",
@@ -1027,11 +1045,14 @@
           "description": "Optional filter: 'reference_consultation', 'utility', 'conditional', etc."
         }
       ],
-      "purpose": "Get all flows from wildcard '*' source (available from ANY context). Includes FP references, utilities, cross-cutting concerns.",
-      "error_handling": "Returns empty array if no flows found",
+      "purpose": "Get all directive flows from wildcard '*' source (available from ANY context). Includes FP references, utilities, cross-cutting concerns.",
+      "error_handling": "Returns empty array if no directive flows found",
       "is_tool": true,
       "is_sub_helper": false,
-      "return_statements": [],
+      "return_statements": [
+        "Wildcard directive flows are available from ANY directive context — they represent cross-cutting concerns like FP reference consultation and utility directives. Load the target directive via get_directive_by_name before executing.",
+        "NOTE: These are directive flows (aifp_core.db), distinct from project flows (project.db flow_themes/file_flows)."
+      ],
       "implementation_notes": [
         "Simple query: SELECT * FROM directive_flow WHERE from_directive = '*' [AND flow_type = ?] ORDER BY flow_type, priority",
         "Wildcard '*' means: available from ANY directive context (not sequential workflow)",
@@ -1059,9 +1080,9 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Returns directive MD content, absolute file path, and token estimate",
-        "Use for deep context on edge cases, complex workflows, FP compliance questions, and cross-directive relationships",
-        "For routine directive usage, the JSON workflow steps from get_directive_by_name are sufficient"
+        "Returns directive MD content, absolute file path, and token estimate. MD documentation is the DEEPEST layer of directive guidance — it contains complete workflows, examples, edge cases, FP compliance notes, and cross-directive relationships.",
+        "Use for: complex edge cases, ambiguity in workflow steps, FP compliance questions, cross-directive relationships, and any situation where the JSON workflow steps from get_directive_by_name are not sufficient.",
+        "Directives cover ALL aspects of AIFP. If you're uncertain about any workflow — file operations, interactions, types, reserve/finalize, task management, FP patterns — there is a directive with detailed guidance. Read it before improvising."
       ],
       "target_database": "core",
       "used_by_directives": [],

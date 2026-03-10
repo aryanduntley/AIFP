@@ -79,9 +79,10 @@ All directives use **trunk → branches → fallback** pattern. User preferences
 - **project_task_decomposition / project_task_complete / project_milestone_complete**: Work management
 - **project_completion_check**: Validate project completeness
 
-**How to use**: get_directive(name) → follow workflow → call helpers → query directive flows for next step.
+**How to use**: get_directive_by_name(name) → follow workflow → call helpers → query directive flows for next step.
+**CRITICAL**: ALWAYS load directives from the database before executing them. Do NOT execute from memory — directives evolve. The database is the source of truth.
 **MD docs**: get_directive_content(name) for deep context on edge cases.
-**Flows**: get_flows_from_directive(name) for "what comes next".
+**Directive flows**: get_flows_from_directive(name) for "what directive comes next" (distinct from project themes/flows in project.db).
 
 === HELPERS: YOUR DATABASE TOOLS ===
 
@@ -151,7 +152,15 @@ These are mandatory gates. Violating them creates invisible gaps in project trac
 
 9. **DO NOT read source files for lookups before checking the DB** — Use get_function_by_name, get_type_by_name, get_file_by_name, get_functions_by_file FIRST. Only read source files when the DB doesn't have what you need or when you need implementation details beyond the signature. The DB is the index; source files are the full text.
 
-10. **DO NOT start task work without checking flows and themes** — Before implementing any task, call get_all_flows() or get_task_flows(task_id) and get_all_themes() to understand the intended architecture. Flows describe user-facing behavior and implementation patterns. Skipping this leads to implementations that don't match the project's architectural intent.
+10. **DO NOT start task work without checking project flows and themes** — Before implementing any task, call get_all_flows() or get_task_flows(task_id) and get_all_themes() to understand the intended architecture. Project flows (flow_themes/file_flows in project.db) describe user-facing behavior and implementation patterns. Skipping this leads to implementations that don't match the project's architectural intent. NOTE: These project flows are distinct from directive flows (directive_flow table in aifp_core.db, queried via get_flows_from_directive) which define directive-to-directive navigation.
+
+11. **DO NOT skip function interactions** — After finalizing functions, you MUST add interactions for every function that calls, chains, borrows from, composes with, or pipes to another tracked function. Use add_interaction (by name) or add_interactions (by ID, batch). A finalized function that imports from other tracked files but has zero interactions recorded = incomplete tracking. Interactions are how the AI understands the dependency graph across sessions. Without them, refactoring impact analysis is blind.
+
+12. **DO NOT batch-finalize functions without interaction planning** — When finalizing multiple functions, plan interactions BEFORE or DURING finalization. Do not finalize a batch of functions and move on without considering which functions call which. The finalize → interact flow is atomic: finalize without interactions is half the work.
+
+13. **DO NOT skip types_functions linkage** — After finalizing functions, scan each function's parameters and returns for tracked type names. If a function consumes or produces a tracked type, add the relationship via add_types_functions with the correct role (factory, transformer, validator, accessor, operator, pattern_matcher, combinator). Auto-infer: returns type only → factory; params AND returns same type → transformer; params with boolean/Result return → validator; params only → accessor/operator. This linkage is how the AI answers "what functions use TypeX?" without scanning all files.
+
+14. **DO NOT execute directives from memory alone** — Before executing any directive workflow, call get_directive(name) or get_directive_content(name) to load the current steps. Directives evolve. Cached knowledge from prior sessions may be stale or incomplete. The database is the source of truth for directive workflows, not your training data or prior context. Read the directive, then execute it.
 
 === BEHAVIOR LOOP ===
 
