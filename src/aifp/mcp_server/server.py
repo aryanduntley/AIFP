@@ -12,6 +12,7 @@ Tool call flow:
 import sys
 import json
 import sqlite3
+from pathlib import Path
 from typing import Dict, Any, List, Final
 
 from ..database.connection import get_core_db_path
@@ -33,7 +34,7 @@ from .errors import (
 # ============================================================================
 
 SERVER_NAME: Final[str] = "aifp"
-SERVER_VERSION: Final[str] = "1.0.0"
+SERVER_VERSION: Final[str] = "1.9.0"
 PROTOCOL_VERSION: Final[str] = "2025-06-18"
 
 
@@ -67,6 +68,7 @@ _DESTRUCTIVE_SPECIAL: Final[frozenset] = frozenset({
 # ============================================================================
 
 _cached_tool_dicts: List[Dict[str, Any]] = []
+_cached_instructions: str = ""
 
 
 # ============================================================================
@@ -158,12 +160,15 @@ def build_tool_dict(name: str, description: str,
 
 def handle_initialize(request_id: Any,
                       params: Dict[str, Any]) -> Dict[str, Any]:
-    """Pure: Handle initialize handshake."""
-    return build_jsonrpc_response(request_id, {
+    """Pure: Handle initialize handshake. Includes system prompt as instructions."""
+    result: Dict[str, Any] = {
         "protocolVersion": PROTOCOL_VERSION,
         "capabilities": {"tools": {}},
         "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
-    })
+    }
+    if _cached_instructions:
+        result["instructions"] = _cached_instructions
+    return build_jsonrpc_response(request_id, result)
 
 
 def handle_list_tools(request_id: Any) -> Dict[str, Any]:
@@ -240,6 +245,14 @@ def dispatch_message(message: Dict[str, Any]) -> Dict[str, Any] | None:
 # Effect Functions
 # ============================================================================
 
+def _effect_load_and_cache_instructions() -> None:
+    """Effect: Load system prompt from reference/system_prompt.txt into module cache."""
+    global _cached_instructions
+    prompt_path = Path(__file__).parent.parent / "reference" / "system_prompt.txt"
+    if prompt_path.is_file():
+        _cached_instructions = prompt_path.read_text(encoding="utf-8")
+
+
 def _effect_load_and_cache_tools() -> None:
     """Effect: Load tool definitions from aifp_core.db into module cache."""
     global _cached_tool_dicts
@@ -297,5 +310,6 @@ def _effect_stdio_loop() -> None:
 
 def run_server() -> None:
     """Start the AIFP MCP server on stdio transport (blocking)."""
+    _effect_load_and_cache_instructions()
     _effect_load_and_cache_tools()
     _effect_stdio_loop()

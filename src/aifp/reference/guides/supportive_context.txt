@@ -116,6 +116,16 @@ Call get_directive_by_name(name) to get the current workflow steps from the data
 Do NOT execute directive workflows from memory or training data — directives evolve and
 the database is the source of truth. Cached knowledge from prior sessions may be stale.
 
+**Entry Point Directives** (used every session):
+- **aifp_run / aifp_status**: aifp_run on session start, aifp_status for fresh state
+- **project_file_write**: Write file + update project.db — triggers the File Coding Loop
+- **project_reserve_finalize**: Reserve IDs → embed in names → finalize after writing → assign to flows
+- **project_task_decomposition / project_task_complete / project_milestone_complete**: Work management
+- **update_task / update_milestone / update_project_state**: Status progression (start, complete, block)
+
+**One-time Directives** (init only — not used during regular progression):
+- **aifp_init / project_discovery / project_completion_check**: Setup, planning, and final validation
+
 **Execution Order** (for ALL directives):
 1. Load directive: get_directive_by_name(directive_name) → read workflow steps
 2. User preferences loaded FIRST (user_preferences_sync auto-called if customizable)
@@ -297,7 +307,20 @@ Non-FP projects: If existing OOP codebase detected → STOP, inform user AIFP is
 Offer: disable AIFP, or start new FP project, convert to FP (major refactor - discouraged).
 DO NOT proceed with managing non-FP projects. DO NOT try to convert unless explicitly requested
 
-=== 13. SESSION MANAGEMENT ===
+=== 13. USER REQUEST ROUTING ===
+
+When the user makes a request, route it through these checks IN ORDER:
+
+1. Matches existing task/sidequest/subtask → continue progression on that work
+2. NEW work (ad-hoc fix, polish, "fix this", user request outside current task):
+   → call get_directive_by_name('project_task_decomposition') → create task/sidequest FIRST → then execute
+3. Needs a directive workflow (init, discovery, file write, etc.):
+   → call get_directive_by_name(name) FIRST → follow its steps
+4. Needs code research (how something works, trace a bug, understand wiring):
+   → call get_file_by_name / get_function_by_name / get_interactions_by_function FIRST → then read source
+5. Status/continue/resume request → answer from existing context, call aifp_status() only if stale
+
+=== 14. SESSION MANAGEMENT ===
 
 **Startup** (no context):
   aifp_run(is_new_session=true) → full bundle: status, settings, directives, supportive context, guidance
@@ -315,6 +338,13 @@ DO NOT proceed with managing non-FP projects. DO NOT try to convert unless expli
 **Mid-session refresh** (AI-initiated):
   aifp_status() → fresh project state + supportive context (lighter than full bundle)
   get_supportive_context() alone if you only need this reference reloaded
+  **Staleness check**: If you cannot recall the current milestone name and active task, your context is stale — call aifp_status().
+
+**Task completion gate** (before marking any task complete):
+  Call get_task_context(task_id) to verify every finalized file has its public functions tracked.
+  Zero functions on a code file = incomplete. Do NOT call update_task(status='completed') until verified.
+  If work is deferred: create follow-up task via add_task, call add_note referencing the specific
+  unfinished files/functions. The follow-up MUST exist in the completion path before current task completes.
 
 **Session End** ("done"/"wrap up"/"I'm done"):
   aifp_end → audit tracked files/functions, stop watchdog, log session summary
@@ -324,7 +354,7 @@ DO NOT proceed with managing non-FP projects. DO NOT try to convert unless expli
 **DB policy**: helpers FIRST → orchestrators → directives → direct SQL (last resort, reads only).
 Exception: user_directives.db allows free SQL.
 
-=== 14. FULL WORKFLOW EXAMPLE (reference — rely on directives for definitive steps) ===
+=== 15. FULL WORKFLOW EXAMPLE (reference — rely on directives for definitive steps) ===
 
 Example: user says "help me create a calculator"
 
@@ -432,13 +462,14 @@ PHASE: USE CASE 2 — CUSTOM DIRECTIVE AUTOMATION (if detected during discovery)
     29. user_directive_monitor (ongoing) | user_directive_update (if source files change)
         changes trigger full re-pipeline: deactivate → parse → validate → implement → approve
 
-=== 15. QUICK REFERENCE — WHEN YOU NEED X, CALL Y ===
+=== 16. QUICK REFERENCE — WHEN YOU NEED X, CALL Y ===
 
 DIRECTIVES:
   Execute a directive workflow    → get_directive_by_name(name) FIRST, then follow its steps
   Find which directive applies    → search_directives(type, keyword) or find_directive_by_intent(user_request)
   Deep context / edge cases       → get_directive_content(name)
   What directive comes next       → get_flows_from_directive(name)
+  Which tools for a directive     → get_helpers_for_directive(name)
   FP directive categories         → get_fp_directive_index()
 
 CODE RESEARCH (BEFORE reading source files):
