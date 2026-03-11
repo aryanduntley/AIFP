@@ -767,7 +767,7 @@ def _get_guidance() -> Dict[str, Any]:
     return {
         'directive_access': (
             "Directive names cached from is_new_session bundle. "
-            "Call get_directive(name) for specific details."
+            "Call get_directive_by_name(name) for specific details."
         ),
         'when_to_use': (
             "Use AIFP directives when coding or when project "

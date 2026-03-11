@@ -4,7 +4,7 @@ AIFP SUPPORTIVE CONTEXT — CONCISE REFERENCE
 Supplements the system prompt. Loaded on session start via aifp_run(is_new_session=true).
 Reload anytime via get_supportive_context() if context feels stale or compressed.
 
-=== 1. FP RULES — DIRECTIVE REFERENCE ===
+=== 1. FP RULES — DIRECTIVE REFERENCE (search_directives(type='fp', keyword='...'), get_fp_directive_index) ===
 
 66 FP directives in 18 categories cover all FP patterns in detail.
 Call get_fp_directive_index() or search_directives(type='fp', keyword='...').
@@ -21,7 +21,7 @@ Quick rules:
 - Wrap external libraries in Result-returning pure wrappers
 - Result/Option types for errors, not exceptions for control flow
 
-=== 2. STATE DATABASE USAGE ===
+=== 2. STATE DATABASE USAGE (create_state_database) ===
 
 Auto-created at <source-dir>/.state/runtime.db. Replaces mutable globals.
 
@@ -45,7 +45,7 @@ Scope levels:
 
 Decision: 2+ files AND identical → extract immediately. Promote as commonality grows.
 
-=== 4. PROJECT DISCOVERY & PROGRESSION ===
+=== 4. PROJECT DISCOVERY & PROGRESSION (get_directive_by_name('project_discovery'), get_directive_by_name('project_progression')) ===
 
 **Project Discovery** (after init, before coding):
 Bridge between initialization and active development. Collaborative conversation.
@@ -93,7 +93,23 @@ Bridge between initialization and active development. Collaborative conversation
   Tasks are created incrementally as work progresses, NOT all at once.
   Each completion triggers the next creation.
 
-=== 5. DIRECTIVE EXECUTION ===
+=== 4A. AD-HOC WORK ROUTING (get_directive_by_name('project_task_decomposition')) ===
+
+When the user requests code changes OUTSIDE the current task/milestone
+(bug fixes, polish, "fix this", "change that", investigations that lead to edits):
+
+1. Call get_directive_by_name('project_task_decomposition') → follow its workflow
+2. Route work into proper structure: call add_task, add_subtask, or add_sidequest
+3. Query DB for affected files: call get_file_by_name(name), get_functions_by_file(file_id)
+4. If architectural: call get_all_flows(), get_all_themes()
+5. Do the work (FP-compliant)
+6. Update DB: call finalize_file/finalize_function, add_interaction(s), add_types_functions, add_note
+
+Ad-hoc user requests are NOT exempt from AIFP tracking. The only difference is WHO
+initiates the work (user vs progression loop), not WHETHER it gets tracked.
+Even "quick fixes" go through the loop — the DB prevents tracking gaps across sessions.
+
+=== 5. DIRECTIVE EXECUTION (get_directive_by_name, get_directive_content, get_flows_from_directive) ===
 
 **CRITICAL: ALWAYS load directives before executing them.**
 Call get_directive_by_name(name) to get the current workflow steps from the database.
@@ -130,7 +146,7 @@ the database is the source of truth. Cached knowledge from prior sessions may be
   (user-facing behavior/architecture stored in flow_themes/file_flows tables in project.db).
   Do not confuse the two.
 
-=== 6. PROJECT FILE WRITE WORKFLOW ===
+=== 6. PROJECT FILE WRITE WORKFLOW (get_directive_by_name('project_file_write')) ===
 
 **FIRST**: Call get_directive_by_name("project_file_write") to load the current workflow steps.
 Directives evolve — do NOT execute from memory. The database is the source of truth.
@@ -143,10 +159,10 @@ When writing any file:
 5. Add interactions for ALL finalized functions that call/chain/compose/pipe other tracked functions
 6. Add types_functions linkages for functions that consume or produce tracked types
 
-Never write code without tracking it in project.db.
-Never finalize functions without adding interactions and types_functions linkages.
+Never write code without tracking it — call reserve_file, finalize_file, add_file_to_flow.
+Never finalize functions without calling add_interaction(s) and add_types_functions.
 
-=== 7. RESERVE → WRITE → FINALIZE → INTERACT → LINK FLOW ===
+=== 7. RESERVE → WRITE → FINALIZE → INTERACT → LINK FLOW (get_directive_by_name('project_reserve_finalize')) ===
 
 Purpose: Get database IDs BEFORE coding so names are instantly queryable.
 
@@ -217,7 +233,7 @@ EXCEPTIONS — skip ID embedding:
 - Files: __init__.py, .db files, pyproject.toml, setup.py, conftest.py
 - Private functions (_underscore prefix): do NOT reserve or track
 
-=== 8. USE CASE 2: CUSTOM DIRECTIVE AUTOMATION ===
+=== 8. USE CASE 2: CUSTOM DIRECTIVE AUTOMATION (search_directives(keyword='user_directive'), get_user_directive_by_name) ===
 
 9 user_directive_* directives for full pipeline.
 Call search_directives(keyword='user_directive') for details.
@@ -234,17 +250,17 @@ vs software BUILD signals ("a web server", "a library").
 Status progression: NULL → pending_discovery → pending_parse → in_progress → active → disabled.
 Key: Implementation phase IS Case 1 development — AI builds software to execute user directives.
 
-=== 9. USER PREFERENCES SYSTEM ===
+=== 9. USER PREFERENCES SYSTEM (add_directive_preference, load_directive_preferences, get_user_setting) ===
 
 Atomic key-value overrides for directive behavior.
 Created when users express preferences ("Always add docstrings", "Use 2-space indentation").
 Auto-loaded before customizable directives (user_preferences_sync).
 
-Creating: user_preferences_update → directive_name.preference_key = value.
+Creating: call get_directive_by_name('user_preferences_update') → then call add_directive_preference(directive_name, preference_key, value).
 Tracking features: ALL OFF by default. 5 features for dev/debugging only.
 Regular users: assume tracking always disabled. Don't mention tracking to regular users.
 
-=== 10. GIT + FP COLLABORATION ===
+=== 10. GIT + FP COLLABORATION (get_git_status, get_directive_by_name for git directives) ===
 
 FP makes Git superior: pure functions easy to test, no hierarchy conflicts,
 immutable data fewer state conflicts, isolated side effects easy identification.
@@ -252,7 +268,7 @@ immutable data fewer state conflicts, isolated side effects easy identification.
 Git directives: git_init, git_detect_external_changes, git_create_branch,
 git_detect_conflicts, git_merge_branch. Branch naming: aifp-{user}-{number}.
 
-=== 11. EVOLUTION NOTES ===
+=== 11. EVOLUTION NOTES (add_note) ===
 
 Any change to ProjectBlueprint.md, completion paths, themes, flows, or milestones
 MUST be accompanied by a notes table entry describing what changed and why.
@@ -265,14 +281,14 @@ Use add_note with:
 Blueprint notes: note_type='evolution' + directive_name='project_blueprint_update'.
 Non-negotiable — the database is the project's memory.
 
-=== 12. EDGE CASES & RECOVERY ===
+=== 12. EDGE CASES & RECOVERY (aifp_status, get_supportive_context, search_directives) ===
 
 If confused, lost context, or unsure what to do next:
 - aifp_status() → fresh project state from database
 - get_supportive_context() → reload this reference material
 - search_directives(keyword="...") → find the right directive
-- project_notes_log → record decisions, confusion, context
-- project_sidequest_create → track unexpected work
+- add_note(note_type='task_context') → record decisions, confusion, context
+- add_sidequest(paused_task_id, flow_ids, name) → track unexpected work
 - aifp_run(is_new_session=true) → full reload of everything
 
 Trust the database over cached context.
@@ -289,7 +305,7 @@ DO NOT proceed with managing non-FP projects. DO NOT try to convert unless expli
   - .aifp-project/ missing → check .git/.aifp/ backup → offer restore or aifp_init
   - .aifp-project/ exists → read ProjectBlueprint.md → present status + next actions
   - project_continue_on_start=true → auto-continue; otherwise → await user direction
-  Directive names cached from bundle. Use get_directive(name) or search_directives(type, keyword).
+  Directive names cached from bundle. Use get_directive_by_name(name) or search_directives(type, keyword).
 
 **Continuation** (during session):
   aifp_run(is_new_session=false) → watchdog alerts only (called at work checkpoints)
@@ -392,16 +408,16 @@ PHASE: MID-WORK CHANGES (can occur at any point during work loop)
 
 PHASE: USER PREFERENCE CHANGES
   22. user changes how a directive behaves (e.g., "always add docstrings"):
-      → user_preferences_update directive
-      → table: directive_preferences (directive_name, preference_key, preference_value)
-      → add_note(note_type='decision')
+      → call get_directive_by_name('user_preferences_update') → follow its workflow
+      → call add_directive_preference(directive_name, preference_key, preference_value)
+      → call add_note(note_type='decision')
   23. user changes project-wide AI behavior (e.g., "continue on start"):
-      → user_preferences_update directive
-      → table: user_settings (setting_key, setting_value)
-      → add_note(note_type='decision')
+      → call get_directive_by_name('user_preferences_update') → follow its workflow
+      → call add_user_setting(setting_key, setting_value) or update_user_setting(...)
+      → call add_note(note_type='decision')
   24. user requests custom helper behavior extension:
-      → table: custom_return_statements (helper_name, statement, active)
-      → add_note(note_type='decision')
+      → call set_custom_return_statement(helper_name, statement)
+      → call add_note(note_type='decision')
 
 PHASE: USE CASE 2 — CUSTOM DIRECTIVE AUTOMATION (if detected during discovery)
   Detection: user describes automation BEHAVIOR ("when X do Y") not software to BUILD
@@ -415,5 +431,49 @@ PHASE: USE CASE 2 — CUSTOM DIRECTIVE AUTOMATION (if detected during discovery)
     28. user_directive_approve → user_directive_activate → status='active'
     29. user_directive_monitor (ongoing) | user_directive_update (if source files change)
         changes trigger full re-pipeline: deactivate → parse → validate → implement → approve
+
+=== 15. QUICK REFERENCE — WHEN YOU NEED X, CALL Y ===
+
+DIRECTIVES:
+  Execute a directive workflow    → get_directive_by_name(name) FIRST, then follow its steps
+  Find which directive applies    → search_directives(type, keyword) or find_directive_by_intent(user_request)
+  Deep context / edge cases       → get_directive_content(name)
+  What directive comes next       → get_flows_from_directive(name)
+  FP directive categories         → get_fp_directive_index()
+
+CODE RESEARCH (BEFORE reading source files):
+  Find a file                     → get_file_by_name(name) or get_file_by_path(path)
+  See functions in a file         → get_functions_by_file(file_id)
+  Find a function                 → get_function_by_name(name)
+  Find a type                     → get_type_by_name(name)
+  Trace function dependencies     → get_interactions_by_function(name)
+  Trace file dependencies         → get_interactions_by_file(file_id)
+  Full task context               → get_task_context(task_id, include_interactions=true)
+
+TRACKING CODE CHANGES:
+  Reserve IDs before writing      → reserve_file(s), reserve_function(s), reserve_type(s)
+  Finalize after writing          → finalize_file(s), finalize_function(s), finalize_type(s)
+  Assign file to flow             → add_file_to_flow(file_id, flow_id) or add_file_flows([...])
+  Record function dependencies    → add_interaction(source_name, target_name, type) or add_interactions([...])
+  Link types to functions         → add_types_functions([(function_id, type_id, role), ...])
+
+TASK MANAGEMENT:
+  Route ad-hoc work               → get_directive_by_name('project_task_decomposition')
+  Create task                     → add_task(milestone_id, name, flow_ids, priority)
+  Create sidequest                → add_sidequest(paused_task_id, flow_ids, name, priority)
+  Create subtask                  → add_subtask(name, parent_task_id, priority)
+  Update task/milestone status    → update_task(id, status=...) or update_milestone(id, status=...)
+  Orchestrated state change       → update_project_state(project_root, action, target_type, target_id)
+  Check progress                  → get_current_progress(scope, id) or get_incomplete_tasks()
+
+ARCHITECTURE:
+  All flows                       → get_all_flows()
+  All themes                      → get_all_themes()
+  Task flows                      → get_task_flows(task_id)
+  Completion paths                → get_all_completion_paths()
+
+NOTES & DECISIONS:
+  Record a decision/change        → add_note(note_type, content, source, directive_name)
+  Search past decisions           → search_notes(content_search) or get_notes_comprehensive(...)
 
 === END SUPPORTIVE CONTEXT ===
