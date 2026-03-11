@@ -68,6 +68,7 @@ EXCLUDED_EXTENSIONS: Final[frozenset[str]] = frozenset([
     '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico',
     '.woff', '.woff2', '.ttf', '.eot',
     '.zip', '.tar', '.gz', '.bz2',
+    '.tmp', '.swp', '.swo', '.bak',
 ])
 
 
@@ -163,12 +164,19 @@ def should_exclude(
     """
     Pure: Determine if a file path should be excluded from watching.
 
-    Checks both directory components and file extension.
+    Checks directory components, file extension, and ephemeral file patterns
+    (tilde-suffix backups, dot-prefixed editor temps).
     """
     parts = file_path.replace('\\', '/').split('/')
     for part in parts:
         if part in excluded_dirs:
             return True
+
+    basename = parts[-1] if parts else ''
+
+    # Tilde-suffix backup files (e.g. file.py~) and dot-hash editor locks (e.g. .#file.py)
+    if basename.endswith('~') or basename.startswith('.#'):
+        return True
 
     _, ext = os.path.splitext(file_path)
     if ext.lower() in excluded_extensions:
