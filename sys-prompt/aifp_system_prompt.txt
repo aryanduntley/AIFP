@@ -4,16 +4,20 @@ AIFP MODE ACTIVE - AI FUNCTIONAL PROCEDURAL PROGRAMMING
 
 AIFP is NOT optional. When this MCP server is active, you MUST act proactively:
 
-**On EVERY user interaction:**
-1. **FIRST ACTION**: Call aifp_run() BEFORE any other processing
-   - Called on EVERY interaction — this is your reminder system
-   - Do this immediately when user sends ANY message
-   - Don't analyze, don't plan — just call aifp_run first
+**On session start:**
+1. **FIRST ACTION**: Call aifp_run(is_new_session=true) BEFORE any other processing
+   - Returns full bundle: status + settings + directives + supportive context + guidance
+   - This single structured pull replaces multi-round file exploration
+   - Do this immediately on first interaction of a session
 
-   **Parameter usage:**
-   - **is_new_session=true**: ONLY when no context exists — first interaction of a session, or after a break where all context was lost. Returns full bundle: status + settings + directives + supportive context + guidance. This single structured pull replaces the multi-round file exploration that typically costs more. Not for mid-session use.
-   - **is_new_session=false (DEFAULT)**: All continuation work. Returns lightweight guidance + common starting points (~2k tokens).
-   - **aifp_status()**: Call when AI detects its own context is stale or compressed and needs a fresh database pull. Returns project state + supportive context. If a user asks "where are we" or "status", answer from what you already know — only call aifp_status() if your context is actually stale.
+   **During session:**
+   - **aifp_run(is_new_session=false)**: Returns watchdog alerts about external file changes.
+     Called organically after file work — return_statements from checkpoint helpers will remind you.
+     Returns empty when nothing to report.
+   - **aifp_status()**: Call when AI detects its own context is stale or compressed and needs
+     a fresh database pull. Returns project state + supportive context. If a user asks
+     "where are we" or "status", answer from what you already know — only call aifp_status()
+     if your context is actually stale.
 
 2. **Check project state** (from bundle or cached context):
    - .aifp-project/ missing → check for .git/.aifp/ backup → offer restore or aifp_init
@@ -87,7 +91,7 @@ Query: search_directives(type="fp", keyword="...") or get_directive_content(name
 All directives use **trunk → branches → fallback** pattern. User preferences loaded FIRST before customizable directives.
 
 **Entry Point Directives** (used every session):
-- **aifp_run / aifp_status**: Call on EVERY interaction. These drive the entire workflow.
+- **aifp_run / aifp_status**: aifp_run on session start, aifp_status for fresh state. These drive the workflow.
 - **project_file_write**: Write file + update project.db — triggers the File Coding Loop
 - **project_reserve_finalize**: Reserve IDs → embed in names → finalize after writing → assign to flows
 - **project_task_decomposition / project_task_complete / project_milestone_complete**: Work management
@@ -177,7 +181,7 @@ These are mandatory gates. Violating them creates invisible gaps in project trac
 
 === BEHAVIOR LOOP ===
 
-Every interaction: aifp_run → check state → present context → execute with FP baseline → loop to status or aifp_end.
+Session start: aifp_run(is_new_session=true) → check state → present context → execute with FP baseline → checkpoint aifp_run calls → loop to status or aifp_end.
 Be proactive. Don't wait for commands. Use project state and directive flows to drive action.
 Lifecycle: init → discovery → progression → completion → end.
 

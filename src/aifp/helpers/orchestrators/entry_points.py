@@ -514,39 +514,34 @@ def aifp_run(is_new_session: bool = False) -> Result:
     """
     try:
         if not is_new_session:
-            # Lightweight response — still read watchdog reminders if project exists
-            project_root = _discover_project_root()
-            watchdog_data = {'status': 'no_project', 'reminders': (), 'notice': None}
-            if project_root is not None:
-                set_project_root(project_root)
-                watchdog_data = _read_and_clear_reminders(project_root)
+            # Checkpoint call — only returns data when watchdog has reminders
+            try:
+                project_root = get_cached_project_root()
+            except RuntimeError:
+                return Result(
+                    success=True,
+                    data={},
+                    return_statements=get_return_statements("aifp_run"),
+                )
+
+            watchdog_data = _read_and_clear_reminders(project_root)
+            reminders = watchdog_data.get('reminders', ())
+
+            if not reminders:
+                return Result(
+                    success=True,
+                    data={},
+                    return_statements=get_return_statements("aifp_run"),
+                )
 
             return Result(
                 success=True,
                 data={
-                    'guidance': _get_guidance(),
-                    'action_required': (
-                        'You MUST act proactively — do not wait for user commands.',
-                        'If user gave a task: Execute it using AIFP directives.',
-                        'If no task: Call aifp_status() and present next steps.',
-                        'If something unexpected happened: Use project_sidequest_create or project_notes_log.',
-                        'If writing code: Follow reserve → write → finalize flow (batch helpers available).',
-                        'If confused or lost context: Call aifp_status() for fresh state, '
-                        'then search_directives() to find the right directive for the situation.',
-                    ),
-                    'common_starting_points': (
-                        'aifp_status() — Get fresh project state and determine next action',
-                        'get_supportive_context() — Reload detailed FP examples, DRY patterns, state DB usage, behavioral rules',
-                        'project_task_create — Create new task from user request',
-                        'project_sidequest_create — Track unexpected work or user change of plans',
-                        'project_notes_log — Log decisions, clarifications, or context',
-                        'project_auto_resume — Resume interrupted work',
-                    ),
-                    'session_health': (
-                        'If context feels stale or compressed, call aifp_run(is_new_session=true) '
-                        'to reload full project state from database.'
-                    ),
                     'watchdog': watchdog_data,
+                    'notice': (
+                        'These watchdog reminders have been cleared and will not be shown again. '
+                        'Review and handle any actionable items now.'
+                    ),
                 },
                 return_statements=get_return_statements("aifp_run"),
             )

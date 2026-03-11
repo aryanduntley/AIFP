@@ -291,8 +291,9 @@ DO NOT proceed with managing non-FP projects. DO NOT try to convert unless expli
   - project_continue_on_start=true → auto-continue; otherwise → await user direction
   Directive names cached from bundle. Use get_directive(name) or search_directives(type, keyword).
 
-**Continuation** (every interaction after startup):
-  aifp_run(is_new_session=false) → lightweight guidance
+**Continuation** (during session):
+  aifp_run(is_new_session=false) → watchdog alerts only (called at work checkpoints)
+  Returns empty when nothing to report. Return_statements on checkpoint helpers remind you.
   Execute → update DB → loop. Database handles state, not your memory.
 
 **Mid-session refresh** (AI-initiated):
