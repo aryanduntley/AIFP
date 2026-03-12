@@ -46,6 +46,7 @@ from ._common import (
 )
 
 from .backup import check_and_run_backup
+from .migration import _check_pending_migrations
 from .status import get_project_status
 
 
@@ -93,6 +94,7 @@ def aifp_init(project_root: str) -> Result:
         # Step 1: Check if already initialized
         step = 1
         if database_exists(project_db_path):
+            migration_data = _check_pending_migrations(project_root, AIFP_PROJECT_DIR)
             return Result(
                 success=False,
                 data={
@@ -100,6 +102,7 @@ def aifp_init(project_root: str) -> Result:
                     'error': f"Project already initialized: {project_db_path} exists",
                     'failed_step': step,
                     'cleanup_performed': False,
+                    'migration': migration_data,
                 },
                 error="Project already initialized",
             )
@@ -616,6 +619,12 @@ def aifp_run(is_new_session: bool = False) -> Result:
         # Automated backup check: trigger if project inactive beyond threshold
         backup_data = check_and_run_backup(project_root)
 
+        # Migration check: detect pending schema migrations
+        migration_data = _check_pending_migrations(project_root, AIFP_PROJECT_DIR)
+
+        # Deferred notes: surface outstanding deferred work
+        deferred_notes = _get_deferred_notes_summary(project_root)
+
         return Result(
             success=True,
             data={
@@ -628,6 +637,8 @@ def aifp_run(is_new_session: bool = False) -> Result:
                 'watchdog': watchdog_data,
                 'case_2_context': case_2_context,
                 'backup': backup_data,
+                'migration': migration_data,
+                'deferred_notes': deferred_notes,
             },
             return_statements=get_return_statements("aifp_run"),
         )
@@ -829,6 +840,33 @@ def _get_supportive_context_safe() -> str:
         return ''
     except Exception:
         return ''
+
+
+def _get_deferred_notes_summary(project_root: str) -> Tuple[Dict[str, Any], ...]:
+    """Effect: Get metadata for all deferred notes (excludes content for token savings)."""
+    try:
+        conn = _open_project_connection(project_root)
+        try:
+            cursor = conn.execute(
+                "SELECT id, note_type, reference_table, reference_id, source, severity, "
+                "directive_name, send_with_directive, created_at, updated_at "
+                "FROM notes WHERE note_type = 'deferred' "
+                "ORDER BY created_at DESC"
+            )
+            rows = cursor.fetchall()
+            result = []
+            for row in rows:
+                d = {}
+                for key in row.keys():
+                    val = row[key]
+                    if val is not None and val != '' and val != 0:
+                        d[key] = val
+                result.append(d)
+            return tuple(result)
+        finally:
+            conn.close()
+    except Exception:
+        return ()
 
 
 def _get_infrastructure_safe(project_root: str) -> Tuple[Dict[str, Any], ...]:

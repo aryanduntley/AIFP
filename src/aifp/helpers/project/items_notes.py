@@ -338,7 +338,8 @@ def _query_notes_comprehensive(
     reference_id: Optional[int],
     source: Optional[str],
     severity: Optional[str],
-    directive_name: Optional[str]
+    directive_name: Optional[str],
+    exclude_note_types: Optional[list] = None
 ) -> Tuple[NoteRecord, ...]:
     """
     Effect: Query notes with multiple filters.
@@ -383,6 +384,11 @@ def _query_notes_comprehensive(
         where_clauses.append("directive_name = ?")
         values.append(directive_name)
 
+    if exclude_note_types:
+        placeholders = ", ".join(["?"] * len(exclude_note_types))
+        where_clauses.append(f"note_type NOT IN ({placeholders})")
+        values.extend(exclude_note_types)
+
     # Build final query
     query = "SELECT * FROM notes"
     if where_clauses:
@@ -417,7 +423,8 @@ def _search_notes(
     reference_id: Optional[int],
     source: Optional[str],
     severity: Optional[str],
-    directive_name: Optional[str]
+    directive_name: Optional[str],
+    exclude_note_types: Optional[list] = None
 ) -> Tuple[NoteRecord, ...]:
     """
     Effect: Search notes by content with optional filters.
@@ -462,6 +469,11 @@ def _search_notes(
     if directive_name is not None:
         where_clauses.append("directive_name = ?")
         values.append(directive_name)
+
+    if exclude_note_types:
+        placeholders = ", ".join(["?"] * len(exclude_note_types))
+        where_clauses.append(f"note_type NOT IN ({placeholders})")
+        values.extend(exclude_note_types)
 
     # Build final query
     query = "SELECT * FROM notes WHERE " + " AND ".join(where_clauses)
@@ -905,7 +917,8 @@ def get_notes_comprehensive(
     reference_id: Optional[int] = None,
     source: Optional[str] = None,
     severity: Optional[str] = None,
-    directive_name: Optional[str] = None
+    directive_name: Optional[str] = None,
+    exclude_note_types: Optional[list] = None
 ) -> NoteQueryResult:
     """
     Advanced note search with filters.
@@ -945,7 +958,8 @@ def get_notes_comprehensive(
 
     try:
         notes = _query_notes_comprehensive(
-            conn, note_type, reference_table, reference_id, source, severity, directive_name
+            conn, note_type, reference_table, reference_id, source, severity, directive_name,
+            exclude_note_types
         )
         conn.close()
 
@@ -969,7 +983,8 @@ def search_notes(
     reference_id: Optional[int] = None,
     source: Optional[str] = None,
     severity: Optional[str] = None,
-    directive_name: Optional[str] = None
+    directive_name: Optional[str] = None,
+    exclude_note_types: Optional[list] = None
 ) -> NoteQueryResult:
     """
     Search note content with optional filters.
@@ -1010,7 +1025,8 @@ def search_notes(
 
     try:
         notes = _search_notes(
-            conn, search_string, note_type, reference_table, reference_id, source, severity, directive_name
+            conn, search_string, note_type, reference_table, reference_id, source, severity, directive_name,
+            exclude_note_types
         )
         conn.close()
 

@@ -76,7 +76,9 @@ VALID_NOTE_TYPES: Final[frozenset[str]] = frozenset([
     'user_feedback',
     'lifecycle',
     'testing',
-    'general'
+    'general',
+    # Deferred work tracking
+    'deferred', 'completed', 'obsolete'
 ])
 
 # Severity levels (shared across databases)

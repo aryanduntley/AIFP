@@ -90,7 +90,9 @@ VALID_NOTE_TYPES: Final[frozenset[str]] = frozenset([
     'warning', 'error', 'info', 'auto_summary',
     # Semantic types
     'decision', 'evolution', 'analysis', 'task_context',
-    'external', 'summary'
+    'external', 'summary',
+    # Deferred work tracking
+    'deferred', 'completed', 'obsolete'
 ])
 
 # Note sources

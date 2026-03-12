@@ -20,7 +20,9 @@
         "If user setting project_continue_on_start=true and is_new_session=true: Automatically continue project work with bundled context instead of waiting for user command",
         "When autostart enabled: Load pending tasks from status, present with priority order, proactively suggest next steps for project completion",
         "DB-FIRST LOOKUP POLICY: Throughout this session, use get_function_by_name, get_type_by_name, get_file_by_name, get_functions_by_file to research existing code BEFORE reading source files. The project DB is a queryable index of all tracked files, functions, and types — use it as your first stop for lookups. Only read source files when the DB doesn't answer your question or you need implementation details beyond signatures.",
-        "FLOWS & THEMES: Before starting work on any task, check get_all_flows() and get_all_themes() for relevant workflow descriptions. Flows describe the intended architecture and user-facing behavior your implementation should match."
+        "FLOWS & THEMES: Before starting work on any task, check get_all_flows() and get_all_themes() for relevant workflow descriptions. Flows describe the intended architecture and user-facing behavior your implementation should match.",
+        "If data.migration.pending is non-empty, inform user and call migrate_databases(project_root) to upgrade project databases to current schema versions",
+        "If data.deferred_notes is non-empty, review deferred work items and consider whether any should be addressed in the current session"
       ],
       "implementation_notes": [
         "Returns: If is_new_session=true → bundles {status, user_settings, fp_directive_index, all_directive_names[], infrastructure_data, guidance, watchdog: {started, start_error, status, reminders[], notice}}",
@@ -623,6 +625,47 @@
       ]
     },
     {
+      "name": "migrate_databases",
+      "file_path": "helpers/orchestrators/migration.py",
+      "parameters": [
+        {
+          "name": "project_root",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Absolute path to the project root directory"
+        },
+        {
+          "name": "aifp_folder",
+          "type": "string",
+          "required": false,
+          "default": ".aifp-project",
+          "description": "AIFP project directory name"
+        }
+      ],
+      "purpose": "Migrate all pending project databases to current schema versions. Creates fresh DBs from new schema SQL, transfers data via ATTACH, returns temp paths for AI to verify and place.",
+      "error_handling": "Returns per-DB results with verification data. Never throws — errors are captured per-DB.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Verify all tables in each migrated DB show match=true in verification data",
+        "Move each backup from temp path to {project_root}/{aifp_folder}/backups/{db_name}_pre_migration_v{old_version}_{YYYYMMDD}.db",
+        "Replace each old DB with new: move new_db_temp_path to original_db_path",
+        "Ask user about backup retention (delete old backups, keep, or cycle)"
+      ],
+      "implementation_notes": [
+        "Reads expected_schema_versions from aifp_core.db to determine which DBs need migration",
+        "For each pending DB: backup old → create new from schema → ATTACH old → transfer shared columns → verify row counts",
+        "Schema-only: no init SQL (standard_infrastructure.sql etc.) — data comes from old DB",
+        "Triggers are AFTER UPDATE only, so INSERT transfers preserve original timestamps",
+        "Uses INSERT OR IGNORE to handle any constraint changes gracefully",
+        "Returns temp paths — tool does NOT move files, AI handles placement via return_statements",
+        "RETURN STRUCTURE: {migrated: [{db_name, old_version, new_version, backup_temp_path, new_db_temp_path, original_db_path, verification: {table: {old_rows, new_rows, match}}, warnings}], skipped: [], already_current: []}"
+      ],
+      "target_database": "multi_db",
+      "used_by_directives": []
+    },
+    {
       "name": "aifp_end",
       "file_path": "helpers/orchestrators/entry_points.py",
       "parameters": [
@@ -677,7 +720,7 @@
   ],
   "metadata": {
     "file": "helpers-orchestrators.json",
-    "count": 12,
+    "count": 13,
     "status": "updated 2026-01-31 - moved get_supportive_context to helpers-index.json (not an orchestrator)",
     "last_updated": "2026-01-31",
     "changes": [

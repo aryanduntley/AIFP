@@ -1,5 +1,5 @@
 -- project.db Schema
--- Version: 1.6
+-- Version: 1.7
 -- Purpose: Track project-specific data, including files, functions, themes, flows, and completion paths
 -- Changelog v1.6:
 --   - Added send_with_directive BOOLEAN field to notes table
@@ -254,7 +254,11 @@ CREATE TABLE IF NOT EXISTS notes (
         'analysis',        -- AI research, findings, reasoning (broader than research)
         'task_context',    -- Task/milestone/sidequest lifecycle context
         'external',        -- Git changes, dependency updates, file system events
-        'summary'          -- Manual summaries (distinct from auto_summary which is automated)
+        'summary',         -- Manual summaries (distinct from auto_summary which is automated)
+        -- Deferred work tracking
+        'deferred',        -- Placeholder code, TODOs, stubs, intentionally incomplete work
+        'completed',       -- Resolved deferred items, closed follow-ups
+        'obsolete'         -- Deferred items no longer relevant (code refactored, task re-scoped)
     )),
     reference_table TEXT,                   -- e.g., 'items', 'files', 'completion_path'
     reference_id INTEGER,
@@ -462,4 +466,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.6');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.7');

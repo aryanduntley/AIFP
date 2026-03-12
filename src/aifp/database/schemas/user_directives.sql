@@ -1,5 +1,5 @@
 -- user_directives.db Schema
--- Version: 1.1
+-- Version: 1.2
 -- Purpose: Store user-defined domain-specific directives (home automation, cloud infrastructure, etc.)
 -- Location: .aifp-project/user_directives.db
 -- Changelog v1.1: Added notes table for AI record-keeping
@@ -341,7 +341,11 @@ CREATE TABLE IF NOT EXISTS notes (
         'user_feedback',    -- User comments, preferences, customization requests
         'lifecycle',        -- Status changes, activation, deactivation, updates
         'testing',         -- Testing results, edge cases, approval process
-        'general'          -- General notes that don't fit other categories
+        'general',         -- General notes that don't fit other categories
+        -- Deferred work tracking
+        'deferred',        -- Placeholder code, TODOs, stubs, intentionally incomplete work
+        'completed',       -- Resolved deferred items, closed follow-ups
+        'obsolete'         -- Deferred items no longer relevant (code refactored, task re-scoped)
     )),
     reference_type TEXT,                        -- e.g., 'directive', 'helper', 'dependency', 'file'
     reference_name TEXT,                        -- e.g., directive name, helper name, file path
@@ -425,4 +429,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.1');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.2');

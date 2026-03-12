@@ -29,7 +29,8 @@ These rules are NON-NEGOTIABLE. Violating any creates tracking gaps and invisibl
 
 - NEVER read source files before querying the DB — the DB is the index, source files are last resort
 - NEVER execute directive workflows from memory — ALWAYS load from DB first
-- NEVER mark tasks/milestones complete if code has stubs, placeholders, TODOs, or non-functional work — "complete" means functional and tested, not "file exists." If deferred: create follow-up task, add_note referencing specific unfinished files/functions
+- NEVER mark tasks/milestones complete if code has stubs, placeholders, TODOs, or non-functional work — "complete" means functional and tested, not "file exists." If deferred: create follow-up task, add_note(note_type='deferred') referencing specific unfinished files/functions
+- When placing TODO comments, placeholder code, or stub implementations: immediately call add_note(note_type='deferred', reference_table='files', reference_id=<file_id>, content='<what and why>') to track the deferred work. When the deferred work is resolved, update_note(id=<note_id>, note_type='completed'). When encountering deferred notes that are no longer relevant (code refactored away, task re-scoped), update_note(id=<note_id>, note_type='obsolete')
 - NEVER finalize files without reserving+finalizing their public functions
 - NEVER finalize functions without adding interactions for cross-function dependencies
 - NEVER finalize functions without linking types_functions for tracked type usage

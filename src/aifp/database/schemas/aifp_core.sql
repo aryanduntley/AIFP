@@ -175,4 +175,16 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '2.0');
+CREATE TABLE IF NOT EXISTS expected_schema_versions (
+    db_name TEXT PRIMARY KEY,
+    expected_version TEXT NOT NULL,
+    minimum_version TEXT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR REPLACE INTO expected_schema_versions (db_name, expected_version, minimum_version) VALUES
+    ('project', '1.7', '1.0'),
+    ('user_preferences', '1.2', '1.0'),
+    ('user_directives', '1.2', '1.0');
+
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '2.1');

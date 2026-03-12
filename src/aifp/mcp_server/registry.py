@@ -88,6 +88,8 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "aifp_init": ("aifp.helpers.orchestrators.entry_points", "aifp_init"),
     "aifp_run": ("aifp.helpers.orchestrators.entry_points", "aifp_run"),
     "aifp_status": ("aifp.helpers.orchestrators.entry_points", "aifp_status"),
+    # helpers/orchestrators/migration.py (1 tool)
+    "migrate_databases": ("aifp.helpers.orchestrators.migration", "migrate_databases"),
     # helpers/orchestrators/query.py (1 tool)
     "query_project_state": ("aifp.helpers.orchestrators.query", "query_project_state"),
     "get_files_by_flow_context": ("aifp.helpers.orchestrators.query", "get_files_by_flow_context"),

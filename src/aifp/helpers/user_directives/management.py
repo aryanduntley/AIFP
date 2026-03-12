@@ -443,7 +443,8 @@ def get_user_directive_notes(
     reference_name: Optional[str] = None,
     reference_id: Optional[int] = None,
     severity: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
+    exclude_note_types: Optional[list] = None
 ) -> NotesResult:
     """
     Get notes from user_directives.db with optional filters.
@@ -494,6 +495,11 @@ def get_user_directive_notes(
             where_parts.append("severity = ?")
             values.append(severity)
 
+        if exclude_note_types:
+            placeholders = ", ".join(["?"] * len(exclude_note_types))
+            where_parts.append(f"note_type NOT IN ({placeholders})")
+            values.extend(exclude_note_types)
+
         if where_parts:
             query += " WHERE " + " AND ".join(where_parts)
 
@@ -540,7 +546,8 @@ def search_user_directive_notes(
     note_type: Optional[str] = None,
     reference_type: Optional[str] = None,
     severity: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
+    exclude_note_types: Optional[list] = None
 ) -> NotesResult:
     """
     Search note content in user_directives.db with optional additional filters.
@@ -580,6 +587,11 @@ def search_user_directive_notes(
         if severity is not None:
             query += " AND severity = ?"
             values.append(severity)
+
+        if exclude_note_types:
+            placeholders = ", ".join(["?"] * len(exclude_note_types))
+            query += f" AND note_type NOT IN ({placeholders})"
+            values.extend(exclude_note_types)
 
         query += " ORDER BY created_at DESC LIMIT ?"
         values.append(limit)

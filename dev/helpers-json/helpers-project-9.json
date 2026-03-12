@@ -352,6 +352,13 @@
           "required": false,
           "default": null,
           "description": "Filter by directive name"
+        },
+        {
+          "name": "exclude_note_types",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "List of note_type values to exclude from results (e.g., ['completed', 'obsolete'])"
         }
       ],
       "purpose": "Advanced note search with filters",
@@ -431,6 +438,13 @@
           "required": false,
           "default": null,
           "description": "Optional filter by directive name"
+        },
+        {
+          "name": "exclude_note_types",
+          "type": "array",
+          "required": false,
+          "default": null,
+          "description": "List of note_type values to exclude from results (e.g., ['completed', 'obsolete'])"
         }
       ],
       "purpose": "Search note content with optional filters",
