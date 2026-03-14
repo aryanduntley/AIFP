@@ -40,7 +40,7 @@
           "description": "'low', 'medium', 'high', 'critical'"
         }
       ],
-      "purpose": "Add subtask to task",
+      "purpose": "Create a focused sub-unit of work under a parent task. The parent is paused until all subtasks complete.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -465,7 +465,7 @@
           "description": "JSON array of flow IDs"
         }
       ],
-      "purpose": "Add sidequest (urgent interruption)",
+      "purpose": "Create an urgent interruption that pauses the current task. Use for bug fixes, blockers, or unexpected work discovered mid-task.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,

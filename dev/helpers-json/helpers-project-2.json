@@ -33,7 +33,7 @@
           "description": "If true, skip ID embedding in name (for __init__.py, .db files, MCP tools, or user preference). Sets id_in_name=0 in database."
         }
       ],
-      "purpose": "Reserve file ID for naming before creation",
+      "purpose": "Reserve a file ID before writing code — part of the mandatory reserve-write-finalize tracking flow. Returns ID to embed in filename.",
       "error_handling": "Return error if path already exists",
       "is_tool": true,
       "is_sub_helper": false,
@@ -82,7 +82,7 @@
           "description": "Array of file objects [{name, path, language, skip_id_naming?}, ...]"
         }
       ],
-      "purpose": "Reserve multiple file IDs at once",
+      "purpose": "Batch-reserve file IDs before writing multiple files. Returns IDs in input order for embedding in filenames.",
       "error_handling": "Return error if any path already exists",
       "is_tool": true,
       "is_sub_helper": false,
@@ -143,7 +143,7 @@
           "description": "If true, skip _id_XX pattern validation (for files where ID naming was skipped during reservation)"
         }
       ],
-      "purpose": "Finalize reserved file after creation",
+      "purpose": "Mark a reserved file as tracked after writing it to disk. Triggers flow assignment and function/type tracking checks.",
       "error_handling": "Return error if file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
@@ -202,7 +202,7 @@
           "description": "Array of file objects [{file_id, name, path, language, skip_id_naming?}, ...]"
         }
       ],
-      "purpose": "Finalize multiple reserved files",
+      "purpose": "Batch-finalize multiple reserved files after writing them to disk. All-or-nothing operation.",
       "error_handling": "Return error if any file doesn't exist at path",
       "is_tool": true,
       "is_sub_helper": false,
@@ -237,7 +237,7 @@
           "description": "File name to look up (e.g., 'calculator_id_42.py')"
         }
       ],
-      "purpose": "Get files by name (high-frequency lookup, returns list)",
+      "purpose": "Look up a tracked file by name — use BEFORE reading source files. Returns metadata, path, and ID for follow-up queries.",
       "error_handling": "Return error if no files found with that name",
       "is_tool": true,
       "is_sub_helper": false,
@@ -282,7 +282,7 @@
           "description": "File path to look up (e.g., 'src/calculator.py')"
         }
       ],
-      "purpose": "Get file by path (very high-frequency lookup)",
+      "purpose": "Look up a tracked file by path — use BEFORE reading source files. Returns file metadata and ID for follow-up queries.",
       "error_handling": "Return null if not found",
       "is_tool": true,
       "is_sub_helper": false,

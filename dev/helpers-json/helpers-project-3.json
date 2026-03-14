@@ -47,7 +47,7 @@
           "description": "If true, skip ID embedding in name (for MCP tools, private functions excluded). Sets id_in_name=0 in database."
         }
       ],
-      "purpose": "Reserve function ID for naming before creation",
+      "purpose": "Reserve a function ID before writing code. Include purpose, parameters, and returns — null fields make functions invisible to future sessions.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -96,7 +96,7 @@
           "description": "Array of function objects [{name, file_id, purpose, parameters, returns, skip_id_naming?}, ...]"
         }
       ],
-      "purpose": "Reserve multiple function IDs",
+      "purpose": "Batch-reserve function IDs before writing multiple functions. Include purpose/parameters/returns for every function.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -171,7 +171,7 @@
           "description": "If true, skip _id_XX pattern validation (for functions where ID naming was skipped during reservation)"
         }
       ],
-      "purpose": "Finalize reserved function after creation",
+      "purpose": "Mark a reserved function as tracked after writing it. Triggers interaction and type-function relationship checks.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -229,7 +229,7 @@
           "description": "Array of function objects [{function_id, name, file_id, purpose, parameters, returns, skip_id_naming?}, ...]"
         }
       ],
-      "purpose": "Finalize multiple reserved functions",
+      "purpose": "Batch-finalize multiple reserved functions after writing them. Triggers interaction and type-function checks for all.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -263,7 +263,7 @@
           "description": "Function name to look up"
         }
       ],
-      "purpose": "Get functions by name (very high-frequency lookup, returns list with file data)",
+      "purpose": "Look up a tracked function by name with file location — use BEFORE reading source files. Returns purpose, parameters, returns, and file path.",
       "error_handling": "Return error if no functions found with that name",
       "is_tool": true,
       "is_sub_helper": false,
@@ -316,7 +316,7 @@
           "description": "File ID to get functions for"
         }
       ],
-      "purpose": "Get all functions in a file (high-frequency)",
+      "purpose": "Get all tracked function signatures for a file — use BEFORE reading source code. Often provides everything needed without opening the file.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,

@@ -200,7 +200,7 @@
           "description": "Project root directory. When provided, also retrieves directive preferences from user_preferences.db and linked notes (send_with_directive=1) from project.db."
         }
       ],
-      "purpose": "Get specific directive by name with optional cross-DB enrichment (preferences + linked notes)",
+      "purpose": "Load a directive's workflow steps, preferences, and linked notes by name. ALWAYS call BEFORE executing any workflow — directives are the authoritative source, not memory.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -281,7 +281,7 @@
           "description": "Directive category filter (e.g., 'purity', 'error_handling', 'task_management')"
         }
       ],
-      "purpose": "Search directives with filters (orchestrator)",
+      "purpose": "Find directives by type, category, or keyword when you know the domain but not the exact directive name.",
       "error_handling": "Returns empty array if no matches found",
       "is_tool": true,
       "is_sub_helper": false,
@@ -327,7 +327,7 @@
           "description": "Confidence threshold"
         }
       ],
-      "purpose": "Map user intent to directives using NLP/keyword matching",
+      "purpose": "Match a natural-language user request to the most relevant directive(s). Use when the user describes what they want and you need to find which directive handles it.",
       "error_handling": "Returns empty array if no matches above threshold",
       "is_tool": true,
       "is_sub_helper": false,
@@ -725,7 +725,7 @@
           "description": "If true, includes full helper_functions data"
         }
       ],
-      "purpose": "Get all helpers used by a directive",
+      "purpose": "Get the list of MCP tools available for a directive workflow. Use to discover which tools to call when executing a directive's steps.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,

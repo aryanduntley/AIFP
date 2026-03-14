@@ -397,7 +397,7 @@
           "description": "Auto-log action as note in notes table"
         }
       ],
-      "purpose": "Single entry point for common project state updates. Simplifies task lifecycle management and progress tracking.",
+      "purpose": "Orchestrated state change for tasks, milestones, and paths. Maps actions (start_task, complete_task, block_task, etc.) to correct status updates and note creation.",
       "error_handling": "Returns error if entity not found or invalid action for entity type.",
       "is_tool": true,
       "is_sub_helper": false,

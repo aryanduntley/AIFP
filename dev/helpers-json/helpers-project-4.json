@@ -47,7 +47,7 @@
           "description": "If true, skip ID embedding in name. Sets id_in_name=0 in database."
         }
       ],
-      "purpose": "Reserve type ID for naming before creation",
+      "purpose": "Reserve a type ID before writing the definition. Include definition_json and description — null fields force full file reads in future sessions.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -94,7 +94,7 @@
           "description": "Array of type objects [{name, definition_json, description, links, file_id, skip_id_naming?}, ...]"
         }
       ],
-      "purpose": "Reserve multiple type IDs",
+      "purpose": "Batch-reserve type IDs before writing multiple type definitions. Include definition_json and description for every type.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -399,7 +399,7 @@
           "description": "Type name to look up"
         }
       ],
-      "purpose": "Get types by name (returns list with file data)",
+      "purpose": "Look up a tracked type by name with full definition and file location — use BEFORE reading source files. Returns definition_json and description.",
       "error_handling": "Return error if no types found with that name",
       "is_tool": true,
       "is_sub_helper": false,
@@ -444,7 +444,7 @@
           "description": "Array of tuples [(type_id, function_id, role), ...] - role: 'factory', 'transformer', 'operator', 'pattern_matcher', 'accessor', 'validator', 'combinator'"
         }
       ],
-      "purpose": "Add type-function relationship(s)",
+      "purpose": "Link tracked types to the functions that use them with a role (factory, transformer, validator, etc.). Enables 'what functions use TypeX?' queries.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -588,7 +588,7 @@
           "description": "Interaction type ('call', 'chain', 'borrow', 'compose', 'pipe')"
         }
       ],
-      "purpose": "Add function dependency/interaction",
+      "purpose": "Record a dependency between two functions by name (call, chain, borrow, compose, pipe). Interactions are how the AI traces dependency graphs.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -626,7 +626,7 @@
           "description": "Array of tuples [(source_function_id, target_function_id, interaction_type, description), ...] - type: 'call', 'chain', 'borrow', 'compose', 'pipe'"
         }
       ],
-      "purpose": "Add multiple interactions at once",
+      "purpose": "Batch-record function dependencies by ID. More efficient than multiple add_interaction calls for tracking all cross-function dependencies.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,

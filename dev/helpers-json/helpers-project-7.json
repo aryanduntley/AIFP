@@ -211,7 +211,7 @@
           "description": "New description (NULL = don't update)"
         }
       ],
-      "purpose": "Update milestone metadata",
+      "purpose": "Update milestone status, name, or description. When completing, check if all milestones in the path are done to cascade completion.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -342,7 +342,7 @@
           "description": "JSON array of flow IDs"
         }
       ],
-      "purpose": "Add task to milestone",
+      "purpose": "Create a task under a milestone with flow associations. Tasks are created ONE at a time as work progresses, not all at once.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -436,7 +436,7 @@
       "name": "get_incomplete_tasks",
       "file_path": "helpers/project/tasks.py",
       "parameters": [],
-      "purpose": "Get all incomplete tasks with subtasks/sidequests",
+      "purpose": "Get all unfinished tasks (pending, in_progress, blocked) with their subtasks and sidequests. Shows remaining work across the project.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -607,7 +607,7 @@
           "description": "Task ID"
         }
       ],
-      "purpose": "Get flow IDs for a task",
+      "purpose": "Get the architectural flow IDs for a task. Use to understand which part of the codebase a task touches and find relevant files.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,

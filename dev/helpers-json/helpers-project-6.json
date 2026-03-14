@@ -193,7 +193,7 @@
       "name": "get_all_completion_paths",
       "file_path": "helpers/project/themes_flows_2.py",
       "parameters": [],
-      "purpose": "Get all completion paths ordered by order_index",
+      "purpose": "Get the project's ordered completion roadmap (stages from setup through completion). Each path contains milestones which contain tasks.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -533,7 +533,7 @@
           "description": "Flow ID (from add_flow or get_all_flows)"
         }
       ],
-      "purpose": "Link a file to a flow in the file_flows junction table",
+      "purpose": "Assign a finalized file to an architectural flow. Every finalized file needs at least one flow assignment to stay architecturally connected.",
       "error_handling": "Return error if file or flow not found, or if link already exists",
       "is_tool": true,
       "is_sub_helper": false,
@@ -577,7 +577,7 @@
           "description": "Array of [file_id, flow_id] tuples to create"
         }
       ],
-      "purpose": "Link multiple files to flows (batch) — skips existing links silently",
+      "purpose": "Batch-assign multiple files to flows. Skips existing links silently. More efficient than multiple add_file_to_flow calls.",
       "error_handling": "Return error if any file or flow ID not found",
       "is_tool": true,
       "is_sub_helper": false,

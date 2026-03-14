@@ -277,7 +277,7 @@
           "description": "If true and directive_name set, note is included when that directive is retrieved. Turns notes into contextual reminders that travel with their directive."
         }
       ],
-      "purpose": "Add note to project database",
+      "purpose": "Record a decision, architecture change, or context event in the project's audit trail. Supports typed notes with optional directive linking.",
       "error_handling": "Returns error if project.db not initialized, otherwise continues silently",
       "is_tool": true,
       "is_sub_helper": false,
@@ -361,7 +361,7 @@
           "description": "List of note_type values to exclude from results (e.g., ['completed', 'obsolete'])"
         }
       ],
-      "purpose": "Advanced note search with filters",
+      "purpose": "Query notes with structured filters (type, reference, source, severity, directive). For targeted retrieval without keyword search.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
@@ -447,7 +447,7 @@
           "description": "List of note_type values to exclude from results (e.g., ['completed', 'obsolete'])"
         }
       ],
-      "purpose": "Search note content with optional filters",
+      "purpose": "Search past decisions and context by keyword. Use to recall why a decision was made or find historical context.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
