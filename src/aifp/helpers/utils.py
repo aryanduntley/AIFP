@@ -39,6 +39,7 @@ from ..database.connection import (
     # Project root cache
     set_project_root,
     get_cached_project_root,
+    resolve_project_root,
     clear_project_root_cache,
     _discover_project_root,
     # Connection management
@@ -91,6 +92,7 @@ __all__ = [
     # Project root cache
     'set_project_root',
     'get_cached_project_root',
+    'resolve_project_root',
     'clear_project_root_cache',
     '_discover_project_root',
     # Connection management

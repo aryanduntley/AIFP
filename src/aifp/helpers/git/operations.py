@@ -33,6 +33,7 @@ from ..utils import (
     get_return_statements,
     _open_connection,
     database_exists,
+    resolve_project_root,
 )
 
 
@@ -223,21 +224,23 @@ def _is_git_repository(project_root: str) -> bool:
 # Public API Functions
 # ============================================================================
 
-def get_current_commit_hash(project_root: str) -> GitHashResult:
+def get_current_commit_hash() -> GitHashResult:
     """
     Get current Git HEAD commit hash.
-
-    Args:
-        project_root: Project directory path
 
     Returns:
         GitHashResult with 40-char SHA-1 hash or error
 
     Example:
-        >>> result = get_current_commit_hash("/path/to/project")
+        >>> result = get_current_commit_hash()
         >>> result.hash
         'abc123def456...'
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return GitHashResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     if not _is_git_repository(project_root):
         return GitHashResult(success=False, error="Not a git repository")
 
@@ -255,21 +258,23 @@ def get_current_commit_hash(project_root: str) -> GitHashResult:
     )
 
 
-def get_current_branch(project_root: str) -> GitBranchResult:
+def get_current_branch() -> GitBranchResult:
     """
     Get current Git branch name.
-
-    Args:
-        project_root: Project directory path
 
     Returns:
         GitBranchResult with branch name or commit hash if detached
 
     Example:
-        >>> result = get_current_branch("/path/to/project")
+        >>> result = get_current_branch()
         >>> result.branch
         'main'
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return GitBranchResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     if not _is_git_repository(project_root):
         return GitBranchResult(success=False, error="Not a git repository")
 
@@ -280,7 +285,7 @@ def get_current_branch(project_root: str) -> GitBranchResult:
 
     # Empty output means detached HEAD
     if not stdout:
-        hash_result = get_current_commit_hash(project_root)
+        hash_result = get_current_commit_hash()
         if hash_result.success:
             return GitBranchResult(
                 success=True,
@@ -299,35 +304,37 @@ def get_current_branch(project_root: str) -> GitBranchResult:
     )
 
 
-def get_git_status(project_root: str) -> GitStatusResult:
+def get_git_status() -> GitStatusResult:
     """
     Get comprehensive Git state snapshot.
 
     Combines multiple git commands into single status object.
 
-    Args:
-        project_root: Project directory path
-
     Returns:
         GitStatusResult with branch, hash, file statuses, ahead/behind counts
 
     Example:
-        >>> result = get_git_status("/path/to/project")
+        >>> result = get_git_status()
         >>> result.branch
         'main'
         >>> result.staged_files
         ('file1.py', 'file2.py')
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return GitStatusResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     if not _is_git_repository(project_root):
         return GitStatusResult(success=True, git_available=False)
 
     # Get branch
-    branch_result = get_current_branch(project_root)
+    branch_result = get_current_branch()
     branch = branch_result.branch if branch_result.success else None
     is_detached = branch_result.is_detached if branch_result.success else False
 
     # Get commit hash
-    hash_result = get_current_commit_hash(project_root)
+    hash_result = get_current_commit_hash()
     commit_hash = hash_result.hash if hash_result.success else None
 
     # Get remote tracking and ahead/behind
@@ -393,30 +400,32 @@ def get_git_status(project_root: str) -> GitStatusResult:
     )
 
 
-def detect_external_changes(project_root: str) -> ExternalChangesResult:
+def detect_external_changes() -> ExternalChangesResult:
     """
     Compare current Git HEAD with project.last_known_git_hash.
 
     Detects if external changes (commits outside AIFP) occurred.
 
-    Args:
-        project_root: Project directory path
-
     Returns:
         ExternalChangesResult with changed files and affected entities
 
     Example:
-        >>> result = detect_external_changes("/path/to/project")
+        >>> result = detect_external_changes()
         >>> result.hash_changed
         True
         >>> result.changed_files
         ('src/main.py', 'src/utils.py')
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return ExternalChangesResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     if not _is_git_repository(project_root):
         return ExternalChangesResult(success=False, error="Not a git repository")
 
     # Get current hash
-    hash_result = get_current_commit_hash(project_root)
+    hash_result = get_current_commit_hash()
     if not hash_result.success:
         return ExternalChangesResult(success=False, error=hash_result.error)
 
@@ -538,23 +547,27 @@ def get_user_name_for_branch() -> str:
     return 'user'
 
 
-def create_user_branch(user: str, purpose: str, project_root: str) -> CreateBranchResult:
+def create_user_branch(user: str, purpose: str) -> CreateBranchResult:
     """
     Create work branch following aifp-{user}-{number} convention.
 
     Args:
         user: Username for branch naming
         purpose: Branch purpose description
-        project_root: Project directory path
 
     Returns:
         CreateBranchResult with branch name and metadata
 
     Example:
-        >>> result = create_user_branch("alice", "implement auth", "/path/to/project")
+        >>> result = create_user_branch("alice", "implement auth")
         >>> result.branch_name
         'aifp-alice-001'
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return CreateBranchResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     if not _is_git_repository(project_root):
         return CreateBranchResult(success=False, error="Not a git repository")
 
@@ -601,7 +614,7 @@ def create_user_branch(user: str, purpose: str, project_root: str) -> CreateBran
 
     # Get created_from branch
     created_from = 'main'
-    branch_result = get_current_branch(project_root)
+    branch_result = get_current_branch()
     if branch_result.success and branch_result.branch != branch_name:
         created_from = branch_result.branch or 'main'
 
@@ -633,21 +646,23 @@ def create_user_branch(user: str, purpose: str, project_root: str) -> CreateBran
     )
 
 
-def list_active_branches(project_root: str) -> ListBranchesResult:
+def list_active_branches() -> ListBranchesResult:
     """
     List all AIFP work branches from work_branches table.
-
-    Args:
-        project_root: Project directory path
 
     Returns:
         ListBranchesResult with branch records
 
     Example:
-        >>> result = list_active_branches("/path/to/project")
+        >>> result = list_active_branches()
         >>> result.branches[0].branch_name
         'aifp-alice-001'
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return ListBranchesResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     db_path = get_project_db_path(project_root)
     if not database_exists(db_path):
         return ListBranchesResult(success=True, branches=())
@@ -691,8 +706,7 @@ def list_active_branches(project_root: str) -> ListBranchesResult:
 
 
 def detect_conflicts_before_merge(
-    source_branch: str,
-    project_root: str
+    source_branch: str
 ) -> ConflictCheckResult:
     """
     Dry-run merge analysis - retrieves potential conflict data.
@@ -701,18 +715,22 @@ def detect_conflicts_before_merge(
 
     Args:
         source_branch: Branch to merge from
-        project_root: Project directory path
 
     Returns:
         ConflictCheckResult with conflict data for AI to evaluate
 
     Example:
-        >>> result = detect_conflicts_before_merge("feature-branch", "/path/to/project")
+        >>> result = detect_conflicts_before_merge("feature-branch")
         >>> result.would_conflict
         True
         >>> result.conflicting_files
         ('src/main.py',)
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return ConflictCheckResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     if not _is_git_repository(project_root):
         return ConflictCheckResult(success=False, error="Not a git repository")
 
@@ -785,7 +803,7 @@ def detect_conflicts_before_merge(
     )
 
 
-def execute_merge(source_branch: str, project_root: str) -> MergeResult:
+def execute_merge(source_branch: str) -> MergeResult:
     """
     Execute git merge and return result.
 
@@ -793,18 +811,22 @@ def execute_merge(source_branch: str, project_root: str) -> MergeResult:
 
     Args:
         source_branch: Branch to merge from
-        project_root: Project directory path
 
     Returns:
         MergeResult with merge outcome and any conflict files
 
     Example:
-        >>> result = execute_merge("feature-branch", "/path/to/project")
+        >>> result = execute_merge("feature-branch")
         >>> result.merged
         True
         >>> result.commit_hash
         'abc123...'
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return MergeResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     if not _is_git_repository(project_root):
         return MergeResult(success=False, error="Not a git repository")
 
@@ -816,7 +838,7 @@ def execute_merge(source_branch: str, project_root: str) -> MergeResult:
 
     if success:
         # Merge succeeded - get new commit hash
-        hash_result = get_current_commit_hash(project_root)
+        hash_result = get_current_commit_hash()
 
         # Update work_branches table
         db_path = get_project_db_path(project_root)
@@ -872,25 +894,27 @@ def execute_merge(source_branch: str, project_root: str) -> MergeResult:
     return MergeResult(success=False, error=stderr or "Merge failed")
 
 
-def project_update_git_status(project_root: str) -> UpdateGitStatusResult:
+def project_update_git_status() -> UpdateGitStatusResult:
     """
     Update last_known_git_hash and last_git_sync in project table.
 
     Sub-helper for git state synchronization.
 
-    Args:
-        project_root: Project directory path
-
     Returns:
         UpdateGitStatusResult with updated values
 
     Example:
-        >>> result = project_update_git_status("/path/to/project")
+        >>> result = project_update_git_status()
         >>> result.hash
         'abc123...'
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return UpdateGitStatusResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     # Get current hash
-    hash_result = get_current_commit_hash(project_root)
+    hash_result = get_current_commit_hash()
     if not hash_result.success:
         return UpdateGitStatusResult(success=False, error=hash_result.error)
 
@@ -929,42 +953,44 @@ def project_update_git_status(project_root: str) -> UpdateGitStatusResult:
     )
 
 
-def sync_git_state(project_root: str) -> SyncResult:
+def sync_git_state() -> SyncResult:
     """
     Update project.last_known_git_hash with current Git HEAD.
 
     Detects external changes if hash differs from stored value.
 
-    Args:
-        project_root: Project directory path
-
     Returns:
         SyncResult with sync status and any detected changes
 
     Example:
-        >>> result = sync_git_state("/path/to/project")
+        >>> result = sync_git_state()
         >>> result.hash_synced
         True
         >>> result.external_changes_detected
         False
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return SyncResult(success=False, error="Project root not established. Call aifp_init or aifp_run first.")
+
     if not _is_git_repository(project_root):
         return SyncResult(success=False, error="Not a git repository")
 
     # Check for external changes first
-    changes_result = detect_external_changes(project_root)
+    changes_result = detect_external_changes()
 
     external_changes = False
     if changes_result.success and changes_result.hash_changed:
         external_changes = True
 
     # Update git status in project table
-    update_result = project_update_git_status(project_root)
+    update_result = project_update_git_status()
     if not update_result.success:
         return SyncResult(success=False, error=update_result.error)
 
     # Get current branch
-    branch_result = get_current_branch(project_root)
+    branch_result = get_current_branch()
 
     return_statements = get_return_statements("sync_git_state")
 

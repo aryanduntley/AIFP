@@ -18,6 +18,7 @@ from typing import Optional, Tuple, Dict, Any, List
 from ._common import (
     _open_project_connection,
     _close_connection,
+    resolve_project_root,
     get_return_statements,
     row_to_dict,
     rows_to_tuple,
@@ -35,7 +36,6 @@ from ._common import (
 # ============================================================================
 
 def get_current_progress(
-    project_root: str,
     scope: Optional[str] = None,
     detail_level: str = "standard",
     filters: Optional[Dict[str, Any]] = None,
@@ -47,7 +47,6 @@ def get_current_progress(
     Routes to appropriate tables based on scope parameter.
 
     Args:
-        project_root: Absolute path to project root directory
         scope: What to retrieve — 'tasks', 'milestones', 'completion_paths',
                'files', 'functions', 'flows', 'themes', 'infrastructure', 'all'.
                None returns summary counts for all entity types.
@@ -68,6 +67,11 @@ def get_current_progress(
             success=False,
             error=f"Invalid detail_level '{detail_level}'. Valid: minimal, standard, full",
         )
+
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError as e:
+        return Result(success=False, error=str(e))
 
     try:
         conn = _open_project_connection(project_root)
@@ -186,7 +190,6 @@ def _get_scoped_progress(
 # ============================================================================
 
 def update_project_state(
-    project_root: str,
     action: str,
     target_type: str,
     target_id: int,
@@ -200,7 +203,6 @@ def update_project_state(
     Optionally logs the action as a note.
 
     Args:
-        project_root: Absolute path to project root directory
         action: Operation name (e.g., 'start_task', 'complete_task', 'block_subtask')
         target_type: Entity type ('task', 'subtask', 'sidequest', 'milestone', 'completion_path')
         target_id: ID of target entity
@@ -235,6 +237,11 @@ def update_project_state(
             error=f"Invalid target_type '{target_type}'. "
                   f"Valid: {sorted(table_map.keys())}",
         )
+
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError as e:
+        return Result(success=False, error=str(e))
 
     try:
         conn = _open_project_connection(project_root)
@@ -351,7 +358,6 @@ def _create_action_note(
 # ============================================================================
 
 def batch_update_progress(
-    project_root: str,
     updates: List[Dict[str, Any]],
     transaction: bool = True,
     continue_on_error: bool = False,
@@ -362,7 +368,6 @@ def batch_update_progress(
     Each update dict: {target_type, target_id, action, data (optional)}.
 
     Args:
-        project_root: Absolute path to project root directory
         updates: List of update dicts [{target_type, target_id, action, data?}, ...]
         transaction: If True, all-or-nothing (rolls back on failure)
         continue_on_error: If True, process remaining updates even if one fails
@@ -388,6 +393,11 @@ def batch_update_progress(
             },
             return_statements=get_return_statements("batch_update_progress"),
         )
+
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError as e:
+        return Result(success=False, error=str(e))
 
     results = []
     updated_count = 0

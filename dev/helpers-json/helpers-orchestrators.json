@@ -113,13 +113,6 @@
       "file_path": "helpers/orchestrators/entry_points.py",
       "parameters": [
         {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Absolute path to the project root directory containing .aifp-project/"
-        },
-        {
           "name": "type",
           "type": "string",
           "required": false,
@@ -179,13 +172,6 @@
       "file_path": "helpers/orchestrators/status.py",
       "parameters": [
         {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Path to project root directory"
-        },
-        {
           "name": "type",
           "type": "string",
           "required": false,
@@ -230,25 +216,18 @@
       "file_path": "helpers/orchestrators/status.py",
       "parameters": [
         {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Path to project root directory"
-        },
-        {
-          "name": "task_type",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Type of task: 'task', 'subtask', 'sidequest'"
-        },
-        {
           "name": "task_id",
           "type": "integer",
           "required": true,
           "default": null,
           "description": "ID of the task/subtask/sidequest"
+        },
+        {
+          "name": "task_type",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Type of task: 'task', 'subtask', 'sidequest'. Auto-detected from task_id if omitted."
         },
         {
           "name": "include_interactions",
@@ -265,7 +244,7 @@
           "description": "Include note history for task"
         }
       ],
-      "purpose": "Get complete context for resuming work on a specific task/subtask/sidequest. Single call retrieves item + associated items + flows + files + functions + optionally interactions and notes.",
+      "purpose": "Get complete context for resuming work on a specific task/subtask/sidequest. Single call retrieves item + associated items + flows + files + functions + optionally interactions and notes. Uses cached project root internally.",
       "error_handling": "Returns error if task not found or project.db not accessible.",
       "is_tool": true,
       "is_sub_helper": false,
@@ -275,8 +254,9 @@
         "BEFORE RESUMING WORK: Review the flows[] in the returned context — they describe the intended architecture and user-facing behavior. Use the returned functions[] data (purpose, parameters, returns) as your lookup index BEFORE reading source files."
       ],
       "implementation_notes": [
-        "Returns: {task_item{}, items[], flows[], files[], functions[], interactions[]?, notes[]?}",
-        "Queries task/subtask/sidequest by task_type + task_id from appropriate table",
+        "Returns: {task_item{}, task_type, items[], flows[], files[], functions[], interactions[]?, notes[]?}",
+        "If task_type omitted: searches tasks, subtasks, sidequests tables by task_id and auto-detects type",
+        "Uses get_cached_project_root() — no project_root parameter needed",
         "Gets associated items from items table (polymorphic: reference_table + reference_id)",
         "Gets flows linked to task's items via file_flows",
         "Gets files from file_flows for those flows",
@@ -293,7 +273,6 @@
           "sequence_order": 3,
           "is_required": true,
           "parameters_mapping": {
-            "task_type": "detected_task_type (task, subtask, sidequest)",
             "task_id": "last_incomplete_task_id",
             "include_interactions": "true",
             "include_history": "true"
@@ -306,13 +285,6 @@
       "name": "get_current_progress",
       "file_path": "helpers/orchestrators/state.py",
       "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Path to project root directory"
-        },
         {
           "name": "scope",
           "type": "string",
@@ -354,13 +326,6 @@
       "name": "update_project_state",
       "file_path": "helpers/orchestrators/state.py",
       "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Path to project root directory"
-        },
         {
           "name": "action",
           "type": "string",
@@ -422,13 +387,6 @@
       "file_path": "helpers/orchestrators/state.py",
       "parameters": [
         {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Path to project root directory"
-        },
-        {
           "name": "updates",
           "type": "array",
           "required": true,
@@ -471,13 +429,6 @@
       "name": "query_project_state",
       "file_path": "helpers/orchestrators/query.py",
       "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Path to project root directory"
-        },
         {
           "name": "entity",
           "type": "string",
@@ -542,13 +493,6 @@
       "file_path": "helpers/orchestrators/query.py",
       "parameters": [
         {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Path to project root directory"
-        },
-        {
           "name": "flow_id",
           "type": "integer",
           "required": true,
@@ -586,15 +530,7 @@
     {
       "name": "create_project_backup",
       "file_path": "helpers/orchestrators/backup.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Absolute path to the project root directory containing .aifp-project/"
-        }
-      ],
+      "parameters": [],
       "purpose": "Automated backup sub-helper. Checks project inactivity against backup_duration setting, creates zip backup of .aifp-project/ (excluding backups/ and watchdog/), generates backup_summary.md, and rotates old backups per backup_count setting.",
       "error_handling": "Returns {checked: true, triggered: false, reason: str} on any failure. Never throws — all errors are caught and returned as reason strings.",
       "is_tool": false,
@@ -629,13 +565,6 @@
       "file_path": "helpers/orchestrators/migration.py",
       "parameters": [
         {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Absolute path to the project root directory"
-        },
-        {
           "name": "aifp_folder",
           "type": "string",
           "required": false,
@@ -668,15 +597,7 @@
     {
       "name": "aifp_end",
       "file_path": "helpers/orchestrators/entry_points.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Absolute path to the project root directory containing .aifp-project/"
-        }
-      ],
+      "parameters": [],
       "purpose": "Session termination orchestrator. Gathers session audit data: reads watchdog state and final reminders, queries all files and functions from DB for AI to cross-reference, reads recent notes and task state. Stops watchdog process if running. Returns structured audit data for AI to interpret and act on. No analysis logic — AI determines what is stale or missing.",
       "error_handling": "Returns {initialized: false} if .aifp-project/ does not exist. Returns partial data if watchdog PID file missing (watchdog not implemented or not running). Never fails hard — always returns what it can gather.",
       "is_tool": true,

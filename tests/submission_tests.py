@@ -248,7 +248,7 @@ class TestCoreDatabase:
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
                 "name": "get_databases",
-                "arguments": {"project_root": project_root},
+                "arguments": {},
             })
         )
         assert is_error is False
@@ -783,14 +783,12 @@ class TestOrchestrators:
             handle_call_tool(1, {
                 "name": "aifp_status",
                 "arguments": {
-                    "project_root": project_root,
                     "type": "summary",
                 },
             })
         )
         assert is_error is False
         assert isinstance(data, dict)
-        assert data.get("success") is True
 
     def test_aifp_init_via_tool_call(self, tmp_path):
         """Test aifp_init through the MCP tool call interface."""

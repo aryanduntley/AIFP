@@ -42,6 +42,7 @@ from ._common import (
     # Project root cache
     set_project_root,
     get_cached_project_root,
+    resolve_project_root,
     _discover_project_root,
 )
 
@@ -323,7 +324,6 @@ def _get_initialization_path(init_file: str) -> str:
 # ============================================================================
 
 def aifp_status(
-    project_root: str,
     type: str = "summary",
 ) -> Result:
     """
@@ -334,7 +334,6 @@ def aifp_status(
     optionally user_directives.db.
 
     Args:
-        project_root: Absolute path to project root directory
         type: 'quick', 'summary' (default), or 'detailed'
 
     Returns:
@@ -356,8 +355,17 @@ def aifp_status(
             error=f"Invalid type '{type}'. Valid: {sorted(VALID_STATUS_TYPES)}",
         )
 
-    # Cache project root for helper functions
-    set_project_root(project_root)
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return Result(
+            success=True,
+            data={
+                'initialized': False,
+                'supportive_context': _get_supportive_context_safe(),
+            },
+            return_statements=get_return_statements("aifp_status"),
+        )
 
     aifp_dir = get_aifp_project_dir(project_root)
     if not os.path.isdir(aifp_dir):
@@ -372,7 +380,7 @@ def aifp_status(
 
     try:
         # Work hierarchy (includes counts + tree)
-        status_result = get_project_status(project_root, type)
+        status_result = get_project_status(type)
         work_hierarchy = status_result.data if status_result.success else {}
 
         # Project metadata + infrastructure from project.db
@@ -580,7 +588,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
         }
 
         # Bundle: status
-        status_result = aifp_status(project_root, type="summary")
+        status_result = aifp_status(type="summary")
         status_data = status_result.data if status_result.success else {}
 
         # Bundle: user settings
@@ -617,7 +625,7 @@ def aifp_run(is_new_session: bool = False) -> Result:
             }
 
         # Automated backup check: trigger if project inactive beyond threshold
-        backup_data = check_and_run_backup(project_root)
+        backup_data = check_and_run_backup()
 
         # Migration check: detect pending schema migrations
         migration_data = _check_pending_migrations(project_root, AIFP_PROJECT_DIR)
@@ -885,16 +893,13 @@ def _get_infrastructure_safe(project_root: str) -> Tuple[Dict[str, Any], ...]:
 # aifp_end
 # ============================================================================
 
-def aifp_end(project_root: str) -> Result:
+def aifp_end() -> Result:
     """
     Session termination orchestrator.
 
     Stops watchdog (if running) and delegates to get_project_status for
     project state. AI uses status data + conversation context to perform
     session audit, compliance checks, and summary generation.
-
-    Args:
-        project_root: Absolute path to project root directory
 
     Returns:
         Result with data={
@@ -903,8 +908,14 @@ def aifp_end(project_root: str) -> Result:
             project_state: dict (from get_project_status)
         }
     """
-    # Cache project root for helper functions
-    set_project_root(project_root)
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError:
+        return Result(
+            success=False,
+            data={'initialized': False},
+            error="Project root not established. Call aifp_init or aifp_run first.",
+        )
 
     aifp_dir = get_aifp_project_dir(project_root)
     if not os.path.isdir(aifp_dir):
@@ -918,7 +929,7 @@ def aifp_end(project_root: str) -> Result:
     watchdog_data = _stop_watchdog(aifp_dir)
 
     # Step 2: Project state via existing status helper
-    status_result = get_project_status(project_root, "summary")
+    status_result = get_project_status("summary")
     project_state = status_result.data if status_result.success else {}
 
     return Result(

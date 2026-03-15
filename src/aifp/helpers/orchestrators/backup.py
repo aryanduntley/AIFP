@@ -22,6 +22,7 @@ from ._common import (
     get_project_db_path,
     get_user_preferences_db_path,
     get_aifp_project_dir,
+    resolve_project_root,
     database_exists,
     BACKUPS_DIR_NAME,
 )
@@ -31,7 +32,7 @@ from ._common import (
 # Public Entry Point (called by aifp_run)
 # ============================================================================
 
-def check_and_run_backup(project_root: str) -> Dict[str, Any]:
+def check_and_run_backup() -> Dict[str, Any]:
     """
     Effect: Check if backup should be triggered and run it if so.
 
@@ -46,6 +47,7 @@ def check_and_run_backup(project_root: str) -> Dict[str, Any]:
         }
     """
     try:
+        project_root = resolve_project_root()
         settings = _get_backup_settings_safe(project_root)
         backup_duration = int(settings.get('backup_duration', '30'))
 

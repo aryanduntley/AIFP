@@ -278,7 +278,7 @@ aifp_run checks: project.user_directives_status
 
 **Checkpoint mode (`is_new_session=false`)** — Watchdog alerts only. Returns empty when nothing to report. AI uses cached data from session start bundle. Available helpers for on-demand queries:
 - **`get_project_status(project_root)`** — Refresh work hierarchy data mid-session
-- **`get_task_context(project_root, task_type, task_id)`** — Context for resuming specific tasks
+- **`get_task_context(task_id)`** — Context for resuming specific tasks (task_type auto-detected)
 - **`get_flows_from_directive(directive_name)`** — Navigate directive flow graph
 - **`get_directive(name)`** / **`search_directives(keyword)`** — Query directive details
 ---

@@ -23,6 +23,7 @@ from aifp.helpers.orchestrators.migration import (
     _get_schema_path,
     migrate_databases,
 )
+from aifp.database.connection import set_project_root, clear_project_root_cache
 
 
 # ============================================================================
@@ -182,6 +183,7 @@ def test_check_pending_all_current():
 def test_migrate_databases_nothing_pending():
     tmp = tempfile.mkdtemp()
     try:
+        set_project_root(tmp)
         aifp_dir = _setup_project(tmp)
         # Create at current versions
         db_path = os.path.join(aifp_dir, "project.db")
@@ -191,22 +193,24 @@ def test_migrate_databases_nothing_pending():
         conn.close()
         _create_old_prefs_db(aifp_dir)
 
-        result = migrate_databases(tmp)
+        result = migrate_databases()
         assert result.success is True
         assert len(result.data['migrated']) == 0
         assert result.data['message'] == 'All databases up to date'
     finally:
+        clear_project_root_cache()
         shutil.rmtree(tmp)
 
 
 def test_migrate_databases_upgrades_project():
     tmp = tempfile.mkdtemp()
     try:
+        set_project_root(tmp)
         aifp_dir = _setup_project(tmp)
         _create_old_project_db(aifp_dir, "1.6")
         _create_old_prefs_db(aifp_dir)
 
-        result = migrate_databases(tmp)
+        result = migrate_databases()
         assert result.success is True
         assert len(result.data['migrated']) == 1
 
@@ -223,17 +227,19 @@ def test_migrate_databases_upgrades_project():
         os.remove(migrated['backup_temp_path'])
         os.remove(migrated['new_db_temp_path'])
     finally:
+        clear_project_root_cache()
         shutil.rmtree(tmp)
 
 
 def test_migrate_databases_preserves_data():
     tmp = tempfile.mkdtemp()
     try:
+        set_project_root(tmp)
         aifp_dir = _setup_project(tmp)
         _create_old_project_db(aifp_dir, "1.6")
         _create_old_prefs_db(aifp_dir)
 
-        result = migrate_databases(tmp)
+        result = migrate_databases()
         migrated = result.data['migrated'][0]
 
         # Verify data in new DB
@@ -273,12 +279,14 @@ def test_migrate_databases_preserves_data():
         os.remove(migrated['backup_temp_path'])
         os.remove(migrated['new_db_temp_path'])
     finally:
+        clear_project_root_cache()
         shutil.rmtree(tmp)
 
 
 def test_migrate_databases_preserves_timestamps():
     tmp = tempfile.mkdtemp()
     try:
+        set_project_root(tmp)
         aifp_dir = _setup_project(tmp)
         old_db_path = _create_old_project_db(aifp_dir, "1.6")
 
@@ -293,7 +301,7 @@ def test_migrate_databases_preserves_timestamps():
 
         _create_old_prefs_db(aifp_dir)
 
-        result = migrate_databases(tmp)
+        result = migrate_databases()
         migrated = result.data['migrated'][0]
 
         # Verify timestamps preserved in new DB
@@ -309,17 +317,19 @@ def test_migrate_databases_preserves_timestamps():
         os.remove(migrated['backup_temp_path'])
         os.remove(migrated['new_db_temp_path'])
     finally:
+        clear_project_root_cache()
         shutil.rmtree(tmp)
 
 
 def test_migrate_databases_verification_match():
     tmp = tempfile.mkdtemp()
     try:
+        set_project_root(tmp)
         aifp_dir = _setup_project(tmp)
         _create_old_project_db(aifp_dir, "1.6")
         _create_old_prefs_db(aifp_dir)
 
-        result = migrate_databases(tmp)
+        result = migrate_databases()
         migrated = result.data['migrated'][0]
         verification = migrated['verification']
 
@@ -337,17 +347,19 @@ def test_migrate_databases_verification_match():
         os.remove(migrated['backup_temp_path'])
         os.remove(migrated['new_db_temp_path'])
     finally:
+        clear_project_root_cache()
         shutil.rmtree(tmp)
 
 
 def test_migrate_databases_backup_is_valid():
     tmp = tempfile.mkdtemp()
     try:
+        set_project_root(tmp)
         aifp_dir = _setup_project(tmp)
         _create_old_project_db(aifp_dir, "1.6")
         _create_old_prefs_db(aifp_dir)
 
-        result = migrate_databases(tmp)
+        result = migrate_databases()
         migrated = result.data['migrated'][0]
 
         # Backup should be a valid SQLite DB with old version
@@ -358,16 +370,18 @@ def test_migrate_databases_backup_is_valid():
         os.remove(migrated['backup_temp_path'])
         os.remove(migrated['new_db_temp_path'])
     finally:
+        clear_project_root_cache()
         shutil.rmtree(tmp)
 
 
 def test_migrate_databases_custom_aifp_folder():
     tmp = tempfile.mkdtemp()
     try:
+        set_project_root(tmp)
         aifp_dir = _setup_project(tmp, aifp_folder=".custom-aifp")
         _create_old_project_db(aifp_dir, "1.6")
 
-        result = migrate_databases(tmp, aifp_folder=".custom-aifp")
+        result = migrate_databases(aifp_folder=".custom-aifp")
         assert result.success is True
         assert len(result.data['migrated']) == 1
         assert result.data['migrated'][0]['db_name'] == 'project'
@@ -379,4 +393,5 @@ def test_migrate_databases_custom_aifp_folder():
             if m.get('new_db_temp_path'):
                 os.remove(m['new_db_temp_path'])
     finally:
+        clear_project_root_cache()
         shutil.rmtree(tmp)

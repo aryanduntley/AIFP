@@ -23,6 +23,7 @@ from ..utils import (
     get_user_preferences_db_path,
     get_user_directives_db_path,
     database_exists,
+    resolve_project_root,
     _open_connection,
     _close_connection,
 )
@@ -83,19 +84,16 @@ def _count_tables(db_path: str) -> int:
 # Public Helper Functions
 # ============================================================================
 
-def get_databases(project_root: str) -> DatabasesResult:
+def get_databases() -> DatabasesResult:
     """
     Get list of all available databases with metadata.
     Reports on all 4 AIFP databases: core, project, user_preferences, user_directives.
-
-    Args:
-        project_root: Absolute path to project root directory
 
     Returns:
         DatabasesResult with database info for all 4 databases
 
     Example:
-        >>> result = get_databases("/home/user/my-project")
+        >>> result = get_databases()
         >>> for db in result.databases:
         ...     print(f"{db.name}: {'exists' if db.exists else 'not found'} ({db.table_count} tables)")
         aifp_core: exists (8 tables)
@@ -103,6 +101,14 @@ def get_databases(project_root: str) -> DatabasesResult:
         user_preferences: exists (7 tables)
         user_directives: not found (0 tables)
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError as e:
+        return DatabasesResult(
+            success=False,
+            error=f"Cannot resolve project root: {str(e)}"
+        )
+
     try:
         # Resolve all database paths
         core_path = get_core_db_path()

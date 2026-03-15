@@ -3,15 +3,7 @@
     {
       "name": "get_current_commit_hash",
       "file_path": "helpers/git/operations.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project directory path"
-        }
-      ],
+      "parameters": [],
       "purpose": "Get current Git HEAD commit hash",
       "error_handling": "Return null if not Git repository",
       "is_tool": true,
@@ -45,15 +37,7 @@
     {
       "name": "get_current_branch",
       "file_path": "helpers/git/operations.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project directory path"
-        }
-      ],
+      "parameters": [],
       "purpose": "Get current Git branch name",
       "error_handling": "Return null if Git unavailable",
       "is_tool": true,
@@ -88,15 +72,7 @@
     {
       "name": "get_git_status",
       "file_path": "helpers/git/operations.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project directory path"
-        }
-      ],
+      "parameters": [],
       "purpose": "Get comprehensive Git state snapshot (orchestrator)",
       "error_handling": "Returns git_available=false if Git unavailable",
       "is_tool": true,
@@ -123,15 +99,7 @@
     {
       "name": "detect_external_changes",
       "file_path": "helpers/git/operations.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project directory path"
-        }
-      ],
+      "parameters": [],
       "purpose": "Compare current Git HEAD with project.last_known_git_hash",
       "error_handling": "Return empty changes if Git unavailable",
       "is_tool": true,
@@ -180,13 +148,6 @@
           "required": true,
           "default": null,
           "description": "Branch purpose description"
-        },
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project root directory"
         }
       ],
       "purpose": "Create work branch following aifp-{user}-{number} convention",
@@ -245,15 +206,7 @@
     {
       "name": "list_active_branches",
       "file_path": "helpers/git/operations.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project root directory"
-        }
-      ],
+      "parameters": [],
       "purpose": "List all AIFP work branches from work_branches table",
       "error_handling": "Return empty array if table doesn't exist",
       "is_tool": true,
@@ -294,13 +247,6 @@
           "required": true,
           "default": null,
           "description": "Branch to merge from"
-        },
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project directory path"
         }
       ],
       "purpose": "Dry-run merge analysis - retrieves potential conflict data for AI to evaluate",
@@ -345,13 +291,6 @@
           "required": true,
           "default": null,
           "description": "Branch to merge from"
-        },
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project directory path"
         }
       ],
       "purpose": "Execute git merge and return result. Updates work_branches table on success.",
@@ -381,15 +320,7 @@
     {
       "name": "sync_git_state",
       "file_path": "helpers/git/operations.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Project directory path"
-        }
-      ],
+      "parameters": [],
       "purpose": "Update project.last_known_git_hash with current Git HEAD",
       "error_handling": "Log warning if Git unavailable, continue with cached",
       "is_tool": true,

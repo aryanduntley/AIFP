@@ -3,15 +3,7 @@
     {
       "name": "get_databases",
       "file_path": "helpers/shared/database_info.py",
-      "parameters": [
-        {
-          "name": "project_root",
-          "type": "string",
-          "required": true,
-          "default": null,
-          "description": "Absolute path to project root directory"
-        }
-      ],
+      "parameters": [],
       "purpose": "Get list of all available databases with metadata",
       "error_handling": "Return empty array if none found",
       "is_tool": true,

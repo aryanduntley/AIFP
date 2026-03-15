@@ -49,6 +49,7 @@ from ..utils import (
     # Project root cache (set by orchestrators, read by helpers)
     set_project_root,
     get_cached_project_root,
+    resolve_project_root,
     clear_project_root_cache,
     _discover_project_root,
     # Connection openers now come from foundation layer
@@ -87,6 +88,7 @@ __all__ = [
     # Project root cache (set by orchestrators, read by helpers)
     'set_project_root',
     'get_cached_project_root',
+    'resolve_project_root',
     'clear_project_root_cache',
     '_discover_project_root',
     # Connection openers (from foundation layer)

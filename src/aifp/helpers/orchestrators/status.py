@@ -16,6 +16,8 @@ from typing import Optional, Tuple, Dict, Any, List
 from ._common import (
     _open_project_connection,
     _close_connection,
+    get_cached_project_root,
+    resolve_project_root,
     get_return_statements,
     row_to_dict,
     rows_to_tuple,
@@ -56,7 +58,6 @@ def _query_all(
 # ============================================================================
 
 def get_project_status(
-    project_root: str,
     type: str = "summary",
 ) -> Result:
     """
@@ -74,7 +75,6 @@ def get_project_status(
     - Nested tree
 
     Args:
-        project_root: Absolute path to project root directory
         type: 'quick' (counts only), 'summary' (default), or 'detailed' (all history)
 
     Returns:
@@ -85,6 +85,8 @@ def get_project_status(
             success=False,
             error=f"Invalid type '{type}'. Valid: {sorted(VALID_STATUS_TYPES)}",
         )
+
+    project_root = resolve_project_root()
 
     try:
         conn = _open_project_connection(project_root)
@@ -509,9 +511,8 @@ def _build_tree(
 # ============================================================================
 
 def get_task_context(
-    project_root: str,
-    task_type: str,
     task_id: int,
+    task_type: Optional[str] = None,
     include_interactions: bool = False,
     include_history: bool = False,
 ) -> Result:
@@ -522,15 +523,15 @@ def get_task_context(
     functions, and optionally interactions and note history.
 
     Args:
-        project_root: Absolute path to project root directory
-        task_type: 'task', 'subtask', or 'sidequest'
         task_id: ID of the task/subtask/sidequest
+        task_type: 'task', 'subtask', or 'sidequest' (auto-detected if omitted)
         include_interactions: Include function dependency interactions
         include_history: Include note history for task
 
     Returns:
         Result with data={
             task_item: dict,
+            task_type: str,
             items: tuple,
             flows: tuple,
             files: tuple,
@@ -539,27 +540,49 @@ def get_task_context(
             notes: tuple (if requested)
         }
     """
-    if task_type not in VALID_TASK_TYPES:
+    if task_type is not None and task_type not in VALID_TASK_TYPES:
         return Result(
             success=False,
             error=f"Invalid task_type '{task_type}'. "
                   f"Valid: {sorted(VALID_TASK_TYPES)}",
         )
 
-    table = TASK_TABLE_MAP[task_type]
+    try:
+        project_root = get_cached_project_root()
+    except RuntimeError:
+        return Result(
+            success=False,
+            error="Project root not cached. Call aifp_init or aifp_run first.",
+        )
 
     try:
         conn = _open_project_connection(project_root)
         try:
             # Step 1: Get the task/subtask/sidequest
-            cursor = conn.execute(
-                f"SELECT * FROM {table} WHERE id = ?", (task_id,)
-            )
-            task_row = cursor.fetchone()
+            if task_type is not None:
+                # Explicit type — single table lookup
+                table = TASK_TABLE_MAP[task_type]
+                cursor = conn.execute(
+                    f"SELECT * FROM {table} WHERE id = ?", (task_id,)
+                )
+                task_row = cursor.fetchone()
+            else:
+                # Auto-detect — search all tables
+                task_row = None
+                for candidate_type, table in TASK_TABLE_MAP.items():
+                    cursor = conn.execute(
+                        f"SELECT * FROM {table} WHERE id = ?", (task_id,)
+                    )
+                    task_row = cursor.fetchone()
+                    if task_row is not None:
+                        task_type = candidate_type
+                        break
+
             if task_row is None:
+                searched = f"'{task_type}'" if task_type else "tasks, subtasks, sidequests"
                 return Result(
                     success=False,
-                    error=f"{task_type} with id {task_id} not found",
+                    error=f"No item with id {task_id} found in {searched}",
                 )
             task_item = row_to_dict(task_row)
 
@@ -579,6 +602,7 @@ def get_task_context(
 
             data = {
                 'task_item': task_item,
+                'task_type': task_type,
                 'items': items,
                 'flows': flows,
                 'files': files,

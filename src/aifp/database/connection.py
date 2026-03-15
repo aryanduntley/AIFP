@@ -77,6 +77,29 @@ def get_cached_project_root() -> str:
     return _cached_project_root
 
 
+def resolve_project_root() -> str:
+    """
+    Resolve project root: cache first, discovery fallback.
+
+    Cascade:
+        1. Return cached value if set
+        2. Discover from .aifp-project/project.db in cwd
+        3. Raise RuntimeError if neither works
+
+    Caches discovered value for subsequent calls.
+    """
+    if _cached_project_root is not None:
+        return _cached_project_root
+    discovered = _discover_project_root()
+    if discovered is not None:
+        set_project_root(discovered)
+        return discovered
+    raise RuntimeError(
+        "Project root not established. "
+        "Call aifp_init or aifp_run first."
+    )
+
+
 def clear_project_root_cache() -> None:
     """Effect: Clear the cache (for testing)."""
     global _cached_project_root

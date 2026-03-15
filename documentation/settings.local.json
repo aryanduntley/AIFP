@@ -237,10 +237,11 @@
       "mcp__aifp__update_type_function_role",
       "mcp__aifp__delete_type_function",
       "mcp__aifp__init_user_directives_db",
+       "mcp__aifp__get_directive_content",
       "mcp__aifp__add_file_flows",
       "mcp__aifp__get_interactions_by_file",
       "mcp__aifp__add_file_to_flow",
-      "mcp__aifp__get_directive_content"
+      "mcp__aifp__migrate_databases"
     ]
   },
   "enableAllProjectMcpServers": true,

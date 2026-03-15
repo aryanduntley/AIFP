@@ -24,6 +24,7 @@ from typing import Dict, Any, List
 from ._common import (
     get_core_db_path,
     get_aifp_project_dir,
+    resolve_project_root,
     database_exists,
     _get_table_names,
     get_return_statements,
@@ -215,7 +216,6 @@ def _get_old_table_names(conn: sqlite3.Connection, old_db_alias: str) -> List[st
 
 
 def migrate_databases(
-    project_root: str,
     aifp_folder: str = ".aifp-project"
 ) -> Result:
     """
@@ -229,12 +229,16 @@ def migrate_databases(
     5. Returns temp paths for AI to verify and place
 
     Args:
-        project_root: Absolute path to project root
         aifp_folder: AIFP project directory name (default '.aifp-project')
 
     Returns:
         Result with migrated DB temp paths and verification data
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError as e:
+        return Result(success=False, error=str(e))
+
     migration_check = _check_pending_migrations(project_root, aifp_folder)
 
     if not migration_check.get('checked'):

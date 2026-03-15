@@ -17,6 +17,7 @@ from typing import Optional, Tuple, Dict, Any, List
 
 from ._common import (
     _open_project_connection,
+    resolve_project_root,
     get_return_statements,
     row_to_dict,
     rows_to_tuple,
@@ -31,7 +32,6 @@ from ._common import (
 # ============================================================================
 
 def query_project_state(
-    project_root: str,
     entity: str,
     filters: Optional[Dict[str, Any]] = None,
     joins: Optional[List[str]] = None,
@@ -46,7 +46,6 @@ def query_project_state(
     All values are parameterized to prevent SQL injection.
 
     Args:
-        project_root: Absolute path to project root directory
         entity: Primary table to query (e.g., 'tasks', 'files', 'functions')
         filters: WHERE conditions — {field: value} or {field: {op: 'gt', value: 5}}
         joins: Relations to LEFT JOIN (e.g., ['milestones', 'files'])
@@ -62,6 +61,11 @@ def query_project_state(
             success=False,
             error=f"Unknown entity '{entity}'. Valid: {sorted(VALID_QUERY_ENTITIES)}",
         )
+
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError as e:
+        return Result(success=False, error=str(e))
 
     try:
         conn = _open_project_connection(project_root)
@@ -193,7 +197,6 @@ def _op_to_sql(op: str) -> Optional[str]:
 # ============================================================================
 
 def get_files_by_flow_context(
-    project_root: str,
     flow_id: int,
 ) -> Result:
     """
@@ -203,12 +206,16 @@ def get_files_by_flow_context(
     and embeds functions array in each file object.
 
     Args:
-        project_root: Absolute path to project root directory
         flow_id: Flow ID to get files for
 
     Returns:
         Result with data=tuple of file dicts, each with 'functions' key
     """
+    try:
+        project_root = resolve_project_root()
+    except RuntimeError as e:
+        return Result(success=False, error=str(e))
+
     try:
         conn = _open_project_connection(project_root)
         try:

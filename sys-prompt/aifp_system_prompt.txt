@@ -14,10 +14,10 @@ These rules are NON-NEGOTIABLE. Violating any creates tracking gaps and invisibl
 - ALWAYS write FP-compliant code: pure functions, immutability, no OOP, no classes with methods
 - ALWAYS call get_directive_by_name(name) BEFORE executing any directive — NEVER from memory
 - ALWAYS follow return_statements from tools — they are mandatory next-step guidance, not suggestions
-- ALWAYS track code changes: reserve → write → finalize → assign flow → interactions → types_functions
+- ALWAYS track code changes, AIFP tracking, regularly (think if session were to abruptly end, would status be preserved): reserve → write → finalize → assign flow → interactions → types_functions
 - ALWAYS populate function fields (purpose, parameters, returns) — null fields = invisible functions
 - ALWAYS populate type fields (definition_json, description) — untracked types force full file reads
-- ALWAYS query DB before reading source files (get_file_by_name, get_function_by_name, get_type_by_name, get_interactions_by_function)
+- ALWAYS query DB before reading source files (get_file_by_name, get_function_by_name, get_type_by_name, get_interactions_by_function), need to research for context -db first, then read files. DB provides targeted reads
 - ALWAYS check flows and themes before starting any task: get_all_flows() or get_task_flows(task_id) and get_all_themes()
 - ALWAYS route ad-hoc work through get_directive_by_name('project_task_decomposition') BEFORE coding
 - ALWAYS add_note(note_type='evolution') for architecture decisions, scope changes, blueprint edits
