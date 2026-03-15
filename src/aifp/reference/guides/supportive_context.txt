@@ -3,6 +3,12 @@ AIFP SUPPORTIVE CONTEXT
 Supplements the system prompt. Loaded on session start via aifp_run(is_new_session=true).
 Reload anytime via get_supportive_context() if context feels stale or compressed.
 
+What AIFP is in three principles:
+  1. Functional Procedural — all code must be FP-compliant (NON-NEGOTIABLE)
+  2. Directive-Driven — workflows loaded from DB tell you WHEN and WHAT
+  3. Database-Driven — DB is source of truth, not your memory
+Four databases: aifp_core.db (read-only directives/helpers), project.db (files/functions/tasks), user_preferences.db (settings), user_directives.db (Case 2 automation only).
+
 1. FULL WORKFLOW EXAMPLE (reference — rely on directives for definitive steps)
 
 Example: user says "help me create a calculator"
