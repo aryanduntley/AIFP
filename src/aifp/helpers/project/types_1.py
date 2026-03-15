@@ -734,6 +734,10 @@ def finalize_type(
             error=f"Type name must contain '_id_{type_id}' pattern"
         )
 
+    # Pure: serialize definition and links
+    definition_str = serialize_definition(definition_json)
+    links_str = serialize_links(links)
+
     # Effect: open connection
     project_root = get_cached_project_root()
     conn = _open_project_connection(project_root)
@@ -746,9 +750,24 @@ def finalize_type(
                 error=f"File with ID {file_id} not found"
             )
 
-        # Pure: serialize definition and links
-        definition_str = serialize_definition(definition_json)
-        links_str = serialize_links(links)
+        # Validation gate: merge new values with existing DB values, reject if description still null
+        row = conn.execute(
+            "SELECT description FROM types WHERE id = ?",
+            (type_id,)
+        ).fetchone()
+        if row is None:
+            return FinalizeResult(
+                success=False,
+                error=f"Type with ID {type_id} not found"
+            )
+
+        final_description = description if description is not None else row[0]
+        if final_description is None:
+            return FinalizeResult(
+                success=False,
+                error=f"Cannot finalize type '{name}': description not populated. "
+                      f"Set at reserve or pass to finalize."
+            )
 
         # Effect: finalize type
         _finalize_type_effect(
@@ -756,7 +775,7 @@ def finalize_type(
             type_id,
             name,
             definition_str,
-            description,
+            final_description,
             links_str,
             file_id
         )
@@ -873,8 +892,31 @@ def finalize_types(
                     error=f"File with ID {file_id} not found"
                 )
 
+        # Validation gate: merge new values with DB values, reject if description still null
+        validated_finalizations = []
+        for typ_id, typ_name, typ_def_str, typ_desc, typ_links_str, typ_file_id in finalizations:
+            row = conn.execute(
+                "SELECT description FROM types WHERE id = ?",
+                (typ_id,)
+            ).fetchone()
+            if row is None:
+                return FinalizeBatchResult(
+                    success=False,
+                    error=f"Type with ID {typ_id} not found"
+                )
+
+            final_description = typ_desc if typ_desc is not None else row[0]
+            if final_description is None:
+                return FinalizeBatchResult(
+                    success=False,
+                    error=f"Cannot finalize type '{typ_name}': description not populated. "
+                          f"Set at reserve or pass to finalize."
+                )
+
+            validated_finalizations.append((typ_id, typ_name, typ_def_str, final_description, typ_links_str, typ_file_id))
+
         # Effect: finalize all types in transaction
-        _finalize_types_batch_effect(conn, finalizations)
+        _finalize_types_batch_effect(conn, validated_finalizations)
 
         conn.close()
 

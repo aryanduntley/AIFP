@@ -11,32 +11,32 @@ These rules are NON-NEGOTIABLE. Violating any creates tracking gaps and invisibl
 
 === ALWAYS DO ===
 
-- ALWAYS write FP-compliant code: pure functions, immutability, no OOP, no classes with methods
-- ALWAYS call get_directive_by_name(name) BEFORE executing any directive — NEVER from memory
-- ALWAYS follow return_statements from tools — they are mandatory next-step guidance, not suggestions
-- ALWAYS track code changes, AIFP tracking, regularly (think if session were to abruptly end, would status be preserved): reserve → write → finalize → assign flow → interactions → types_functions
-- ALWAYS populate function fields (purpose, parameters, returns) — null fields = invisible functions
-- ALWAYS populate type fields (definition_json, description) — untracked types force full file reads
-- ALWAYS query DB before reading source files (get_file_by_name, get_function_by_name, get_type_by_name, get_interactions_by_function), need to research for context -db first, then read files. DB provides targeted reads
-- ALWAYS check flows and themes before starting any task: get_all_flows() or get_task_flows(task_id) and get_all_themes()
+- Write FP-compliant code: pure functions, immutability, no OOP, no classes with methods
+- Call get_directive_by_name(name) BEFORE executing any directive — NEVER from memory
+- Follow return_statements from tools — they are mandatory next-step guidance, not suggestions
+- TRACKING GATE: after EVERY Edit or Write to a source file, immediately run the AIFP tracking sequence for that file BEFORE moving to the next file or responding to the user:
+    reserve file (if new) → reserve functions+types (public) → finalize file → assign to flow(s)
+    → finalize functions+types (with purpose, parameters, returns populated) → add interactions → add types_functions
+  This applies to ALL work: features, bug fixes, refactors. If ANY function is added, params changed, types modified — track it.
+  Before reporting results to the user, verify tracking is current: call get_task_context(task_id) — if files were edited but not finalized, finalize them FIRST
+- Query DB before reading source files (get_file_by_name, get_function_by_name, get_type_by_name, get_interactions_by_function), need to research for context -db first, then read files. DB provides targeted reads
+- Check flows and themes before starting any task: get_all_flows() or get_task_flows(task_id) and get_all_themes()
 - ALWAYS route ad-hoc work through get_directive_by_name('project_task_decomposition') BEFORE coding
-- ALWAYS add_note(note_type='evolution') for architecture decisions, scope changes, blueprint edits
-- ALWAYS update DB from discussions: architecture/infrastructure/task decisions → update_project, update_task, update_milestone, or add_note
-- ALWAYS verify before completing a task: call get_task_context(task_id) — every finalized file must have its public functions tracked
-- ALWAYS call aifp_end when user says "done" / "wrap up" / "end session"
+- Add_note(note_type='evolution') for architecture decisions, scope changes, blueprint edits
+- Update DB from discussions: architecture/infrastructure/task decisions → update_project, update_task, update_milestone, or add_note
+- Call aifp_end when user says "done" / "wrap up" / "end session"
 
 === NEVER DO ===
 
-- NEVER read source files before querying the DB — the DB is the index, source files are last resort
-- NEVER execute directive workflows from memory — ALWAYS load from DB first
-- NEVER mark tasks/milestones complete if code has stubs, placeholders, TODOs, or non-functional work — "complete" means functional and tested, not "file exists." If deferred: create follow-up task, add_note(note_type='deferred') referencing specific unfinished files/functions
+- DO NOT read source files before querying the DB — the DB is the index, source files are last resort
+- DO NOT execute directive workflows from memory — ALWAYS load from DB first
+- DO NOT mark tasks/milestones complete if code has stubs, placeholders, TODOs, or non-functional work — "complete" means functional and tested, not "file exists." If deferred: create follow-up task, add_note(note_type='deferred') referencing specific unfinished files/functions
 - When placing TODO comments, placeholder code, or stub implementations: immediately call add_note(note_type='deferred', reference_table='files', reference_id=<file_id>, content='<what and why>') to track the deferred work. When the deferred work is resolved, update_note(id=<note_id>, note_type='completed'). When encountering deferred notes that are no longer relevant (code refactored away, task re-scoped), update_note(id=<note_id>, note_type='obsolete')
-- NEVER finalize files without reserving+finalizing their public functions
-- NEVER finalize functions without adding interactions for cross-function dependencies
-- NEVER finalize functions without linking types_functions for tracked type usage
-- NEVER skip flow assignment — every finalized file needs add_file_to_flow or add_file_flows
-- NEVER leave a finalized file with 0 tracked functions (unless data-only/config-only)
-- NEVER proceed with non-FP projects — STOP and inform user AIFP is FP-only
+- DO NOT finalize files without reserving+finalizing their public functions
+- DO NOT finalize functions without adding interactions for cross-function dependencies
+- DO NOT finalize functions without linking types_functions for tracked type usage
+- DO NOT skip flow assignment — every finalized file needs add_file_to_flow or add_file_flows
+- DO NOT leave a finalized file with 0 tracked functions (unless data-only/config-only)
 
 === DURING SESSION ===
 

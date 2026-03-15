@@ -593,6 +593,10 @@ def finalize_function(
             error=f"Function name must contain '_id_{function_id}' pattern"
         )
 
+    # Pure: serialize parameters and returns
+    params_json = serialize_params(parameters)
+    returns_json = serialize_returns(returns)
+
     # Effect: open connection
     project_root = get_cached_project_root()
     conn = _open_project_connection(project_root)
@@ -605,18 +609,43 @@ def finalize_function(
                 error=f"File with ID {file_id} not found"
             )
 
-        # Pure: serialize parameters and returns
-        params_json = serialize_params(parameters)
-        returns_json = serialize_returns(returns)
+        # Validation gate: merge new values with existing DB values, reject if still null
+        row = conn.execute(
+            "SELECT purpose, parameters, returns FROM functions WHERE id = ?",
+            (function_id,)
+        ).fetchone()
+        if row is None:
+            return FinalizeResult(
+                success=False,
+                error=f"Function with ID {function_id} not found"
+            )
+
+        final_purpose = purpose if purpose is not None else row[0]
+        final_params = params_json if params_json is not None else row[1]
+        final_returns = returns_json if returns_json is not None else row[2]
+
+        missing = []
+        if final_purpose is None:
+            missing.append("purpose")
+        if final_params is None:
+            missing.append("parameters")
+        if final_returns is None:
+            missing.append("returns")
+        if missing:
+            return FinalizeResult(
+                success=False,
+                error=f"Cannot finalize function '{name}': {', '.join(missing)} not populated. "
+                      f"Set at reserve or pass to finalize."
+            )
 
         # Effect: finalize function
         _finalize_function_effect(
             conn,
             function_id,
             name,
-            purpose,
-            params_json,
-            returns_json
+            final_purpose,
+            final_params,
+            final_returns
         )
 
         conn.close()
@@ -728,8 +757,41 @@ def finalize_functions(
                     error=f"File with ID {file_id} not found"
                 )
 
+        # Validation gate: merge new values with DB values, reject if any still null
+        validated_finalizations = []
+        for func_id, func_name, func_purpose, func_params, func_returns in finalizations:
+            row = conn.execute(
+                "SELECT purpose, parameters, returns FROM functions WHERE id = ?",
+                (func_id,)
+            ).fetchone()
+            if row is None:
+                return FinalizeBatchResult(
+                    success=False,
+                    error=f"Function with ID {func_id} not found"
+                )
+
+            final_purpose = func_purpose if func_purpose is not None else row[0]
+            final_params = func_params if func_params is not None else row[1]
+            final_returns = func_returns if func_returns is not None else row[2]
+
+            missing = []
+            if final_purpose is None:
+                missing.append("purpose")
+            if final_params is None:
+                missing.append("parameters")
+            if final_returns is None:
+                missing.append("returns")
+            if missing:
+                return FinalizeBatchResult(
+                    success=False,
+                    error=f"Cannot finalize function '{func_name}': {', '.join(missing)} not populated. "
+                          f"Set at reserve or pass to finalize."
+                )
+
+            validated_finalizations.append((func_id, func_name, final_purpose, final_params, final_returns))
+
         # Effect: finalize all functions in transaction
-        _finalize_functions_batch_effect(conn, finalizations)
+        _finalize_functions_batch_effect(conn, validated_finalizations)
 
         conn.close()
 

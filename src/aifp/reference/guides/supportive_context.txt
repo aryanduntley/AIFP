@@ -148,8 +148,8 @@ TYPES_FUNCTIONS auto-inference: scan params/returns for tracked types.
 Roles: 'factory' (returns only), 'transformer' (in+out same type), 'validator' (params->bool/Result),
 'accessor'/'operator' (params only), 'pattern_matcher', 'combinator'.
 
-FIELD POPULATION: functions need purpose/parameters/returns. Types need definition_json/description.
-Null fields = invisible entities. Populate at reserve, verify at finalize.
+FIELD POPULATION: finalize rejects null purpose/parameters/returns (functions) and null description (types).
+Populate at reserve time or pass to finalize — either works, but finalize enforces completeness.
 
 8. FP REFERENCE & STATE DATABASE
 
@@ -185,6 +185,7 @@ add_note(note_type='evolution'). Blueprint notes: directive_name='project_bluepr
 
 Lost context? aifp_status() -> fresh state. get_supportive_context() -> reload this reference.
 search_directives(keyword="...") -> find the right directive. aifp_run(is_new_session=true) -> full reload.
-Non-FP projects: STOP, inform user AIFP is FP-only. Do NOT proceed or convert unless explicitly requested.
+Non-FP projects: STOP and REJECT. AIFP is FP-only — do NOT proceed, do NOT attempt to convert existing OOP code.
+If pre-existing codebase is non-FP at init/discovery, inform user immediately and halt. No exceptions.
 
 END SUPPORTIVE CONTEXT
