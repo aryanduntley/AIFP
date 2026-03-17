@@ -10,6 +10,7 @@ These rules are NON-NEGOTIABLE. Violating any creates tracking gaps and invisibl
 - .aifp-project/ missing → offer aifp_init or restore from backup
 
 === ALWAYS DO ===
+AIFP TRACKING IS ALWAYS MANDATORY!
 
 - Write FP-compliant code: pure functions, immutability, no OOP, no classes with methods
 - Call get_directive_by_name(name) BEFORE executing any directive — NEVER from memory
