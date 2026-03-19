@@ -92,8 +92,8 @@ class Calculator:
 Every function, file, and dependency is tracked in SQLite. AI accesses this data through helper tools — not raw SQL:
 
 ```
-AI calls: get_functions_by_file(project_root, file_id)
-→ Returns: all functions in that file with name, purpose, line numbers, dependencies
+AI calls: get_functions_by_file(file_id)
+→ Returns: all functions in that file with name, purpose, parameters, returns
 ```
 
 No source code reparsing required. Instant context retrieval across sessions.
@@ -173,9 +173,8 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 - `directives`: All FP, project, and user preference directives (workflows, keywords, thresholds)
 - `helper_functions`: Database, file, Git, and FP utilities organized across multiple registry files
 - `directive_helpers`: **Many-to-many junction table** mapping directives to their helper functions with execution metadata
-- `directives_interactions`: Cross-directive relationships and dependencies
 - `categories`: Directive groupings (purity, immutability, task management, etc.)
-- `tools`: MCP tool definitions
+- `directive_flow`: Status-driven directive navigation and routing
 
 **Helper-Directive Relationship** (New in v1.4):
 - One directive can use many helpers, one helper can serve many directives
@@ -188,7 +187,7 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 - **Sub-helper** (`is_sub_helper = TRUE`): Internal utility called by other helpers only (not exposed to AI)
 
 **Helper Registry** (Development Staging):
-- Helper definitions maintained in `docs/helpers/json/*.json` during development
+- Helper definitions maintained in `dev/helpers-json/*.json` during development
 - Developers modify JSON files, then import to database when complete
 - Each helper includes `used_by_directives` field for relationship mapping
 - Database import script populates `aifp_core.db` from JSON files before release
@@ -335,7 +334,7 @@ The MCP server exposes CRUD helper functions for all database operations — tra
 2. AI calls `aifp_run` tool → receives guidance
 3. AI evaluates: Is this coding or project management?
 4. If yes: Check if directives are in memory
-   - No directives? → Call `get_all_directives()`
+   - No directives? → Directive names cached from session bundle; query by name when needed
    - Has directives? → Apply appropriate ones
 5. If no: Respond without directives
 
@@ -551,7 +550,7 @@ claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/paren
 
 #### Claude Code: Pre-Approve All AIFP Tools (Optional)
 
-Claude Code prompts you to approve each new MCP tool the first time it's called. With 207 tools, this means 207 approval prompts. To skip this, copy the pre-built permissions file into your project's `.claude/` folder:
+Claude Code prompts you to approve each new MCP tool the first time it's called. With 228 tools, this means 228 approval prompts. To skip this, copy the pre-built permissions file into your project's `.claude/` folder:
 
 ```bash
 # Create the .claude/ folder in your project root if it doesn't exist
@@ -954,7 +953,7 @@ Traditional AI assistants lack persistent memory. AIFP solves this:
 
 ```
 -- AI remembers everything across sessions via helper tools
-AI calls: get_project_status(project_root, "detailed")
+AI calls: get_project_status("detailed")
 → Returns: project metadata, active milestone, current task, recent notes, tracked files and functions
 
 -- No source code reparsing required. Instant context retrieval.
@@ -1026,25 +1025,25 @@ The payoff comes with project scale. Without AIFP, every new session requires th
 1. aifp_run(is_new_session=false)
    → Returns: lightweight guidance
 
-2. reserve_file(project_root="/home/user/calculator", name="matrix_operations", ...)
-   → Returns: { success: true, data: { id: 42 } }
+2. reserve_file(name="matrix_operations", path="src/matrix_operations.py", language="Python")
+   → Returns: { success: true, id: 42 }
 
-3. reserve_function(project_root="/home/user/calculator", name="multiply_matrices", file_id=42, ...)
-   → Returns: { success: true, data: { id: 99 } }
+3. reserve_function(name="multiply_matrices", file_id=42, purpose="Multiply two matrices")
+   → Returns: { success: true, id: 99 }
 
    (AI writes FP-compliant code to src/matrix_operations_id_42.py)
 
-4. finalize_file(project_root="/home/user/calculator", file_id=42, path="src/matrix_operations_id_42.py", ...)
+4. finalize_file(file_id=42, path="src/matrix_operations_id_42.py", ...)
    → Returns: { success: true }
 
-5. finalize_function(project_root="/home/user/calculator", function_id=99, line_start=5, line_end=25, ...)
+5. finalize_function(function_id=99, name="multiply_matrices_id_99", file_id=42, purpose="...", parameters=[...], returns={...})
    → Returns: { success: true }
 ```
 
 **What happens**:
 - File and function are reserved in `project.db` before writing (IDs embedded in names)
 - AI writes pure functional code following FP baseline (no OOP, no mutations, explicit parameters)
-- File and function are finalized with line numbers and metadata
+- File and function are finalized with purpose, parameters, and return metadata
 - Project database now tracks the code structure for instant retrieval in future sessions
 
 ### Example 3: Resuming Work / Checking Status
@@ -1059,7 +1058,7 @@ The payoff comes with project scale. Without AIFP, every new session requires th
    (AI answers from cached context — no additional DB calls needed
     unless context is stale, in which case:)
 
-2. aifp_status(project_root="/home/user/calculator", type="detailed")
+2. aifp_status(type="detailed")
    → Returns: project metadata, active milestone, current task, recent notes, warnings
 ```
 

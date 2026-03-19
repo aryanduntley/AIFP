@@ -47,14 +47,14 @@
           "description": "If true, skip ID embedding in name. Sets id_in_name=0 in database."
         }
       ],
-      "purpose": "Reserve a type ID before writing the definition. Include definition_json and description — null fields force full file reads in future sessions.",
+      "purpose": "Reserve a type ID before writing the definition. Include definition_json and description \u2014 null fields force full file reads in future sessions.",
       "error_handling": "",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "Use returned ID for type naming: {TypeName}_id_{id}",
-        "MANDATORY: Include definition_json (full type shape) AND description (what it represents, 5-10 words). Types are the MOST frequently looked-up entities — they are how AI understands data shapes without reading files. Incomplete type entries force full file reads that the DB should eliminate. Example: definition_json={'kind': 'union', 'variants': [{'kind': 'handle', 'handle': 'Handle'}, {'kind': 'direct', 'address': 'string'}]}, description='Payment recipient — handle or direct address'",
-        "Next: write type definition with ID in name → finalize_type(type_id, name, definition_json)"
+        "MANDATORY: Include definition_json (full type shape) AND description (what it represents, 5-10 words). Types are the MOST frequently looked-up entities \u2014 they are how AI understands data shapes without reading files. Incomplete type entries force full file reads that the DB should eliminate. Example: definition_json={'kind': 'union', 'variants': [{'kind': 'handle', 'handle': 'Handle'}, {'kind': 'direct', 'address': 'string'}]}, description='Payment recipient \u2014 handle or direct address'",
+        "Next: write type definition with ID in name \u2192 finalize_type(type_id, name, definition_json)"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -100,8 +100,8 @@
       "is_sub_helper": false,
       "return_statements": [
         "Use returned IDs for type naming: {TypeName}_id_{id}",
-        "MANDATORY: Include definition_json (full type shape) AND description for EVERY type. Types are the MOST frequently looked-up entities — they are how AI understands data shapes without reading files. Incomplete type entries force full file reads that the DB should eliminate.",
-        "Next: write type definitions with IDs in names → finalize_types([{type_id, name, definition_json}, ...])"
+        "MANDATORY: Include definition_json (full type shape) AND description for EVERY type. Types are the MOST frequently looked-up entities \u2014 they are how AI understands data shapes without reading files. Incomplete type entries force full file reads that the DB should eliminate.",
+        "Next: write type definitions with IDs in names \u2192 finalize_types([{type_id, name, definition_json}, ...])"
       ],
       "target_database": "project",
       "used_by_directives": [],
@@ -172,7 +172,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "WARNING: Verify definition_json and description are populated. Types with null description are incomplete tracking entries — future AI sessions cannot understand the type shape from the DB. If description is null, populate it NOW via update_type(). This is your last chance before the type is considered 'tracked'.",
+        "WARNING: Verify definition_json and description are populated. Types with null description are incomplete tracking entries \u2014 future AI sessions cannot understand the type shape from the DB. If description is null, populate it NOW via update_type(). This is your last chance before the type is considered 'tracked'.",
         "Do any type-function relationships need to be added in types_functions table?",
         "If called during project_reserve_finalize: follow project_update_db directive to sync type registrations."
       ],
@@ -228,7 +228,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "WARNING: Verify definition_json and description are populated for ALL types. Types with null description are incomplete tracking entries — future AI sessions cannot understand type shapes from the DB. If any description is null, populate it NOW via update_type(). This is your last chance before types are considered 'tracked'.",
+        "WARNING: Verify definition_json and description are populated for ALL types. Types with null description are incomplete tracking entries \u2014 future AI sessions cannot understand type shapes from the DB. If any description is null, populate it NOW via update_type(). This is your last chance before types are considered 'tracked'.",
         "Do any type-function relationships need to be added in types_functions table?",
         "If called during project_reserve_finalize: follow project_update_db directive to sync type registrations."
       ],
@@ -397,14 +397,28 @@
           "required": true,
           "default": null,
           "description": "Type name to look up"
+        },
+        {
+          "name": "include_details",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "If false, omit definition_json/description/links for lightweight listing"
+        },
+        {
+          "name": "details_only",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, return only id/name + definition_json/description/links (when AI already has the rest)"
         }
       ],
-      "purpose": "Look up a tracked type by name with full definition and file location — use BEFORE reading source files. Returns definition_json and description.",
+      "purpose": "Look up a tracked type by name with full definition and file location \u2014 use BEFORE reading source files. Returns definition_json and description.",
       "error_handling": "Return error if no types found with that name",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "DB-FIRST: Use this lookup BEFORE reading source files. Type definitions (definition_json, description) in the DB provide the full type shape — often eliminating the need to read the file. Only read source files when the DB doesn't have what you need."
+        "DB-FIRST: Use this lookup BEFORE reading source files. Type definitions (definition_json, description) in the DB provide the full type shape \u2014 often eliminating the need to read the file. Only read source files when the DB doesn't have what you need."
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -449,8 +463,8 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Verify all functions that consume or produce tracked types have been linked. Missing type-function relationships make 'what functions use TypeX?' queries incomplete — the AI loses refactoring impact analysis for that type.",
-        "Role auto-inference guide: returns type only → 'factory'; params AND returns same type → 'transformer'; params with boolean/Result return → 'validator'; params only → 'accessor' or 'operator'. For complex cases: 'pattern_matcher' (destructures type variants), 'combinator' (combines multiple instances of type). Correct auto-inferred roles if needed via update_type_function_role."
+        "Verify all functions that consume or produce tracked types have been linked. Missing type-function relationships make 'what functions use TypeX?' queries incomplete \u2014 the AI loses refactoring impact analysis for that type.",
+        "Role auto-inference guide: returns type only \u2192 'factory'; params AND returns same type \u2192 'transformer'; params with boolean/Result return \u2192 'validator'; params only \u2192 'accessor' or 'operator'. For complex cases: 'pattern_matcher' (destructures type variants), 'combinator' (combines multiple instances of type). Correct auto-inferred roles if needed via update_type_function_role."
       ],
       "implementation_notes": [
         "Returns: {success: true, ids: [int, ...]} - inserted relationship IDs",
@@ -599,7 +613,7 @@
         "Returns: {success: true, id: int} - new interaction ID",
         "Inserts into interactions table",
         "Source/target are function names - resolved to IDs internally via JOIN with files table",
-        "DISAMBIGUATION: If function name matches multiple functions, returns error with list of matches [{id, name, file_name, file_path}] — AI should choose the correct one and call add_interactions with specific function IDs instead",
+        "DISAMBIGUATION: If function name matches multiple functions, returns error with list of matches [{id, name, file_name, file_path}] \u2014 AI should choose the correct one and call add_interactions with specific function IDs instead",
         "If exactly 1 match: proceeds normally. If 0 matches: returns 'not found' error"
       ],
       "target_database": "project",
@@ -781,12 +795,12 @@
           "description": "Function name to look up interactions for"
         }
       ],
-      "purpose": "Get all interactions for a function (both as source and target) — trace dependency graphs",
+      "purpose": "Get all interactions for a function (both as source and target) \u2014 trace dependency graphs",
       "error_handling": "Return error if query fails",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "DB-FIRST: Use this to trace dependency graphs BEFORE reading source files. Shows what a function calls (source) and what calls it (target) — often answers investigation questions without reading code."
+        "DB-FIRST: Use this to trace dependency graphs BEFORE reading source files. Shows what a function calls (source) and what calls it (target) \u2014 often answers investigation questions without reading code."
       ],
       "implementation_notes": [
         "Returns: {success, interactions: [{id, source_function_id, source_function_name, source_file_name, source_file_path, target_function_id, target_function_name, target_file_name, target_file_path, interaction_type, description, created_at, updated_at}, ...]}",
@@ -803,7 +817,7 @@
           "sequence_order": 2,
           "is_required": false,
           "parameters_mapping": {},
-          "description": "Trace function dependency graph during investigation — query interactions before reading source files"
+          "description": "Trace function dependency graph during investigation \u2014 query interactions before reading source files"
         }
       ]
     },
@@ -819,12 +833,12 @@
           "description": "File ID to look up interactions for"
         }
       ],
-      "purpose": "Get all interactions for functions in a file — understand file's dependency role",
+      "purpose": "Get all interactions for functions in a file \u2014 understand file's dependency role",
       "error_handling": "Return error if query fails",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "DB-FIRST: Use this to understand a file's dependencies BEFORE reading it. Shows all function relationships involving this file — often answers 'how is this file connected?' without reading source code."
+        "DB-FIRST: Use this to understand a file's dependencies BEFORE reading it. Shows all function relationships involving this file \u2014 often answers 'how is this file connected?' without reading source code."
       ],
       "implementation_notes": [
         "Returns: {success, interactions: [{id, source_function_id, source_function_name, source_file_name, source_file_path, target_function_id, target_function_name, target_file_name, target_file_path, interaction_type, description, created_at, updated_at}, ...]}",
@@ -841,8 +855,46 @@
           "sequence_order": 3,
           "is_required": false,
           "parameters_mapping": {},
-          "description": "Trace file-level dependency graph during investigation — query all interactions for functions in a file"
+          "description": "Trace file-level dependency graph during investigation \u2014 query all interactions for functions in a file"
         }
+      ]
+    },
+    {
+      "name": "search_types",
+      "file_path": "helpers/project/types_1.py",
+      "parameters": [
+        {
+          "name": "search_string",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Search string for type name or description (FTS5 full-text search)"
+        },
+        {
+          "name": "include_details",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "If false, omit definition_json/description/links for lightweight listing"
+        },
+        {
+          "name": "details_only",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "If true, return only id/name + definition_json/description/links"
+        }
+      ],
+      "purpose": "Search tracked types by name or description using FTS5 full-text search with relevance ranking.",
+      "error_handling": "Falls back to LIKE search if FTS5 not available",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [],
+      "implementation_notes": [
+        "Uses FTS5 MATCH for relevance-ranked results",
+        "Falls back to LIKE for pre-migration databases"
       ]
     }
   ],

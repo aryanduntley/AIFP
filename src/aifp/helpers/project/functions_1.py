@@ -156,7 +156,11 @@ def serialize_returns(returns: Optional[Dict[str, Any]]) -> Optional[str]:
     return json.dumps(returns)
 
 
-def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
+def row_to_function_record(
+    row: sqlite3.Row,
+    include_details: bool = True,
+    details_only: bool = False
+) -> FunctionRecord:
     """
     Convert database row to immutable FunctionRecord.
 
@@ -165,18 +169,37 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
 
     Args:
         row: SQLite row object
+        include_details: If False, omit purpose/parameters/returns (lightweight listing)
+        details_only: If True, return only id/name + purpose/parameters/returns (for when AI already has the rest)
 
     Returns:
         Immutable FunctionRecord
     """
     keys = row.keys()
+
+    if details_only:
+        return FunctionRecord(
+            id=row["id"],
+            name=row["name"],
+            file_id=row["file_id"],
+            purpose=row["purpose"],
+            parameters=row["parameters"],
+            returns=row["returns"],
+            is_reserved=False,
+            id_in_name=False,
+            file_name=None,
+            file_path=None,
+            created_at="",
+            updated_at=""
+        )
+
     return FunctionRecord(
         id=row["id"],
         name=row["name"],
         file_id=row["file_id"],
-        purpose=row["purpose"],
-        parameters=row["parameters"],
-        returns=row["returns"],
+        purpose=row["purpose"] if include_details else None,
+        parameters=row["parameters"] if include_details else None,
+        returns=row["returns"] if include_details else None,
         is_reserved=bool(row["is_reserved"]),
         id_in_name=bool(row["id_in_name"]),
         file_name=row["file_name"] if "file_name" in keys else None,
@@ -824,8 +847,82 @@ def finalize_functions(
         pass
 
 
+def search_functions(
+    search_string: str,
+    include_details: bool = True,
+    details_only: bool = False
+) -> FunctionQueryResult:
+    """
+    Search functions by name or purpose using FTS5 full-text search.
+
+    Returns relevance-ranked results. Falls back to LIKE if FTS5
+    table is not available (pre-migration databases).
+
+    Args:
+        search_string: Search string for function name or purpose
+
+    Returns:
+        FunctionQueryResult with matching function records
+
+    Example:
+        >>> result = search_functions("calculate")
+        >>> result.success
+        True
+        >>> [f.name for f in result.functions]
+        ['calculate_sum_id_42', 'calculate_total_id_55']
+    """
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        try:
+            # FTS5 path: relevance-ranked results
+            cursor = conn.execute(
+                """SELECT f.*, fi.name AS file_name, fi.path AS file_path
+                FROM functions f
+                JOIN functions_fts ON f.id = functions_fts.rowid
+                LEFT JOIN files fi ON f.file_id = fi.id
+                WHERE functions_fts MATCH ?
+                ORDER BY functions_fts.rank""",
+                (search_string,)
+            )
+        except sqlite3.OperationalError:
+            # Fallback: LIKE search
+            like_pattern = f"%{search_string}%"
+            cursor = conn.execute(
+                """SELECT f.*, fi.name AS file_name, fi.path AS file_path
+                FROM functions f
+                LEFT JOIN files fi ON f.file_id = fi.id
+                WHERE f.name LIKE ? OR f.purpose LIKE ?
+                ORDER BY f.name""",
+                (like_pattern, like_pattern)
+            )
+
+        rows = cursor.fetchall()
+        function_records = tuple(
+            row_to_function_record(row, include_details=include_details, details_only=details_only)
+            for row in rows
+        )
+
+        return FunctionQueryResult(
+            success=True,
+            functions=function_records
+        )
+
+    except Exception as e:
+        return FunctionQueryResult(
+            success=False,
+            error=f"Search failed: {str(e)}"
+        )
+
+    finally:
+        conn.close()
+
+
 def get_function_by_name(
-    function_name: str
+    function_name: str,
+    include_details: bool = True,
+    details_only: bool = False
 ) -> FunctionQueryResult:
     """
     Get functions by name (very high-frequency lookup).
@@ -859,7 +956,10 @@ def get_function_by_name(
         rows = _get_function_by_name_effect(conn, function_name)
 
         # Pure: convert rows to immutable records
-        function_records = tuple(row_to_function_record(row) for row in rows)
+        function_records = tuple(
+            row_to_function_record(row, include_details=include_details, details_only=details_only)
+            for row in rows
+        )
 
         return FunctionQueryResult(
             success=True,

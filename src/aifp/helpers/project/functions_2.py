@@ -209,7 +209,11 @@ def build_update_query(
     return (sql, tuple(params_list))
 
 
-def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
+def row_to_function_record(
+    row: sqlite3.Row,
+    include_details: bool = True,
+    details_only: bool = False
+) -> FunctionRecord:
     """
     Convert database row to immutable FunctionRecord.
 
@@ -218,18 +222,37 @@ def row_to_function_record(row: sqlite3.Row) -> FunctionRecord:
 
     Args:
         row: SQLite row object
+        include_details: If False, omit purpose/parameters/returns (lightweight listing)
+        details_only: If True, return only id/name + purpose/parameters/returns
 
     Returns:
         Immutable FunctionRecord
     """
     keys = row.keys()
+
+    if details_only:
+        return FunctionRecord(
+            id=row["id"],
+            name=row["name"],
+            file_id=row["file_id"],
+            purpose=row["purpose"],
+            parameters=row["parameters"],
+            returns=row["returns"],
+            is_reserved=False,
+            id_in_name=False,
+            file_name=None,
+            file_path=None,
+            created_at="",
+            updated_at=""
+        )
+
     return FunctionRecord(
         id=row["id"],
         name=row["name"],
         file_id=row["file_id"],
-        purpose=row["purpose"],
-        parameters=row["parameters"],
-        returns=row["returns"],
+        purpose=row["purpose"] if include_details else None,
+        parameters=row["parameters"] if include_details else None,
+        returns=row["returns"] if include_details else None,
         is_reserved=bool(row["is_reserved"]),
         id_in_name=bool(row["id_in_name"]),
         file_name=row["file_name"] if "file_name" in keys else None,
@@ -447,7 +470,9 @@ def _delete_function_effect(
 # ============================================================================
 
 def get_functions_by_file(
-    file_id: int
+    file_id: int,
+    include_details: bool = True,
+    details_only: bool = False
 ) -> FunctionsQueryResult:
     """
     Get all functions in a file (high-frequency).
@@ -485,7 +510,10 @@ def get_functions_by_file(
         rows = _get_functions_by_file_effect(conn, file_id)
 
         # Pure: convert rows to immutable records
-        function_records = tuple(row_to_function_record(row) for row in rows)
+        function_records = tuple(
+            row_to_function_record(row, include_details=include_details, details_only=details_only)
+            for row in rows
+        )
 
         return FunctionsQueryResult(
             success=True,

@@ -115,6 +115,7 @@ Route user requests IN ORDER:
   - BEFORE starting task: check get_all_flows() / get_task_flows(task_id) and get_all_themes()
   - DURING task: DB-first for ALL code questions (get_file_by_name, get_function_by_name,
     get_interactions_by_function, then source files ONLY for implementation details)
+  - For fuzzy lookups: search_functions(search_string), search_types(search_string)
   - Task complete -> check milestone -> create next task or next milestone
   - Tasks created incrementally, NOT all at once
 

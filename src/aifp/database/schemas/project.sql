@@ -457,6 +457,72 @@ CREATE INDEX IF NOT EXISTS idx_notes_directive_send
     WHERE send_with_directive = 1 AND directive_name IS NOT NULL;
 
 -- ===============================================================
+-- FTS5 Full-Text Search Indexes
+-- ===============================================================
+
+-- Notes FTS (search note content)
+CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
+    content,
+    content='notes',
+    content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS notes_fts_insert AFTER INSERT ON notes BEGIN
+    INSERT INTO notes_fts(rowid, content) VALUES (new.id, new.content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS notes_fts_delete AFTER DELETE ON notes BEGIN
+    INSERT INTO notes_fts(notes_fts, rowid, content) VALUES('delete', old.id, old.content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS notes_fts_update AFTER UPDATE OF content ON notes BEGIN
+    INSERT INTO notes_fts(notes_fts, rowid, content) VALUES('delete', old.id, old.content);
+    INSERT INTO notes_fts(rowid, content) VALUES (new.id, new.content);
+END;
+
+-- Functions FTS (search by name and purpose)
+CREATE VIRTUAL TABLE IF NOT EXISTS functions_fts USING fts5(
+    name,
+    purpose,
+    content='functions',
+    content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS functions_fts_insert AFTER INSERT ON functions BEGIN
+    INSERT INTO functions_fts(rowid, name, purpose) VALUES (new.id, new.name, COALESCE(new.purpose, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS functions_fts_delete AFTER DELETE ON functions BEGIN
+    INSERT INTO functions_fts(functions_fts, rowid, name, purpose) VALUES('delete', old.id, old.name, COALESCE(old.purpose, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS functions_fts_update AFTER UPDATE OF name, purpose ON functions BEGIN
+    INSERT INTO functions_fts(functions_fts, rowid, name, purpose) VALUES('delete', old.id, old.name, COALESCE(old.purpose, ''));
+    INSERT INTO functions_fts(rowid, name, purpose) VALUES (new.id, new.name, COALESCE(new.purpose, ''));
+END;
+
+-- Types FTS (search by name and description)
+CREATE VIRTUAL TABLE IF NOT EXISTS types_fts USING fts5(
+    name,
+    description,
+    content='types',
+    content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS types_fts_insert AFTER INSERT ON types BEGIN
+    INSERT INTO types_fts(rowid, name, description) VALUES (new.id, new.name, COALESCE(new.description, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS types_fts_delete AFTER DELETE ON types BEGIN
+    INSERT INTO types_fts(types_fts, rowid, name, description) VALUES('delete', old.id, old.name, COALESCE(old.description, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS types_fts_update AFTER UPDATE OF name, description ON types BEGIN
+    INSERT INTO types_fts(types_fts, rowid, name, description) VALUES('delete', old.id, old.name, COALESCE(old.description, ''));
+    INSERT INTO types_fts(rowid, name, description) VALUES (new.id, new.name, COALESCE(new.description, ''));
+END;
+
+-- ===============================================================
 -- Schema Version Tracking
 -- ===============================================================
 
@@ -466,4 +532,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.7');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.8');

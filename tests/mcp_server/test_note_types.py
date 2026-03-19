@@ -245,11 +245,11 @@ def test_filter_deferred_only():
 # Schema Version Tests
 # ============================================================================
 
-def test_project_schema_version_is_1_7():
+def test_project_schema_version_is_1_8():
     conn, db_path, tmp_dir = _create_project_db()
     try:
         cursor = conn.execute("SELECT version FROM schema_version")
-        assert cursor.fetchone()['version'] == '1.7'
+        assert cursor.fetchone()['version'] == '1.8'
     finally:
         conn.close()
         shutil.rmtree(tmp_dir)
@@ -265,11 +265,11 @@ def test_ud_schema_version_is_1_2():
         shutil.rmtree(tmp_dir)
 
 
-def test_core_schema_version_is_2_1():
+def test_core_schema_version_is_2_2():
     from aifp.helpers.orchestrators._common import get_core_db_path
     from aifp.helpers.orchestrators.migration import _get_db_version
     core_path = get_core_db_path()
-    assert _get_db_version(core_path) == '2.1'
+    assert _get_db_version(core_path) == '2.2'
 
 
 def test_core_has_expected_schema_versions_table():
@@ -282,6 +282,6 @@ def test_core_has_expected_schema_versions_table():
     )
     rows = {row['db_name']: row['expected_version'] for row in cursor.fetchall()}
     conn.close()
-    assert rows['project'] == '1.7'
+    assert rows['project'] == '1.8'
     assert rows['user_preferences'] == '1.2'
     assert rows['user_directives'] == '1.2'

@@ -166,6 +166,31 @@ CREATE INDEX IF NOT EXISTS idx_directive_helpers_directive ON directive_helpers 
 CREATE INDEX IF NOT EXISTS idx_directive_helpers_helper ON directive_helpers (helper_function_id);
 
 -- ===============================================================
+-- FTS5 Full-Text Search Indexes
+-- ===============================================================
+
+-- Directives FTS (search by name and description)
+CREATE VIRTUAL TABLE IF NOT EXISTS directives_fts USING fts5(
+    name,
+    description,
+    content='directives',
+    content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS directives_fts_insert AFTER INSERT ON directives BEGIN
+    INSERT INTO directives_fts(rowid, name, description) VALUES (new.id, new.name, COALESCE(new.description, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS directives_fts_delete AFTER DELETE ON directives BEGIN
+    INSERT INTO directives_fts(directives_fts, rowid, name, description) VALUES('delete', old.id, old.name, COALESCE(old.description, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS directives_fts_update AFTER UPDATE OF name, description ON directives BEGIN
+    INSERT INTO directives_fts(directives_fts, rowid, name, description) VALUES('delete', old.id, old.name, COALESCE(old.description, ''));
+    INSERT INTO directives_fts(rowid, name, description) VALUES (new.id, new.name, COALESCE(new.description, ''));
+END;
+
+-- ===============================================================
 -- Schema Version Tracking
 -- ===============================================================
 
@@ -183,8 +208,8 @@ CREATE TABLE IF NOT EXISTS expected_schema_versions (
 );
 
 INSERT OR REPLACE INTO expected_schema_versions (db_name, expected_version, minimum_version) VALUES
-    ('project', '1.7', '1.0'),
+    ('project', '1.8', '1.0'),
     ('user_preferences', '1.2', '1.0'),
     ('user_directives', '1.2', '1.0');
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '2.1');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '2.2');

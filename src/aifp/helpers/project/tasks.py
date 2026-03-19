@@ -909,6 +909,19 @@ def update_milestone(
                 error=f"Completion path ID {completion_path_id} not found"
             )
 
+        # Completion gate: refuse if incomplete tasks exist
+        if status == 'completed':
+            incomplete_tasks = _query_incomplete_tasks_by_milestone(conn, id, skip_pending=False)
+            if incomplete_tasks:
+                task_names = ", ".join(f"'{t.name}'" for t in incomplete_tasks[:3])
+                suffix = f" and {len(incomplete_tasks) - 3} more" if len(incomplete_tasks) > 3 else ""
+                conn.close()
+                return UpdateResult(
+                    success=False,
+                    error=f"Cannot complete milestone: {len(incomplete_tasks)} incomplete task(s) exist "
+                          f"({task_names}{suffix}). Complete or remove all tasks before marking milestone as completed."
+                )
+
         # Update milestone
         _update_milestone_fields(conn, id, name, completion_path_id, status, description)
         conn.close()
@@ -1362,6 +1375,22 @@ def update_task(
                 success=False,
                 error=f"Milestone ID {milestone_id} not found"
             )
+
+        # Completion gate: refuse if incomplete items exist
+        if status == 'completed':
+            cursor = conn.execute(
+                "SELECT COUNT(*) as count FROM items WHERE reference_table = 'tasks' AND reference_id = ? AND status != 'completed'",
+                (id,)
+            )
+            row = cursor.fetchone()
+            incomplete_count = row['count']
+            if incomplete_count > 0:
+                conn.close()
+                return UpdateResult(
+                    success=False,
+                    error=f"Cannot complete task: {incomplete_count} incomplete item(s) exist. "
+                          f"Complete or remove all items before marking task as completed."
+                )
 
         # Update task
         _update_task_fields(conn, id, name, milestone_id, status, description, flow_ids, priority)

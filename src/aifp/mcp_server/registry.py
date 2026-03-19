@@ -124,12 +124,13 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "update_file": ("aifp.helpers.project.files_2", "update_file"),
 
     # ── Project: Functions ───────────────────────────────────────────────
-    # helpers/project/functions_1.py (5 tools)
+    # helpers/project/functions_1.py (6 tools)
     "finalize_function": ("aifp.helpers.project.functions_1", "finalize_function"),
     "finalize_functions": ("aifp.helpers.project.functions_1", "finalize_functions"),
     "get_function_by_name": ("aifp.helpers.project.functions_1", "get_function_by_name"),
     "reserve_function": ("aifp.helpers.project.functions_1", "reserve_function"),
     "reserve_functions": ("aifp.helpers.project.functions_1", "reserve_functions"),
+    "search_functions": ("aifp.helpers.project.functions_1", "search_functions"),
     # helpers/project/functions_2.py (4 tools)
     "delete_function": ("aifp.helpers.project.functions_2", "delete_function"),
     "get_functions_by_file": ("aifp.helpers.project.functions_2", "get_functions_by_file"),
@@ -250,13 +251,14 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "swap_completion_paths_order": ("aifp.helpers.project.themes_flows_2", "swap_completion_paths_order"),
 
     # ── Project: Types ───────────────────────────────────────────────────
-    # helpers/project/types_1.py (7 tools)
+    # helpers/project/types_1.py (8 tools)
     "delete_type": ("aifp.helpers.project.types_1", "delete_type"),
     "finalize_type": ("aifp.helpers.project.types_1", "finalize_type"),
     "finalize_types": ("aifp.helpers.project.types_1", "finalize_types"),
     "get_type_by_name": ("aifp.helpers.project.types_1", "get_type_by_name"),
     "reserve_type": ("aifp.helpers.project.types_1", "reserve_type"),
     "reserve_types": ("aifp.helpers.project.types_1", "reserve_types"),
+    "search_types": ("aifp.helpers.project.types_1", "search_types"),
     "update_type": ("aifp.helpers.project.types_1", "update_type"),
     # helpers/project/types_2.py (3 tools)
     "add_types_functions": ("aifp.helpers.project.types_2", "add_types_functions"),

@@ -21,8 +21,8 @@ from aifp.mcp_server.registry import (
 # Registry Structure Tests
 # ============================================================================
 
-def test_registry_has_226_entries():
-    assert len(TOOL_REGISTRY) == 226
+def test_registry_has_228_entries():
+    assert len(TOOL_REGISTRY) == 228
 
 
 def test_registry_values_are_tuples():

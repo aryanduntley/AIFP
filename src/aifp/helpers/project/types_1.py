@@ -235,7 +235,11 @@ def build_update_query(
     return (sql, tuple(params_list))
 
 
-def row_to_type_record(row: sqlite3.Row) -> TypeRecord:
+def row_to_type_record(
+    row: sqlite3.Row,
+    include_details: bool = True,
+    details_only: bool = False
+) -> TypeRecord:
     """
     Convert database row to immutable TypeRecord.
 
@@ -244,18 +248,37 @@ def row_to_type_record(row: sqlite3.Row) -> TypeRecord:
 
     Args:
         row: SQLite row object
+        include_details: If False, omit definition_json/description (lightweight listing)
+        details_only: If True, return only id/name + definition_json/description
 
     Returns:
         Immutable TypeRecord
     """
     keys = row.keys()
+
+    if details_only:
+        return TypeRecord(
+            id=row["id"],
+            name=row["name"],
+            file_id=row["file_id"],
+            definition_json=row["definition_json"],
+            description=row["description"],
+            links=row["links"],
+            is_reserved=False,
+            id_in_name=False,
+            file_name=None,
+            file_path=None,
+            created_at="",
+            updated_at=""
+        )
+
     return TypeRecord(
         id=row["id"],
         name=row["name"],
         file_id=row["file_id"],
-        definition_json=row["definition_json"],
-        description=row["description"],
-        links=row["links"],
+        definition_json=row["definition_json"] if include_details else None,
+        description=row["description"] if include_details else None,
+        links=row["links"] if include_details else None,
         is_reserved=bool(row["is_reserved"]),
         id_in_name=bool(row["id_in_name"]),
         file_name=row["file_name"] if "file_name" in keys else None,
@@ -1201,8 +1224,82 @@ def _get_type_by_name_effect(conn: sqlite3.Connection, type_name: str) -> List[s
     return cursor.fetchall()
 
 
+def search_types(
+    search_string: str,
+    include_details: bool = True,
+    details_only: bool = False
+) -> TypeQueryResult:
+    """
+    Search types by name or description using FTS5 full-text search.
+
+    Returns relevance-ranked results. Falls back to LIKE if FTS5
+    table is not available (pre-migration databases).
+
+    Args:
+        search_string: Search string for type name or description
+
+    Returns:
+        TypeQueryResult with matching type records
+
+    Example:
+        >>> result = search_types("optional")
+        >>> result.success
+        True
+        >>> [t.name for t in result.types]
+        ['Maybe_id_7']
+    """
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        try:
+            # FTS5 path: relevance-ranked results
+            cursor = conn.execute(
+                """SELECT t.*, fi.name AS file_name, fi.path AS file_path
+                FROM types t
+                JOIN types_fts ON t.id = types_fts.rowid
+                LEFT JOIN files fi ON t.file_id = fi.id
+                WHERE types_fts MATCH ?
+                ORDER BY types_fts.rank""",
+                (search_string,)
+            )
+        except sqlite3.OperationalError:
+            # Fallback: LIKE search
+            like_pattern = f"%{search_string}%"
+            cursor = conn.execute(
+                """SELECT t.*, fi.name AS file_name, fi.path AS file_path
+                FROM types t
+                LEFT JOIN files fi ON t.file_id = fi.id
+                WHERE t.name LIKE ? OR t.description LIKE ?
+                ORDER BY t.name""",
+                (like_pattern, like_pattern)
+            )
+
+        rows = cursor.fetchall()
+        type_records = tuple(
+            row_to_type_record(row, include_details=include_details, details_only=details_only)
+            for row in rows
+        )
+
+        return TypeQueryResult(
+            success=True,
+            types=type_records
+        )
+
+    except Exception as e:
+        return TypeQueryResult(
+            success=False,
+            error=f"Search failed: {str(e)}"
+        )
+
+    finally:
+        conn.close()
+
+
 def get_type_by_name(
-    type_name: str
+    type_name: str,
+    include_details: bool = True,
+    details_only: bool = False
 ) -> TypeQueryResult:
     """
     Look up types by name.
@@ -1240,7 +1337,10 @@ def get_type_by_name(
             )
 
         # Pure: convert rows to records
-        type_records = tuple(row_to_type_record(row) for row in rows)
+        type_records = tuple(
+            row_to_type_record(row, include_details=include_details, details_only=details_only)
+            for row in rows
+        )
 
         return TypeQueryResult(
             success=True,

@@ -48,7 +48,7 @@ def _create_old_project_db(aifp_dir, version="1.6"):
         schema_sql = f.read()
     # Replace new version with old version
     schema_sql = schema_sql.replace(
-        "INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.7')",
+        "INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.8')",
         f"INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '{version}')"
     )
     # Remove the new note types to simulate old schema
@@ -217,7 +217,7 @@ def test_migrate_databases_upgrades_project():
         migrated = result.data['migrated'][0]
         assert migrated['db_name'] == 'project'
         assert migrated['old_version'] == '1.6'
-        assert migrated['new_version'] == '1.7'
+        assert migrated['new_version'] == '1.8'
         assert migrated['backup_temp_path'] is not None
         assert migrated['new_db_temp_path'] is not None
         assert os.path.isfile(migrated['backup_temp_path'])
@@ -271,7 +271,7 @@ def test_migrate_databases_preserves_data():
         # Check version is new
         cursor = new_conn.execute("SELECT version FROM schema_version")
         row = cursor.fetchone()
-        assert row['version'] == "1.7"
+        assert row['version'] == "1.8"
 
         new_conn.close()
 

@@ -309,6 +309,10 @@ def migrate_databases(
                     # Skip — new DB already has correct version
                     continue
 
+                if '_fts' in table:
+                    # Skip FTS5 virtual tables and their internal tables — auto-populated by triggers
+                    continue
+
                 if table not in new_tables:
                     warnings.append(f"Table '{table}' exists in old DB but not in new schema — skipped")
                     continue

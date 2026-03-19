@@ -427,7 +427,10 @@ def _search_notes(
     exclude_note_types: Optional[list] = None
 ) -> Tuple[NoteRecord, ...]:
     """
-    Effect: Search notes by content with optional filters.
+    Effect: Search notes by content with optional filters using FTS5.
+
+    Uses FTS5 full-text search for relevance-ranked results. Falls back
+    to LIKE if FTS5 table is not available (pre-migration databases).
 
     Args:
         conn: Database connection
@@ -438,48 +441,62 @@ def _search_notes(
         source: Optional source filter
         severity: Optional severity filter
         directive_name: Optional directive name filter
+        exclude_note_types: Optional list of note types to exclude
 
     Returns:
-        Tuple of note records
+        Tuple of note records (ranked by relevance when using FTS5)
     """
-    # Build dynamic query
-    where_clauses = ["content LIKE ?"]
-    values = [f"%{search_string}%"]
+    # Build filter clauses (applied to main table in both paths)
+    filter_clauses = []
+    filter_values = []
 
     if note_type is not None:
-        where_clauses.append("note_type = ?")
-        values.append(note_type)
+        filter_clauses.append("n.note_type = ?")
+        filter_values.append(note_type)
 
     if reference_table is not None:
-        where_clauses.append("reference_table = ?")
-        values.append(reference_table)
+        filter_clauses.append("n.reference_table = ?")
+        filter_values.append(reference_table)
 
     if reference_id is not None:
-        where_clauses.append("reference_id = ?")
-        values.append(reference_id)
+        filter_clauses.append("n.reference_id = ?")
+        filter_values.append(reference_id)
 
     if source is not None:
-        where_clauses.append("source = ?")
-        values.append(source)
+        filter_clauses.append("n.source = ?")
+        filter_values.append(source)
 
     if severity is not None:
-        where_clauses.append("severity = ?")
-        values.append(severity)
+        filter_clauses.append("n.severity = ?")
+        filter_values.append(severity)
 
     if directive_name is not None:
-        where_clauses.append("directive_name = ?")
-        values.append(directive_name)
+        filter_clauses.append("n.directive_name = ?")
+        filter_values.append(directive_name)
 
     if exclude_note_types:
         placeholders = ", ".join(["?"] * len(exclude_note_types))
-        where_clauses.append(f"note_type NOT IN ({placeholders})")
-        values.extend(exclude_note_types)
+        filter_clauses.append(f"n.note_type NOT IN ({placeholders})")
+        filter_values.extend(exclude_note_types)
 
-    # Build final query
-    query = "SELECT * FROM notes WHERE " + " AND ".join(where_clauses)
-    query += " ORDER BY created_at DESC"
+    filter_sql = (" AND " + " AND ".join(filter_clauses)) if filter_clauses else ""
 
-    cursor = conn.execute(query, values)
+    try:
+        # FTS5 path: relevance-ranked results
+        query = f"""
+            SELECT n.* FROM notes n
+            JOIN notes_fts ON n.id = notes_fts.rowid
+            WHERE notes_fts MATCH ?{filter_sql}
+            ORDER BY notes_fts.rank
+        """
+        cursor = conn.execute(query, [search_string] + filter_values)
+    except sqlite3.OperationalError:
+        # Fallback: LIKE search for pre-migration databases
+        like_clause = "n.content LIKE ?"
+        like_value = f"%{search_string}%"
+        query = f"SELECT n.* FROM notes n WHERE {like_clause}{filter_sql} ORDER BY n.created_at DESC"
+        cursor = conn.execute(query, [like_value] + filter_values)
+
     rows = cursor.fetchall()
     return tuple(
         NoteRecord(

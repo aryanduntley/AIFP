@@ -474,45 +474,71 @@ def search_directives(
 
         try:
             # Build query based on filters
-            query = "SELECT DISTINCT d.* FROM directives d"
             conditions = []
             params = []
+            joins = ""
 
             # Join with categories if category filter
             if category:
-                query += """
+                joins += """
                     JOIN directive_categories dc ON d.id = dc.directive_id
                     JOIN categories c ON dc.category_id = c.id
                 """
                 conditions.append("c.name = ?")
                 params.append(category)
 
-            # Join with intent_keywords if keyword filter (for keyword search)
-            if keyword:
-                query += """
-                    LEFT JOIN directives_intent_keywords dik ON d.id = dik.directive_id
-                    LEFT JOIN intent_keywords ik ON dik.keyword_id = ik.id
-                """
-
-            # Add WHERE clause
+            # Add type filter
             if type:
                 conditions.append("d.type = ?")
                 params.append(type)
 
+            # Keyword search: try FTS5 first, fall back to LIKE
             if keyword:
-                keyword_pattern = f"%{keyword}%"
-                conditions.append(
-                    "(d.name LIKE ? OR d.description LIKE ? OR ik.keyword LIKE ?)"
-                )
-                params.extend([keyword_pattern, keyword_pattern, keyword_pattern])
+                try:
+                    # FTS5 path: match against directives_fts, also check intent_keywords
+                    fts_query = f"""
+                        SELECT DISTINCT d.* FROM directives d
+                        {joins}
+                        LEFT JOIN directives_intent_keywords dik ON d.id = dik.directive_id
+                        LEFT JOIN intent_keywords ik ON dik.keyword_id = ik.id
+                        LEFT JOIN directives_fts ON d.id = directives_fts.rowid
+                        WHERE (directives_fts MATCH ? OR ik.keyword LIKE ?)
+                    """
+                    if conditions:
+                        fts_query += " AND " + " AND ".join(conditions)
+                    fts_query += " ORDER BY d.type, d.name"
 
-            if conditions:
-                query += " WHERE " + " AND ".join(conditions)
+                    keyword_pattern = f"%{keyword}%"
+                    cursor = conn.execute(fts_query, tuple([keyword, keyword_pattern] + params))
+                    rows = cursor.fetchall()
+                except sqlite3.OperationalError:
+                    # Fallback: LIKE search for pre-migration databases
+                    joins += """
+                        LEFT JOIN directives_intent_keywords dik ON d.id = dik.directive_id
+                        LEFT JOIN intent_keywords ik ON dik.keyword_id = ik.id
+                    """
+                    keyword_pattern = f"%{keyword}%"
+                    conditions.append(
+                        "(d.name LIKE ? OR d.description LIKE ? OR ik.keyword LIKE ?)"
+                    )
+                    params.extend([keyword_pattern, keyword_pattern, keyword_pattern])
 
-            query += " ORDER BY d.type, d.name"
+                    query = f"SELECT DISTINCT d.* FROM directives d{joins}"
+                    if conditions:
+                        query += " WHERE " + " AND ".join(conditions)
+                    query += " ORDER BY d.type, d.name"
 
-            cursor = conn.execute(query, tuple(params))
-            rows = cursor.fetchall()
+                    cursor = conn.execute(query, tuple(params))
+                    rows = cursor.fetchall()
+            else:
+                query = f"SELECT DISTINCT d.* FROM directives d{joins}"
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+                query += " ORDER BY d.type, d.name"
+
+                cursor = conn.execute(query, tuple(params))
+                rows = cursor.fetchall()
+
             directives = tuple(row_to_directive(row) for row in rows)
             return_statements = get_return_statements("search_directives")
 
