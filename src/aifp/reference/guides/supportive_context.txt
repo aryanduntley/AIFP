@@ -167,9 +167,14 @@ State database: auto-created at <source-dir>/.state/runtime.db via create_state_
 Replaces mutable globals. Operations: set_var, get_var, delete_var, increment_var.
 See fp_state_elimination.md for patterns.
 
-9. DRY PRINCIPLE
+9. DRY PRINCIPLE & MODULAR REUSE
 
-Extract when: code IDENTICAL across 2+ files, single responsibility, no conditionals needed.
+**Modular reuse (fp_modular_reuse)**: Functions are puzzle pieces — self-contained, reusable, organized by domain.
+Domain logic (payments, users, pricing) goes in domain modules, NOT in feature files (pages, routes, handlers).
+Feature files are thin orchestrators: import domain functions, compose them, done. No embedded business logic.
+Ask: "Could another part of the codebase use this?" If yes, it belongs in a domain module.
+
+**DRY extraction**: Extract when code IDENTICAL across 2+ files, single responsibility, no conditionals needed.
 Don't extract when: similar but not identical, would require many parameters, would create god functions.
 Scopes: Global (src/aifp/_common.py) > Category (helpers/{category}/_common.py) > File-local.
 

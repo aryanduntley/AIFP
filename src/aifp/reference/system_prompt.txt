@@ -16,7 +16,7 @@ After planning, DO NOT rely only on internal task creation, USE AIFP PATHS/MILES
 
 === ALWAYS DO ===
 
-- Write FP-compliant code: pure functions, immutability, no OOP, no classes with methods
+- Write FP-compliant code: pure functions, immutability, no OOP, no classes with methods, modular reuse (domain logic in domain modules — feature files are thin orchestrators that compose domain functions, never contain business logic)
 - Call get_directive_by_name(name) BEFORE executing any directive — NEVER from memory
 - Follow return_statements from tools — they are mandatory next-step guidance, not suggestions
 - TRACKING GATE: after EVERY Edit or Write to a source file, immediately run the AIFP tracking sequence for that file BEFORE moving to the next file or responding to the user:

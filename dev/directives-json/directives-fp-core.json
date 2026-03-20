@@ -460,7 +460,9 @@
           "then": "refactor_to_module_function",
           "details": {
             "apply_dry_principle": true,
+            "apply_modular_reuse": true,
             "extract_common_utilities": "if used across multiple files",
+            "organize_by_domain": "domain logic in domain modules, feature files compose",
             "scope_levels": ["global", "category", "file"]
           }
         },
@@ -1331,6 +1333,86 @@
       "task isolation",
       "async",
       "parallel safety"
+    ],
+    "confidence_threshold": 0.7
+  },
+  {
+    "name": "fp_modular_reuse",
+    "type": "fp",
+    "parent_directive": null,
+    "category": {
+      "name": "modularity",
+      "description": "Enforces domain-based organization and reusable function composition."
+    },
+    "description": "Enforces functional modularity: functions are self-contained, reusable puzzle pieces organized by domain, not by the feature that first uses them. Domain logic lives in domain modules; feature files are thin orchestrators that compose domain functions. Prevents logic entanglement and enables reuse across the codebase.",
+    "md_file_path": "directives/fp_modular_reuse.md",
+    "workflow": {
+      "trunk": "analyze_module_structure",
+      "branches": [
+        {
+          "if": "domain_logic_in_feature_file",
+          "then": "extract_to_domain_module",
+          "details": {
+            "identify_domain": true,
+            "create_or_find_module": true,
+            "replace_inline_with_import": true
+          }
+        },
+        {
+          "if": "function_mixes_concerns",
+          "then": "decompose_function",
+          "details": {
+            "single_responsibility": true,
+            "create_orchestrator_if_needed": true
+          }
+        },
+        {
+          "if": "unreusable_function",
+          "then": "generalize_interface",
+          "details": {
+            "remove_caller_assumptions": true,
+            "general_inputs_outputs": true
+          }
+        },
+        {
+          "if": "missing_domain_module",
+          "then": "create_domain_module"
+        },
+        {
+          "fallback": "mark_as_compliant"
+        }
+      ],
+      "error_handling": {
+        "on_failure": "prompt_user"
+      }
+    },
+    "roadblocks_json": [
+      {
+        "issue": "domain_logic_in_feature_file",
+        "resolution": "Extract to domain module, replace with import + function call"
+      },
+      {
+        "issue": "mixed_concerns",
+        "resolution": "Decompose into single-responsibility functions, compose via orchestrator"
+      },
+      {
+        "issue": "unreusable_interface",
+        "resolution": "Generalize parameters and return types for broader applicability"
+      },
+      {
+        "issue": "missing_domain_module",
+        "resolution": "Create domain module, migrate related functions from feature files"
+      }
+    ],
+    "intent_keywords_json": [
+      "reusable",
+      "modular",
+      "domain module",
+      "separation of concerns",
+      "puzzle piece",
+      "compose",
+      "orchestrator",
+      "extract"
     ],
     "confidence_threshold": 0.7
   },

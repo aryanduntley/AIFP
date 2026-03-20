@@ -928,6 +928,27 @@
     {
       "id": 48,
       "from_context": "code_writing",
+      "to_directive": "fp_modular_reuse",
+      "flow_type": "reference_consultation",
+      "condition_key": "need_to_organize_or_place_functions",
+      "condition_value": "true",
+      "condition_description": "AI needs to decide where to place functions or how to structure modules for reuse",
+      "priority": 45,
+      "description": "Consult fp_modular_reuse when deciding function placement, module organization, or extracting domain logic from feature files",
+      "consultation_method": "search_directives(keyword='modular reuse', type='fp') OR get_directive_by_name('fp_modular_reuse')",
+      "common_scenarios": [
+        "Deciding where to place a new function",
+        "Domain logic embedded in a feature file",
+        "Function handles multiple concerns",
+        "Structuring a feature that spans multiple domains",
+        "Function signature too specific to one caller"
+      ],
+      "flow_category": "fp",
+      "from_directive": "*"
+    },
+    {
+      "id": 49,
+      "from_context": "code_writing",
       "to_directive": "fp_evaluation_order_control",
       "flow_type": "reference_consultation",
       "condition_key": "need_to_control_evaluation_order",
@@ -946,15 +967,16 @@
     }
   ],
   "flow_summary": {
-    "total_flows": 48,
+    "total_flows": 49,
     "by_priority": {
-      "high_priority_40_45": 12,
+      "high_priority_40_45": 13,
       "medium_priority_30_35": 23,
       "low_priority_25": 13
     },
     "by_category": {
       "error_handling": 4,
       "purity_principles": 6,
+      "modularity": 1,
       "optimization": 7,
       "advanced_patterns": 9,
       "type_safety": 3,
@@ -971,7 +993,8 @@
         "fp_result_types",
         "fp_purity",
         "fp_null_elimination",
-        "fp_wrapper_generation"
+        "fp_wrapper_generation",
+        "fp_modular_reuse"
       ],
       "common": [
         "fp_currying",

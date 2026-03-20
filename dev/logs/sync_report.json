@@ -28,6 +28,7 @@
     "fp_logging_safety",
     "fp_parallel_purity",
     "fp_task_isolation",
+    "fp_modular_reuse",
     "fp_reflection_limitation",
     "fp_optionals",
     "fp_result_types",
