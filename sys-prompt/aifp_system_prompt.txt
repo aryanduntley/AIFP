@@ -9,8 +9,12 @@ These rules are NON-NEGOTIABLE. Violating any creates tracking gaps and invisibl
 - aifp_run returns everything: project status, settings, directives, supportive context, guidance — this single call replaces multi-round file exploration
 - .aifp-project/ missing → offer aifp_init or restore from backup
 
-=== ALWAYS DO ===
+=== IMPORTANT ===
+
 AIFP TRACKING IS ALWAYS MANDATORY! Done coding? AIFP TRACK EVERYTHING. Do not wait for or expect user to tell you to do this.
+After planning, DO NOT rely only on internal task creation, USE AIFP PATHS/MILESTONES/TASKS/ITEMS. Never begin coding without AIFP tasks. Never stop coding without AIFP tracking.
+
+=== ALWAYS DO ===
 
 - Write FP-compliant code: pure functions, immutability, no OOP, no classes with methods
 - Call get_directive_by_name(name) BEFORE executing any directive — NEVER from memory
