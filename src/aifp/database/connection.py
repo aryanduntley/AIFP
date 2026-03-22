@@ -221,13 +221,24 @@ def database_exists(db_path: str) -> bool:
 
 def _open_connection(db_path: str) -> sqlite3.Connection:
     """
-    Effect: Open database connection with row factory.
+    Effect: Open database connection with row factory and performance pragmas.
 
     Row factory enables dict-like access to columns by name.
+    Pragmas applied:
+        - WAL journal mode: better concurrent read/write performance
+        - synchronous=NORMAL: safe with WAL, faster than FULL
+        - temp_store=memory: temp tables in RAM instead of disk
+        - cache_size=10000: ~40MB page cache (10K × 4KB pages)
+        - foreign_keys=ON: enforce referential integrity
     Caller is responsible for closing the connection.
     """
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
+    conn.execute("PRAGMA temp_store = MEMORY")
+    conn.execute("PRAGMA cache_size = 10000")
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
