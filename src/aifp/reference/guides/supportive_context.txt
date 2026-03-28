@@ -172,11 +172,17 @@ See fp_state_elimination.md for patterns.
 **Modular reuse (fp_modular_reuse)**: Functions are puzzle pieces — self-contained, reusable, organized by domain.
 Domain logic (payments, users, pricing) goes in domain modules, NOT in feature files (pages, routes, handlers).
 Feature files are thin orchestrators: import domain functions, compose them, done. No embedded business logic.
-Ask: "Could another part of the codebase use this?" If yes, it belongs in a domain module.
 
-**DRY extraction**: Extract when code IDENTICAL across 2+ files, single responsibility, no conditionals needed.
-Don't extract when: similar but not identical, would require many parameters, would create god functions.
-Scopes: Global (src/aifp/_common.py) > Category (helpers/{category}/_common.py) > File-local.
+**Pre-write modularity checklist (MANDATORY before writing any function)**:
+1. Search existing domain modules for functions that overlap with what you're about to write (DB first: get_function_by_name, get_file_by_name)
+2. If found → import and compose. Do NOT rewrite existing logic.
+3. If not found but reusable (could serve >1 caller) → create in domain module, import into feature file. This is NOT optional.
+4. If similar logic exists but not identical → parameterize or compose from shared primitives. "Similar but not identical" is NOT a reason to duplicate — it's a signal to extract a shared core.
+5. If truly one-off and file-local → inline is acceptable.
+6. After writing → verify feature files remain thin orchestrators (composition + imports only, no embedded domain logic).
+
+**DRY extraction scopes**: Global (src/aifp/_common.py) > Category (helpers/{category}/_common.py) > File-local.
+Don't extract when: variations would require many parameters, or extraction would create god functions.
 
 10. USE CASE 2 / PREFERENCES / GIT / NOTES
 

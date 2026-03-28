@@ -147,7 +147,7 @@ Loads and applies user-defined preferences for file writing.
 
 ## Code Organization and DRY Principle
 
-**CRITICAL**: When writing code files, actively enforce DRY (Don't Repeat Yourself) by extracting common utilities to shared modules. This is essential for AI efficiency at scale.
+**CRITICAL**: Before writing any function, search existing domain modules for overlapping logic (DB first: get_function_by_name, get_file_by_name). If reusable code exists, import and compose — do not rewrite. Actively enforce DRY by extracting common utilities to shared modules. This is essential for AI efficiency at scale.
 
 ### Why DRY Matters for AI Efficiency
 
@@ -169,10 +169,11 @@ At scale (hundreds/thousands of files), code duplication causes massive overhead
 - Use cases are **truly the same**
 - No conditionals or parameters needed to handle variations
 
+⚠️ **When code is similar but not identical**: Do NOT duplicate. Extract the shared core into a domain module, then compose or parameterize at each call site. "Similar but not identical" is a signal to modularize, not a license to copy-paste.
+
 ❌ **Don't extract when** (FORCED DRY—avoid this):
-- Code is **similar but not identical**
-- Would require adding parameters/conditionals to handle variations
-- Use cases are **actually different** (even if they look similar)
+- Would require adding many parameters/conditionals to handle wildly different variations
+- Use cases are **fundamentally different** (not just superficially similar)
 - Would create "god functions" that try to do everything
 
 ### Examples

@@ -532,7 +532,7 @@
         }
       ],
       "purpose": "Delete file with comprehensive cross-reference validation",
-      "error_handling": "Return error if functions/flows exist for file - requires manual cleanup first",
+      "error_handling": "Return error if functions/types exist for file - requires manual cleanup. File_flows are auto-cleared when no other dependencies remain.",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -551,16 +551,15 @@
       ],
       "implementation_notes": [
         "ERROR LOGIC: Query files table for is_reserved WHERE id=? - if is_reserved=1, return error",
-        "ERROR RETURN (reserved): {success: false, error: 'file_reserved', message: 'Cannot delete reserved file. Use delete_reserved helper to clean up abandoned reservation'}",
-        "ERROR LOGIC: Query functions table WHERE file_id=? - if not empty, return error with function list",
-        "ERROR LOGIC: Query types table WHERE file_id=? - if not empty, return error with type list",
-        "ERROR LOGIC: Query file_flows table WHERE file_id=? - if not empty, return error with flow list",
-        "ERROR RETURN: {success: false, error: 'dependencies_exist', functions: [...], types: [...], file_flows: [...]}",
-        "ERROR MESSAGE: 'Cannot delete file - dependencies exist. Delete functions/types first, remove file_flows entries, then retry'",
-        "SUCCESS LOGIC: Only proceed with deletion if is_reserved=0 AND all three dependency checks return empty results",
+        "ERROR RETURN (reserved): {success: false, error: \"file_reserved\", message: \"Cannot delete reserved file. Use delete_reserved helper to clean up abandoned reservation\"}",
+        "ERROR LOGIC: Query functions table WHERE file_id=? - if not empty, return error with dependency list",
+        "ERROR LOGIC: Query types table WHERE file_id=? - if not empty, return error with dependency list",
+        "ERROR RETURN (functions/types): {success: false, error: \"dependencies_exist\", dependencies: {functions: [...], types: [...], file_flows: [...]}}",
+        "AUTO-CLEAR: If functions and types are empty but file_flows exist, auto-delete all file_flows entries for the file",
         "SUCCESS LOGIC: Create note entry in notes table with reason, severity, source, type, reference details",
         "SUCCESS LOGIC: Delete file entry: DELETE FROM files WHERE id=file_id",
-        "SUCCESS RETURN: {success: true, deleted_file_id: file_id}",
+        "SUCCESS RETURN: {success: true, deleted_file_id: file_id, cleared_file_flows: [...flow_names]}",
+        "RETURN STATEMENT: When file_flows were auto-cleared, appends guidance to verify flow coverage",
         "NOTE: Functions and types have SQL ON DELETE CASCADE to files, but we prevent this by checking dependencies first"
       ]
     }

@@ -33,8 +33,8 @@ AI consults this when making decisions about where to place functions and how to
 **Modular reuse is baseline behavior**:
 - AI organizes code by domain and composes at call sites (enforced by system prompt during code writing)
 - This directive provides detailed guidance for complex structuring decisions
-- NO post-write validation occurs
-- NO automatic checking after file writes
+- **Pre-write search is MANDATORY**: Before writing any function, search existing domain modules for overlapping logic. If reusable code exists, import it — do not rewrite it
+- If a function could serve more than one caller, it MUST go in a domain module. This is a hard gate, not a suggestion
 
 ---
 
@@ -115,12 +115,14 @@ def handle_checkout(request: CheckoutRequest) -> CheckoutResponse:
     return success_response(receipt.value)
 ```
 
-### Principle 4: Reusability by Default
+### Principle 4: Reusability by Default (HARD GATE)
 
-When writing a function, ask: **"Could another part of the codebase use this?"** If yes (even hypothetically), design it for reuse:
+When writing a function, answer: **"Could another part of the codebase use this?"** If yes (even hypothetically), it **MUST** go in a domain module — this is not optional, not a suggestion, not a "nice to have." Place it in the domain module, import it where needed:
 - Accept general inputs, not caller-specific structures
 - Return general outputs, not caller-specific formats
 - Don't assume context about who's calling
+
+If similar logic already exists elsewhere, do NOT duplicate it. Either reuse the existing function directly, parameterize it to cover both cases, or extract a shared core that both call sites compose.
 
 **Anti-pattern**: `format_price_for_checkout_page(price)` — hard-coded to one consumer.
 

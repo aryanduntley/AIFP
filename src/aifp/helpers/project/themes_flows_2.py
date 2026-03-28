@@ -24,6 +24,7 @@ Helpers in this file:
 - swap_completion_paths_order: Swap order_index of two completion paths
 - add_file_to_flow: Link a file to a flow
 - add_file_flows: Link multiple files to flows (batch)
+- remove_file_from_flow: Remove a file-flow link
 """
 
 import sqlite3
@@ -195,6 +196,14 @@ class AddFileFlowsBatchResult:
     success: bool
     added_count: int = 0
     skipped_count: int = 0
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class RemoveFileFlowResult:
+    """Result of removing a file-flow link."""
+    success: bool
     error: Optional[str] = None
     return_statements: Tuple[str, ...] = ()
 
@@ -1459,6 +1468,15 @@ def _add_file_flow_effect(conn: sqlite3.Connection, file_id: int, flow_id: int) 
     conn.commit()
 
 
+def _remove_file_flow_effect(conn: sqlite3.Connection, file_id: int, flow_id: int) -> None:
+    """Effect: Delete file-flow link from junction table."""
+    conn.execute(
+        "DELETE FROM file_flows WHERE file_id = ? AND flow_id = ?",
+        (file_id, flow_id)
+    )
+    conn.commit()
+
+
 def add_file_to_flow(
     file_id: int,
     flow_id: int,
@@ -1589,6 +1607,69 @@ def add_file_flows(
         return AddFileFlowsBatchResult(
             success=False,
             error=f"Batch link failed: {str(e)}",
+        )
+
+    finally:
+        conn.close()
+
+
+def remove_file_from_flow(
+    file_id: int,
+    flow_id: int,
+) -> RemoveFileFlowResult:
+    """
+    Remove a file-flow link from the file_flows junction table.
+
+    Use when reassigning a file to a different flow or when preparing
+    a file for deletion. Does not delete the file or the flow.
+
+    Args:
+        file_id: File ID to unlink
+        flow_id: Flow ID to unlink from
+
+    Returns:
+        RemoveFileFlowResult with success status
+
+    Example:
+        >>> result = remove_file_from_flow(file_id=42, flow_id=3)
+        >>> result.success
+        True
+    """
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        if not _check_file_exists(conn, file_id):
+            return RemoveFileFlowResult(
+                success=False,
+                error=f"File with ID {file_id} not found"
+            )
+
+        if not _check_flow_exists(conn, flow_id):
+            return RemoveFileFlowResult(
+                success=False,
+                error=f"Flow with ID {flow_id} not found"
+            )
+
+        if not _check_file_flow_exists(conn, file_id, flow_id):
+            return RemoveFileFlowResult(
+                success=False,
+                error=f"File {file_id} is not linked to flow {flow_id}"
+            )
+
+        _remove_file_flow_effect(conn, file_id, flow_id)
+
+        return_statements = get_return_statements("remove_file_from_flow")
+
+        return RemoveFileFlowResult(
+            success=True,
+            return_statements=return_statements,
+        )
+
+    except Exception as e:
+        return RemoveFileFlowResult(
+            success=False,
+            error=f"Failed to remove file-flow link: {str(e)}",
         )
 
     finally:

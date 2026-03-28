@@ -70,6 +70,7 @@ class DeleteResult:
     deleted_file_id: Optional[int] = None
     error: Optional[str] = None
     dependencies: Optional[DeletionDependencies] = None
+    cleared_file_flows: Tuple[str, ...] = ()  # Flow names auto-cleared during deletion
     return_statements: Tuple[str, ...] = ()  # AI guidance for next steps
 
 
@@ -346,6 +347,18 @@ def _get_deletion_dependencies(
     )
 
 
+def _clear_file_flows_effect(conn: sqlite3.Connection, file_id: int) -> None:
+    """
+    Effect: Remove all file_flows entries for a file.
+
+    Args:
+        conn: Database connection
+        file_id: File ID to clear flows for
+    """
+    conn.execute("DELETE FROM file_flows WHERE file_id = ?", (file_id,))
+    conn.commit()
+
+
 def _delete_file_effect(conn: sqlite3.Connection, file_id: int) -> None:
     """
     Effect: Delete file from database.
@@ -605,8 +618,8 @@ def delete_file(
     """
     Delete file with comprehensive cross-reference validation.
 
-    Validates no dependencies exist before deletion. Requires manual cleanup
-    of functions, types, and file_flows entries first.
+    Functions and types must be removed manually before deletion.
+    File_flows entries are auto-cleared when no other dependencies remain.
 
     Args:
         file_id: File ID to delete
@@ -653,16 +666,21 @@ def delete_file(
         # Check for dependencies
         deps = _get_deletion_dependencies(conn, file_id)
 
-        # If dependencies exist, return error
-        if deps.functions or deps.types or deps.file_flows:
+        # Functions and types are hard blockers — must be removed manually
+        if deps.functions or deps.types:
             return DeleteResult(
                 success=False,
                 error="dependencies_exist",
                 dependencies=deps
             )
 
-        # No dependencies - proceed with deletion
-        # Create note entry
+        # Auto-clear file_flows when functions/types are clean
+        cleared_flows: Tuple[str, ...] = ()
+        if deps.file_flows:
+            cleared_flows = deps.file_flows
+            _clear_file_flows_effect(conn, file_id)
+
+        # Proceed with deletion
         _create_deletion_note(
             conn,
             "files",
@@ -673,15 +691,20 @@ def delete_file(
             note_type
         )
 
-        # Delete file
         _delete_file_effect(conn, file_id)
 
-        # Success - fetch return statements from core database
+        # Build return statements
         return_statements = get_return_statements("delete_file")
+        if cleared_flows:
+            flow_list = ", ".join(cleared_flows)
+            return_statements = return_statements + (
+                f"Auto-cleared file_flows entries: [{flow_list}]. Verify these flows still have adequate file coverage.",
+            )
 
         return DeleteResult(
             success=True,
             deleted_file_id=file_id,
+            cleared_file_flows=cleared_flows,
             return_statements=return_statements
         )
 

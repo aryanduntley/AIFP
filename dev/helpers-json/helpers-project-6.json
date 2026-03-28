@@ -601,6 +601,40 @@
           "description": "Batch link files to flows during theme-flow mapping — efficient for multiple file assignments"
         }
       ]
+    },
+    {
+      "name": "remove_file_from_flow",
+      "file_path": "helpers/project/themes_flows_2.py",
+      "parameters": [
+        {
+          "name": "file_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "File ID to unlink"
+        },
+        {
+          "name": "flow_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Flow ID to unlink from"
+        }
+      ],
+      "purpose": "Remove a file-flow link from the file_flows junction table. Use when reassigning a file to a different flow or preparing for file deletion.",
+      "error_handling": "Return error if file or flow not found, or if link does not exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "File-flow link removed. If this file has 0 remaining flow assignments, it is architecturally disconnected — reassign to another flow or proceed with deletion."
+      ],
+      "implementation_notes": [
+        "Returns: {success: true}",
+        "Deletes from file_flows junction table (composite PK: file_id, flow_id)",
+        "Returns error if link does not exist — validates before deleting"
+      ],
+      "target_database": "project",
+      "used_by_directives": []
     }
   ],
   "metadata": {
