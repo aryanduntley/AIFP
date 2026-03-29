@@ -501,12 +501,12 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_init",
+          "directive_name": "aimfp_init",
           "execution_context": "create_project_structure",
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Initialize project entry during .aifp-project/ creation - creates single project record with metadata"
+          "description": "Initialize project entry during .aimfp-project/ creation - creates single project record with metadata"
         }
       ],
       "implementation_notes": [
@@ -544,7 +544,7 @@
           "description": "Get current project version before updating blueprint - checks version for increment"
         },
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 1,
           "is_required": true,
@@ -727,7 +727,7 @@
       ],
       "implementation_notes": [
         "Returns {changed: boolean, method: 'git'|'filesystem'}",
-        "Git method: git diff --quiet .aifp/ProjectBlueprint.md || compute hash and compare with project.last_known_git_hash",
+        "Git method: git diff --quiet .aimfp/ProjectBlueprint.md || compute hash and compare with project.last_known_git_hash",
         "Filesystem method: Compare os.path.getmtime() with project.updated_at",
         "Prefers git method if available, falls back to filesystem"
       ]
@@ -752,7 +752,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_init",
+          "directive_name": "aimfp_init",
           "execution_context": "create_project_structure",
           "sequence_order": 2,
           "is_required": true,
@@ -787,7 +787,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_init",
+          "directive_name": "aimfp_init",
           "execution_context": "state_db_initialization",
           "sequence_order": 9.5,
           "is_required": true,
@@ -856,7 +856,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_run",
+          "directive_name": "aimfp_run",
           "execution_context": "session_bundle",
           "sequence_order": 5,
           "is_required": true,
@@ -864,7 +864,7 @@
           "description": "Include infrastructure data in session bundle when is_new_session=true"
         },
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "load_infrastructure",
           "sequence_order": 4,
           "is_required": false,
@@ -875,7 +875,7 @@
       "implementation_notes": [
         "SQL: SELECT * FROM infrastructure ORDER BY created_at",
         "Returns ALL rows including empty values",
-        "Used by aifp_run to bundle infrastructure in session context (~500 tokens)",
+        "Used by aimfp_run to bundle infrastructure in session context (~500 tokens)",
         "AI caches this data and only re-calls if cache lost or infrastructure updated",
         "Empty values signal 'needs population' - AI should detect and populate these"
       ]
@@ -919,7 +919,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_init",
+          "directive_name": "aimfp_init",
           "execution_context": "populate_project_root",
           "sequence_order": 5,
           "is_required": true,

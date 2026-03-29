@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Bump AIFP version across all version files, then build.
+Bump AIMFP version across all version files, then build.
 
 Files updated:
   - pyproject.toml          (version = "X.Y.Z")
-  - src/aifp/__init__.py    (__version__ = "X.Y.Z")
-  - src/aifp/mcp_server/server.py  (SERVER_VERSION: Final[str] = "X.Y.Z")
+  - src/aimfp/__init__.py    (__version__ = "X.Y.Z")
+  - src/aimfp/mcp_server/server.py  (SERVER_VERSION: Final[str] = "X.Y.Z")
   - manifest.json           ("version": "X.Y.Z")
 
 After bumping, runs: rm -rf build dist src/*.egg-info && python3 -m build
@@ -25,13 +25,13 @@ VERSION_FILES = {
         "pattern": r'^(version\s*=\s*")[^"]+(")',
         "replace": r'\g<1>{version}\2',
     },
-    "src/aifp/__init__.py": {
-        "path": ROOT / "src" / "aifp" / "__init__.py",
+    "src/aimfp/__init__.py": {
+        "path": ROOT / "src" / "aimfp" / "__init__.py",
         "pattern": r'^(__version__\s*=\s*")[^"]+(")',
         "replace": r'\g<1>{version}\2',
     },
-    "src/aifp/mcp_server/server.py": {
-        "path": ROOT / "src" / "aifp" / "mcp_server" / "server.py",
+    "src/aimfp/mcp_server/server.py": {
+        "path": ROOT / "src" / "aimfp" / "mcp_server" / "server.py",
         "pattern": r'^(SERVER_VERSION:\s*Final\[str\]\s*=\s*")[^"]+(")',
         "replace": r'\g<1>{version}\2',
     },
@@ -96,7 +96,7 @@ def run_build() -> int:
 
 
 def main():
-    print("AIFP Version Bumper")
+    print("AIMFP Version Bumper")
     print("=" * 40)
 
     # Show current versions

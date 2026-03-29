@@ -1,5 +1,5 @@
 """
-AIFP Test Suite - Root conftest
+AIMFP Test Suite - Root conftest
 
 Shared fixtures for all tests.
 Adds src/ to Python path for imports.

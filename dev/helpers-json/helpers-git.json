@@ -150,14 +150,14 @@
           "description": "Branch purpose description"
         }
       ],
-      "purpose": "Create work branch following aifp-{user}-{number} convention",
+      "purpose": "Create work branch following aimfp-{user}-{number} convention",
       "error_handling": "Auto-increment number if branch exists",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [],
       "implementation_notes": [
         "Returns object: {success, branch_name, user, purpose, linked_tasks[]}",
-        "Format: aifp-{user}-{number:03d} (e.g., aifp-alice-001, aifp-bob-042)",
+        "Format: aimfp-{user}-{number:03d} (e.g., aimfp-alice-001, aimfp-bob-042)",
         "Queries MAX(branch_number) FROM work_branches WHERE user_name = ? to get next number",
         "Creates Git branch: git checkout -b {branch_name} main",
         "Inserts into work_branches table: {branch_name, user_name, purpose, status=active, created_from=main}"
@@ -173,7 +173,7 @@
             "user": "workflow.detected_user",
             "purpose": "workflow.branch_purpose"
           },
-          "description": "Tool that implements git_create_branch directive - detects user, formats branch name (aifp-{user}-{number}), creates Git branch, stores metadata in work_branches table"
+          "description": "Tool that implements git_create_branch directive - detects user, formats branch name (aimfp-{user}-{number}), creates Git branch, stores metadata in work_branches table"
         }
       ]
     },
@@ -189,7 +189,7 @@
       "implementation_notes": [
         "Returns string username (never null) - guarantees 'user' fallback",
         "Detection order: git config user.name → env USER → env USERNAME → os.getlogin() → fallback 'user'",
-        "Used to format branch names: aifp-{user}-{number:03d}"
+        "Used to format branch names: aimfp-{user}-{number:03d}"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -199,7 +199,7 @@
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Detect username from git config, environment variables (USER, USERNAME), or system user - used to format branch name aifp-{user}-{number}"
+          "description": "Detect username from git config, environment variables (USER, USERNAME), or system user - used to format branch name aimfp-{user}-{number}"
         }
       ]
     },
@@ -207,7 +207,7 @@
       "name": "list_active_branches",
       "file_path": "helpers/git/operations.py",
       "parameters": [],
-      "purpose": "List all AIFP work branches from work_branches table",
+      "purpose": "List all AIMFP work branches from work_branches table",
       "error_handling": "Return empty array if table doesn't exist",
       "is_tool": true,
       "is_sub_helper": false,
@@ -220,12 +220,12 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 15,
           "is_required": false,
           "parameters_mapping": {},
-          "description": "Show active AIFP work branches in project status report - displays branches awaiting merge or currently in use"
+          "description": "Show active AIMFP work branches in project status report - displays branches awaiting merge or currently in use"
         },
         {
           "directive_name": "git_merge_branch",

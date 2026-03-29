@@ -1,12 +1,12 @@
 """
-AIFP MCP Server — Submission Verification Tests
+AIMFP MCP Server — Submission Verification Tests
 
-Automated functional tests for verifying the AIFP MCP server works correctly.
+Automated functional tests for verifying the AIMFP MCP server works correctly.
 Covers protocol compliance, tool functionality, project lifecycle, and privacy.
 
 These tests verify what a reviewer or end user would experience:
   1. Protocol: JSON-RPC 2.0 compliance, tool listing, annotations
-  2. Core DB: Read-only directive/helper queries against aifp_core.db
+  2. Core DB: Read-only directive/helper queries against aimfp_core.db
   3. Init: Project initialization creates correct directory structure and DBs
   4. Lifecycle: Reserve -> Finalize -> Query cycle for files, functions, tasks
   5. Preferences: User settings and tracking defaults
@@ -28,7 +28,7 @@ import pytest
 # Ensure src/ is importable
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from aifp.mcp_server.server import (
+from aimfp.mcp_server.server import (
     dispatch_message,
     handle_initialize,
     handle_list_tools,
@@ -39,10 +39,10 @@ from aifp.mcp_server.server import (
     SERVER_VERSION,
     PROTOCOL_VERSION,
 )
-from aifp.mcp_server.registry import TOOL_REGISTRY
-from aifp.helpers.orchestrators.entry_points import aifp_init
-from aifp.database.connection import (
-    AIFP_PROJECT_DIR,
+from aimfp.mcp_server.registry import TOOL_REGISTRY
+from aimfp.helpers.orchestrators.entry_points import aimfp_init
+from aimfp.database.connection import (
+    AIMFP_PROJECT_DIR,
     PROJECT_DB_NAME,
     USER_PREFERENCES_DB_NAME,
     clear_project_root_cache,
@@ -68,16 +68,16 @@ def _clear_cache():
 
 @pytest.fixture
 def project_dir(tmp_path):
-    """Create an initialized AIFP project in a temporary directory.
+    """Create an initialized AIMFP project in a temporary directory.
 
     Returns (project_root, project_db_path, prefs_db_path).
     """
     project_root = str(tmp_path)
-    result = aifp_init(project_root=project_root)
-    assert result.success, f"aifp_init failed: {result.error}"
+    result = aimfp_init(project_root=project_root)
+    assert result.success, f"aimfp_init failed: {result.error}"
 
-    project_db = str(tmp_path / AIFP_PROJECT_DIR / PROJECT_DB_NAME)
-    prefs_db = str(tmp_path / AIFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME)
+    project_db = str(tmp_path / AIMFP_PROJECT_DIR / PROJECT_DB_NAME)
+    prefs_db = str(tmp_path / AIMFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME)
     return project_root, project_db, prefs_db
 
 
@@ -133,11 +133,11 @@ class TestProtocol:
             assert "openWorldHint" in ann, f"Tool {name} annotation missing 'openWorldHint'"
 
     def test_all_tools_are_local_only(self):
-        """Every AIFP tool must have openWorldHint=false (no network access)."""
+        """Every AIMFP tool must have openWorldHint=false (no network access)."""
         resp = handle_list_tools(1)
         for tool in resp["result"]["tools"]:
             assert tool["annotations"]["openWorldHint"] is False, (
-                f"Tool {tool['name']} has openWorldHint=true — AIFP is local-only"
+                f"Tool {tool['name']} has openWorldHint=true — AIMFP is local-only"
             )
 
     def test_no_tool_name_exceeds_64_characters(self):
@@ -194,7 +194,7 @@ class TestProtocol:
 
 
 # ============================================================================
-# 2. Core Database (Read-Only aifp_core.db)
+# 2. Core Database (Read-Only aimfp_core.db)
 # ============================================================================
 
 class TestCoreDatabase:
@@ -261,16 +261,16 @@ class TestCoreDatabase:
 # ============================================================================
 
 class TestProjectInit:
-    """Verify aifp_init creates correct directory structure and databases."""
+    """Verify aimfp_init creates correct directory structure and databases."""
 
-    def test_init_creates_aifp_directory(self, tmp_path):
-        result = aifp_init(project_root=str(tmp_path))
+    def test_init_creates_aimfp_directory(self, tmp_path):
+        result = aimfp_init(project_root=str(tmp_path))
         assert result.success is True
-        assert (tmp_path / AIFP_PROJECT_DIR).is_dir()
+        assert (tmp_path / AIMFP_PROJECT_DIR).is_dir()
 
     def test_init_creates_project_db(self, tmp_path):
-        aifp_init(project_root=str(tmp_path))
-        db_path = tmp_path / AIFP_PROJECT_DIR / PROJECT_DB_NAME
+        aimfp_init(project_root=str(tmp_path))
+        db_path = tmp_path / AIMFP_PROJECT_DIR / PROJECT_DB_NAME
         assert db_path.is_file()
         # Verify it's a valid SQLite database
         conn = sqlite3.connect(str(db_path))
@@ -292,8 +292,8 @@ class TestProjectInit:
         assert "infrastructure" in table_names
 
     def test_init_creates_user_preferences_db(self, tmp_path):
-        aifp_init(project_root=str(tmp_path))
-        db_path = tmp_path / AIFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME
+        aimfp_init(project_root=str(tmp_path))
+        db_path = tmp_path / AIMFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME
         assert db_path.is_file()
         conn = sqlite3.connect(str(db_path))
         tables = conn.execute(
@@ -306,15 +306,15 @@ class TestProjectInit:
         assert "tracking_settings" in table_names
 
     def test_init_creates_blueprint(self, tmp_path):
-        aifp_init(project_root=str(tmp_path))
-        blueprint = tmp_path / AIFP_PROJECT_DIR / "ProjectBlueprint.md"
+        aimfp_init(project_root=str(tmp_path))
+        blueprint = tmp_path / AIMFP_PROJECT_DIR / "ProjectBlueprint.md"
         assert blueprint.is_file()
         content = blueprint.read_text()
         assert "Project Blueprint" in content
 
     def test_init_populates_default_infrastructure(self, tmp_path):
-        aifp_init(project_root=str(tmp_path))
-        db_path = str(tmp_path / AIFP_PROJECT_DIR / PROJECT_DB_NAME)
+        aimfp_init(project_root=str(tmp_path))
+        db_path = str(tmp_path / AIMFP_PROJECT_DIR / PROJECT_DB_NAME)
         conn = sqlite3.connect(db_path)
         rows = conn.execute("SELECT type, value FROM infrastructure").fetchall()
         conn.close()
@@ -322,8 +322,8 @@ class TestProjectInit:
         assert "project_root" in infra_types
 
     def test_init_populates_default_user_settings(self, tmp_path):
-        aifp_init(project_root=str(tmp_path))
-        db_path = str(tmp_path / AIFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME)
+        aimfp_init(project_root=str(tmp_path))
+        db_path = str(tmp_path / AIMFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME)
         conn = sqlite3.connect(db_path)
         rows = conn.execute(
             "SELECT setting_key FROM user_settings"
@@ -332,8 +332,8 @@ class TestProjectInit:
         assert len(rows) > 0, "No default user settings were created"
 
     def test_init_tracking_all_disabled_by_default(self, tmp_path):
-        aifp_init(project_root=str(tmp_path))
-        db_path = str(tmp_path / AIFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME)
+        aimfp_init(project_root=str(tmp_path))
+        db_path = str(tmp_path / AIMFP_PROJECT_DIR / USER_PREFERENCES_DB_NAME)
         conn = sqlite3.connect(db_path)
         rows = conn.execute(
             "SELECT feature_name, enabled FROM tracking_settings"
@@ -347,7 +347,7 @@ class TestProjectInit:
             )
 
     def test_init_returns_structured_result(self, tmp_path):
-        result = aifp_init(project_root=str(tmp_path))
+        result = aimfp_init(project_root=str(tmp_path))
         assert result.success is True
         assert result.data is not None
         data = result.data
@@ -355,10 +355,10 @@ class TestProjectInit:
         assert data.get("project_root") == str(tmp_path)
 
     def test_init_is_idempotent_guard(self, tmp_path):
-        """Running aifp_init twice should not crash or corrupt data."""
-        result1 = aifp_init(project_root=str(tmp_path))
+        """Running aimfp_init twice should not crash or corrupt data."""
+        result1 = aimfp_init(project_root=str(tmp_path))
         assert result1.success is True
-        result2 = aifp_init(project_root=str(tmp_path))
+        result2 = aimfp_init(project_root=str(tmp_path))
         # Second call should either succeed gracefully or return an
         # informative already-exists message — it must NOT crash
         assert isinstance(result2.success, bool)
@@ -692,11 +692,11 @@ class TestUserPreferences:
 # ============================================================================
 
 class TestPrivacySecurity:
-    """Verify AIFP makes no network calls and is fully local."""
+    """Verify AIMFP makes no network calls and is fully local."""
 
     def test_no_network_imports_in_source(self):
         """Source code must not import network libraries."""
-        src_dir = Path(__file__).parent.parent / "src" / "aifp"
+        src_dir = Path(__file__).parent.parent / "src" / "aimfp"
         network_modules = {"requests", "urllib", "httpx", "aiohttp"}
         # socket is stdlib but we check for direct usage in imports
         violations = []
@@ -708,13 +708,13 @@ class TestPrivacySecurity:
                     violations.append(f"{py_file.name}: imports {mod}")
 
         assert violations == [], (
-            f"Network library imports found (AIFP must be local-only):\n"
+            f"Network library imports found (AIMFP must be local-only):\n"
             + "\n".join(violations)
         )
 
     def test_no_url_construction_in_helpers(self):
         """Helper code must not construct HTTP URLs."""
-        helpers_dir = Path(__file__).parent.parent / "src" / "aifp" / "helpers"
+        helpers_dir = Path(__file__).parent.parent / "src" / "aimfp" / "helpers"
         violations = []
 
         for py_file in helpers_dir.rglob("*.py"):
@@ -751,10 +751,10 @@ class TestPrivacySecurity:
 class TestOrchestrators:
     """Verify the key orchestrator tools work through the MCP interface."""
 
-    def test_aifp_run_new_session(self):
+    def test_aimfp_run_new_session(self):
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
-                "name": "aifp_run",
+                "name": "aimfp_run",
                 "arguments": {
                     "is_new_session": True,
                 },
@@ -764,10 +764,10 @@ class TestOrchestrators:
         assert isinstance(data, dict)
         assert data.get("success") is True
 
-    def test_aifp_run_continuation(self):
+    def test_aimfp_run_continuation(self):
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
-                "name": "aifp_run",
+                "name": "aimfp_run",
                 "arguments": {
                     "is_new_session": False,
                 },
@@ -777,11 +777,11 @@ class TestOrchestrators:
         assert isinstance(data, dict)
         assert data.get("success") is True
 
-    def test_aifp_status(self, project_dir):
+    def test_aimfp_status(self, project_dir):
         project_root, _, _ = project_dir
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
-                "name": "aifp_status",
+                "name": "aimfp_status",
                 "arguments": {
                     "type": "summary",
                 },
@@ -790,18 +790,18 @@ class TestOrchestrators:
         assert is_error is False
         assert isinstance(data, dict)
 
-    def test_aifp_init_via_tool_call(self, tmp_path):
-        """Test aifp_init through the MCP tool call interface."""
+    def test_aimfp_init_via_tool_call(self, tmp_path):
+        """Test aimfp_init through the MCP tool call interface."""
         data, is_error = _parse_tool_response(
             handle_call_tool(1, {
-                "name": "aifp_init",
+                "name": "aimfp_init",
                 "arguments": {"project_root": str(tmp_path)},
             })
         )
         assert is_error is False
         assert isinstance(data, dict)
         assert data.get("success") is True
-        assert (tmp_path / AIFP_PROJECT_DIR).is_dir()
+        assert (tmp_path / AIMFP_PROJECT_DIR).is_dir()
 
 
 # ============================================================================
@@ -854,7 +854,7 @@ class TestAnnotationClassification:
             f"{tool_name} should be idempotent"
         )
 
-    @pytest.mark.parametrize("tool_name", ["execute_merge", "aifp_end"])
+    @pytest.mark.parametrize("tool_name", ["execute_merge", "aimfp_end"])
     def test_special_destructive_tools(self, tool_name):
         ann = build_tool_annotations(tool_name)
         assert ann.get("destructiveHint") is True, (

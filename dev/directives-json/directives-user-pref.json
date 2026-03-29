@@ -3,7 +3,7 @@
     "name": "user_preferences_sync",
     "type": "project",
     "level": 0,
-    "parent_directive": "aifp_run",
+    "parent_directive": "aimfp_run",
     "category": {
       "name": "user_customization",
       "description": "Manages user-specific AI behavior preferences and settings."
@@ -313,7 +313,7 @@
           "if": "export_complete",
           "then": "save_file",
           "details": {
-            "filename": "aifp_preferences_export.json"
+            "filename": "aimfp_preferences_export.json"
           }
         },
         {

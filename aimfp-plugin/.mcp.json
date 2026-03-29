@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "aimfp": {
+      "command": "python3",
+      "args": ["-m", "aimfp"]
+    }
+  }
+}

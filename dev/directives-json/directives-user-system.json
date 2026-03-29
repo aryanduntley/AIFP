@@ -1,8 +1,8 @@
 {
   "directive_set": "user_system",
   "version": "1.0",
-  "description": "Directives for managing user-defined domain-specific directives (home automation, cloud infrastructure, etc.). When user directives are initialized, the AIFP project's purpose becomes implementing and executing those directives. The AI builds all necessary code, dependencies, helpers, cron jobs, and automations to fulfill the user directives. Status progression: discovery (pending_discovery) → onboarding (pending_parse) → parse → validate → implement (in_progress) → user testing → user approval → activate (active) → modifications trigger return to in_progress.",
-  "purpose_when_active": "The AIFP project serves as the execution engine for user directives. All project development focuses on meeting user directive requirements.",
+  "description": "Directives for managing user-defined domain-specific directives (home automation, cloud infrastructure, etc.). When user directives are initialized, the AIMFP project's purpose becomes implementing and executing those directives. The AI builds all necessary code, dependencies, helpers, cron jobs, and automations to fulfill the user directives. Status progression: discovery (pending_discovery) → onboarding (pending_parse) → parse → validate → implement (in_progress) → user testing → user approval → activate (active) → modifications trigger return to in_progress.",
+  "purpose_when_active": "The AIMFP project serves as the execution engine for user directives. All project development focuses on meeting user directive requirements.",
   "status_semantics": {
     "NULL": "No user directives initialized (Use Case 1)",
     "pending_discovery": "Case 2 selected during project_discovery, discovery still in progress with automation context",
@@ -16,7 +16,7 @@
       "name": "user_directive_parse",
       "type": "project",
       "level": 2,
-      "parent_directive": "aifp_run",
+      "parent_directive": "aimfp_run",
       "md_file_path": "directives/user_directive_parse.md",
       "description": "Parse user directive files (YAML/JSON/TXT) from wherever user placed them in their project. User tells AI the file path (e.g., 'directives/lights.yaml', 'automations.yaml', etc.).",
       "parameters": {
@@ -99,7 +99,7 @@
                 "insert": "user_directives table (status=pending_validation, raw_content, source_file_reference)"
               },
               {
-                "log": "parse result to .aifp-project/logs/user-directives.log"
+                "log": "parse result to .aimfp-project/logs/user-directives.log"
               },
               {
                 "note": "File stays where user put it - we just track the reference"
@@ -202,7 +202,7 @@
                 "update": "user_directives table (status=validated, validated_content, validated_at)"
               },
               {
-                "log": "validation success to .aifp-project/logs/user-directives.log"
+                "log": "validation success to .aimfp-project/logs/user-directives.log"
               },
               {
                 "note": "Validated content stored in database only - user's source file unchanged"
@@ -234,7 +234,7 @@
       "level": 2,
       "parent_directive": "user_directive_validate",
       "md_file_path": "directives/user_directive_implement.md",
-      "description": "Build the entire AIFP project to implement user directives. Reserve names via project_reserve_finalize before generating code to get database IDs for embedding. Generate all necessary FP-compliant code with embedded IDs, install dependencies, create helper functions, set up cron jobs, configure automations, and build supporting infrastructure. The project's purpose becomes executing these directives.",
+      "description": "Build the entire AIMFP project to implement user directives. Reserve names via project_reserve_finalize before generating code to get database IDs for embedding. Generate all necessary FP-compliant code with embedded IDs, install dependencies, create helper functions, set up cron jobs, configure automations, and build supporting infrastructure. The project's purpose becomes executing these directives.",
       "workflow": {
         "trunk": "generate_implementation_code",
         "branches": [
@@ -324,7 +324,7 @@
                 "update": "user_directives (status=implemented, implementation_status=completed, implementation_file_path)"
               }
             ],
-            "note": "Generated code becomes the project's src/ codebase. Project.db tracks these files like any AIFP project. User directives are definitions (.aifp-project/directives/source/), generated code is the actual implementation (src/)."
+            "note": "Generated code becomes the project's src/ codebase. Project.db tracks these files like any AIMFP project. User directives are definitions (.aimfp-project/directives/source/), generated code is the actual implementation (src/)."
           },
           {
             "step": "update_project_purpose",
@@ -441,7 +441,7 @@
               },
               {
                 "log": "User approved implementation",
-                "to": ".aifp-project/logs/user-directives.log"
+                "to": ".aimfp-project/logs/user-directives.log"
               }
             ]
           },
@@ -565,14 +565,14 @@
             "step": "initialize_logging",
             "actions": [
               {
-                "setup": "execution log handler (rotating file: .aifp-project/logs/execution/)"
+                "setup": "execution log handler (rotating file: .aimfp-project/logs/execution/)"
               },
               {
-                "setup": "error log handler (rotating file: .aifp-project/logs/errors/)"
+                "setup": "error log handler (rotating file: .aimfp-project/logs/errors/)"
               },
               {
                 "log": "Directive activated: {name} (type: {implementation_type}, PID: {process_id})",
-                "to": ".aifp-project/logs/user-directives.log"
+                "to": ".aimfp-project/logs/user-directives.log"
               }
             ]
           },
@@ -715,7 +715,7 @@
       "name": "user_directive_update",
       "type": "project",
       "level": 2,
-      "parent_directive": "aifp_run",
+      "parent_directive": "aimfp_run",
       "md_file_path": "directives/user_directive_update.md",
       "description": "Handle changes to user directive source files. When modifications are detected, status returns to 'in_progress', directives are deactivated if active, re-implemented, and require user approval again before reactivation.",
       "workflow": {
@@ -819,7 +819,7 @@
               },
               {
                 "log": "Source file updated: {file_path}",
-                "to": ".aifp-project/logs/user-directives.log"
+                "to": ".aimfp-project/logs/user-directives.log"
               }
             ]
           }
@@ -846,7 +846,7 @@
       "name": "user_directive_deactivate",
       "type": "project",
       "level": 2,
-      "parent_directive": "aifp_run",
+      "parent_directive": "aimfp_run",
       "md_file_path": "directives/user_directive_deactivate.md",
       "description": "Stop execution of active directives and clean up resources",
       "workflow": {
@@ -883,7 +883,7 @@
               },
               {
                 "log": "Directive deactivated: {name}",
-                "to": ".aifp-project/logs/user-directives.log"
+                "to": ".aimfp-project/logs/user-directives.log"
               }
             ]
           },
@@ -952,7 +952,7 @@
       "name": "user_directive_status",
       "type": "project",
       "level": 1,
-      "parent_directive": "aifp_run",
+      "parent_directive": "aimfp_run",
       "md_file_path": "directives/user_directive_status.md",
       "description": "Get comprehensive status report for all user directives",
       "workflow": {
@@ -962,7 +962,7 @@
             "step": "check_user_directives_db_exists",
             "actions": [
               {
-                "check": ".aifp-project/user_directives.db exists"
+                "check": ".aimfp-project/user_directives.db exists"
               },
               {
                 "if_not_exists": "return message: 'No user directives initialized'"
@@ -1011,13 +1011,13 @@
             "step": "include_log_paths",
             "actions": [
               {
-                "include": "execution log path (.aifp-project/logs/execution/current.log)"
+                "include": "execution log path (.aimfp-project/logs/execution/current.log)"
               },
               {
-                "include": "error log path (.aifp-project/logs/errors/current_errors.log)"
+                "include": "error log path (.aimfp-project/logs/errors/current_errors.log)"
               },
               {
-                "include": "lifecycle log path (.aifp-project/logs/user-directives.log)"
+                "include": "lifecycle log path (.aimfp-project/logs/user-directives.log)"
               }
             ]
           }
@@ -1041,20 +1041,20 @@
   ],
   "logging_configuration": {
     "execution_logs": {
-      "location": ".aifp-project/logs/execution/",
+      "location": ".aimfp-project/logs/execution/",
       "format": "json_lines",
       "rotation": "daily",
       "retention_days": 30,
       "compress_after_days": 7
     },
     "error_logs": {
-      "location": ".aifp-project/logs/errors/",
+      "location": ".aimfp-project/logs/errors/",
       "format": "json_lines",
       "rotation": "10MB",
       "retention_days": 90
     },
     "lifecycle_log": {
-      "location": ".aifp-project/logs/user-directives.log",
+      "location": ".aimfp-project/logs/user-directives.log",
       "format": "human_readable",
       "rotation": "weekly",
       "retention_days": 90

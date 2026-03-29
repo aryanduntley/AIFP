@@ -1,5 +1,5 @@
 """
-Tests for aifp.mcp_server.registry
+Tests for aimfp.mcp_server.registry
 
 Verifies all 225 registry entries are valid: modules importable,
 functions exist, helper functions work correctly.
@@ -9,7 +9,7 @@ import importlib
 
 import pytest
 
-from aifp.mcp_server.registry import (
+from aimfp.mcp_server.registry import (
     TOOL_REGISTRY,
     is_registered_tool,
     get_registry_entry,
@@ -34,7 +34,7 @@ def test_registry_values_are_tuples():
 def test_registry_module_paths_are_strings():
     for name, (module_path, _) in TOOL_REGISTRY.items():
         assert isinstance(module_path, str), f"{name}: module_path not a string"
-        assert module_path.startswith("aifp."), f"{name}: module_path doesn't start with 'aifp.'"
+        assert module_path.startswith("aimfp."), f"{name}: module_path doesn't start with 'aimfp.'"
 
 
 def test_registry_function_names_are_strings():
@@ -64,7 +64,7 @@ def test_registry_no_duplicate_module_function_pairs():
 # ============================================================================
 
 def test_is_registered_tool_known():
-    assert is_registered_tool("aifp_run") is True
+    assert is_registered_tool("aimfp_run") is True
 
 
 def test_is_registered_tool_unknown():
@@ -72,9 +72,9 @@ def test_is_registered_tool_unknown():
 
 
 def test_get_registry_entry_known():
-    module_path, function_name = get_registry_entry("aifp_run")
-    assert module_path == "aifp.helpers.orchestrators.entry_points"
-    assert function_name == "aifp_run"
+    module_path, function_name = get_registry_entry("aimfp_run")
+    assert module_path == "aimfp.helpers.orchestrators.entry_points"
+    assert function_name == "aimfp_run"
 
 
 def test_get_registry_entry_unknown_raises():
@@ -150,7 +150,7 @@ def test_effect_import_tool_function_unknown_raises_keyerror():
 # ============================================================================
 
 def test_registry_covers_entry_points():
-    entry_points = {"aifp_run", "aifp_init", "aifp_status", "aifp_end"}
+    entry_points = {"aimfp_run", "aimfp_init", "aimfp_status", "aimfp_end"}
     for ep in entry_points:
         assert ep in TOOL_REGISTRY, f"Missing entry point: {ep}"
 

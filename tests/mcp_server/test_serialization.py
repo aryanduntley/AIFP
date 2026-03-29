@@ -1,5 +1,5 @@
 """
-Tests for aifp.mcp_server.serialization
+Tests for aimfp.mcp_server.serialization
 
 Verifies result serialization handles all frozen dataclass types,
 edge cases (frozenset, Path, datetime, bytes), and error detection.
@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
-from aifp.mcp_server.serialization import (
+from aimfp.mcp_server.serialization import (
     _json_default,
     serialize_result,
     is_error_result,
@@ -19,7 +19,7 @@ from aifp.mcp_server.serialization import (
 
 
 # ============================================================================
-# Test Dataclasses (mimicking AIFP helper result types)
+# Test Dataclasses (mimicking AIMFP helper result types)
 # ============================================================================
 
 @dataclass(frozen=True)

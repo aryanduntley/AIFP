@@ -3,12 +3,12 @@
     "name": "git_init",
     "type": "git",
     "level": 1,
-    "parent_directive": "aifp_init",
+    "parent_directive": "aimfp_init",
     "category": {
       "name": "git_setup",
       "description": "Initialize or integrate with Git repository for version control and collaboration."
     },
-    "description": "Initializes Git repository if one doesn't exist, or integrates with existing repository. Creates initial .gitignore for AIFP files, stores initial Git hash in project.last_known_git_hash for external change tracking, and optionally creates initial commit. For existing repos, detects current branch and commit hash. Current Git state is always queried from Git directly (no duplication in DB).",
+    "description": "Initializes Git repository if one doesn't exist, or integrates with existing repository. Creates initial .gitignore for AIMFP files, stores initial Git hash in project.last_known_git_hash for external change tracking, and optionally creates initial commit. For existing repos, detects current branch and commit hash. Current Git state is always queried from Git directly (no duplication in DB).",
     "md_file_path": "directives/git_init.md",
     "workflow": {
       "trunk": "check_git_repo_exists",
@@ -97,10 +97,10 @@
     "name": "git_detect_external_changes",
     "type": "git",
     "level": 2,
-    "parent_directive": "aifp_status",
+    "parent_directive": "aimfp_status",
     "category": {
       "name": "change_detection",
-      "description": "Detect code modifications made outside AIFP sessions using Git commit hash comparison."
+      "description": "Detect code modifications made outside AIMFP sessions using Git commit hash comparison."
     },
     "description": "Detects external code changes by comparing current Git HEAD with project.last_known_git_hash. Identifies modified files using git diff, analyzes theme impact by querying project.db for affected themes/flows, and updates project.last_known_git_hash with new hash. Presents changes to user with recommendations for organizational state reconciliation.",
     "md_file_path": "directives/git_detect_external_changes.md",
@@ -207,7 +207,7 @@
       "name": "collaboration",
       "description": "Create user/AI work branches for multi-user collaboration."
     },
-    "description": "Creates new work branch following naming convention aifp-{user}-{number}. Detects user from Git config, environment, or prompts if needed. Stores branch metadata in work_branches table including purpose, user, and status. Optionally links branch to specific tasks/themes. Supports both human developers and autonomous AI instances.",
+    "description": "Creates new work branch following naming convention aimfp-{user}-{number}. Detects user from Git config, environment, or prompts if needed. Stores branch metadata in work_branches table including purpose, user, and status. Optionally links branch to specific tasks/themes. Supports both human developers and autonomous AI instances.",
     "md_file_path": "directives/git_create_branch.md",
     "workflow": {
       "trunk": "get_user_identification",
@@ -243,7 +243,7 @@
           "if": "branch_number_determined",
           "then": "format_branch_name",
           "details": {
-            "format": "aifp-{user}-{number:03d}"
+            "format": "aimfp-{user}-{number:03d}"
           }
         },
         {
@@ -631,7 +631,7 @@
     "name": "git_sync_state",
     "type": "git",
     "level": 2,
-    "parent_directive": "aifp_status",
+    "parent_directive": "aimfp_status",
     "category": {
       "name": "state_management",
       "description": "Synchronize Git hash with project.db for external change detection."

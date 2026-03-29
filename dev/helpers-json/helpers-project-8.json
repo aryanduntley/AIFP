@@ -83,7 +83,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 11,
           "is_required": true,
@@ -256,7 +256,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 12,
           "is_required": false,
@@ -510,7 +510,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 12,
           "is_required": true,
@@ -609,7 +609,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 13,
           "is_required": false,

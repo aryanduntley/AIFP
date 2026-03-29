@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-AIFP Directive Sync Manager — Schema v2.0
+AIMFP Directive Sync Manager — Schema v2.0
 ------------------------------------------
 Synchronizes all directive JSON definitions, helper functions, and directive flows
-with the aifp_core.db database.
+with the aimfp_core.db database.
 
 Location: dev/sync-directives.py
 Run from project root or dev/ directory.
@@ -25,7 +25,7 @@ Updated: 2026-02-04
 
 Total Directives: 125+ (30 FP Core + 36 FP Aux + 36 Project + 7 User Pref + 9 User System + 6 Git + ...)
 
-This version aligns with the full schema (v2.0) for aifp_core.db.
+This version aligns with the full schema (v2.0) for aimfp_core.db.
 """
 
 import os
@@ -47,11 +47,11 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)  # One level up from dev/
 # ===================================
 
 # Database path - configurable via environment variable
-# Default: src/aifp/database/aifp_core.db (production location)
-# Override with AIFP_CORE_DB_PATH environment variable if needed
+# Default: src/aimfp/database/aimfp_core.db (production location)
+# Override with AIMFP_CORE_DB_PATH environment variable if needed
 DB_PATH = os.environ.get(
-    "AIFP_CORE_DB_PATH",
-    os.path.join(PROJECT_ROOT, "src", "aifp", "database", "aifp_core.db")
+    "AIMFP_CORE_DB_PATH",
+    os.path.join(PROJECT_ROOT, "src", "aimfp", "database", "aimfp_core.db")
 )
 
 # Directive JSON files are in dev/directives-json/
@@ -110,11 +110,11 @@ def get_conn(db_path: str) -> sqlite3.Connection:
 
 def ensure_schema(conn: sqlite3.Connection):
     """Load and execute schema from external SQL file (source of truth)."""
-    schema_path = os.path.join(PROJECT_ROOT, 'src', 'aifp', 'database', 'schemas', 'aifp_core.sql')
+    schema_path = os.path.join(PROJECT_ROOT, 'src', 'aimfp', 'database', 'schemas', 'aimfp_core.sql')
 
     if not os.path.exists(schema_path):
         print(f"❌ Schema file not found: {schema_path}")
-        print(f"   Please ensure src/aifp/database/schemas/aifp_core.sql exists")
+        print(f"   Please ensure src/aimfp/database/schemas/aimfp_core.sql exists")
         raise FileNotFoundError(f"Schema file missing: {schema_path}")
 
     print(f"📄 Loading schema from: {schema_path}")
@@ -657,7 +657,7 @@ def sync_directive_helper_mappings(conn: sqlite3.Connection, all_helpers: List[D
     Each helper's used_by_directives field contains:
     [
       {
-        "directive_name": "aifp_run",
+        "directive_name": "aimfp_run",
         "execution_context": "self_invocation",
         "sequence_order": 1,
         "is_required": true,
@@ -792,8 +792,8 @@ def sync_directive_flows(conn: sqlite3.Connection):
 
     Flow structure:
     {
-      "from_directive": "aifp_run",
-      "to_directive": "aifp_status",
+      "from_directive": "aimfp_run",
+      "to_directive": "aimfp_status",
       "flow_type": "status_branch",
       "flow_category": "project",
       "condition_key": "is_new_session",
@@ -919,7 +919,7 @@ def sync_directive_flows(conn: sqlite3.Connection):
 # ===================================
 
 def sync_directives():
-    print("🔄 Starting Full AIFP Directive Sync (Schema v2.0)")
+    print("🔄 Starting Full AIMFP Directive Sync (Schema v2.0)")
     print("📦 Including: FP Core, FP Aux, Project, User Prefs, User System, Git Integration")
     print("📦 Including: Categories, Intent Keywords, Helpers, Directive-Helper Mappings, Directive Flows")
 
@@ -1094,7 +1094,7 @@ def validate_integrity(conn):
     md_files_checked = 0
 
     # Use PROJECT_ROOT for reference directory
-    reference_dir = os.path.join(PROJECT_ROOT, 'src', 'aifp', 'reference')
+    reference_dir = os.path.join(PROJECT_ROOT, 'src', 'aimfp', 'reference')
 
     for row in cur.fetchall():
         # Construct absolute path
@@ -1185,5 +1185,5 @@ if __name__ == "__main__":
 # - Flows:      dev/directives-json/directive_flow_*.json
 # - Migrations: dev/migrations/*.sql
 # - Logs:       dev/logs/sync_report.json
-# - Target DB:  src/aifp/database/aifp_core.db
+# - Target DB:  src/aimfp/database/aimfp_core.db
 # ==================================

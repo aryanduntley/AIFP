@@ -109,7 +109,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 8,
           "is_required": false,
@@ -142,7 +142,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 9,
           "is_required": true,
@@ -218,7 +218,7 @@
       "return_statements": [
         "If milestone status changed: call add_note(note_type='task_context', reference_table='milestones', reference_id=<milestone_id>). If scope changed: call add_note(note_type='evolution', directive_name='project_evolution', reference_table='milestones', reference_id=<milestone_id>)",
         "If status='completed': call get_milestones_by_path(completion_path_id) — if all completed, call update_completion_path(id, status='completed')",
-        "Call aifp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
+        "Call aimfp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -444,7 +444,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 10,
           "is_required": true,
@@ -573,7 +573,7 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 11,
           "is_required": false,
@@ -725,7 +725,7 @@
         "If status='in_progress': BEFORE STARTING WORK — (1) search_notes(search_string=<task-relevant keywords>, exclude_note_types=['completed','obsolete']) for prior decisions or deferred work affecting this task. Review hits, mark handled notes as 'completed'/'obsolete'. (2) Check get_all_flows() and get_task_flows(task_id) for relevant workflow descriptions. (3) Use DB lookups (get_function_by_name, get_type_by_name, get_functions_by_file) to understand existing code BEFORE reading source files.",
         "If task status changed: call add_note(note_type='task_context', reference_table='tasks', reference_id=<task_id>) describing the status change",
         "If status='completed': call get_incomplete_tasks_by_milestone(milestone_id, skip_pending=false) — if empty, call update_milestone(id, status='completed')",
-        "Call aifp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
+        "Call aimfp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
       ],
       "target_database": "project",
       "used_by_directives": [

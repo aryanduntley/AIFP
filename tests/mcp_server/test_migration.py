@@ -1,5 +1,5 @@
 """
-Tests for aifp.helpers.orchestrators.migration
+Tests for aimfp.helpers.orchestrators.migration
 
 Verifies:
 - Version mismatch detection
@@ -9,7 +9,7 @@ Verifies:
 - Row count verification
 - Missing DB handling (user_directives skipped)
 - All-current returns empty migrated list
-- Custom aifp_folder parameter
+- Custom aimfp_folder parameter
 """
 
 import os
@@ -17,30 +17,30 @@ import sqlite3
 import tempfile
 import shutil
 
-from aifp.helpers.orchestrators.migration import (
+from aimfp.helpers.orchestrators.migration import (
     _check_pending_migrations,
     _get_db_version,
     _get_schema_path,
     migrate_databases,
 )
-from aifp.database.connection import set_project_root, clear_project_root_cache
+from aimfp.database.connection import set_project_root, clear_project_root_cache
 
 
 # ============================================================================
 # Fixtures: Create temp project with old-version DBs
 # ============================================================================
 
-def _setup_project(tmp_dir, aifp_folder=".aifp-project"):
+def _setup_project(tmp_dir, aimfp_folder=".aimfp-project"):
     """Create a temp project with old-version project.db and user_preferences.db."""
-    aifp_dir = os.path.join(tmp_dir, aifp_folder)
-    os.makedirs(aifp_dir, exist_ok=True)
-    os.makedirs(os.path.join(aifp_dir, "backups"), exist_ok=True)
-    return aifp_dir
+    aimfp_dir = os.path.join(tmp_dir, aimfp_folder)
+    os.makedirs(aimfp_dir, exist_ok=True)
+    os.makedirs(os.path.join(aimfp_dir, "backups"), exist_ok=True)
+    return aimfp_dir
 
 
-def _create_old_project_db(aifp_dir, version="1.6"):
+def _create_old_project_db(aimfp_dir, version="1.6"):
     """Create a project.db with old version and some test data."""
-    db_path = os.path.join(aifp_dir, "project.db")
+    db_path = os.path.join(aimfp_dir, "project.db")
     conn = sqlite3.connect(db_path)
     # Use real schema but with old version
     schema_path = _get_schema_path("project.sql")
@@ -84,9 +84,9 @@ def _create_old_project_db(aifp_dir, version="1.6"):
     return db_path
 
 
-def _create_old_prefs_db(aifp_dir, version="1.2"):
+def _create_old_prefs_db(aimfp_dir, version="1.2"):
     """Create a user_preferences.db at current version (no migration needed)."""
-    db_path = os.path.join(aifp_dir, "user_preferences.db")
+    db_path = os.path.join(aimfp_dir, "user_preferences.db")
     conn = sqlite3.connect(db_path)
     schema_path = _get_schema_path("user_preferences.sql")
     with open(schema_path, 'r') as f:
@@ -103,8 +103,8 @@ def _create_old_prefs_db(aifp_dir, version="1.2"):
 def test_get_db_version_returns_version():
     tmp = tempfile.mkdtemp()
     try:
-        aifp_dir = _setup_project(tmp)
-        db_path = _create_old_project_db(aifp_dir, "1.6")
+        aimfp_dir = _setup_project(tmp)
+        db_path = _create_old_project_db(aimfp_dir, "1.6")
         assert _get_db_version(db_path) == "1.6"
     finally:
         shutil.rmtree(tmp)
@@ -121,11 +121,11 @@ def test_get_db_version_nonexistent_returns_default():
 def test_check_pending_detects_old_version():
     tmp = tempfile.mkdtemp()
     try:
-        aifp_dir = _setup_project(tmp)
-        _create_old_project_db(aifp_dir, "1.6")
-        _create_old_prefs_db(aifp_dir)
+        aimfp_dir = _setup_project(tmp)
+        _create_old_project_db(aimfp_dir, "1.6")
+        _create_old_prefs_db(aimfp_dir)
 
-        result = _check_pending_migrations(tmp, ".aifp-project")
+        result = _check_pending_migrations(tmp, ".aimfp-project")
         assert result['checked'] is True
         # project.db should be pending (1.6 -> 1.7)
         pending_names = [p['db_name'] for p in result['pending']]
@@ -140,11 +140,11 @@ def test_check_pending_detects_old_version():
 def test_check_pending_skips_missing_db():
     tmp = tempfile.mkdtemp()
     try:
-        aifp_dir = _setup_project(tmp)
-        _create_old_project_db(aifp_dir, "1.6")
+        aimfp_dir = _setup_project(tmp)
+        _create_old_project_db(aimfp_dir, "1.6")
         # No user_preferences.db or user_directives.db
 
-        result = _check_pending_migrations(tmp, ".aifp-project")
+        result = _check_pending_migrations(tmp, ".aimfp-project")
         assert result['checked'] is True
         skipped_names = [s['db_name'] for s in result['skipped']]
         # user_directives should be skipped (file missing)
@@ -156,17 +156,17 @@ def test_check_pending_skips_missing_db():
 def test_check_pending_all_current():
     tmp = tempfile.mkdtemp()
     try:
-        aifp_dir = _setup_project(tmp)
+        aimfp_dir = _setup_project(tmp)
         # Create project.db at current version (1.7)
-        db_path = os.path.join(aifp_dir, "project.db")
+        db_path = os.path.join(aimfp_dir, "project.db")
         conn = sqlite3.connect(db_path)
         schema_path = _get_schema_path("project.sql")
         with open(schema_path, 'r') as f:
             conn.executescript(f.read())
         conn.close()
-        _create_old_prefs_db(aifp_dir)
+        _create_old_prefs_db(aimfp_dir)
 
-        result = _check_pending_migrations(tmp, ".aifp-project")
+        result = _check_pending_migrations(tmp, ".aimfp-project")
         assert result['checked'] is True
         assert len(result['pending']) == 0
         up_to_date_names = [u['db_name'] for u in result['up_to_date']]
@@ -184,14 +184,14 @@ def test_migrate_databases_nothing_pending():
     tmp = tempfile.mkdtemp()
     try:
         set_project_root(tmp)
-        aifp_dir = _setup_project(tmp)
+        aimfp_dir = _setup_project(tmp)
         # Create at current versions
-        db_path = os.path.join(aifp_dir, "project.db")
+        db_path = os.path.join(aimfp_dir, "project.db")
         conn = sqlite3.connect(db_path)
         with open(_get_schema_path("project.sql"), 'r') as f:
             conn.executescript(f.read())
         conn.close()
-        _create_old_prefs_db(aifp_dir)
+        _create_old_prefs_db(aimfp_dir)
 
         result = migrate_databases()
         assert result.success is True
@@ -206,9 +206,9 @@ def test_migrate_databases_upgrades_project():
     tmp = tempfile.mkdtemp()
     try:
         set_project_root(tmp)
-        aifp_dir = _setup_project(tmp)
-        _create_old_project_db(aifp_dir, "1.6")
-        _create_old_prefs_db(aifp_dir)
+        aimfp_dir = _setup_project(tmp)
+        _create_old_project_db(aimfp_dir, "1.6")
+        _create_old_prefs_db(aimfp_dir)
 
         result = migrate_databases()
         assert result.success is True
@@ -235,9 +235,9 @@ def test_migrate_databases_preserves_data():
     tmp = tempfile.mkdtemp()
     try:
         set_project_root(tmp)
-        aifp_dir = _setup_project(tmp)
-        _create_old_project_db(aifp_dir, "1.6")
-        _create_old_prefs_db(aifp_dir)
+        aimfp_dir = _setup_project(tmp)
+        _create_old_project_db(aimfp_dir, "1.6")
+        _create_old_prefs_db(aimfp_dir)
 
         result = migrate_databases()
         migrated = result.data['migrated'][0]
@@ -287,8 +287,8 @@ def test_migrate_databases_preserves_timestamps():
     tmp = tempfile.mkdtemp()
     try:
         set_project_root(tmp)
-        aifp_dir = _setup_project(tmp)
-        old_db_path = _create_old_project_db(aifp_dir, "1.6")
+        aimfp_dir = _setup_project(tmp)
+        old_db_path = _create_old_project_db(aimfp_dir, "1.6")
 
         # Read original timestamp
         old_conn = sqlite3.connect(old_db_path)
@@ -299,7 +299,7 @@ def test_migrate_databases_preserves_timestamps():
         old_updated = old_row['updated_at']
         old_conn.close()
 
-        _create_old_prefs_db(aifp_dir)
+        _create_old_prefs_db(aimfp_dir)
 
         result = migrate_databases()
         migrated = result.data['migrated'][0]
@@ -325,9 +325,9 @@ def test_migrate_databases_verification_match():
     tmp = tempfile.mkdtemp()
     try:
         set_project_root(tmp)
-        aifp_dir = _setup_project(tmp)
-        _create_old_project_db(aifp_dir, "1.6")
-        _create_old_prefs_db(aifp_dir)
+        aimfp_dir = _setup_project(tmp)
+        _create_old_project_db(aimfp_dir, "1.6")
+        _create_old_prefs_db(aimfp_dir)
 
         result = migrate_databases()
         migrated = result.data['migrated'][0]
@@ -355,9 +355,9 @@ def test_migrate_databases_backup_is_valid():
     tmp = tempfile.mkdtemp()
     try:
         set_project_root(tmp)
-        aifp_dir = _setup_project(tmp)
-        _create_old_project_db(aifp_dir, "1.6")
-        _create_old_prefs_db(aifp_dir)
+        aimfp_dir = _setup_project(tmp)
+        _create_old_project_db(aimfp_dir, "1.6")
+        _create_old_prefs_db(aimfp_dir)
 
         result = migrate_databases()
         migrated = result.data['migrated'][0]
@@ -374,14 +374,14 @@ def test_migrate_databases_backup_is_valid():
         shutil.rmtree(tmp)
 
 
-def test_migrate_databases_custom_aifp_folder():
+def test_migrate_databases_custom_aimfp_folder():
     tmp = tempfile.mkdtemp()
     try:
         set_project_root(tmp)
-        aifp_dir = _setup_project(tmp, aifp_folder=".custom-aifp")
-        _create_old_project_db(aifp_dir, "1.6")
+        aimfp_dir = _setup_project(tmp, aimfp_folder=".custom-aimfp")
+        _create_old_project_db(aimfp_dir, "1.6")
 
-        result = migrate_databases(aifp_folder=".custom-aifp")
+        result = migrate_databases(aimfp_folder=".custom-aimfp")
         assert result.success is True
         assert len(result.data['migrated']) == 1
         assert result.data['migrated'][0]['db_name'] == 'project'

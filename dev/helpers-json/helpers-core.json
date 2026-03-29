@@ -19,7 +19,7 @@
           "description": "Field name to get allowed values for"
         }
       ],
-      "purpose": "Returns list of allowed values for CHECK constraint enum fields in aifp_core.db. Parses schema to extract CHECK(field IN (...)) constraints.",
+      "purpose": "Returns list of allowed values for CHECK constraint enum fields in aimfp_core.db. Parses schema to extract CHECK(field IN (...)) constraints.",
       "error_handling": "Returns error if table does not exist, field does not exist, or field does not have a CHECK constraint list",
       "is_tool": true,
       "is_sub_helper": false,
@@ -205,18 +205,18 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Directives contain authoritative workflow guidance for ALL aspects of AIFP — file operations, task management, FP compliance, reserve/finalize flows, interactions, types, git, user preferences, and more. Follow the returned workflow steps. Do NOT execute directive workflows from memory alone — always load the directive first.",
+        "Directives contain authoritative workflow guidance for ALL aspects of AIMFP — file operations, task management, FP compliance, reserve/finalize flows, interactions, types, git, user preferences, and more. Follow the returned workflow steps. Do NOT execute directive workflows from memory alone — always load the directive first.",
         "For deeper context (edge cases, cross-directive relationships, complex scenarios), call get_directive_content(directive_name) to read the full MD documentation."
       ],
       "implementation_notes": [
         "Returns: Directive object with workflow, description, category, preferences, and linked notes",
         "When project_root provided: queries user_preferences.db for directive_preferences (by directive_name) and project.db for notes with send_with_directive=1",
-        "Without project_root: returns directive data from aifp_core.db only (no preferences or linked notes)"
+        "Without project_root: returns directive data from aimfp_core.db only (no preferences or linked notes)"
       ],
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 2,
           "is_required": true,
@@ -236,7 +236,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Directives are the authoritative source for ALL AIFP workflows. Do NOT rely on cached knowledge or training data — directives evolve and the database is the source of truth. When executing any workflow, load the specific directive first via get_directive_by_name.",
+        "Directives are the authoritative source for ALL AIMFP workflows. Do NOT rely on cached knowledge or training data — directives evolve and the database is the source of truth. When executing any workflow, load the specific directive first via get_directive_by_name.",
         "For any workflow step you're uncertain about, consult the directive. They cover: file operations, function tracking, interactions, types, task management, FP compliance, git, user preferences, reserve/finalize flows, and more."
       ],
       "implementation_notes": [
@@ -246,7 +246,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_run",
+          "directive_name": "aimfp_run",
           "execution_context": "load_directive_library",
           "sequence_order": 1,
           "is_required": false,
@@ -286,7 +286,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Directives exist for ALL aspects of AIFP — if you're unsure how to handle a workflow step, there is almost certainly a directive for it. Search by keyword or type to find relevant guidance. Do NOT assume you know the workflow from memory — load and follow the directive.",
+        "Directives exist for ALL aspects of AIMFP — if you're unsure how to handle a workflow step, there is almost certainly a directive for it. Search by keyword or type to find relevant guidance. Do NOT assume you know the workflow from memory — load and follow the directive.",
         "For full workflow details on a matched directive, call get_directive_by_name(name). For deep edge-case context, call get_directive_content(name) to read the MD documentation."
       ],
       "implementation_notes": [
@@ -296,7 +296,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 1,
           "is_required": true,
@@ -423,7 +423,7 @@
           "description": "Search for directives by keywords when find_directive_by_intent returns multiple candidates - provides full directive objects for preference mapping"
         },
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 2,
           "is_required": false,
@@ -455,7 +455,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 4,
           "is_required": false,
@@ -478,7 +478,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 5,
           "is_required": false,
@@ -499,7 +499,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 6,
           "is_required": false,
@@ -527,7 +527,7 @@
       "return_statements": [
         "Directive flows define the directive-to-directive navigation system — 'what directive comes next' based on current state. Evaluate the condition_key/condition_value fields against current project state to determine which directive flow to follow. Do NOT guess the next directive from memory — use get_flows_from_directive.",
         "After identifying the next directive from directive flows, load it via get_directive_by_name before executing. Directives contain step-by-step workflow guidance — always read them from the database, never execute from cached memory.",
-        "NOTE: Directive flows (directive_flow table in aifp_core.db) are distinct from project flows (flow_themes/file_flows in project.db). This tool queries directive flows only."
+        "NOTE: Directive flows (directive_flow table in aimfp_core.db) are distinct from project flows (flow_themes/file_flows in project.db). This tool queries directive flows only."
       ],
       "implementation_notes": [
         "Simple query: SELECT * FROM directive_flow WHERE from_directive = ? ORDER BY priority",
@@ -556,7 +556,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "Directive flows show which directives route to this one and under what conditions. Use to understand prerequisites and entry points for any directive workflow.",
-        "NOTE: Directive flows (aifp_core.db) are distinct from project flows (project.db flow_themes/file_flows)."
+        "NOTE: Directive flows (aimfp_core.db) are distinct from project flows (project.db flow_themes/file_flows)."
       ],
       "implementation_notes": [
         "Simple query: SELECT * FROM directive_flow WHERE to_directive = ? ORDER BY priority",
@@ -583,7 +583,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Route to the returned target directive. For task/subtask/sidequest completion, target is typically aifp_status which then routes to project_progression for next task creation. For milestone completion, target is aifp_status which routes to project_progression to open next milestone.",
+        "Route to the returned target directive. For task/subtask/sidequest completion, target is typically aimfp_status which then routes to project_progression for next task creation. For milestone completion, target is aimfp_status which routes to project_progression to open next milestone.",
         "If project_task_complete: check if all tasks in milestone are done \u2014 if yes, trigger project_milestone_complete before routing to target."
       ],
       "target_database": "core",
@@ -596,7 +596,7 @@
           "parameters_mapping": {
             "from_directive": "project_task_complete"
           },
-          "description": "Query directive_flow table to determine where to loop back after task completion - typically returns aifp_status"
+          "description": "Query directive_flow table to determine where to loop back after task completion - typically returns aimfp_status"
         },
         {
           "directive_name": "project_subtask_complete",
@@ -606,7 +606,7 @@
           "parameters_mapping": {
             "from_directive": "project_subtask_complete"
           },
-          "description": "Query directive_flow table to determine where to loop back after subtask completion - typically returns aifp_status"
+          "description": "Query directive_flow table to determine where to loop back after subtask completion - typically returns aimfp_status"
         },
         {
           "directive_name": "project_sidequest_complete",
@@ -616,7 +616,7 @@
           "parameters_mapping": {
             "from_directive": "project_sidequest_complete"
           },
-          "description": "Query directive_flow table to determine where to loop back after sidequest completion - typically returns aifp_status"
+          "description": "Query directive_flow table to determine where to loop back after sidequest completion - typically returns aimfp_status"
         },
         {
           "directive_name": "project_milestone_complete",
@@ -626,7 +626,7 @@
           "parameters_mapping": {
             "from_directive": "project_milestone_complete"
           },
-          "description": "Query directive_flow table to determine where to loop back after milestone completion - typically returns aifp_status"
+          "description": "Query directive_flow table to determine where to loop back after milestone completion - typically returns aimfp_status"
         }
       ]
     },
@@ -733,7 +733,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 7,
           "is_required": false,
@@ -764,7 +764,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 8,
           "is_required": false,
@@ -795,7 +795,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 9,
           "is_required": false,
@@ -818,7 +818,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 10,
           "is_required": false,
@@ -851,7 +851,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 11,
           "is_required": false,
@@ -893,7 +893,7 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_help",
+          "directive_name": "aimfp_help",
           "execution_context": "user_requests_help",
           "sequence_order": 12,
           "is_required": false,
@@ -930,12 +930,12 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_run",
+          "directive_name": "aimfp_run",
           "execution_context": "new_session_startup",
           "sequence_order": 3,
           "is_required": false,
           "parameters_mapping": {},
-          "description": "Called by aifp_run when is_new_session=true - provides FP directive quick reference grouped by category"
+          "description": "Called by aimfp_run when is_new_session=true - provides FP directive quick reference grouped by category"
         }
       ]
     },
@@ -956,10 +956,10 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "These directive names represent the complete AIFP guidance system. For any workflow you need to execute, find the matching directive name here, then load it via get_directive_by_name(name) BEFORE executing. Directives are authoritative — do not execute workflows from memory alone."
+        "These directive names represent the complete AIMFP guidance system. For any workflow you need to execute, find the matching directive name here, then load it via get_directive_by_name(name) BEFORE executing. Directives are authoritative — do not execute workflows from memory alone."
       ],
       "implementation_notes": [
-        "Returns: Array of directive names as strings ['aifp_run', 'aifp_status', 'aifp_init', 'fp_purity', ...]",
+        "Returns: Array of directive names as strings ['aimfp_run', 'aimfp_status', 'aimfp_init', 'fp_purity', ...]",
         "If types provided: Filters to only those types (e.g., types=['fp', 'project'] returns only FP and project directives)",
         "If types=null: Returns ALL directive names across all types",
         "Query: SELECT name FROM directives WHERE type IN (types) ORDER BY type, name",
@@ -970,12 +970,12 @@
       "target_database": "core",
       "used_by_directives": [
         {
-          "directive_name": "aifp_run",
+          "directive_name": "aimfp_run",
           "execution_context": "new_session_startup",
           "sequence_order": 4,
           "is_required": false,
           "parameters_mapping": {},
-          "description": "Called by aifp_run when is_new_session=true - provides complete list of ALL directive names for AI to cache"
+          "description": "Called by aimfp_run when is_new_session=true - provides complete list of ALL directive names for AI to cache"
         }
       ]
     },
@@ -1051,7 +1051,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "Wildcard directive flows are available from ANY directive context — they represent cross-cutting concerns like FP reference consultation and utility directives. Load the target directive via get_directive_by_name before executing.",
-        "NOTE: These are directive flows (aifp_core.db), distinct from project flows (project.db flow_themes/file_flows)."
+        "NOTE: These are directive flows (aimfp_core.db), distinct from project flows (project.db flow_themes/file_flows)."
       ],
       "implementation_notes": [
         "Simple query: SELECT * FROM directive_flow WHERE from_directive = '*' [AND flow_type = ?] ORDER BY flow_type, priority",
@@ -1072,22 +1072,22 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Directive name (e.g., 'fp_purity', 'aifp_init', 'project_file_write')"
+          "description": "Directive name (e.g., 'fp_purity', 'aimfp_init', 'project_file_write')"
         }
       ],
-      "purpose": "Read and return the full MD documentation file for a directive. Resolves the md_file_path from aifp_core.db to an absolute path within the installed package, reads the file, and returns content + absolute path + token estimate.",
+      "purpose": "Read and return the full MD documentation file for a directive. Resolves the md_file_path from aimfp_core.db to an absolute path within the installed package, reads the file, and returns content + absolute path + token estimate.",
       "error_handling": "Returns error if directive not found, md_file_path is null, or file cannot be read",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "Returns directive MD content, absolute file path, and token estimate. MD documentation is the DEEPEST layer of directive guidance — it contains complete workflows, examples, edge cases, FP compliance notes, and cross-directive relationships.",
         "Use for: complex edge cases, ambiguity in workflow steps, FP compliance questions, cross-directive relationships, and any situation where the JSON workflow steps from get_directive_by_name are not sufficient.",
-        "Directives cover ALL aspects of AIFP. If you're uncertain about any workflow — file operations, interactions, types, reserve/finalize, task management, FP patterns — there is a directive with detailed guidance. Read it before improvising."
+        "Directives cover ALL aspects of AIMFP. If you're uncertain about any workflow — file operations, interactions, types, reserve/finalize, task management, FP patterns — there is a directive with detailed guidance. Read it before improvising."
       ],
       "target_database": "core",
       "used_by_directives": [],
       "implementation_notes": [
-        "Looks up md_file_path from directives table in aifp_core.db",
+        "Looks up md_file_path from directives table in aimfp_core.db",
         "Resolves to absolute path: Path(__file__).parent.parent.parent / 'reference' / md_file_path",
         "Reads file with UTF-8 encoding, estimates tokens at ~1 token per 4 characters",
         "Returns Result with data={content, absolute_path, token_estimate, directive_name}",

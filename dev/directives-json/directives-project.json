@@ -1,6 +1,6 @@
 [
   {
-    "name": "aifp_run",
+    "name": "aimfp_run",
     "type": "project",
     "level": 0,
     "parent_directive": null,
@@ -8,8 +8,8 @@
       "name": "orchestration",
       "description": "Gateway for session start and watchdog checkpoint."
     },
-    "description": "Gateway entry point for AIFP system. Returns guidance to AI assistant on when and how to use AIFP directives. Does NOT execute directives itself - AI receives guidance and decides next action based on task type (coding, project management, or simple discussion). Always assume AIFP applies unless user explicitly rejects. First action should be calling aifp_status to understand current project state.",
-    "md_file_path": "directives/aifp_run.md",
+    "description": "Gateway entry point for AIMFP system. Returns guidance to AI assistant on when and how to use AIMFP directives. Does NOT execute directives itself - AI receives guidance and decides next action based on task type (coding, project management, or simple discussion). Always assume AIMFP applies unless user explicitly rejects. First action should be calling aimfp_status to understand current project state.",
+    "md_file_path": "directives/aimfp_run.md",
     "workflow": {
       "trunk": "evaluate_is_new_session_parameter",
       "branches": [
@@ -18,7 +18,7 @@
           "then": "bundle_session_startup_data",
           "details": {
             "call_helpers": [
-              "aifp_status() - comprehensive project state",
+              "aimfp_status() - comprehensive project state",
               "get_user_settings() - all user settings",
               "get_fp_directive_index() - FP directives grouped by category"
             ],
@@ -27,7 +27,7 @@
             "message": "Bundling session startup data (status + settings + FP index)",
             "guidance": {
               "cache_bundle": "Cache entire bundle (status, settings, fp_index) in your context to avoid re-fetching",
-              "when_to_refresh": "Call aifp_run(is_new_session=true) again after: (1) major state changes (init/milestone complete), (2) long breaks, (3) new conversation",
+              "when_to_refresh": "Call aimfp_run(is_new_session=true) again after: (1) major state changes (init/milestone complete), (2) long breaks, (3) new conversation",
               "use_for_navigation": "Use returned state with get_flows_from_directive() to find appropriate next directives",
               "fp_reference": "Use fp_index for quick FP directive lookup by category. Call search_directives(type='fp') or get_directive_by_name(name) for directive JSON. If more context needed, read MD file directly (path provided in directive object's md_file_path field)",
               "settings_usage": "Apply user_settings preferences during directive execution (code style, task granularity, etc.)"
@@ -53,8 +53,8 @@
     },
     "roadblocks_json": [
       {
-        "issue": "ai_bypasses_aifp",
-        "resolution": "System prompt should enforce: 'If AIFP MCP present, always call aifp_run unless explicitly rejected'"
+        "issue": "ai_bypasses_aimfp",
+        "resolution": "System prompt should enforce: 'If AIMFP MCP present, always call aimfp_run unless explicitly rejected'"
       },
       {
         "issue": "ai_forgets_directives",
@@ -66,13 +66,13 @@
       },
       {
         "issue": "ai_starts_without_context",
-        "resolution": "Call aifp_status first to understand project state and current focus"
+        "resolution": "Call aimfp_status first to understand project state and current focus"
       }
     ],
     "intent_keywords_json": [
       "run",
       "execute",
-      "aifp",
+      "aimfp",
       "start",
       "continue",
       "status",
@@ -81,28 +81,28 @@
     "confidence_threshold": 1.0
   },
   {
-    "name": "aifp_init",
+    "name": "aimfp_init",
     "type": "project",
     "level": 1,
-    "parent_directive": "aifp_run",
+    "parent_directive": "aimfp_run",
     "category": {
       "name": "initialization",
-      "description": "Handles creation and setup of new AIFP projects with ProjectBlueprint.md creation."
+      "description": "Handles creation and setup of new AIMFP projects with ProjectBlueprint.md creation."
     },
-    "description": "Initializes a new AIFP project using a two-phase approach: Phase 1 (Mechanical Setup) calls aifp_init helper to atomically create folders, databases, and templates. Phase 2 (Intelligent Population) uses AI to detect language/tools, prompt user for metadata, and populate ProjectBlueprint and infrastructure. Checks for existing .aifp-project/ or .git/.aifp/ folders before initialization. Scans existing codebase for OOP patterns and aborts if OOP detected (AIFP is FP-only). Offers restoration from .git/.aifp/ backup if found.",
-    "md_file_path": "directives/aifp_init.md",
+    "description": "Initializes a new AIMFP project using a two-phase approach: Phase 1 (Mechanical Setup) calls aimfp_init helper to atomically create folders, databases, and templates. Phase 2 (Intelligent Population) uses AI to detect language/tools, prompt user for metadata, and populate ProjectBlueprint and infrastructure. Checks for existing .aimfp-project/ or .git/.aimfp/ folders before initialization. Scans existing codebase for OOP patterns and aborts if OOP detected (AIMFP is FP-only). Offers restoration from .git/.aimfp/ backup if found.",
+    "md_file_path": "directives/aimfp_init.md",
     "workflow": {
       "trunk": "check_existing_state",
       "branches": [
         {
-          "if": "aifp_folder_exists",
-          "then": "call_aifp_status",
+          "if": "aimfp_folder_exists",
+          "then": "call_aimfp_status",
           "details": {
-            "message": ".aifp-project/ folder already exists"
+            "message": ".aimfp-project/ folder already exists"
           }
         },
         {
-          "if": "existing_code_detected_no_aifp",
+          "if": "existing_code_detected_no_aimfp",
           "then": "scan_for_oop_patterns",
           "details": {
             "scan_patterns": {
@@ -129,7 +129,7 @@
           "then": "abort_initialization_with_message",
           "details": {
             "action": "abort_without_init",
-            "message": "🛑 AIFP Incompatible Project Detected\n\nThis directory contains existing OOP-based code. AIFP is designed exclusively for Functional Procedural (FP) codebases.\n\nYour options:\n1. Convert this project to FP first (major refactor - use AIFP in a separate directory to help)\n2. Disable/uninstall AIFP MCP server for this project\n3. Start a new FP-compliant project in a different directory\n\nAIFP cannot manage OOP projects - it enforces pure functions, immutability, and no classes with methods.",
+            "message": "🛑 AIMFP Incompatible Project Detected\n\nThis directory contains existing OOP-based code. AIMFP is designed exclusively for Functional Procedural (FP) codebases.\n\nYour options:\n1. Convert this project to FP first (major refactor - use AIMFP in a separate directory to help)\n2. Disable/uninstall AIMFP MCP server for this project\n3. Start a new FP-compliant project in a different directory\n\nAIMFP cannot manage OOP projects - it enforces pure functions, immutability, and no classes with methods.",
             "exit_directive": true,
             "do_not_initialize": true
           }
@@ -143,18 +143,18 @@
           }
         },
         {
-          "if": "git_aifp_backup_exists",
+          "if": "git_aimfp_backup_exists",
           "then": "prompt_restore_or_new",
           "details": {
-            "check_path": ".git/.aifp/ProjectBlueprint.md"
+            "check_path": ".git/.aimfp/ProjectBlueprint.md"
           }
         },
         {
           "if": "restore_chosen",
           "then": "restore_from_git_backup",
           "details": {
-            "copy_from": ".git/.aifp/",
-            "copy_to": ".aifp-project/"
+            "copy_from": ".git/.aimfp/",
+            "copy_to": ".aimfp-project/"
           }
         },
         {
@@ -162,7 +162,7 @@
           "then": "determine_project_root",
           "details": {
             "action": "get_current_working_directory",
-            "note": "Project root is where AIFP is being initialized (current directory)"
+            "note": "Project root is where AIMFP is being initialized (current directory)"
           }
         },
         {
@@ -170,13 +170,13 @@
           "then": "phase_1_mechanical_setup",
           "details": {
             "phase": "1 - Mechanical Setup (Code)",
-            "use_helper": "aifp_init",
+            "use_helper": "aimfp_init",
             "parameters": {
               "project_root": "full path to project root"
             },
             "operations": [
-              "Create .aifp-project/ and backups/ directories",
-              "Copy ProjectBlueprint_template.md to .aifp-project/",
+              "Create .aimfp-project/ and backups/ directories",
+              "Copy ProjectBlueprint_template.md to .aimfp-project/",
               "Create project.db from schemas/project.sql",
               "Execute initialization/standard_infrastructure.sql (8 empty entries)",
               "INSERT project_root into infrastructure table",
@@ -184,7 +184,7 @@
               "INSERT default tracking_settings (all disabled)",
               "Validate initialization (all files and tables exist)"
             ],
-            "note": "aifp_init helper does all file/database creation atomically. Returns success or error."
+            "note": "aimfp_init helper does all file/database creation atomically. Returns success or error."
           }
         },
         {
@@ -254,7 +254,7 @@
           "if": "user_directives_no_or_complete",
           "then": "note_git_status_for_discovery",
           "details": {
-            "git_status_from_phase_1": "aifp_init helper returns git_status: 'created', 'pre_existing', or 'git_unavailable'",
+            "git_status_from_phase_1": "aimfp_init helper returns git_status: 'created', 'pre_existing', or 'git_unavailable'",
             "note": "Git repository mechanical creation happened in Phase 1. Intelligent Git setup (gitignore, initial commit, hash storage, branch detection) happens during project_discovery via git_init directive.",
             "action": "Store git_status value for project_discovery to consume"
           }
@@ -263,7 +263,7 @@
           "if": "git_status_noted",
           "then": "backup_blueprint",
           "details": {
-            "backup_to": ".aifp-project/backups/ProjectBlueprint.md.backup"
+            "backup_to": ".aimfp-project/backups/ProjectBlueprint.md.backup"
           }
         },
         {
@@ -296,7 +296,7 @@
     "roadblocks_json": [
       {
         "issue": "oop_detected_in_existing_code",
-        "resolution": "Abort initialization and inform user that AIFP cannot manage OOP projects. Suggest: 1) Convert to FP first, 2) Disable AIFP MCP server, 3) Start new FP project elsewhere"
+        "resolution": "Abort initialization and inform user that AIMFP cannot manage OOP projects. Suggest: 1) Convert to FP first, 2) Disable AIMFP MCP server, 3) Start new FP project elsewhere"
       },
       {
         "issue": "db_creation_failed",
@@ -307,8 +307,8 @@
         "resolution": "Verify schema file in /schemas/"
       },
       {
-        "issue": "aifp_folder_exists",
-        "resolution": "Call aifp_status to show existing project state"
+        "issue": "aimfp_folder_exists",
+        "resolution": "Call aimfp_status to show existing project state"
       },
       {
         "issue": "blueprint_generation_failed",
@@ -332,10 +332,10 @@
     "name": "project_task_decomposition",
     "type": "project",
     "level": 2,
-    "parent_directive": "aifp_run",
+    "parent_directive": "aimfp_run",
     "category": {
       "name": "task_management",
-      "description": "Manages decomposition of user goals into AIFP-aligned tasks, subtasks, and sidequests."
+      "description": "Manages decomposition of user goals into AIMFP-aligned tasks, subtasks, and sidequests."
     },
     "description": "Decomposes high-level user requests into completion_path, milestones, tasks, subtasks, and items. When tasks require code generation, use project_reserve_finalize before project_file_write to reserve names and get database IDs. Respects user preferences for task granularity, naming conventions, and decomposition style. Creates roadmap structure and ensures hierarchy consistency. Central decomposition directive; translates user intent into actionable milestones.",
     "md_file_path": "directives/project_task_decomposition.md",
@@ -364,7 +364,7 @@
         },
         {
           "if": "task_decomposition_requested",
-          "then": "call_aifp_status",
+          "then": "call_aimfp_status",
           "details": {
             "purpose": "Understand current context before creating new tasks",
             "brief": true
@@ -536,7 +536,7 @@
       "name": "file_operations",
       "description": "Handles file generation and metadata updates."
     },
-    "description": "Writes new or modified files using the AIFP-compliant output pattern, validates via FP directives, enforces DRY principle by extracting IDENTICAL functions to shared modules at appropriate scope level (avoid forced DRY with god functions), and updates project.db accordingly. MUST use project_reserve_finalize BEFORE writing to get database IDs for embedding, and finalize AFTER writing. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
+    "description": "Writes new or modified files using the AIMFP-compliant output pattern, validates via FP directives, enforces DRY principle by extracting IDENTICAL functions to shared modules at appropriate scope level (avoid forced DRY with god functions), and updates project.db accordingly. MUST use project_reserve_finalize BEFORE writing to get database IDs for embedding, and finalize AFTER writing. Detects user directive generated files and marks them with appropriate metadata. Applies user preferences from directive_preferences table (e.g., always_add_docstrings, max_function_length, prefer_guard_clauses) loaded by user_preferences_sync. Core file generation directive; bridges code creation and database synchronization.",
     "md_file_path": "directives/project_file_write.md",
     "workflow": {
       "trunk": "reserve_before_write",
@@ -553,7 +553,7 @@
               "3. reserve_types() if applicable — get type IDs"
             ],
             "batch_encouraged": "Use batch helpers (reserve_files, reserve_functions) when creating multiple entities",
-            "returns": "Database IDs to embed in code (AIFP:FUNC:42, AIFP:FILE:7)"
+            "returns": "Database IDs to embed in code (AIMFP:FUNC:42, AIMFP:FILE:7)"
           }
         },
         {
@@ -581,7 +581,7 @@
           }
         },
         {
-          "if": "file_path_starts_with_.aifp-project/user-directives/generated/",
+          "if": "file_path_starts_with_.aimfp-project/user-directives/generated/",
           "then": "mark_as_user_directive_implementation",
           "details": {
             "metadata_tag": "user_directive_generated",
@@ -641,7 +641,7 @@
     "roadblocks_json": [
       {
         "issue": "missing_metadata",
-        "resolution": "Add AIFP_METADATA, prompt user"
+        "resolution": "Add AIMFP_METADATA, prompt user"
       },
       {
         "issue": "fp_violation",
@@ -649,7 +649,7 @@
       },
       {
         "issue": "user_directive_link_missing",
-        "resolution": "Parse file for directive reference in AIFP_METADATA or prompt user"
+        "resolution": "Parse file for directive reference in AIMFP_METADATA or prompt user"
       }
     ],
     "intent_keywords_json": [
@@ -740,7 +740,7 @@
           "then": "write_with_embedded_id",
           "details": {
             "naming": "filename_id_42.py, function_name_id_99(), TypeName_id_7",
-            "id_comment": "# AIFP:FUNC:42 or AIFP-ID: 42 in docstring"
+            "id_comment": "# AIMFP:FUNC:42 or AIMFP-ID: 42 in docstring"
           }
         },
         {
@@ -1194,11 +1194,11 @@
         },
         {
           "parallel": [
-            "backup_blueprint_to_aifp_backups",
+            "backup_blueprint_to_aimfp_backups",
             "log_evolution_to_notes"
           ],
           "details": {
-            "backup_path": ".aifp-project/backups/",
+            "backup_path": ".aimfp-project/backups/",
             "note_type": "evolution",
             "source": "directive",
             "directive_name": "project_evolution"
@@ -1371,7 +1371,7 @@
       },
       {
         "issue": "missing_metadata",
-        "resolution": "Parse file for AIFP_METADATA or prompt user"
+        "resolution": "Parse file for AIMFP_METADATA or prompt user"
       },
       {
         "issue": "blueprint_update_failed",
@@ -1576,7 +1576,7 @@
     "name": "project_auto_resume",
     "type": "project",
     "level": 3,
-    "parent_directive": "aifp_run",
+    "parent_directive": "aimfp_run",
     "category": {
       "name": "recovery_automation",
       "description": "Automatically resumes interrupted tasks or workflows."
@@ -1752,7 +1752,7 @@
       "name": "dependency_management",
       "description": "Generates visual dependency maps across project entities."
     },
-    "description": "Queries relationships between files, functions, flows, and tasks to produce a dependency graph for reasoning or visualization. Improves transparency and traceability across project elements for AIFP reasoning.",
+    "description": "Queries relationships between files, functions, flows, and tasks to produce a dependency graph for reasoning or visualization. Improves transparency and traceability across project elements for AIMFP reasoning.",
     "md_file_path": "directives/project_dependency_map.md",
     "workflow": {
       "trunk": "generate_dependency_graph",
@@ -1829,21 +1829,21 @@
     "confidence_threshold": 0.7
   },
   {
-    "name": "aifp_status",
+    "name": "aimfp_status",
     "type": "project",
     "level": 1,
-    "parent_directive": "aifp_run",
+    "parent_directive": "aimfp_run",
     "category": {
       "name": "status_management",
       "description": "Retrieves comprehensive project status with context-aware task continuation support."
     },
-    "description": "Retrieves comprehensive project status with historical context for task continuation. For existing projects: reads ProjectBlueprint.md, loads infrastructure, builds priority status tree (sidequests → subtasks → tasks), provides historical context from previous tasks, checks for ambiguities, and generates status report. For new projects: checks for .aifp/ folder, checks .git/.aifp/ backup, prompts for restoration or initialization.",
-    "md_file_path": "directives/aifp_status.md",
+    "description": "Retrieves comprehensive project status with historical context for task continuation. For existing projects: reads ProjectBlueprint.md, loads infrastructure, builds priority status tree (sidequests → subtasks → tasks), provides historical context from previous tasks, checks for ambiguities, and generates status report. For new projects: checks for .aimfp/ folder, checks .git/.aimfp/ backup, prompts for restoration or initialization.",
+    "md_file_path": "directives/aimfp_status.md",
     "workflow": {
       "trunk": "determine_project_state",
       "branches": [
         {
-          "if": "aifp_folder_exists",
+          "if": "aimfp_folder_exists",
           "then": "sync_git_state_on_boot",
           "details": {
             "trigger": "git_sync_state directive",
@@ -1856,10 +1856,10 @@
           "details": {}
         },
         {
-          "if": "no_aifp_folder",
-          "then": "check_git_aifp_backup",
+          "if": "no_aimfp_folder",
+          "then": "check_git_aimfp_backup",
           "details": {
-            "check_path": ".git/.aifp/ProjectBlueprint.md"
+            "check_path": ".git/.aimfp/ProjectBlueprint.md"
           }
         },
         {
@@ -1877,14 +1877,14 @@
           "if": "no_backups",
           "then": "prompt_init_new_project",
           "details": {
-            "suggest_aifp_init": true
+            "suggest_aimfp_init": true
           }
         },
         {
           "if": "existing_project",
           "then": "read_project_blueprint",
           "details": {
-            "path": ".aifp-project/ProjectBlueprint.md"
+            "path": ".aimfp-project/ProjectBlueprint.md"
           }
         },
         {
@@ -2035,7 +2035,7 @@
     "name": "project_blueprint_read",
     "type": "project",
     "level": 2,
-    "parent_directive": "aifp_status",
+    "parent_directive": "aimfp_status",
     "category": {
       "name": "blueprint_management",
       "description": "Standard helper for reading and parsing ProjectBlueprint.md."
@@ -2140,7 +2140,7 @@
           "if": "blueprint_read",
           "then": "backup_current_blueprint",
           "details": {
-            "backup_to": ".aifp-project/backups/ProjectBlueprint.md.v{version}",
+            "backup_to": ".aimfp-project/backups/ProjectBlueprint.md.v{version}",
             "include_timestamp": true
           }
         },
@@ -2174,7 +2174,7 @@
           "if": "section_replaced",
           "then": "write_updated_blueprint",
           "details": {
-            "path": ".aifp-project/ProjectBlueprint.md"
+            "path": ".aimfp-project/ProjectBlueprint.md"
           }
         },
         {
@@ -2714,7 +2714,7 @@
           "if": "milestone_not_complete",
           "then": "review_next_steps",
           "details": {
-            "call_aifp_status": true,
+            "call_aimfp_status": true,
             "brief": true,
             "show_completion_path_progress": true,
             "show_milestone_progress": true,
@@ -2815,7 +2815,7 @@
             "update_parent_status": "in_progress",
             "log_resume": true,
             "notify_user": "All subtasks complete for task '[parent_task_name]'. Parent task resumed.",
-            "call_aifp_status": true,
+            "call_aimfp_status": true,
             "brief": true
           }
         },
@@ -3004,7 +3004,7 @@
           "if": "project_not_complete",
           "then": "move_to_next_milestone",
           "details": {
-            "call_aifp_status": true,
+            "call_aimfp_status": true,
             "brief": true,
             "show_completion_path_progress": true,
             "use_helper": "get next pending milestone",
@@ -3080,16 +3080,16 @@
     "confidence_threshold": 0.8
   },
   {
-    "name": "aifp_help",
+    "name": "aimfp_help",
     "type": "project",
     "level": 1,
-    "parent_directive": "aifp_run",
+    "parent_directive": "aimfp_run",
     "category": {
       "name": "orchestration",
-      "description": "Documentation and guidance access for AIFP directives"
+      "description": "Documentation and guidance access for AIMFP directives"
     },
     "description": "Loads detailed documentation for a specific directive. Uses get_directive_by_name helper to retrieve directive JSON (includes workflow, description, category, md_file_path). If comprehensive context needed, reads MD file directly for purpose, examples, edge cases, and related directives. Provides guidance beyond basic directive metadata.",
-    "md_file_path": "directives/aifp_help.md",
+    "md_file_path": "directives/aimfp_help.md",
     "workflow": {
       "trunk": "load_directive_documentation",
       "branches": [
@@ -3171,12 +3171,12 @@
     "name": "project_discovery",
     "type": "project",
     "level": 1,
-    "parent_directive": "aifp_init",
+    "parent_directive": "aimfp_init",
     "category": {
       "name": "initialization",
       "description": "Guided project discovery and shape definition after initialization."
     },
-    "description": "Guided project discovery workflow. After aifp_init creates base files and databases, AI collaborates with user to define the full project shape: detailed blueprint, infrastructure mapping, completion path with stages, milestones, initial themes and flows. For pre-existing FP codebases, delegates to project_catalog before proceeding. This directive bridges the gap between mechanical initialization and active development work.",
+    "description": "Guided project discovery workflow. After aimfp_init creates base files and databases, AI collaborates with user to define the full project shape: detailed blueprint, infrastructure mapping, completion path with stages, milestones, initial themes and flows. For pre-existing FP codebases, delegates to project_catalog before proceeding. This directive bridges the gap between mechanical initialization and active development work.",
     "md_file_path": "directives/project_discovery.md",
     "workflow": {
       "trunk": "assess_project_state",
@@ -3186,7 +3186,7 @@
           "then": "delegate_to_project_catalog",
           "details": {
             "trigger": "project_catalog directive",
-            "condition": "Existing FP-compliant code was detected during aifp_init pre-flight scan",
+            "condition": "Existing FP-compliant code was detected during aimfp_init pre-flight scan",
             "action": "Call project_catalog to scan and register all existing code before proceeding with discovery conversation",
             "resume_after": "project_catalog completion loops back to project_discovery to continue with blueprint discussion"
           }
@@ -3241,7 +3241,7 @@
               "Discuss coding conventions, file organization patterns, naming standards",
               "Update infrastructure table with confirmed/corrected values",
               "Create state database: Once source_directory is confirmed, call create_state_database(source_directory) to create <source-dir>/.state/runtime.db — FP-compliant replacement for mutable global variables",
-              "Create state operations entry point: Using template at src/aifp/templates/state_db/state_operations.py as reference, create language-appropriate state operations file in <source-dir>/.state/state_operations.{ext}",
+              "Create state operations entry point: Using template at src/aimfp/templates/state_db/state_operations.py as reference, create language-appropriate state operations file in <source-dir>/.state/state_operations.{ext}",
               "Register state files in project.db: After creating state DB and state_operations file, register them in project.db files table via reserve → finalize flow. The .state/ directory contents are project files that should be tracked."
             ]
           }
@@ -3321,11 +3321,11 @@
           "details": {
             "action": "Wrap up discovery and prepare for work",
             "steps": [
-              "Backup blueprint to .aifp-project/backups/",
+              "Backup blueprint to .aimfp-project/backups/",
               "Log discovery completion in notes (source=directive, directive_name=project_discovery)",
               "Present summary to user: project shape, stages, milestones, themes, flows",
               "Inform user: 'Project shape defined. First milestone is open. Ready to begin work.'",
-              "Flow to aifp_status — status will route to project_progression for first task creation"
+              "Flow to aimfp_status — status will route to project_progression for first task creation"
             ]
           }
         },
@@ -3393,7 +3393,7 @@
       "name": "initialization",
       "description": "Comprehensive cataloging of pre-existing FP codebase into project database."
     },
-    "description": "Comprehensive cataloging of an existing FP-compliant codebase into project.db. Scans all source files, identifies functions with metadata, maps interactions, and infers organizational structure. Called by project_discovery when pre-existing FP code is detected during initialization. Requires Phase 1 (aifp_init) to be complete — needs database and directory structure before cataloging.",
+    "description": "Comprehensive cataloging of an existing FP-compliant codebase into project.db. Scans all source files, identifies functions with metadata, maps interactions, and infers organizational structure. Called by project_discovery when pre-existing FP code is detected during initialization. Requires Phase 1 (aimfp_init) to be complete — needs database and directory structure before cataloging.",
     "md_file_path": "directives/project_catalog.md",
     "workflow": {
       "trunk": "prepare_catalog_scan",
@@ -3407,7 +3407,7 @@
               "Read source_directory from infrastructure table",
               "Recursively scan for source files matching primary_language extensions",
               "Also include other recognized source file types (config, data, script files)",
-              "Exclude: build artifacts, dependencies, generated files, .aifp-project/, node_modules, __pycache__, etc.",
+              "Exclude: build artifacts, dependencies, generated files, .aimfp-project/, node_modules, __pycache__, etc.",
               "Use same exclusion patterns as watchdog config.py for consistency",
               "Build file inventory: path, size, last_modified, extension, language"
             ],
@@ -3543,7 +3543,7 @@
     "name": "project_progression",
     "type": "project",
     "level": 2,
-    "parent_directive": "aifp_status",
+    "parent_directive": "aimfp_status",
     "category": {
       "name": "task_management",
       "description": "Incremental milestone/task state machine for project advancement."
@@ -3654,7 +3654,7 @@
           "fallback": "route_to_status",
           "details": {
             "action": "No progression action needed at this time",
-            "return_to": "aifp_status"
+            "return_to": "aimfp_status"
           }
         }
       ],
@@ -3696,7 +3696,7 @@
     "confidence_threshold": 0.8
   },
   {
-    "name": "aifp_end",
+    "name": "aimfp_end",
     "type": "project",
     "level": 0,
     "parent_directive": null,
@@ -3704,8 +3704,8 @@
       "name": "session_management",
       "description": "Graceful session termination with comprehensive data audit."
     },
-    "description": "Graceful session termination directive. Comprehensive audit of all work done during the session, ensuring database state is consistent and up to date. Closes watchdog if running, processes final reminders. Verifies all files and functions are tracked, checks FP compliance of session work, reviews project management state, and generates session summary. Counterpart to aifp_run(is_new_session=true) — bookend pattern for session lifecycle.",
-    "md_file_path": "directives/aifp_end.md",
+    "description": "Graceful session termination directive. Comprehensive audit of all work done during the session, ensuring database state is consistent and up to date. Closes watchdog if running, processes final reminders. Verifies all files and functions are tracked, checks FP compliance of session work, reviews project management state, and generates session summary. Counterpart to aimfp_run(is_new_session=true) — bookend pattern for session lifecycle.",
+    "md_file_path": "directives/aimfp_end.md",
     "workflow": {
       "trunk": "begin_session_audit",
       "branches": [
@@ -3715,13 +3715,13 @@
           "details": {
             "action": "Close watchdog and process remaining reminders",
             "steps": [
-              "Check for .aifp-project/watchdog/watchdog.pid",
+              "Check for .aimfp-project/watchdog/watchdog.pid",
               "If PID file exists and process is alive: read final reminders.json",
               "Process any outstanding reminders (unregistered files, missing functions, stale timestamps)",
               "Kill watchdog process",
               "If watchdog not implemented yet: skip gracefully (check PID file existence, if absent log 'watchdog not active' and continue)"
             ],
-            "watchdog_note": "Watchdog implementation is pending. aifp_end handles both states: watchdog present (stop it) and watchdog absent (skip gracefully)."
+            "watchdog_note": "Watchdog implementation is pending. aimfp_end handles both states: watchdog present (stop it) and watchdog absent (skip gracefully)."
           }
         },
         {
@@ -3761,7 +3761,7 @@
               "Review all code written during this session",
               "Check for: mutations, OOP patterns, unwrapped external calls, missing Result types, hidden state",
               "Report violations to user (informational — do not auto-fix)",
-              "Log compliance status in notes (source=directive, directive_name=aifp_end, severity=info or warning)"
+              "Log compliance status in notes (source=directive, directive_name=aimfp_end, severity=info or warning)"
             ],
             "note": "This is a quick scan, not a deep audit. FP compliance should have been maintained during coding. This catches anything that slipped through."
           }
@@ -3788,7 +3788,7 @@
             "action": "Compile and present session summary",
             "steps": [
               "Compile session summary: files created/modified, functions added/modified, tasks completed/progressed, milestones progressed, discrepancies found and fixed, FP compliance status, outstanding items for next session",
-              "Log session summary in notes (source=directive, directive_name=aifp_end)",
+              "Log session summary in notes (source=directive, directive_name=aimfp_end)",
               "Present summary to user",
               "If clean session: 'All project data is up to date. Safe to end session.'",
               "If outstanding issues: list them with severity and recommended next-session actions"
@@ -3822,8 +3822,8 @@
         "resolution": "Process audit in batches. Report progress to user."
       },
       {
-        "issue": "user_closes_without_aifp_end",
-        "resolution": "Not a blocker — watchdog catches drift during next session. aifp_end is best practice, not mandatory."
+        "issue": "user_closes_without_aimfp_end",
+        "resolution": "Not a blocker — watchdog catches drift during next session. aimfp_end is best practice, not mandatory."
       }
     ],
     "intent_keywords_json": [

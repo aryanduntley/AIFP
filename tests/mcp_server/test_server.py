@@ -1,5 +1,5 @@
 """
-Tests for aifp.mcp_server.server
+Tests for aimfp.mcp_server.server
 
 Integration tests for tool loading, handler dispatch, and error paths.
 Tests the zero-dependency JSON-RPC server (no MCP SDK).
@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from aifp.mcp_server.server import (
+from aimfp.mcp_server.server import (
     _effect_load_and_cache_tools,
     _cached_tool_dicts,
     build_jsonrpc_response,
@@ -26,7 +26,7 @@ from aifp.mcp_server.server import (
     SERVER_VERSION,
     PROTOCOL_VERSION,
 )
-from aifp.mcp_server.registry import TOOL_REGISTRY
+from aimfp.mcp_server.registry import TOOL_REGISTRY
 
 
 # ============================================================================
@@ -80,20 +80,20 @@ def test_build_tool_dict():
 
 def test_load_and_cache_tools_populates_cache():
     _effect_load_and_cache_tools()
-    from aifp.mcp_server import server
+    from aimfp.mcp_server import server
     assert len(server._cached_tool_dicts) == 228
 
 
 def test_cached_tools_are_dicts():
     _effect_load_and_cache_tools()
-    from aifp.mcp_server import server
+    from aimfp.mcp_server import server
     for tool in server._cached_tool_dicts:
         assert isinstance(tool, dict)
 
 
 def test_cached_tools_have_required_keys():
     _effect_load_and_cache_tools()
-    from aifp.mcp_server import server
+    from aimfp.mcp_server import server
     for tool in server._cached_tool_dicts:
         assert "name" in tool, f"Missing 'name' key"
         assert "description" in tool, f"Missing 'description' for {tool.get('name')}"
@@ -102,7 +102,7 @@ def test_cached_tools_have_required_keys():
 
 def test_cached_tools_have_valid_schemas():
     _effect_load_and_cache_tools()
-    from aifp.mcp_server import server
+    from aimfp.mcp_server import server
     for tool in server._cached_tool_dicts:
         schema = tool["inputSchema"]
         assert isinstance(schema, dict), f"{tool['name']}: schema not a dict"
@@ -112,7 +112,7 @@ def test_cached_tools_have_valid_schemas():
 
 def test_cached_tools_have_descriptions():
     _effect_load_and_cache_tools()
-    from aifp.mcp_server import server
+    from aimfp.mcp_server import server
     for tool in server._cached_tool_dicts:
         assert isinstance(tool["description"], str)
         assert len(tool["description"]) > 0, f"{tool['name']}: empty description"
@@ -120,7 +120,7 @@ def test_cached_tools_have_descriptions():
 
 def test_cached_tools_names_match_registry():
     _effect_load_and_cache_tools()
-    from aifp.mcp_server import server
+    from aimfp.mcp_server import server
     names = {t["name"] for t in server._cached_tool_dicts}
     for tool_name in TOOL_REGISTRY:
         assert tool_name in names, f"Tool '{tool_name}' missing from cached tools"
@@ -277,8 +277,8 @@ class TestBuildToolAnnotations:
         ann = build_tool_annotations("get_all_directive_names")
         assert ann["title"] == "Get All Directive Names"
 
-    def test_title_for_aifp_run(self):
-        ann = build_tool_annotations("aifp_run")
+    def test_title_for_aimfp_run(self):
+        ann = build_tool_annotations("aimfp_run")
         assert ann["title"] == "Aifp Run"
 
     # -- Read-only tools (prefix-based) --
@@ -300,7 +300,7 @@ class TestBuildToolAnnotations:
     # -- Read-only tools (special cases) --
 
     @pytest.mark.parametrize("name", [
-        "aifp_run", "aifp_status",
+        "aimfp_run", "aimfp_status",
         "core_allowed_check_constraints",
         "project_allowed_check_constraints",
         "user_preferences_allowed_check_constraints",
@@ -320,7 +320,7 @@ class TestBuildToolAnnotations:
         "reserve_file", "reserve_function", "reserve_type",
         "finalize_file", "finalize_function", "finalize_type",
         "create_project", "create_state_database", "create_user_branch",
-        "aifp_init", "activate_user_directive", "deactivate_user_directive",
+        "aimfp_init", "activate_user_directive", "deactivate_user_directive",
         "sync_git_state", "toggle_tracking_feature",
         "add_directive_preference", "batch_update_progress",
     ])
@@ -362,7 +362,7 @@ class TestBuildToolAnnotations:
 
     # -- Destructive tools (special cases) --
 
-    @pytest.mark.parametrize("name", ["execute_merge", "aifp_end"])
+    @pytest.mark.parametrize("name", ["execute_merge", "aimfp_end"])
     def test_special_destructive_tools(self, name):
         ann = build_tool_annotations(name)
         assert ann["readOnlyHint"] is False
@@ -383,7 +383,7 @@ class TestBuildToolAnnotations:
 def test_cached_tools_have_annotations():
     """Every tool dict in the cache must have an annotations key."""
     _effect_load_and_cache_tools()
-    from aifp.mcp_server import server
+    from aimfp.mcp_server import server
     for tool in server._cached_tool_dicts:
         assert "annotations" in tool, f"{tool['name']}: missing 'annotations'"
 
@@ -391,7 +391,7 @@ def test_cached_tools_have_annotations():
 def test_cached_tools_annotations_have_required_fields():
     """Every annotations dict must have title, readOnlyHint, openWorldHint."""
     _effect_load_and_cache_tools()
-    from aifp.mcp_server import server
+    from aimfp.mcp_server import server
     for tool in server._cached_tool_dicts:
         ann = tool["annotations"]
         assert "title" in ann, f"{tool['name']}: annotations missing 'title'"

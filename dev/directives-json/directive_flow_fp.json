@@ -9,7 +9,7 @@
       "FP directives are reference documentation only",
       "AI writes FP-compliant code by default (no consultation needed for basics)",
       "Consultation happens inline when AI uncertain about implementation details",
-      "NO loop-back to aifp_status (not workflow steps)",
+      "NO loop-back to aimfp_status (not workflow steps)",
       "FP compliance checking (project_compliance_check) is separate - already in directive_flow_project.json"
     ],
     "consultation_triggers": [
@@ -22,7 +22,7 @@
     "helpers_used": [
       "search_directives(keyword, type='fp') - Keyword-based FP directive search",
       "get_directive_by_name(directive_name) - Get directive JSON (includes md_file_path if more detail needed)",
-      "query_core(table, filters) - Query aifp_core.db for directive metadata"
+      "query_core(table, filters) - Query aimfp_core.db for directive metadata"
     ]
   },
   "flows": [
@@ -1018,7 +1018,7 @@
   },
   "notes": {
     "no_duplication": "FP compliance checking (project_compliance_check) is separate - already in directive_flow_project.json with 5 opt-in flows",
-    "inline_consultations": "All FP reference consultations happen inline during code writing - NO loop-back to aifp_status",
+    "inline_consultations": "All FP reference consultations happen inline during code writing - NO loop-back to aimfp_status",
     "baseline_compliance": "AI writes FP-compliant code by default - consultations only needed for implementation details",
     "helpers_used": "search_directives() and get_directive_by_name() are primary consultation methods. Read MD file directly if detailed context needed (path in directive JSON)",
     "not_covered": "Some FP directives not included in flows (optimization-specific, language-specific) - consult via keyword search when needed"

@@ -1,7 +1,7 @@
 {
   "helpers": [
     {
-      "name": "aifp_run",
+      "name": "aimfp_run",
       "file_path": "helpers/orchestrators/entry_points.py",
       "parameters": [
         {
@@ -30,7 +30,7 @@
         "Returns: If is_new_session=true → bundles {status, user_settings, fp_directive_index, all_directive_names[], infrastructure_data, guidance, watchdog: {started, start_error, status, reminders[], notice}}",
         "Returns: If is_new_session=false → watchdog alerts only {watchdog: {status, reminders[], notice}, notice} when reminders exist, empty {} when nothing to report.",
         "Watchdog status values: 'ok' (running, checked), 'not_running' (PID file missing — inform user), 'no_reminders_file' (PID exists but reminders missing — watchdog may have failed), 'no_project' (no project found). AI should surface notice to user when status is not 'ok'.",
-        "Session bundle calls: aifp_status(), get_user_settings(), get_fp_directive_index(), get_all_directive_names(), get_all_infrastructure(), check_and_run_backup(). Note: supportive_context is included via aifp_status() — do not call get_supportive_context() separately.",
+        "Session bundle calls: aimfp_status(), get_user_settings(), get_fp_directive_index(), get_all_directive_names(), get_all_infrastructure(), check_and_run_backup(). Note: supportive_context is included via aimfp_status() — do not call get_supportive_context() separately.",
         "Directive names only - NOT full directive data (AI queries by name when needs details)",
         "fp_directive_index: FP directive names grouped by category for quick reference",
         "all_directive_names: Complete list of ALL directive names (project, fp, user, git) for AI to know what's available",
@@ -38,22 +38,22 @@
         "AI receives guidance on session start and makes own decisions about which directives to apply",
         "Continuation calls (is_new_session=false) return empty when watchdog has nothing — near-zero token cost",
         "Session bundle is ~16-20k tokens: status (~10k, includes supportive_context) + settings (~1k) + fp_index (~2k) + directive_names (~1k) + infrastructure (~500) + guidance (~2k)",
-        "Always includes guidance on when to call aifp_run(is_new_session=true) again"
+        "Always includes guidance on when to call aimfp_run(is_new_session=true) again"
       ],
       "target_database": "multi_db",
       "used_by_directives": [
         {
-          "directive_name": "aifp_run",
+          "directive_name": "aimfp_run",
           "execution_context": "self_invocation",
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "aifp_run directive uses aifp_run helper as entry point orchestrator"
+          "description": "aimfp_run directive uses aimfp_run helper as entry point orchestrator"
         }
       ]
     },
     {
-      "name": "aifp_init",
+      "name": "aimfp_init",
       "file_path": "helpers/orchestrators/entry_points.py",
       "parameters": [
         {
@@ -65,11 +65,11 @@
         }
       ],
       "purpose": "Phase 1 mechanical setup orchestrator for project initialization. Atomically creates directories, databases with schemas, and templates. No deep logic - pure mechanical operations.",
-      "error_handling": "Return detailed error if: already initialized, directory permissions denied, database creation failed. Clean up partial initialization on error (delete .aifp-project/ if incomplete).",
+      "error_handling": "Return detailed error if: already initialized, directory permissions denied, database creation failed. Clean up partial initialization on error (delete .aimfp-project/ if incomplete).",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Verify initialization: confirm .aifp-project/ directory exists with project.db, user_preferences.db, ProjectBlueprint.md, and backups/ directory. Check project.db has 21 tables, user_preferences.db has 8 tables, infrastructure has 8 entries. Report any issues to user before proceeding.",
+        "Verify initialization: confirm .aimfp-project/ directory exists with project.db, user_preferences.db, ProjectBlueprint.md, and backups/ directory. Check project.db has 21 tables, user_preferences.db has 8 tables, infrastructure has 8 entries. Report any issues to user before proceeding.",
         "Phase 1 complete. AI must now execute Phase 2: scan for OOP patterns (if existing code), detect infrastructure (language, build tool, source directory), and prompt user for project name/purpose/goals. IMPORTANT: The project table is EMPTY after Phase 1. AI must call create_project(name, purpose, goals, status, version) as the FIRST step of Phase 2 to insert the project row. Do NOT call update_project before create_project — there is no row to update yet.",
         "Phase 2 ordering: (1) create_project — must complete first, (2) update_source_directory + update infrastructure entries — can run in parallel after create_project succeeds, (3) populate ProjectBlueprint.md. Do NOT batch create_project with infrastructure updates in one parallel call.",
         "Empty infrastructure entries created: project_root (populated), source_directory, primary_language, build_tool, package_manager, test_framework, runtime_version, main_branch. AI must detect and populate these using update_project_entry(table='infrastructure', id=N, data={'value': '...'}) — only the 'value' field should be updated (not 'description' or 'details'). Call get_all_infrastructure() first to see current IDs and values.",
@@ -80,38 +80,38 @@
       ],
       "implementation_notes": [
         "PHASE 1 ONLY - Mechanical setup with no intelligence",
-        "Step 1: Check if already initialized (error if .aifp-project/project.db exists)",
-        "Step 2: Create directories: .aifp-project/, .aifp-project/backups/",
+        "Step 1: Check if already initialized (error if .aimfp-project/project.db exists)",
+        "Step 2: Create directories: .aimfp-project/, .aimfp-project/backups/",
         "Step 2.5: Check for .git directory. If missing and git available, run 'git init' (subprocess, non-blocking, 10s timeout). Store result as git_status: 'created' (new repo), 'pre_existing' (already had .git), or 'git_unavailable' (git not found or failed). Initialization continues regardless of git outcome.",
-        "Step 3: Copy ProjectBlueprint_template.md to .aifp-project/ProjectBlueprint.md",
+        "Step 3: Copy ProjectBlueprint_template.md to .aimfp-project/ProjectBlueprint.md",
         "Step 4: Initialize project.db: load schemas/project.sql, execute, then execute initialization/standard_infrastructure.sql (8 empty entries), then call update_project_root() to populate project_root value",
         "Step 5: Initialize user_preferences.db: load schemas/user_preferences.sql, execute, INSERT default tracking_settings (all disabled), load initialization/standard_user_settings.sql (backup defaults)",
         "Step 6: Create .gitkeep files for empty directories",
         "Step 7: Verify all created files exist (inline check, no helper call)",
         "Step 8: Return success object",
-        "RETURN STRUCTURE: {success: bool, project_root: str, aifp_dir: str, files_created: ['.aifp-project/', 'project.db', 'user_preferences.db', 'ProjectBlueprint.md'], tables_created: {project_db: [...], user_prefs_db: [...]}, infrastructure_entries: 8, git_status: 'created'|'pre_existing'|'git_unavailable', next_phase: 'AI populates infrastructure and blueprint'}",
+        "RETURN STRUCTURE: {success: bool, project_root: str, aimfp_dir: str, files_created: ['.aimfp-project/', 'project.db', 'user_preferences.db', 'ProjectBlueprint.md'], tables_created: {project_db: [...], user_prefs_db: [...]}, infrastructure_entries: 8, git_status: 'created'|'pre_existing'|'git_unavailable', next_phase: 'AI populates infrastructure and blueprint'}",
         "State database is NOT created during init. It is created during project_discovery (Branch 3: map_infrastructure) via create_state_database() helper after source_directory is confirmed with user.",
-        "State DB reference: SQL schema at src/aifp/database/initialization/state_db.sql, template at src/aifp/templates/state_db/state_operations.py, helper at helpers/project/state_db.py",
-        "ERROR CLEANUP: If any step fails after Step 2, delete .aifp-project/ directory entirely (shutil.rmtree). Partial initialization is worse than no initialization.",
+        "State DB reference: SQL schema at src/aimfp/database/initialization/state_db.sql, template at src/aimfp/templates/state_db/state_operations.py, helper at helpers/project/state_db.py",
+        "ERROR CLEANUP: If any step fails after Step 2, delete .aimfp-project/ directory entirely (shutil.rmtree). Partial initialization is worse than no initialization.",
         "ERROR RETURN: {success: false, error: str, failed_step: int, cleanup_performed: bool}",
         "All operations are direct file/DB operations - no external helper calls"
       ],
       "target_database": "multi_db",
       "used_by_directives": [
         {
-          "directive_name": "aifp_init",
+          "directive_name": "aimfp_init",
           "execution_context": "phase_1_mechanical_setup",
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {
             "project_root": "from current working directory or user input"
           },
-          "description": "aifp_init directive calls aifp_init for Phase 1 mechanical setup"
+          "description": "aimfp_init directive calls aimfp_init for Phase 1 mechanical setup"
         }
       ]
     },
     {
-      "name": "aifp_status",
+      "name": "aimfp_status",
       "file_path": "helpers/orchestrators/entry_points.py",
       "parameters": [
         {
@@ -123,12 +123,12 @@
         }
       ],
       "purpose": "Status orchestrator that retrieves comprehensive project state. Gathers data from multiple tables for AI to determine next steps.",
-      "error_handling": "Returns {initialized: false} if .aifp-project/ does not exist.",
+      "error_handling": "Returns {initialized: false} if .aimfp-project/ does not exist.",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
         "AI should interpret status data and determine next directive to execute based on project state.",
-        "If not initialized: route to aifp_init directive.",
+        "If not initialized: route to aimfp_init directive.",
         "If validation has errors: AI should address structural issues before continuing work.",
         "Priority order for current focus: sidequests → subtasks → tasks.",
         "FLOWS & THEMES: Review get_all_flows() and get_all_themes() to orient on project architecture before diving into work. Flows describe intended user-facing behavior and implementation architecture. Themes identify project areas. Consult these when picking up work or starting a new task."
@@ -136,7 +136,7 @@
       "implementation_notes": [
         "Returns status object with: project_metadata, infrastructure, work_hierarchy (counts + tree), user_directives_status, recent_warnings, git_state, supportive_context",
         "Calls get_project_status(project_root, type) for work hierarchy data (includes both flat counts AND nested tree)",
-        "Calls get_supportive_context() to include detailed FP examples, DRY patterns, state DB usage, behavioral rules — provides same reference material as aifp_run(is_new_session=true) so AI can refresh context mid-session without full directive reload",
+        "Calls get_supportive_context() to include detailed FP examples, DRY patterns, state DB usage, behavioral rules — provides same reference material as aimfp_run(is_new_session=true) so AI can refresh context mid-session without full directive reload",
         "AI assesses structural health from returned data (infrastructure, metadata, work_hierarchy)",
         "Reads project metadata from project table",
         "Reads infrastructure from infrastructure table",
@@ -152,20 +152,20 @@
       "target_database": "multi_db",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "self_invocation",
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "aifp_status directive uses aifp_status helper to retrieve comprehensive project state - AI determines next steps from returned data"
+          "description": "aimfp_status directive uses aimfp_status helper to retrieve comprehensive project state - AI determines next steps from returned data"
         },
         {
-          "directive_name": "aifp_run",
+          "directive_name": "aimfp_run",
           "execution_context": "get_status_when_requested",
           "sequence_order": 2,
           "is_required": false,
           "parameters_mapping": {},
-          "description": "Called by aifp_run when is_new_session=true - provides comprehensive status for fresh context"
+          "description": "Called by aimfp_run when is_new_session=true - provides comprehensive status for fresh context"
         }
       ]
     },
@@ -204,12 +204,12 @@
       "target_database": "project",
       "used_by_directives": [
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "retrieve_work_hierarchy",
           "sequence_order": 2,
           "is_required": true,
           "parameters_mapping": {},
-          "description": "Sub-helper used by aifp_status to retrieve work hierarchy data (completion paths, milestones, tasks, subtasks, sidequests) with counts and nested tree"
+          "description": "Sub-helper used by aimfp_status to retrieve work hierarchy data (completion paths, milestones, tasks, subtasks, sidequests) with counts and nested tree"
         }
       ]
     },
@@ -533,32 +533,32 @@
       "name": "create_project_backup",
       "file_path": "helpers/orchestrators/backup.py",
       "parameters": [],
-      "purpose": "Automated backup sub-helper. Checks project inactivity against backup_duration setting, creates zip backup of .aifp-project/ (excluding backups/ and watchdog/), generates backup_summary.md, and rotates old backups per backup_count setting.",
+      "purpose": "Automated backup sub-helper. Checks project inactivity against backup_duration setting, creates zip backup of .aimfp-project/ (excluding backups/ and watchdog/), generates backup_summary.md, and rotates old backups per backup_count setting.",
       "error_handling": "Returns {checked: true, triggered: false, reason: str} on any failure. Never throws — all errors are caught and returned as reason strings.",
       "is_tool": false,
       "is_sub_helper": true,
       "return_statements": [],
       "implementation_notes": [
-        "Sub-helper: not exposed as MCP tool, called only by aifp_run orchestrator during is_new_session=true",
-        "Reads backup settings from user_preferences.db user_settings table: backup_count (default 3), backup_duration (default 30 days), backup_path (default .aifp-project)",
+        "Sub-helper: not exposed as MCP tool, called only by aimfp_run orchestrator during is_new_session=true",
+        "Reads backup settings from user_preferences.db user_settings table: backup_count (default 3), backup_duration (default 30 days), backup_path (default .aimfp-project)",
         "Queries last activity timestamp across all project.db tables (notes, files, functions, tasks, milestones, subtasks, sidequests, project)",
         "If last_activity older than backup_duration days: creates zip backup",
-        "Zip contents: all .aifp-project/ files EXCEPT backups/ and watchdog/ directories + auto-generated backup_summary.md",
-        "Backup naming: aifp-backup-YYYY-MM-DD.zip (or aifp-backup-YYYY-MM-DD-HH-MM.zip if same-day duplicate)",
+        "Zip contents: all .aimfp-project/ files EXCEPT backups/ and watchdog/ directories + auto-generated backup_summary.md",
+        "Backup naming: aimfp-backup-YYYY-MM-DD.zip (or aimfp-backup-YYYY-MM-DD-HH-MM.zip if same-day duplicate)",
         "Rotation: keeps only backup_count most recent zip files, deletes oldest",
         "Returns: {checked: true, triggered: bool, backup_result: {created, backup_path, backup_name, rotated_count, error} or null, reason: str}"
       ],
       "target_database": "multi_db",
       "used_by_directives": [
         {
-          "directive_name": "aifp_run",
+          "directive_name": "aimfp_run",
           "execution_context": "automated_backup_on_new_session",
           "sequence_order": 10,
           "is_required": false,
           "parameters_mapping": {
             "project_root": "from discovered project root"
           },
-          "description": "Sub-helper called by aifp_run during is_new_session=true to automatically backup .aifp-project/ when project has been inactive beyond the configured threshold"
+          "description": "Sub-helper called by aimfp_run during is_new_session=true to automatically backup .aimfp-project/ when project has been inactive beyond the configured threshold"
         }
       ]
     },
@@ -567,11 +567,11 @@
       "file_path": "helpers/orchestrators/migration.py",
       "parameters": [
         {
-          "name": "aifp_folder",
+          "name": "aimfp_folder",
           "type": "string",
           "required": false,
-          "default": ".aifp-project",
-          "description": "AIFP project directory name"
+          "default": ".aimfp-project",
+          "description": "AIMFP project directory name"
         }
       ],
       "purpose": "Migrate all pending project databases to current schema versions. Creates fresh DBs from new schema SQL, transfers data via ATTACH, returns temp paths for AI to verify and place.",
@@ -580,12 +580,12 @@
       "is_sub_helper": false,
       "return_statements": [
         "Verify all tables in each migrated DB show match=true in verification data",
-        "Move each backup from temp path to {project_root}/{aifp_folder}/backups/{db_name}_pre_migration_v{old_version}_{YYYYMMDD}.db",
+        "Move each backup from temp path to {project_root}/{aimfp_folder}/backups/{db_name}_pre_migration_v{old_version}_{YYYYMMDD}.db",
         "Replace each old DB with new: move new_db_temp_path to original_db_path",
         "Ask user about backup retention (delete old backups, keep, or cycle)"
       ],
       "implementation_notes": [
-        "Reads expected_schema_versions from aifp_core.db to determine which DBs need migration",
+        "Reads expected_schema_versions from aimfp_core.db to determine which DBs need migration",
         "For each pending DB: backup old → create new from schema → ATTACH old → transfer shared columns → verify row counts",
         "Schema-only: no init SQL (standard_infrastructure.sql etc.) — data comes from old DB",
         "Triggers are AFTER UPDATE only, so INSERT transfers preserve original timestamps",
@@ -597,11 +597,11 @@
       "used_by_directives": []
     },
     {
-      "name": "aifp_end",
+      "name": "aimfp_end",
       "file_path": "helpers/orchestrators/entry_points.py",
       "parameters": [],
       "purpose": "Session termination orchestrator. Gathers session audit data: reads watchdog state and final reminders, queries all files and functions from DB for AI to cross-reference, reads recent notes and task state. Stops watchdog process if running. Returns structured audit data for AI to interpret and act on. No analysis logic — AI determines what is stale or missing.",
-      "error_handling": "Returns {initialized: false} if .aifp-project/ does not exist. Returns partial data if watchdog PID file missing (watchdog not implemented or not running). Never fails hard — always returns what it can gather.",
+      "error_handling": "Returns {initialized: false} if .aimfp-project/ does not exist. Returns partial data if watchdog PID file missing (watchdog not implemented or not running). Never fails hard — always returns what it can gather.",
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
@@ -614,7 +614,7 @@
       ],
       "implementation_notes": [
         "NO analysis or compliance logic — pure data gathering and process management",
-        "Step 1: Read .aifp-project/watchdog/watchdog.pid — if PID file exists and process alive, read .aifp-project/watchdog/reminders.json, then kill process. If PID file absent, set watchdog_stopped=null (not implemented/not running)",
+        "Step 1: Read .aimfp-project/watchdog/watchdog.pid — if PID file exists and process alive, read .aimfp-project/watchdog/reminders.json, then kill process. If PID file absent, set watchdog_stopped=null (not implemented/not running)",
         "Step 2: Query files table — SELECT id, path, updated_at, is_reserved FROM files",
         "Step 3: Query functions table — SELECT id, name, file_id, is_reserved FROM functions",
         "Step 4: Query active tasks/items — SELECT from tasks, items WHERE status='in_progress'",
@@ -629,14 +629,14 @@
       "target_database": "multi_db",
       "used_by_directives": [
         {
-          "directive_name": "aifp_end",
+          "directive_name": "aimfp_end",
           "execution_context": "session_termination_audit",
           "sequence_order": 1,
           "is_required": true,
           "parameters_mapping": {
             "project_root": "from project context or user input"
           },
-          "description": "aifp_end directive calls aifp_end helper to gather session audit data — AI interprets returned data and performs compliance checks, identifies gaps, generates summary"
+          "description": "aimfp_end directive calls aimfp_end helper to gather session audit data — AI interprets returned data and performs compliance checks, identifies gaps, generates summary"
         }
       ]
     }
@@ -649,13 +649,13 @@
     "changes": [
       "Removed get_status_tree: tree logic folded into get_project_status",
       "Removed get_project_context: redundant with existing helpers (get_from_project, get_all_infrastructure, get_project_status)",
-      "Renamed target_database 'orchestrator' to 'multi_db' for cross-DB helpers (aifp_run, aifp_init, aifp_status)",
+      "Renamed target_database 'orchestrator' to 'multi_db' for cross-DB helpers (aimfp_run, aimfp_init, aimfp_status)",
       "Renamed target_database 'orchestrator' to 'project' for single-DB helpers (all others)",
       "Added project_root parameter to helpers that were missing it",
-      "Updated aifp_status implementation_notes to remove get_status_tree reference",
-      "Updated aifp_init return_statements per orchestrator implementation plan",
+      "Updated aimfp_status implementation_notes to remove get_status_tree reference",
+      "Updated aimfp_init return_statements per orchestrator implementation plan",
       "Updated file_path values to match planned file organization",
-      "Removed validate_initialization: validation logic belongs to AI, not coded helpers. aifp_init uses inline file-exists check instead",
+      "Removed validate_initialization: validation logic belongs to AI, not coded helpers. aimfp_init uses inline file-exists check instead",
       "Renamed get_work_context → get_task_context, work_item_type → task_type, work_item_id → task_id",
       "Restructured get_project_status summary mode: hierarchy-aware context (completion_path → milestone → task → items) with positional history, reserved entities, recent files",
       "Fixed items JOIN_MAPPINGS: items uses polymorphic reference_table + reference_id, not FK columns"

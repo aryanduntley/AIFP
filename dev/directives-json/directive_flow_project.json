@@ -1,8 +1,8 @@
 {
   "flows": [
     {
-      "from_directive": "aifp_run",
-      "to_directive": "aifp_status",
+      "from_directive": "aimfp_run",
+      "to_directive": "aimfp_status",
       "flow_type": "status_branch",
       "condition_key": "is_new_session",
       "condition_value": "true",
@@ -12,8 +12,8 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_run",
-      "to_directive": "aifp_help",
+      "from_directive": "aimfp_run",
+      "to_directive": "aimfp_help",
       "flow_type": "conditional",
       "condition_key": "user_requests_help",
       "condition_value": "true",
@@ -23,8 +23,8 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
-      "to_directive": "aifp_help",
+      "from_directive": "aimfp_status",
+      "to_directive": "aimfp_help",
       "flow_type": "conditional",
       "condition_key": "directive_guidance_needed",
       "condition_value": "true",
@@ -34,8 +34,8 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_help",
-      "to_directive": "aifp_status",
+      "from_directive": "aimfp_help",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -45,14 +45,14 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "git_detect_external_changes",
       "flow_type": "canonical",
       "condition_key": "session_start",
       "condition_value": "true",
       "condition_description": "Always sync git state on session start",
       "priority": 100,
-      "description": "Git sync is standard workflow - detect changes made outside AIFP",
+      "description": "Git sync is standard workflow - detect changes made outside AIMFP",
       "flow_category": "git"
     },
     {
@@ -61,7 +61,7 @@
       "flow_type": "conditional",
       "condition_key": "git_status_from_init",
       "condition_value": "created_or_pre_existing",
-      "condition_description": "Git repository was created or pre-existed during aifp_init Phase 1 — needs intelligent setup (gitignore, initial commit, hash storage)",
+      "condition_description": "Git repository was created or pre-existed during aimfp_init Phase 1 — needs intelligent setup (gitignore, initial commit, hash storage)",
       "priority": 95,
       "description": "During discovery, execute git_init directive for intelligent Git setup after mechanical initialization in Phase 1",
       "flow_category": "git"
@@ -78,18 +78,18 @@
       "flow_category": "git"
     },
     {
-      "from_directive": "aifp_status",
-      "to_directive": "aifp_init",
+      "from_directive": "aimfp_status",
+      "to_directive": "aimfp_init",
       "flow_type": "conditional",
-      "condition_key": "aifp_initialized",
+      "condition_key": "aimfp_initialized",
       "condition_value": "false",
-      "condition_description": "No .aifp-project/ folder found and no git backup",
+      "condition_description": "No .aimfp-project/ folder found and no git backup",
       "priority": 100,
       "description": "Project not initialized - initialize first",
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "user_directive_parse",
       "flow_type": "conditional",
       "condition_key": "user_directives_status",
@@ -101,7 +101,7 @@
     },
     {
       "from_directive": "project_discovery",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "conditional",
       "condition_key": "case_2_selected",
       "condition_value": "true",
@@ -111,7 +111,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_init",
+      "from_directive": "aimfp_init",
       "to_directive": "project_discovery",
       "flow_type": "canonical",
       "condition_key": "initialization_successful",
@@ -122,8 +122,8 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_init",
-      "to_directive": "aifp_status",
+      "from_directive": "aimfp_init",
+      "to_directive": "aimfp_status",
       "flow_type": "error_handler",
       "condition_key": "oop_detected_in_existing_code",
       "condition_value": "true",
@@ -133,7 +133,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_task_decomposition",
       "flow_type": "conditional",
       "condition_key": "has_incomplete_tasks",
@@ -145,7 +145,7 @@
     },
     {
       "from_directive": "project_task_decomposition",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -155,7 +155,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_task_update",
       "flow_type": "conditional",
       "condition_key": "user_requests_task_update",
@@ -167,7 +167,7 @@
     },
     {
       "from_directive": "project_task_update",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -177,7 +177,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_file_write",
       "flow_type": "conditional",
       "condition_key": "has_incomplete_items",
@@ -221,7 +221,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_file_read",
       "flow_type": "conditional",
       "condition_key": "file_context_needed",
@@ -233,7 +233,7 @@
     },
     {
       "from_directive": "project_file_read",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -243,7 +243,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_file_delete",
       "flow_type": "conditional",
       "condition_key": "user_requests_file_delete",
@@ -255,7 +255,7 @@
     },
     {
       "from_directive": "project_file_delete",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -265,25 +265,25 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_add_path",
       "flow_type": "conditional",
       "condition_key": "user_adds_existing_file",
       "condition_value": "true",
-      "condition_description": "User wants to track existing file in AIFP",
+      "condition_description": "User wants to track existing file in AIMFP",
       "priority": 70,
-      "description": "Add existing file to AIFP project tracking",
+      "description": "Add existing file to AIMFP project tracking",
       "flow_category": "project"
     },
     {
       "from_directive": "project_add_path",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
       "condition_description": "File added to tracking",
       "priority": 100,
-      "description": "Existing file now tracked by AIFP, loop back",
+      "description": "Existing file now tracked by AIMFP, loop back",
       "flow_category": "project"
     },
     {
@@ -299,7 +299,7 @@
     },
     {
       "from_directive": "project_task_complete",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": "all_milestone_tasks_complete",
       "condition_value": "false",
@@ -310,7 +310,7 @@
     },
     {
       "from_directive": "project_subtask_complete",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -321,7 +321,7 @@
     },
     {
       "from_directive": "project_sidequest_complete",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -332,7 +332,7 @@
     },
     {
       "from_directive": "project_milestone_complete",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -342,7 +342,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_completion_check",
       "flow_type": "conditional",
       "condition_key": "all_milestones_complete",
@@ -365,7 +365,7 @@
     },
     {
       "from_directive": "project_completion_check",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": "completion_criteria_met",
       "condition_value": "false",
@@ -386,7 +386,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_progression",
       "flow_type": "conditional",
       "condition_key": "post_completion_work_requested",
@@ -397,7 +397,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_task_create",
       "flow_type": "conditional",
       "condition_key": "user_requests_new_task",
@@ -420,7 +420,7 @@
     },
     {
       "from_directive": "project_item_create",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -430,7 +430,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_item_create",
       "flow_type": "conditional",
       "condition_key": "user_requests_new_item",
@@ -441,7 +441,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_subtask_create",
       "flow_type": "conditional",
       "condition_key": "task_needs_decomposition",
@@ -453,7 +453,7 @@
     },
     {
       "from_directive": "project_subtask_create",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -463,7 +463,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_sidequest_create",
       "flow_type": "conditional",
       "condition_key": "unexpected_work_discovered",
@@ -475,7 +475,7 @@
     },
     {
       "from_directive": "project_sidequest_create",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -497,7 +497,7 @@
     },
     {
       "from_directive": "user_directive_validate",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -507,7 +507,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "user_directive_implement",
       "flow_type": "conditional",
       "condition_key": "user_directives_status",
@@ -563,7 +563,7 @@
     },
     {
       "from_directive": "user_directive_activate",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -573,7 +573,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "user_directive_monitor",
       "flow_type": "conditional",
       "condition_key": "user_directives_status",
@@ -607,7 +607,7 @@
     },
     {
       "from_directive": "user_directive_update",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -617,7 +617,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_blueprint_read",
       "flow_type": "conditional",
       "condition_key": "blueprint_context_needed",
@@ -629,7 +629,7 @@
     },
     {
       "from_directive": "project_blueprint_read",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -639,7 +639,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_blueprint_update",
       "flow_type": "conditional",
       "condition_key": "blueprint_update_needed",
@@ -651,7 +651,7 @@
     },
     {
       "from_directive": "project_blueprint_update",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -662,7 +662,7 @@
     },
     {
       "from_directive": "project_compliance_check",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": "report_generated",
       "condition_value": "true",
@@ -672,7 +672,7 @@
       "flow_category": "fp"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_compliance_check",
       "flow_type": "conditional",
       "condition_key": "user_requests_compliance_report",
@@ -683,7 +683,7 @@
       "flow_category": "fp"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_error_handling",
       "flow_type": "error_handler",
       "condition_key": "errors_detected",
@@ -695,7 +695,7 @@
     },
     {
       "from_directive": "project_error_handling",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -705,7 +705,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_metrics",
       "flow_type": "conditional",
       "condition_key": "user_requests_metrics",
@@ -717,7 +717,7 @@
     },
     {
       "from_directive": "project_metrics",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -727,7 +727,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_evolution",
       "flow_type": "conditional",
       "condition_key": "significant_changes_detected",
@@ -739,7 +739,7 @@
     },
     {
       "from_directive": "project_evolution",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -749,7 +749,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_dependency_sync",
       "flow_type": "conditional",
       "condition_key": "dependencies_need_sync",
@@ -761,7 +761,7 @@
     },
     {
       "from_directive": "project_dependency_sync",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -771,7 +771,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_integrity_check",
       "flow_type": "conditional",
       "condition_key": "user_requests_integrity_check",
@@ -783,7 +783,7 @@
     },
     {
       "from_directive": "project_integrity_check",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -793,7 +793,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_auto_resume",
       "flow_type": "conditional",
       "condition_key": "session_start_with_incomplete_work",
@@ -805,7 +805,7 @@
     },
     {
       "from_directive": "project_auto_resume",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -815,7 +815,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_auto_summary",
       "flow_type": "conditional",
       "condition_key": "user_requests_summary",
@@ -827,7 +827,7 @@
     },
     {
       "from_directive": "project_auto_summary",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -837,7 +837,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_dependency_map",
       "flow_type": "conditional",
       "condition_key": "user_requests_dependency_visualization",
@@ -849,7 +849,7 @@
     },
     {
       "from_directive": "project_dependency_map",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -859,7 +859,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_theme_flow_mapping",
       "flow_type": "conditional",
       "condition_key": "user_requests_theme_flow_analysis",
@@ -871,7 +871,7 @@
     },
     {
       "from_directive": "project_theme_flow_mapping",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -881,19 +881,19 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_backup_restore",
       "flow_type": "conditional",
       "condition_key": "user_requests_backup_or_restore",
       "condition_value": "true",
       "condition_description": "User wants to backup or restore project state",
       "priority": 70,
-      "description": "Backup project to .git/.aifp/ or restore from backup",
+      "description": "Backup project to .git/.aimfp/ or restore from backup",
       "flow_category": "project"
     },
     {
       "from_directive": "project_backup_restore",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -903,7 +903,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_refactor_path",
       "flow_type": "conditional",
       "condition_key": "user_requests_path_refactor",
@@ -915,7 +915,7 @@
     },
     {
       "from_directive": "project_refactor_path",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -925,7 +925,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_performance_summary",
       "flow_type": "conditional",
       "condition_key": "helper_function_logging_enabled",
@@ -937,7 +937,7 @@
     },
     {
       "from_directive": "project_performance_summary",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -948,7 +948,7 @@
     },
     {
       "from_directive": "git_create_branch",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -981,7 +981,7 @@
     },
     {
       "from_directive": "git_merge_branch",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -992,7 +992,7 @@
     },
     {
       "from_directive": "project_user_referral",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -1025,7 +1025,7 @@
     },
     {
       "from_directive": "project_discovery",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": "discovery_complete",
       "condition_value": "true",
@@ -1035,7 +1035,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_progression",
       "flow_type": "conditional",
       "condition_key": "progression_action_needed",
@@ -1047,7 +1047,7 @@
     },
     {
       "from_directive": "project_progression",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -1068,8 +1068,8 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
-      "to_directive": "aifp_end",
+      "from_directive": "aimfp_status",
+      "to_directive": "aimfp_end",
       "flow_type": "conditional",
       "condition_key": "user_requests_session_end",
       "condition_value": "true",
@@ -1079,7 +1079,7 @@
       "flow_category": "project"
     },
     {
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "project_discovery",
       "flow_type": "conditional",
       "condition_key": "discovery_not_complete",
@@ -1098,7 +1098,7 @@
     "total_flows": 97,
     "flow_types": {
       "status_branch": "Flow from status to next directive based on state",
-      "completion_loop": "Flow back to aifp_status after state change",
+      "completion_loop": "Flow back to aimfp_status after state change",
       "conditional": "Flow based on specific conditions",
       "canonical": "Standard workflow sequence",
       "error_handler": "Flow to handle errors/roadblocks"
@@ -1115,13 +1115,13 @@
       "use_case_2": "User directive automation workflows",
       "git_integration": "Git sync and collaboration workflows",
       "user_preferences": "Preference loading integration",
-      "completion_loops": "All completion directives loop back to aifp_status",
+      "completion_loops": "All completion directives loop back to aimfp_status",
       "fp_directives": "Not included - FP directives are reference documentation, not execution flow",
       "project_lifecycle": "Full lifecycle: init → discovery → progression loop → completion → end",
-      "session_management": "aifp_run (start) and aifp_end (termination) bookend the session"
+      "session_management": "aimfp_run (start) and aimfp_end (termination) bookend the session"
     },
     "notes": [
-      "All completion directives (task_complete, subtask_complete, sidequest_complete, milestone_complete) loop back to aifp_status",
+      "All completion directives (task_complete, subtask_complete, sidequest_complete, milestone_complete) loop back to aimfp_status",
       "Git integration is standard workflow, not conditional",
       "User preferences loaded before customizable directive execution",
       "Use Case 2 detection via project.user_directives_status field",
@@ -1129,12 +1129,12 @@
       "FP compliance checking is OPT-IN ONLY (default = AI writes FP code automatically)",
       "Performance tracking is OPT-IN ONLY (helper_function_logging_enabled user preference)",
       "All 42 project directives now have flows (100% coverage)",
-      "v1.3.0: aifp_init now routes to project_discovery (not aifp_status) on success",
+      "v1.3.0: aimfp_init now routes to project_discovery (not aimfp_status) on success",
       "v1.3.0: project_discovery delegates to project_catalog for pre-existing FP codebases",
       "v1.3.0: project_progression handles incremental task/milestone creation after completions and evolution",
-      "v1.3.0: aifp_end is terminal — no loop back to aifp_status (session is over)",
+      "v1.3.0: aimfp_end is terminal — no loop back to aimfp_status (session is over)",
       "v1.3.0: project_task_decomposition priority lowered to 70 (progression handles normal flow, decomposition for explicit user requests)",
-      "v1.3.0: aifp_status routes to project_discovery at priority 95 if discovery not yet complete",
+      "v1.3.0: aimfp_status routes to project_discovery at priority 95 if discovery not yet complete",
       "v1.3.1: Added project_discovery → git_init → project_discovery flows for Git intelligent setup during discovery (Phase 1 does mechanical git init, discovery does intelligent setup)"
     ]
   }

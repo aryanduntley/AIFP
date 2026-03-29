@@ -1,6 +1,6 @@
-# AIFP: AI Functional Procedural Programming
+# AIMFP: AI Functional Procedural Programming
 
-[![PyPI](https://img.shields.io/pypi/v/aifp)](https://pypi.org/project/aifp/)
+[![PyPI](https://img.shields.io/pypi/v/aimfp)](https://pypi.org/project/aimfp/)
 
 > **A language-agnostic programming paradigm designed for AI-generated and AI-maintained codebases**
 
@@ -8,7 +8,7 @@
 
 ## Table of Contents
 
-- [What is AIFP?](#what-is-aifp)
+- [What is AIMFP?](#what-is-aimfp)
 - [Core Principles](#core-principles)
 - [Architecture Overview](#architecture-overview)
 - [Database Architecture](#database-architecture)
@@ -28,37 +28,37 @@
 
 ---
 
-## What is AIFP?
+## What is AIMFP?
 
-**AIFP (AI Functional Procedural)** is a programming paradigm that combines:
+**AIMFP (AI Functional Procedural)** is a programming paradigm that combines:
 
 - **Pure functional programming** principles (referential transparency, immutability, composability)
 - **Procedural execution** patterns (explicit sequencing, no hidden state)
 - **Database-driven project management** (persistent state, instant context retrieval)
 - **Directive-based AI guidance** (deterministic workflows, automated compliance)
 
-### Two Ways to Use AIFP
+### Two Ways to Use AIMFP
 
 **Use Case 1: Regular Software Development**
 - Build applications (web apps, libraries, CLI tools, etc.)
-- AIFP enforces FP compliance and manages your project
+- AIMFP enforces FP compliance and manages your project
 - You write code, AI assists with FP standards and project tracking
 - Example: Building a web server, calculator library, data processor
 
 **Use Case 2: Custom Directive Automation**
 - Define automation rules (home automation, cloud management, workflows)
-- **AIFP generates and manages the automation codebase for you**
+- **AIMFP generates and manages the automation codebase for you**
 - You write directive definitions (YAML/JSON/TXT), AI generates the implementation
 - The project's code IS the automation code generated from your directives
 - Example: Smart home control system, AWS infrastructure manager, workflow automator
 
-**Key Principle**: One AIFP instance per project directory. You would NOT mix a web app with home automation directives. Run separate instances for separate purposes.
+**Key Principle**: One AIMFP instance per project directory. You would NOT mix a web app with home automation directives. Run separate instances for separate purposes.
 
-### Why AIFP?
+### Why AIMFP?
 
-Traditional programming paradigms were designed for humans. AIFP is optimized for **AI-human collaboration**:
+Traditional programming paradigms were designed for humans. AIMFP is optimized for **AI-human collaboration**:
 
-| Challenge | Traditional Approach | AIFP Solution |
+| Challenge | Traditional Approach | AIMFP Solution |
 |-----------|---------------------|---------------|
 | **Context Loss** | AI forgets between sessions | Database-driven persistent state |
 | **OOP Complexity** | Classes, inheritance, polymorphism | Pure functions, explicit data structures |
@@ -73,12 +73,12 @@ Traditional programming paradigms were designed for humans. AIFP is optimized fo
 ### 1. Functional-Procedural Hybrid
 
 ```python
-# ✅ AIFP-Compliant
+# ✅ AIMFP-Compliant
 def calculate_total(items: List[Item]) -> float:
     """Pure function: deterministic, no side effects"""
     return reduce(lambda acc, item: acc + item.price, items, 0.0)
 
-# ❌ Not AIFP-Compliant
+# ❌ Not AIMFP-Compliant
 class Calculator:
     def __init__(self):
         self.total = 0  # Hidden state
@@ -122,7 +122,7 @@ Project: MatrixCalculator
 
 ### 5. Language-Agnostic
 
-AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directives adapt to language-specific syntax while maintaining universal standards.
+AIMFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directives adapt to language-specific syntax while maintaining universal standards.
 
 ---
 
@@ -146,7 +146,7 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 └───┬────────────────────┬─────────────────────────┬──┘
     │                    │                         │
 ┌───▼──────────────┐ ┌───▼────────────────┐ ┌─────▼─────────────────┐ ┌──────▼────────────────┐
-│  aifp_core.db    │ │  project.db        │ │  user_preferences.db  │ │  user_directives.db   │
+│  aimfp_core.db    │ │  project.db        │ │  user_preferences.db  │ │  user_directives.db   │
 │  (Global,        │ │  (Per-Project,     │ │  (Per-Project,        │ │  (Per-Project,        │
 │   Read-Only)     │ │   Mutable)         │ │   Mutable)            │ │   Optional)           │
 │                  │ │                    │ │                       │ │                       │
@@ -163,11 +163,11 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 
 ## Database Architecture
 
-### aifp_core.db (Global, Read-Only)
+### aimfp_core.db (Global, Read-Only)
 
 **Location**: Within MCP server installation directory (user-defined location, configured in AI client)
 
-**Purpose**: Immutable knowledge base containing all AIFP standards, directives, and helper definitions.
+**Purpose**: Immutable knowledge base containing all AIMFP standards, directives, and helper definitions.
 
 **Key Tables**:
 - `directives`: All FP, project, and user preference directives (workflows, keywords, thresholds)
@@ -180,7 +180,7 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 - One directive can use many helpers, one helper can serve many directives
 - Junction table stores: execution context, sequence order, parameter mappings
 - Enables flexible helper reuse and clear execution flow
-- Defined in `directive_helpers` junction table in `aifp_core.db`
+- Defined in `directive_helpers` junction table in `aimfp_core.db`
 
 **Helper Classification**:
 - **Tool**: All helpers are exposed as MCP tools (AI calls directly via MCP)
@@ -190,17 +190,17 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 - Helper definitions maintained in `dev/helpers-json/*.json` during development
 - Developers modify JSON files, then import to database when complete
 - Each helper includes `used_by_directives` field for relationship mapping
-- Database import script populates `aifp_core.db` from JSON files before release
-- Production: Users query `aifp_core.db` (pre-populated), NOT JSON files
+- Database import script populates `aimfp_core.db` from JSON files before release
+- Production: Users query `aimfp_core.db` (pre-populated), NOT JSON files
 - JSON files are dev-only staging area, never shipped with package
 
 **Read-Only Philosophy**: This database is version-controlled and immutable once deployed. AI reads from it but never modifies it.
 
 ### project.db (Per-Project, Mutable)
 
-**Location**: `<project-root>/.aifp-project/project.db`
+**Location**: `<project-root>/.aimfp-project/project.db`
 
-**Purpose**: Persistent state for a single AIFP project. Tracks code structure, tasks, and runtime notes.
+**Purpose**: Persistent state for a single AIMFP project. Tracks code structure, tasks, and runtime notes.
 
 **Key Tables**:
 - `project`: High-level metadata (name, purpose, goals, status, user_directives_status, last_known_git_hash)
@@ -213,13 +213,13 @@ AIFP works with Python, JavaScript, TypeScript, Rust, Go, and more. FP directive
 - `work_branches`: Git collaboration metadata (user, purpose, merge strategy)
 - `merge_history`: FP-powered merge conflict resolution audit trail
 
-**User Directives Integration**: The `project.user_directives_status` field tracks whether user directives are initialized (NULL/in_progress/active/disabled), allowing `aifp_run` and `aifp_status` directives to include user directive context when active.
+**User Directives Integration**: The `project.user_directives_status` field tracks whether user directives are initialized (NULL/in_progress/active/disabled), allowing `aimfp_run` and `aimfp_status` directives to include user directive context when active.
 
 **Enhanced Notes**: The `notes` table now includes `source` (user/ai/directive), `directive_name` (optional context), and `severity` (info/warning/error) for better traceability.
 
 ### user_preferences.db (Per-Project, Mutable)
 
-**Location**: `<project-root>/.aifp-project/user_preferences.db`
+**Location**: `<project-root>/.aimfp-project/user_preferences.db`
 
 **Purpose**: User-specific AI behavior customizations and opt-in tracking features.
 
@@ -244,9 +244,9 @@ VALUES ('project_file_write', 'always_add_docstrings', 'true');
 
 ### user_directives.db (Per-Project, Optional)
 
-**Location**: `<project-root>/.aifp-project/user_directives.db`
+**Location**: `<project-root>/.aimfp-project/user_directives.db`
 
-**Purpose**: Store user-defined domain-specific directives for automation (home automation, cloud infrastructure, etc.). **When this database exists, the AIFP project IS dedicated to building and managing the automation code generated from these directives.**
+**Purpose**: Store user-defined domain-specific directives for automation (home automation, cloud infrastructure, etc.). **When this database exists, the AIMFP project IS dedicated to building and managing the automation code generated from these directives.**
 
 This database only exists in **Use Case 2: Custom Directive Automation** projects. In regular software development projects, this database is not created.
 
@@ -264,9 +264,9 @@ This database only exists in **Use Case 2: Custom Directive Automation** project
 - AI generates project-specific helper functions for user directives
 - Tracked with implementation status: not_implemented → generated → tested → approved
 - Enforces FP compliance (pure functions) for all generated code
-- Same many-to-many relationship pattern as aifp_core.db
+- Same many-to-many relationship pattern as aimfp_core.db
 
-**File-Based Logging Philosophy**: Database stores state and statistics only. Detailed execution logs (30-day retention) and error logs (90-day retention) are stored in rotating files at `.aifp-project/logs/`.
+**File-Based Logging Philosophy**: Database stores state and statistics only. Detailed execution logs (30-day retention) and error logs (90-day retention) are stored in rotating files at `.aimfp-project/logs/`.
 
 **Directory Structure Comparison**:
 
@@ -275,7 +275,7 @@ This database only exists in **Use Case 2: Custom Directive Automation** project
 my-web-app/
 ├── src/                    # Your application code
 ├── tests/                  # Your tests
-└── .aifp-project/          # AIFP tracks your application
+└── .aimfp-project/          # AIMFP tracks your application
     ├── project.db
     └── user_preferences.db
 
@@ -284,11 +284,11 @@ home-automation/
 ├── directives/             # ← User writes directive files here
 │   ├── lights.yaml
 │   └── security.yaml
-├── src/                    # ← AIFP GENERATES this code
+├── src/                    # ← AIMFP GENERATES this code
 │   ├── lights_controller.py
 │   └── security_monitor.py
-├── tests/                  # ← AIFP GENERATES tests
-└── .aifp-project/          # ← AI-managed only, user never touches
+├── tests/                  # ← AIMFP GENERATES tests
+└── .aimfp-project/          # ← AI-managed only, user never touches
     ├── project.db          # Tracks generated src/ code
     ├── user_preferences.db
     ├── user_directives.db  # References ../directives/ files
@@ -302,27 +302,27 @@ home-automation/
 4. AI generates FP-compliant implementation code in `src/`
 5. AI tracks generated code in `project.db` (files, functions, tasks)
 6. Directives execute in real-time via background services
-7. Execution logs to `.aifp-project/logs/`, statistics to database
+7. Execution logs to `.aimfp-project/logs/`, statistics to database
 
-**Note**: User directive files stay in the user's project. `.aifp-project/` is AI-managed metadata.
+**Note**: User directive files stay in the user's project. `.aimfp-project/` is AI-managed metadata.
 
 ---
 
 ## How It Works
 
-### 1. AIFP MCP Gateway Pattern
+### 1. AIMFP MCP Gateway Pattern
 
-The `aifp_run` command serves as a **gateway and reminder**, not an executor. It tells the AI that AIFP directives should be applied.
+The `aimfp_run` command serves as a **gateway and reminder**, not an executor. It tells the AI that AIMFP directives should be applied.
 
-**Every `aifp_run` call returns**:
+**Every `aimfp_run` call returns**:
 ```json
 {
   "success": true,
-  "message": "AIFP MCP available",
+  "message": "AIMFP MCP available",
   "guidance": {
     "directive_access": "Directive names cached from session bundle. Query specific directives by name when needed.",
-    "when_to_use": "Use AIFP directives when coding or when project management action/reaction is needed.",
-    "assumption": "Always assume AIFP applies unless user explicitly rejects it."
+    "when_to_use": "Use AIMFP directives when coding or when project management action/reaction is needed.",
+    "assumption": "Always assume AIMFP applies unless user explicitly rejects it."
   }
 }
 ```
@@ -330,8 +330,8 @@ The `aifp_run` command serves as a **gateway and reminder**, not an executor. It
 The MCP server exposes CRUD helper functions for all database operations — tracking files, functions, tasks, project state, user preferences, and (for Use Case 2) automation directives. AI discovers available helpers from the database at runtime.
 
 **AI Decision Flow**:
-1. User prefixes request with `aifp run` (or AI assumes it)
-2. AI calls `aifp_run` tool → receives guidance
+1. User prefixes request with `aimfp run` (or AI assumes it)
+2. AI calls `aimfp_run` tool → receives guidance
 3. AI evaluates: Is this coding or project management?
 4. If yes: Check if directives are in memory
    - No directives? → Directive names cached from session bundle; query by name when needed
@@ -345,13 +345,13 @@ User: "Help me build a calculator"
 ```
 
 **AI Processing**:
-1. Calls `aifp_run(is_new_session=true)` → receives session bundle (directive names, project status, settings, supportive context)
-2. Checks project state from bundle: `.aifp-project/` missing → project not initialized
-3. Calls `aifp_init` helper (Phase 1: mechanical setup)
-   - Programmatically creates `.aifp-project/` directory, databases, blueprint template
+1. Calls `aimfp_run(is_new_session=true)` → receives session bundle (directive names, project status, settings, supportive context)
+2. Checks project state from bundle: `.aimfp-project/` missing → project not initialized
+3. Calls `aimfp_init` helper (Phase 1: mechanical setup)
+   - Programmatically creates `.aimfp-project/` directory, databases, blueprint template
 4. Enters Phase 2 (intelligent population): detects language/tools, discusses project with user
 5. Routes to `project_discovery`: collaborates with user on blueprint, themes, flows, completion path, milestones
-6. Discovery complete → routes to `aifp_status` → `project_progression` → first task created
+6. Discovery complete → routes to `aimfp_status` → `project_progression` → first task created
 7. Work begins
 
 ### 3. Self-Assessment Framework
@@ -365,7 +365,7 @@ Before acting, AI performs self-assessment using questions provided with directi
    - Project directives handle the tracking side (file writes, DB updates, task management)
 
 2. **Do I have directives in memory?**
-   - No: Load from session bundle via `aifp_run(is_new_session=true)`
+   - No: Load from session bundle via `aimfp_run(is_new_session=true)`
    - Yes: Proceed with cached directives
 
 3. **Which directives apply?**
@@ -421,31 +421,31 @@ Directives follow a **trunk → branches → fallback** pattern:
 #### Method 1: pip install (Recommended)
 
 ```bash
-pip install aifp
+pip install aimfp
 ```
 
-This installs the MCP server and makes the `aifp` command available. AIFP requires only one external dependency (`watchdog` for filesystem monitoring) — the JSON-RPC server itself is pure Python stdlib.
+This installs the MCP server and makes the `aimfp` command available. AIMFP requires only one external dependency (`watchdog` for filesystem monitoring) — the JSON-RPC server itself is pure Python stdlib.
 
 #### Method 2: Manual Install (GitHub Download)
 
 1. **Download** the repository (zip download or `git clone`)
-2. **Locate** the `src/aifp/` folder — this is the complete MCP server package
-3. **Copy** the `aifp/` folder to wherever you keep MCP servers:
+2. **Locate** the `src/aimfp/` folder — this is the complete MCP server package
+3. **Copy** the `aimfp/` folder to wherever you keep MCP servers:
    ```bash
    # Example: copy to your MCP servers directory
-   cp -r src/aifp/ ~/mcp-servers/aifp/
+   cp -r src/aimfp/ ~/mcp-servers/aimfp/
    ```
 
-The only runtime dependency (`watchdog`) is installed automatically. The `aifp/` folder contains everything else the server needs: helper functions, directives, database schemas, and the pre-populated `aifp_core.db`.
+The only runtime dependency (`watchdog`) is installed automatically. The `aimfp/` folder contains everything else the server needs: helper functions, directives, database schemas, and the pre-populated `aimfp_core.db`.
 
 ### Add the System Prompt to Your AI Client
 
-**This step is required.** The system prompt is what tells the AI to use AIFP tools proactively. Without it, the MCP server is just a collection of passive tools that never get called.
+**This step is required.** The system prompt is what tells the AI to use AIMFP tools proactively. Without it, the MCP server is just a collection of passive tools that never get called.
 
 Print the system prompt to your terminal, then copy-paste it into your AI client:
 
 ```bash
-python3 -m aifp --system-prompt
+python3 -m aimfp --system-prompt
 ```
 
 The system prompt is shipped with the package — no separate file or download needed. This works for all install methods (pip, venv, manual).
@@ -460,7 +460,7 @@ The system prompt is shipped with the package — no separate file or download n
 
 ### Configure Your AI Client
 
-Register the AIFP MCP server in your AI client's configuration. The server uses **stdio transport** — it reads JSON-RPC messages from stdin and writes responses to stdout.
+Register the AIMFP MCP server in your AI client's configuration. The server uses **stdio transport** — it reads JSON-RPC messages from stdin and writes responses to stdout.
 
 #### Claude Desktop
 
@@ -469,41 +469,41 @@ Edit `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "aifp": {
+    "aimfp": {
       "command": "python3",
-      "args": ["-m", "aifp"],
+      "args": ["-m", "aimfp"],
       "env": {}
     }
   }
 }
 ```
 
-If you used **Method 2 (manual install)**, add the parent directory of your `aifp/` folder to `PYTHONPATH` so Python can find it:
+If you used **Method 2 (manual install)**, add the parent directory of your `aimfp/` folder to `PYTHONPATH` so Python can find it:
 
 ```json
 {
   "mcpServers": {
-    "aifp": {
+    "aimfp": {
       "command": "python3",
-      "args": ["-m", "aifp"],
+      "args": ["-m", "aimfp"],
       "env": {
-        "PYTHONPATH": "/path/to/parent-of-aifp-folder"
+        "PYTHONPATH": "/path/to/parent-of-aimfp-folder"
       }
     }
   }
 }
 ```
 
-For example, if you copied `aifp/` to `~/mcp-servers/aifp/`, set `PYTHONPATH` to `~/mcp-servers`.
+For example, if you copied `aimfp/` to `~/mcp-servers/aimfp/`, set `PYTHONPATH` to `~/mcp-servers`.
 
 If you installed into a **virtual environment**, use the full path to the venv's Python so Claude Desktop uses the correct interpreter:
 
 ```json
 {
   "mcpServers": {
-    "aifp": {
+    "aimfp": {
       "command": "/path/to/venv/bin/python3",
-      "args": ["-m", "aifp"],
+      "args": ["-m", "aimfp"],
       "env": {}
     }
   }
@@ -512,43 +512,43 @@ If you installed into a **virtual environment**, use the full path to the venv's
 
 #### Claude Code
 
-Use `claude mcp add` to register the server. Run the command **from within the project folder** you want AIFP to manage.
+Use `claude mcp add` to register the server. Run the command **from within the project folder** you want AIMFP to manage.
 
-**Choose a scope first.** AIFP enforces strict functional programming and actively rejects OOP codebases. If you work on other projects that use OOP or don't need AIFP, avoid `--scope user` — it enables the server in every project you open.
+**Choose a scope first.** AIMFP enforces strict functional programming and actively rejects OOP codebases. If you work on other projects that use OOP or don't need AIMFP, avoid `--scope user` — it enables the server in every project you open.
 
 | Scope | Effect | Best for |
 |---|---|---|
 | `--scope project` (Recommended) | Creates `.mcp.json` in the current directory. Shareable via git. | Teams and per-project control |
 | `--scope local` | Stored in `~/.claude.json` keyed to the current directory. Private. | Personal per-project use |
-| `--scope user` | Available in every project you open. | Developers who use AIFP for all projects |
+| `--scope user` | Available in every project you open. | Developers who use AIMFP for all projects |
 
 **pip install (system-wide):**
 ```bash
-claude mcp add --transport stdio --scope project aifp -- python3 -m aifp
+claude mcp add --transport stdio --scope project aimfp -- python3 -m aimfp
 ```
 
 **pip install (virtual environment)** — use the venv's Python path:
 ```bash
-claude mcp add --transport stdio --scope project aifp -- /path/to/venv/bin/python3 -m aifp
+claude mcp add --transport stdio --scope project aimfp -- /path/to/venv/bin/python3 -m aimfp
 ```
 A bare `python3` resolves to the system Python, which won't have the package. Use the full path to the venv's interpreter so the MCP server subprocess finds the installed package.
 
-**Manual install or running from source** — set `PYTHONPATH` to the parent of the `aifp/` folder:
+**Manual install or running from source** — set `PYTHONPATH` to the parent of the `aimfp/` folder:
 ```bash
-claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/parent-of-aifp aifp -- python3 -m aifp
+claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/parent-of-aimfp aimfp -- python3 -m aimfp
 ```
 
 **Quick reference:**
 
 | Install Method | Claude Code Command |
 |---|---|
-| `pip install aifp` (system) | `-- python3 -m aifp` |
-| `pip install aifp` (venv) | `-- /path/to/venv/bin/python3 -m aifp` |
-| Manual folder / from source | `--env PYTHONPATH=/parent/of/aifp -- python3 -m aifp` |
+| `pip install aimfp` (system) | `-- python3 -m aimfp` |
+| `pip install aimfp` (venv) | `-- /path/to/venv/bin/python3 -m aimfp` |
+| Manual folder / from source | `--env PYTHONPATH=/parent/of/aimfp -- python3 -m aimfp` |
 
 > **Note**: All flags (`--transport`, `--scope`, `--env`) must come **before** the server name. The `--` separates the name from the command. Verify the server is connected with `/mcp` inside Claude Code.
 
-#### Claude Code: Pre-Approve All AIFP Tools (Optional)
+#### Claude Code: Pre-Approve All AIMFP Tools (Optional)
 
 Claude Code prompts you to approve each new MCP tool the first time it's called. With 228 tools, this means 228 approval prompts. To skip this, copy the pre-built permissions file into your project's `.claude/` folder:
 
@@ -560,29 +560,29 @@ mkdir -p /path/to/your/project/.claude
 cp documentation/settings.local.json /path/to/your/project/.claude/
 ```
 
-This places a `settings.local.json` in your project's `.claude/` folder that pre-allows every AIFP tool. Claude Code will read it automatically — no approval prompts needed.
+This places a `settings.local.json` in your project's `.claude/` folder that pre-allows every AIMFP tool. Claude Code will read it automatically — no approval prompts needed.
 
-> **Note**: The file also includes `enableAllProjectMcpServers` and `enabledMcpjsonServers` settings so the AIFP server starts automatically if you have a `.mcp.json` in the project.
+> **Note**: The file also includes `enableAllProjectMcpServers` and `enabledMcpjsonServers` settings so the AIMFP server starts automatically if you have a `.mcp.json` in the project.
 
 #### Other MCP Clients
 
-The server uses **stdio transport**. Point your client at `python3 -m aifp` (or the full path to your venv's Python). For manual installs, ensure `PYTHONPATH` includes the parent directory of the `aifp/` folder. No API keys or authentication required.
+The server uses **stdio transport**. Point your client at `python3 -m aimfp` (or the full path to your venv's Python). For manual installs, ensure `PYTHONPATH` includes the parent directory of the `aimfp/` folder. No API keys or authentication required.
 
 ### How It Works
 
-The server communicates over stdio using the Model Context Protocol. It resolves `aifp_core.db` (the directive database) relative to its own installation — no environment variables needed.
+The server communicates over stdio using the Model Context Protocol. It resolves `aimfp_core.db` (the directive database) relative to its own installation — no environment variables needed.
 
-Once connected, the AI calls `aifp_run()` on every interaction (guided by the system prompt). Project state is stored in `.aifp-project/` in your working directory, created automatically when you initialize a project.
+Once connected, the AI calls `aimfp_run()` on every interaction (guided by the system prompt). Project state is stored in `.aimfp-project/` in your working directory, created automatically when you initialize a project.
 
 ### Project Initialization
 
 Tell your AI assistant:
 
 ```
-"Initialize AIFP for my project"
+"Initialize AIMFP for my project"
 ```
 
-The AI calls `aifp_init` which creates an `.aifp-project/` folder in your project root containing databases for project state tracking, user preferences, and a ProjectBlueprint document. You don't need to interact with these files — the MCP server manages them automatically.
+The AI calls `aimfp_init` which creates an `.aimfp-project/` folder in your project root containing databases for project state tracking, user preferences, and a ProjectBlueprint document. You don't need to interact with these files — the MCP server manages them automatically.
 
 ---
 
@@ -607,8 +607,8 @@ Manage project lifecycle:
 
 | Level | Directives | Purpose |
 |-------|------------|---------|
-| **Level 0** | `aifp_run` | Gateway orchestration (every interaction) |
-| **Level 1** | `aifp_status`, `aifp_init`, `project_task_decomposition` | Status, initialization, high-level coordination |
+| **Level 0** | `aimfp_run` | Gateway orchestration (every interaction) |
+| **Level 1** | `aimfp_status`, `aimfp_init`, `project_task_decomposition` | Status, initialization, high-level coordination |
 | **Level 2** | `project_file_write`, `project_update_db`, `project_task_update` | Operational execution |
 | **Level 3** | `project_compliance_check`, `project_evolution` | State management |
 | **Level 4** | `project_completion_check`, `project_archive` | Validation & completion |
@@ -629,7 +629,7 @@ Manage AI behavior customization and learning:
 
 ### User-Defined Directives
 
-**FOR USE CASE 2 ONLY**: Automation projects where AIFP generates and manages the codebase:
+**FOR USE CASE 2 ONLY**: Automation projects where AIMFP generates and manages the codebase:
 
 | Directive | Purpose |
 |-----------|---------|
@@ -650,8 +650,8 @@ Manage AI behavior customization and learning:
 
 **Key Architecture**:
 - User writes directive definitions (YAML/JSON/TXT)
-- **AIFP generates the entire automation codebase** (`src/`, `tests/`, etc.)
-- AIFP manages the generated code like any software project (tasks, files, functions)
+- **AIMFP generates the entire automation codebase** (`src/`, `tests/`, etc.)
+- AIMFP manages the generated code like any software project (tasks, files, functions)
 - Directives execute via background services/schedulers
 - Project.db tracks the generated code; user_directives.db tracks directive state
 
@@ -695,7 +695,7 @@ def turn_off_living_room_lights(ha_client: HomeAssistant) -> Result[None, str]:
     ...
 ```
 
-See the directive MD files in `src/aifp/reference/directives/` for complete workflow documentation.
+See the directive MD files in `src/aimfp/reference/directives/` for complete workflow documentation.
 
 ### Git Integration
 
@@ -704,8 +704,8 @@ FP-powered Git collaboration for multi-user and multi-AI development:
 | Directive | Purpose |
 |-----------|---------|
 | **git_init** | Initialize or integrate with Git repository for version control |
-| **git_detect_external_changes** | Detect code modifications made outside AIFP sessions |
-| **git_create_branch** | Create user/AI work branches (`aifp-{user}-{number}`) |
+| **git_detect_external_changes** | Detect code modifications made outside AIMFP sessions |
+| **git_create_branch** | Create user/AI work branches (`aimfp-{user}-{number}`) |
 | **git_detect_conflicts** | FP-powered conflict analysis before merging |
 | **git_merge_branch** | Merge branches with AI-assisted conflict resolution |
 | **git_sync_state** | Synchronize Git hash with project.db for external change detection |
@@ -713,14 +713,14 @@ FP-powered Git collaboration for multi-user and multi-AI development:
 **Key Features**:
 - **Multi-user collaboration**: Multiple developers and AI instances work simultaneously
 - **FP-powered conflict resolution**: Uses purity levels, dependencies, and test results to auto-resolve conflicts
-- **Branch naming**: `aifp-alice-001`, `aifp-bob-002`, `aifp-ai-claude-001`
+- **Branch naming**: `aimfp-alice-001`, `aimfp-bob-002`, `aimfp-ai-claude-001`
 - **Auto-resolution**: High-confidence conflicts (>0.8) resolved automatically using FP purity rules
-- **External change detection**: Compares Git HEAD with stored hash to detect changes made outside AIFP
+- **External change detection**: Compares Git HEAD with stored hash to detect changes made outside AIMFP
 - **Simplified schema**: No separate git_state table - Git commands are fast enough (~1ms)
 
-**Why AIFP + Git is Superior to OOP + Git**:
+**Why AIMFP + Git is Superior to OOP + Git**:
 
-| OOP Merge Problem | AIFP FP Solution |
+| OOP Merge Problem | AIMFP FP Solution |
 |-------------------|------------------|
 | Class hierarchies conflict | ✅ No classes → No hierarchy conflicts |
 | Hidden state changes | ✅ Pure functions → Explicit inputs/outputs |
@@ -743,7 +743,7 @@ AI Recommendation: Keep Bob's version (confidence: 85%)
 Reason: More comprehensive tests, still pure
 ```
 
-See the Git directive MD files in `src/aifp/reference/directives/` for complete multi-user collaboration workflows.
+See the Git directive MD files in `src/aimfp/reference/directives/` for complete multi-user collaboration workflows.
 
 ---
 
@@ -751,7 +751,7 @@ See the Git directive MD files in `src/aifp/reference/directives/` for complete 
 
 ```mermaid
 graph TD
-    A[aifp_init] --> B[project_discovery]
+    A[aimfp_init] --> B[project_discovery]
     B --> C[project_progression]
     C --> D[project_file_write]
     D --> E[project_update_db]
@@ -776,11 +776,11 @@ graph TD
 ```
 User: "Help me build a matrix calculator"
 
-AI → aifp_run(is_new_session=true)
+AI → aimfp_run(is_new_session=true)
     → Receives: session bundle (directive names, status, settings, supportive context)
-    → Checks project state: .aifp-project/ missing → not initialized
-    → Calls aifp_init helper (Phase 1: mechanical setup)
-        → Creates .aifp-project/ directory
+    → Checks project state: .aimfp-project/ missing → not initialized
+    → Calls aimfp_init helper (Phase 1: mechanical setup)
+        → Creates .aimfp-project/ directory
         → Creates project.db, user_preferences.db
         → Copies ProjectBlueprint template
     → Enters Phase 2 (intelligent population)
@@ -799,7 +799,7 @@ AI: ✅ Project initialized: MatrixCalculator
 ```
 User: "Write multiply_matrices function"
 
-AI → aifp_run() (continuation — lightweight guidance)
+AI → aimfp_run() (continuation — lightweight guidance)
     → Evaluates: coding task + project tracking needed
     → Has directives cached from session bundle
     → Writes FP-compliant function naturally (pure, immutable, no OOP)
@@ -823,7 +823,7 @@ AI: ✅ Function written: multiply_matrices
 ```
 User: "Check project compliance"
 
-AI → aifp_run() (continuation — lightweight guidance)
+AI → aimfp_run() (continuation — lightweight guidance)
     → project_compliance_check directive (opt-in tracking feature)
     → Queries all functions from project.db
     → Reviews each function against FP baseline
@@ -842,7 +842,7 @@ AI: 📊 Compliance Report:
 ```
 User: "Always add docstrings to functions"
 
-AI → aifp_run() (continuation — lightweight guidance)
+AI → aimfp_run() (continuation — lightweight guidance)
     → user_preferences_update directive
         → Calls find_directive_by_intent helper
         → Searches directives by name/description/keywords
@@ -882,12 +882,12 @@ AI: ✅ Preference learned: project_file_write
 
 ### Directive Reference
 
-All directive documentation is shipped with the package at **[src/aifp/reference/directives/](src/aifp/reference/directives/)** — 129 MD files covering every directive. Each file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, and database operations.
+All directive documentation is shipped with the package at **[src/aimfp/reference/directives/](src/aimfp/reference/directives/)** — 129 MD files covering every directive. Each file includes: purpose, when to apply, complete workflows (trunk → branches), compliant/non-compliant examples, edge cases, related directives, helper functions used, and database operations.
 
 ### Database Schemas
 
-Schema SQL files are in the package at `src/aifp/database/schemas/`:
-- `aifp_core.sql` — Global read-only database (directives, helpers, flows)
+Schema SQL files are in the package at `src/aimfp/database/schemas/`:
+- `aimfp_core.sql` — Global read-only database (directives, helpers, flows)
 - `project.sql` — Per-project mutable database (files, functions, tasks, milestones)
 - `user_preferences.sql` — Per-project user customization database
 - `user_directives.sql` — Per-project automation directives (Use Case 2 only)
@@ -898,7 +898,7 @@ Schema SQL files are in the package at `src/aifp/database/schemas/`:
 
 ### Dev Directory (`dev/`)
 
-The `dev/` directory contains the **source of truth** for directive and helper function definitions. These JSON files are the canonical definitions that get imported into `aifp_core.db` before release.
+The `dev/` directory contains the **source of truth** for directive and helper function definitions. These JSON files are the canonical definitions that get imported into `aimfp_core.db` before release.
 
 ```
 dev/
@@ -920,11 +920,11 @@ dev/
 │   ├── helpers-user-custom.json  # User directive helpers
 │   ├── helpers-git.json          # Git operation helpers
 │   └── helpers-index.json        # Shared/global helpers
-├── sync-directives.py            # Imports JSON → aifp_core.db
+├── sync-directives.py            # Imports JSON → aimfp_core.db
 └── logs/                         # Development logs
 ```
 
-**Dev workflow**: Modify JSON files in `dev/` → run `sync-directives.py` to rebuild `aifp_core.db` → test → release. End users only interact with the pre-populated `aifp_core.db`, never the JSON files directly.
+**Dev workflow**: Modify JSON files in `dev/` → run `sync-directives.py` to rebuild `aimfp_core.db` → test → release. End users only interact with the pre-populated `aimfp_core.db`, never the JSON files directly.
 
 ### Version Locations
 
@@ -933,8 +933,8 @@ dev/
 | File | Variable | Purpose |
 |------|----------|---------|
 | `pyproject.toml` | `version = "X.Y.Z"` | Package version (PyPI, pip install) |
-| `src/aifp/__init__.py` | `__version__ = "X.Y.Z"` | Runtime version (`import aifp; aifp.__version__`) |
-| `src/aifp/mcp_server/server.py` | `SERVER_VERSION = "X.Y.Z"` | MCP `initialize` handshake response (`serverInfo.version`) |
+| `src/aimfp/__init__.py` | `__version__ = "X.Y.Z"` | Runtime version (`import aimfp; aimfp.__version__`) |
+| `src/aimfp/mcp_server/server.py` | `SERVER_VERSION = "X.Y.Z"` | MCP `initialize` handshake response (`serverInfo.version`) |
 
 ---
 
@@ -942,14 +942,14 @@ dev/
 
 ### Immutable Rules, Evolving Projects
 
-- **`aifp_core.db`** is the **rulebook** (read-only, global, version-controlled)
+- **`aimfp_core.db`** is the **rulebook** (read-only, global, version-controlled)
 - **`project.db`** is the **workspace** (read-write, per-project, runtime state)
 - **`user_preferences.db`** is the **customization layer** (read-write, per-project, AI behavior)
 - **Directives** define the boundaries; AI operates freely within them
 
 ### Database-Driven Context
 
-Traditional AI assistants lack persistent memory. AIFP solves this:
+Traditional AI assistants lack persistent memory. AIMFP solves this:
 
 ```
 -- AI remembers everything across sessions via helper tools
@@ -961,7 +961,7 @@ AI calls: get_project_status("detailed")
 
 ### Finite by Design
 
-Every AIFP project has a **completion path**:
+Every AIMFP project has a **completion path**:
 
 ```
 Setup → Core Development → Testing → Documentation → Finalization
@@ -986,9 +986,9 @@ Once `project_completion_check` passes, the project is **done**. No endless feat
 
 ### Token Overhead
 
-AIFP's project management adds token overhead to each session. Database operations (tracking files, updating tasks, managing milestones) consume tokens beyond the code-writing itself. We work to minimize this — continuation calls are lightweight (~2k tokens), batch helpers reduce round-trips, and all optional tracking is off by default.
+AIMFP's project management adds token overhead to each session. Database operations (tracking files, updating tasks, managing milestones) consume tokens beyond the code-writing itself. We work to minimize this — continuation calls are lightweight (~2k tokens), batch helpers reduce round-trips, and all optional tracking is off by default.
 
-The payoff comes with project scale. Without AIFP, every new session requires the AI to re-scan directories, re-read source files, and rebuild context from scratch — costs that grow with codebase size. With AIFP, the database provides instant structured context: the AI knows exactly which files exist, what functions they contain, where work left off, and what comes next. For projects beyond a handful of files, the up-front tracking cost is recovered many times over through eliminated re-discovery work.
+The payoff comes with project scale. Without AIMFP, every new session requires the AI to re-scan directories, re-read source files, and rebuild context from scratch — costs that grow with codebase size. With AIMFP, the database provides instant structured context: the AI knows exactly which files exist, what functions they contain, where work left off, and what comes next. For projects beyond a handful of files, the up-front tracking cost is recovered many times over through eliminated re-discovery work.
 
 ---
 
@@ -1000,17 +1000,17 @@ The payoff comes with project scale. Without AIFP, every new session requires th
 
 **Tool calls**:
 ```
-1. aifp_run(is_new_session=true)
+1. aimfp_run(is_new_session=true)
    → Returns: session bundle (directive names, settings, project status, supportive context)
-   → Status shows: .aifp-project/ missing — not initialized
+   → Status shows: .aimfp-project/ missing — not initialized
 
-2. aifp_init(project_root="/home/user/calculator")
+2. aimfp_init(project_root="/home/user/calculator")
    → Returns: { success: true, message: "Project initialized" }
 ```
 
 **What happens**:
-- AI detects no project exists and automatically calls `aifp_init` helper
-- Creates `.aifp-project/` directory with `project.db`, `user_preferences.db`, and `ProjectBlueprint.md`
+- AI detects no project exists and automatically calls `aimfp_init` helper
+- Creates `.aimfp-project/` directory with `project.db`, `user_preferences.db`, and `ProjectBlueprint.md`
 - Registers project metadata (name, root path, infrastructure)
 - Inserts default user settings and backup configuration
 - AI enters Phase 2: discusses project shape with user (infrastructure, purpose, goals)
@@ -1022,7 +1022,7 @@ The payoff comes with project scale. Without AIFP, every new session requires th
 
 **Tool calls**:
 ```
-1. aifp_run(is_new_session=false)
+1. aimfp_run(is_new_session=false)
    → Returns: lightweight guidance
 
 2. reserve_file(name="matrix_operations", path="src/matrix_operations.py", language="Python")
@@ -1052,13 +1052,13 @@ The payoff comes with project scale. Without AIFP, every new session requires th
 
 **Tool calls**:
 ```
-1. aifp_run(is_new_session=false)
+1. aimfp_run(is_new_session=false)
    → Returns: guidance + common starting points
 
    (AI answers from cached context — no additional DB calls needed
     unless context is stale, in which case:)
 
-2. aifp_status(type="detailed")
+2. aimfp_status(type="detailed")
    → Returns: project metadata, active milestone, current task, recent notes, warnings
 ```
 
@@ -1071,28 +1071,28 @@ The payoff comes with project scale. Without AIFP, every new session requires th
 
 ## Privacy Policy
 
-AIFP runs entirely on your local machine. **No data ever leaves your computer.**
+AIMFP runs entirely on your local machine. **No data ever leaves your computer.**
 
 - **No network requests**: The MCP server makes zero network calls. All operations are local SQLite database reads/writes and filesystem operations.
 - **No telemetry**: No usage analytics, crash reports, or diagnostic data is collected or transmitted.
-- **No third-party services**: AIFP does not connect to any external APIs, cloud services, or remote servers.
-- **Local data only**: All project data (databases, preferences, directives) is stored in your project's `.aifp-project/` directory. You own and control all data.
-- **No Claude memory access**: AIFP does not access or read Claude's conversation history, memory, or any other client-side data.
+- **No third-party services**: AIMFP does not connect to any external APIs, cloud services, or remote servers.
+- **Local data only**: All project data (databases, preferences, directives) is stored in your project's `.aimfp-project/` directory. You own and control all data.
+- **No Claude memory access**: AIMFP does not access or read Claude's conversation history, memory, or any other client-side data.
 
-If you have questions about data handling, please open an issue on our [GitHub repository](https://github.com/aryanduntley/AIFP).
+If you have questions about data handling, please open an issue on our [GitHub repository](https://github.com/aryanduntley/aimfp).
 
 ---
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/aryanduntley/AIFP/issues)
-- **Repository**: [github.com/aryanduntley/AIFP](https://github.com/aryanduntley/AIFP)
+- **Issues**: [GitHub Issues](https://github.com/aryanduntley/aimfp/issues)
+- **Repository**: [github.com/aryanduntley/aimfp](https://github.com/aryanduntley/aimfp)
 
 ---
 
 ## Contributing
 
-AIFP is an **open standard** for AI-optimized programming. Contributions welcome:
+AIMFP is an **open standard** for AI-optimized programming. Contributions welcome:
 
 1. **New FP directives** — Language-specific or advanced patterns
 2. **Helper functions** — Database, file, Git, or FP utilities
@@ -1109,7 +1109,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## Summary
 
-**AIFP transforms AI from a "code generator" into a structured, customizable project collaborator.**
+**AIMFP transforms AI from a "code generator" into a structured, customizable project collaborator.**
 
 It combines:
 - **Pure functional programming** for deterministic, composable code

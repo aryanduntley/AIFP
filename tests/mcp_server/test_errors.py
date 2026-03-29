@@ -1,11 +1,11 @@
 """
-Tests for aifp.mcp_server.errors
+Tests for aimfp.mcp_server.errors
 
 Verifies error codes match JSON-RPC spec and formatter functions
 produce expected output strings.
 """
 
-from aifp.mcp_server.errors import (
+from aimfp.mcp_server.errors import (
     PARSE_ERROR,
     INVALID_REQUEST,
     METHOD_NOT_FOUND,

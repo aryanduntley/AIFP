@@ -430,7 +430,7 @@
       "name": "meta_reflection",
       "description": "Adds machine-readable metadata to generated functions."
     },
-    "description": "Inserts structured metadata comments (# AIFP_METADATA) for functions, recording names, dependencies, and flow context. Guarantees traceability and alignment between code and project.db.",
+    "description": "Inserts structured metadata comments (# AIMFP_METADATA) for functions, recording names, dependencies, and flow context. Guarantees traceability and alignment between code and project.db.",
     "md_file_path": "directives/fp_metadata_annotation.md",
     "workflow": {
       "trunk": "generate_metadata_block",
@@ -454,7 +454,7 @@
     "roadblocks_json": [
       {
         "issue": "missing_metadata",
-        "resolution": "Insert AIFP_METADATA header"
+        "resolution": "Insert AIMFP_METADATA header"
       },
       {
         "issue": "mismatched_metadata",
@@ -521,7 +521,7 @@
       "name": "meta_reflection",
       "description": "Blocks use of reflection and runtime eval."
     },
-    "description": "Scans for reflection, dynamic eval, or code generation and prohibits them to preserve predictability. Prevents dynamic code execution violating AIFP determinism.",
+    "description": "Scans for reflection, dynamic eval, or code generation and prohibits them to preserve predictability. Prevents dynamic code execution violating AIMFP determinism.",
     "md_file_path": "directives/fp_reflection_block.md",
     "workflow": {
       "trunk": "scan_for_reflection",
@@ -675,7 +675,7 @@
     "roadblocks_json": [
       {
         "issue": "nonstandard_alias",
-        "resolution": "Replace with AIFP-standard function name"
+        "resolution": "Replace with AIMFP-standard function name"
       }
     ],
     "intent_keywords_json": [
@@ -693,7 +693,7 @@
       "name": "language_adaptation",
       "description": "Aligns reserved keyword differences across target languages."
     },
-    "description": "Ensures reserved keywords or naming collisions are adapted safely during translation or generation. Prevents syntax conflicts during multi-language AIFP translations.",
+    "description": "Ensures reserved keywords or naming collisions are adapted safely during translation or generation. Prevents syntax conflicts during multi-language AIMFP translations.",
     "md_file_path": "directives/fp_keyword_alignment.md",
     "workflow": {
       "trunk": "detect_keyword_conflicts",
@@ -739,7 +739,7 @@
       "name": "language_adaptation",
       "description": "Creates unified FP wrappers for cross-language interoperability."
     },
-    "description": "Automatically generates pure wrapper functions around language-specific libraries for consistent AIFP compliance. Maintains FP compliance across mixed-language projects. See examples/wrappers/ for reference implementations.",
+    "description": "Automatically generates pure wrapper functions around language-specific libraries for consistent AIMFP compliance. Maintains FP compliance across mixed-language projects. See examples/wrappers/ for reference implementations.",
     "md_file_path": "directives/fp_cross_language_wrappers.md",
     "workflow": {
       "trunk": "detect_foreign_imports",
@@ -781,7 +781,7 @@
       "name": "language_adaptation",
       "description": "Normalizes syntactic constructs across supported languages."
     },
-    "description": "Abstracts language-specific syntax differences into a uniform AIFP-friendly form. Allows directives to operate uniformly across multiple languages.",
+    "description": "Abstracts language-specific syntax differences into a uniform AIMFP-friendly form. Allows directives to operate uniformly across multiple languages.",
     "md_file_path": "directives/fp_syntax_normalization.md",
     "workflow": {
       "trunk": "analyze_syntax_tree",
@@ -1236,7 +1236,7 @@
       "name": "optimization",
       "description": "Records reasoning context for AI interpretability."
     },
-    "description": "Inserts trace comments linking function behavior to directive reasoning for debugging and explainability. Enhances transparency between AIFP reasoning and generated output for debugging.",
+    "description": "Inserts trace comments linking function behavior to directive reasoning for debugging and explainability. Enhances transparency between AIMFP reasoning and generated output for debugging.",
     "md_file_path": "directives/fp_ai_reasoning_trace.md",
     "workflow": {
       "trunk": "insert_trace_annotations",

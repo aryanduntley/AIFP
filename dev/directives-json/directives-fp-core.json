@@ -946,7 +946,7 @@
       "name": "introspection",
       "description": "Tracks relationships between functions for dependency mapping."
     },
-    "description": "Analyzes function call graphs and stores dependency metadata for reasoning and code generation alignment. Provides dependency awareness to improve AIFP’s reasoning efficiency.",
+    "description": "Analyzes function call graphs and stores dependency metadata for reasoning and code generation alignment. Provides dependency awareness to improve AIMFP’s reasoning efficiency.",
     "md_file_path": "directives/fp_dependency_tracking.md",
     "workflow": {
       "trunk": "trace_function_calls",
@@ -1424,7 +1424,7 @@
       "name": "introspection",
       "description": "Restricts reflection and dynamic code evaluation."
     },
-    "description": "Detects and disallows reflection, dynamic eval, or runtime metaprogramming constructs. Prevents runtime code generation that violates AIFP determinism.",
+    "description": "Detects and disallows reflection, dynamic eval, or runtime metaprogramming constructs. Prevents runtime code generation that violates AIMFP determinism.",
     "md_file_path": "directives/fp_reflection_limitation.md",
     "workflow": {
       "trunk": "scan_code_for_reflection",

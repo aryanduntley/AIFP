@@ -712,12 +712,12 @@
       "target_database": "user_preferences",
       "used_by_directives": [
         {
-          "directive_name": "aifp_run",
+          "directive_name": "aimfp_run",
           "execution_context": "new_session_startup",
           "sequence_order": 2,
           "is_required": false,
           "parameters_mapping": {},
-          "description": "Called by aifp_run when is_new_session=true - returns all user settings for session cache"
+          "description": "Called by aimfp_run when is_new_session=true - returns all user settings for session cache"
         }
       ]
     },
@@ -888,7 +888,7 @@
           "type": "string",
           "required": true,
           "default": null,
-          "description": "Helper function name (should match aifp_core.db helper_functions.name)"
+          "description": "Helper function name (should match aimfp_core.db helper_functions.name)"
         },
         {
           "name": "statement",
@@ -918,7 +918,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "Custom return statement added — will be merged with core return statements at runtime",
-        "Verify helper_name matches an existing helper in aifp_core.db for consistency",
+        "Verify helper_name matches an existing helper in aimfp_core.db for consistency",
         "To modify an existing statement: delete it first with delete_custom_return_statement, then set the new one"
       ],
       "target_database": "user_preferences",
@@ -1007,7 +1007,7 @@
     "status": "COMPLETE - All 26 helpers implemented",
     "mapped_helpers": 9,
     "unmapped_helpers": 17,
-    "note": "All helpers implemented in src/aifp/helpers/user_preferences/. Distribution: validation.py (1), schema.py (4), crud.py (6), management.py (15). 9 helpers mapped to user preference directives, 17 are generic AI query tools. Includes 1 sub-helper (get_custom_return_statements).",
+    "note": "All helpers implemented in src/aimfp/helpers/user_preferences/. Distribution: validation.py (1), schema.py (4), crud.py (6), management.py (15). 9 helpers mapped to user preference directives, 17 are generic AI query tools. Includes 1 sub-helper (get_custom_return_statements).",
     "total_mappings": 13,
     "last_updated": "2026-02-06",
     "changes": [

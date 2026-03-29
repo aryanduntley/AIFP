@@ -152,7 +152,7 @@
         "BLOCKED: Link this file to its flow(s) via add_file_to_flow(file_id, flow_id) or add_file_flows([(file_id, flow_id), ...]). A finalized file with 0 flow assignments is architecturally disconnected. Use get_all_flows() or get_task_flows(task_id) to identify the correct flow(s).",
         "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
         "After file write operations: route to git_sync_state directive to update last_known_git_hash",
-        "Call aifp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
+        "Call aimfp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -211,7 +211,7 @@
         "BLOCKED: Link ALL finalized files to their flow(s) via add_file_to_flow(file_id, flow_id) or add_file_flows([(file_id, flow_id), ...]). Finalized files with 0 flow assignments are architecturally disconnected. Use get_all_flows() or get_task_flows(task_id) to identify the correct flow(s).",
         "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
         "After file write operations: route to git_sync_state directive to update last_known_git_hash",
-        "Call aifp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
+        "Call aimfp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
       ],
       "target_database": "project",
       "used_by_directives": [],

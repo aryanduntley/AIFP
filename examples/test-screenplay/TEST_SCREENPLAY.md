@@ -1,6 +1,6 @@
-# AIFP MCP Server — Test Screenplay
+# AIMFP MCP Server — Test Screenplay
 
-**Purpose**: Step-by-step testing guide for verifying the AIFP MCP server works correctly end-to-end. Covers the full project lifecycle from installation through completion.
+**Purpose**: Step-by-step testing guide for verifying the AIMFP MCP server works correctly end-to-end. Covers the full project lifecycle from installation through completion.
 
 **Audience**: Developers testing before submission, and Anthropic reviewers evaluating the server.
 
@@ -22,17 +22,17 @@
 
 1. Install the MCPB bundle:
    - Open Claude Desktop
-   - File > Install Extension > select `aifp.mcpb`
-   - Or: drag `aifp.mcpb` onto the Claude Desktop window
+   - File > Install Extension > select `aimfp.mcpb`
+   - Or: drag `aimfp.mcpb` onto the Claude Desktop window
 
 2. Add the system prompt:
    - Open Claude Desktop Settings > Custom Instructions
-   - Paste the full contents of `sys-prompt/aifp_system_prompt.txt`
+   - Paste the full contents of `sys-prompt/aimfp_system_prompt.txt`
    - Save
 
 3. Create an empty test project folder:
    ```bash
-   mkdir ~/aifp-test-project
+   mkdir ~/aimfp-test-project
    ```
 
 4. Open Claude Desktop and start a new conversation.
@@ -41,45 +41,45 @@
 
 1. **Choose a scope**, then add the MCP server.
 
-   AIFP enforces a strict functional programming style and actively rejects OOP codebases. If you work on other projects that use OOP or don't need AIFP, avoid `--scope user` (which enables the server globally). Use `--scope project` or `--scope local` to keep AIFP active only where you want it.
+   AIMFP enforces a strict functional programming style and actively rejects OOP codebases. If you work on other projects that use OOP or don't need AIMFP, avoid `--scope user` (which enables the server globally). Use `--scope project` or `--scope local` to keep AIMFP active only where you want it.
 
    | Scope | Effect | Best for |
    |---|---|---|
    | `--scope project` (Recommended) | Creates `.mcp.json` in the current directory. Shareable via git. | Teams and per-project control |
    | `--scope local` | Stored in `~/.claude.json` keyed to the current directory. Private. | Personal per-project use |
-   | `--scope user` | Available in every project you open. | Developers who use AIFP for all projects |
+   | `--scope user` | Available in every project you open. | Developers who use AIMFP for all projects |
 
    Run the add command **from within the project folder** (for `project` or `local` scope):
 
    **pip install (system-wide):**
    ```bash
-   cd ~/aifp-test-project
-   claude mcp add --transport stdio --scope project aifp -- python3 -m aifp
+   cd ~/aimfp-test-project
+   claude mcp add --transport stdio --scope project aimfp -- python3 -m aimfp
    ```
 
    **pip install (virtual environment)** — use the venv's Python path directly:
    ```bash
-   claude mcp add --transport stdio --scope project aifp -- /path/to/venv/bin/python3 -m aifp
+   claude mcp add --transport stdio --scope project aimfp -- /path/to/venv/bin/python3 -m aimfp
    ```
    When Claude Code spawns the MCP server, it needs to use the venv's Python (which knows its own `site-packages`). A bare `python3` would resolve to the system Python, which won't have the package.
 
-   **Manual install or running from source** — set `PYTHONPATH` to the parent of the `aifp/` folder:
+   **Manual install or running from source** — set `PYTHONPATH` to the parent of the `aimfp/` folder:
    ```bash
-   claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/parent-of-aifp aifp -- python3 -m aifp
+   claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/parent-of-aimfp aimfp -- python3 -m aimfp
    ```
-   For example, if the package is at `~/mcp-servers/aifp/`, use `PYTHONPATH=~/mcp-servers`. If running from the repo, use `PYTHONPATH=/path/to/AIFP/src`.
+   For example, if the package is at `~/mcp-servers/aimfp/`, use `PYTHONPATH=~/mcp-servers`. If running from the repo, use `PYTHONPATH=/path/to/AIMFP/src`.
 
-   > **Note**: All flags (`--transport`, `--scope`, `--env`) must come **before** the server name `aifp`. The `--` separates the server name from the command.
+   > **Note**: All flags (`--transport`, `--scope`, `--env`) must come **before** the server name `aimfp`. The `--` separates the server name from the command.
 
 2. Create an empty test project folder:
    ```bash
-   mkdir ~/aifp-test-project
-   cd ~/aifp-test-project
+   mkdir ~/aimfp-test-project
+   cd ~/aimfp-test-project
    ```
 
 3. Add the system prompt to the project:
    ```bash
-   python3 -m aifp --system-prompt > ~/aifp-test-project/CLAUDE.md
+   python3 -m aimfp --system-prompt > ~/aimfp-test-project/CLAUDE.md
    ```
    This writes the built-in system prompt to `CLAUDE.md`. The system prompt is shipped with the package — no separate file or download needed.
 
@@ -91,8 +91,8 @@
 ### Verify MCP Connection
 
 Before starting, confirm the server is connected:
-- **Claude Desktop**: Check that AIFP tools appear in the tools list (hammer icon)
-- **Claude Code**: Run `/mcp` and verify the aifp server shows as connected
+- **Claude Desktop**: Check that AIMFP tools appear in the tools list (hammer icon)
+- **Claude Code**: Run `/mcp` and verify the aimfp server shows as connected
 
 If the server is not connected, check your configuration and try again before proceeding.
 
@@ -104,7 +104,7 @@ If the server is not connected, check your configuration and try again before pr
 **Language**: Python 3.11+
 **Description**: A pure functional library that converts temperatures between Celsius, Fahrenheit, and Kelvin, with input validation and formatted output.
 
-This project is intentionally simple so the test focuses on AIFP behavior, not code complexity.
+This project is intentionally simple so the test focuses on AIMFP behavior, not code complexity.
 
 ---
 
@@ -112,7 +112,7 @@ This project is intentionally simple so the test focuses on AIFP behavior, not c
 
 ### What You Say
 
-Start the conversation with a natural message. Do NOT mention any tool names or AIFP internals. Speak as a regular user:
+Start the conversation with a natural message. Do NOT mention any tool names or AIMFP internals. Speak as a regular user:
 
 ```
 I want to build a temperature converter in Python.
@@ -122,11 +122,11 @@ I want to build a temperature converter in Python.
 
 Claude should immediately and proactively:
 
-1. **Call `aifp_run(is_new_session=true)`** as its very first action — before analyzing your message, before responding. This is the #1 behavioral requirement.
+1. **Call `aimfp_run(is_new_session=true)`** as its very first action — before analyzing your message, before responding. This is the #1 behavioral requirement.
 
-2. **Detect no `.aifp-project/` directory** in the project folder and offer to initialize.
+2. **Detect no `.aimfp-project/` directory** in the project folder and offer to initialize.
 
-3. **Call `aifp_init`** after you confirm (or automatically if context is clear).
+3. **Call `aimfp_init`** after you confirm (or automatically if context is clear).
 
 4. **Report successful initialization** and transition into project discovery.
 
@@ -144,31 +144,31 @@ If Claude skips straight to initialization (proactive behavior), that is also ac
 After this act, check the following:
 
 **Files created:**
-- [ ] `.aifp-project/` directory exists in the test project folder
-- [ ] `.aifp-project/project.db` exists (SQLite database)
-- [ ] `.aifp-project/user_preferences.db` exists (SQLite database)
-- [ ] `.aifp-project/ProjectBlueprint.md` exists (template with `[BRACKET]` placeholders)
+- [ ] `.aimfp-project/` directory exists in the test project folder
+- [ ] `.aimfp-project/project.db` exists (SQLite database)
+- [ ] `.aimfp-project/user_preferences.db` exists (SQLite database)
+- [ ] `.aimfp-project/ProjectBlueprint.md` exists (template with `[BRACKET]` placeholders)
 
 **Database state** (optional — run these from terminal):
 ```bash
-cd ~/aifp-test-project
+cd ~/aimfp-test-project
 
 # Project table should have a row
-sqlite3 .aifp-project/project.db "SELECT name, status FROM project;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM project;"
 
 # Infrastructure should have default entries
-sqlite3 .aifp-project/project.db "SELECT type, value FROM infrastructure;"
+sqlite3 .aimfp-project/project.db "SELECT type, value FROM infrastructure;"
 
 # User settings should have defaults
-sqlite3 .aifp-project/user_preferences.db "SELECT setting_key, setting_value FROM user_settings;"
+sqlite3 .aimfp-project/user_preferences.db "SELECT setting_key, setting_value FROM user_settings;"
 
 # Tracking should all be disabled by default
-sqlite3 .aifp-project/user_preferences.db "SELECT feature_name, is_enabled FROM tracking_settings;"
+sqlite3 .aimfp-project/user_preferences.db "SELECT feature_name, is_enabled FROM tracking_settings;"
 ```
 
 **Behavioral checks:**
-- [ ] Claude called `aifp_run` FIRST (check tool call log)
-- [ ] Claude detected missing `.aifp-project/` and acted on it
+- [ ] Claude called `aimfp_run` FIRST (check tool call log)
+- [ ] Claude detected missing `.aimfp-project/` and acted on it
 - [ ] Claude did NOT wait passively for you to ask it to initialize
 - [ ] Claude transitioned to asking about the project (discovery phase)
 
@@ -178,7 +178,7 @@ sqlite3 .aifp-project/user_preferences.db "SELECT feature_name, is_enabled FROM 
 
 ### What Happens
 
-After initialization, the directive flow is: `aifp_init` -> `project_discovery`. Claude should begin a collaborative conversation to understand your project. It should ask about:
+After initialization, the directive flow is: `aimfp_init` -> `project_discovery`. Claude should begin a collaborative conversation to understand your project. It should ask about:
 
 - Project purpose and goals
 - Technical details (language, dependencies, structure)
@@ -283,26 +283,26 @@ Use your best judgment based on the project description.
 **Database state:**
 ```bash
 # Themes should exist
-sqlite3 .aifp-project/project.db "SELECT name, purpose FROM themes;"
+sqlite3 .aimfp-project/project.db "SELECT name, purpose FROM themes;"
 
 # Flows should exist
-sqlite3 .aifp-project/project.db "SELECT name FROM flows;"
+sqlite3 .aimfp-project/project.db "SELECT name FROM flows;"
 
 # Completion path should exist
-sqlite3 .aifp-project/project.db "SELECT name, status FROM completion_path;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM completion_path;"
 
 # Milestones should exist
-sqlite3 .aifp-project/project.db "SELECT name, status FROM milestones;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM milestones;"
 
 # NO tasks should exist yet (tasks are incremental)
-sqlite3 .aifp-project/project.db "SELECT COUNT(*) FROM tasks;"
+sqlite3 .aimfp-project/project.db "SELECT COUNT(*) FROM tasks;"
 # Expected: 0
 
 # Evolution notes should be logged
-sqlite3 .aifp-project/project.db "SELECT note_type, content FROM notes WHERE note_type='evolution' LIMIT 5;"
+sqlite3 .aimfp-project/project.db "SELECT note_type, content FROM notes WHERE note_type='evolution' LIMIT 5;"
 
 # Infrastructure should be populated
-sqlite3 .aifp-project/project.db "SELECT type, value FROM infrastructure WHERE type='language';"
+sqlite3 .aimfp-project/project.db "SELECT type, value FROM infrastructure WHERE type='language';"
 ```
 
 **Behavioral checks:**
@@ -319,7 +319,7 @@ sqlite3 .aifp-project/project.db "SELECT type, value FROM infrastructure WHERE t
 
 ### What Happens
 
-After discovery, the directive flow is: `project_discovery` -> `aifp_status` -> `project_progression`. Claude should:
+After discovery, the directive flow is: `project_discovery` -> `aimfp_status` -> `project_progression`. Claude should:
 
 1. Open the first milestone
 2. Create the first task for that milestone (with task items)
@@ -400,7 +400,7 @@ class TemperatureConverter:      # No classes with methods
 - [ ] Pure functions (same inputs -> same outputs)
 - [ ] No OOP patterns (no inheritance, no polymorphism)
 
-**AIFP Workflow:**
+**AIMFP Workflow:**
 - [ ] Claude reserved file name(s) before writing (check tool calls for `reserve_file`)
 - [ ] Claude reserved function name(s) before writing (check for `reserve_function`)
 - [ ] IDs are embedded in code names (filenames and/or function names have `_id_N`)
@@ -410,16 +410,16 @@ class TemperatureConverter:      # No classes with methods
 **Database state:**
 ```bash
 # Task should exist now
-sqlite3 .aifp-project/project.db "SELECT name, status FROM tasks;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM tasks;"
 
 # Files should be tracked
-sqlite3 .aifp-project/project.db "SELECT name, path, status FROM files;"
+sqlite3 .aimfp-project/project.db "SELECT name, path, status FROM files;"
 
 # Functions should be tracked
-sqlite3 .aifp-project/project.db "SELECT name, purity_level, status FROM functions;"
+sqlite3 .aimfp-project/project.db "SELECT name, purity_level, status FROM functions;"
 
 # Interactions should be tracked (function dependencies)
-sqlite3 .aifp-project/project.db "SELECT * FROM interactions LIMIT 5;"
+sqlite3 .aimfp-project/project.db "SELECT * FROM interactions LIMIT 5;"
 ```
 
 **Exception rules verified:**
@@ -443,7 +443,7 @@ Continue with the next task.
 1. Claude marks the previous task as complete
 2. If more work remains in the current milestone: creates the next task and continues
 3. If the milestone is complete: marks it complete and opens the next milestone
-4. The directive flow loops: `project_task_complete` -> (check milestone) -> `aifp_status` -> `project_progression` -> next task
+4. The directive flow loops: `project_task_complete` -> (check milestone) -> `aimfp_status` -> `project_progression` -> next task
 
 ### Mid-Project Status Check
 
@@ -453,7 +453,7 @@ At some point during development, ask:
 What's the current project status?
 ```
 
-Claude should answer from its existing context (NOT by calling aifp_status — its context shouldn't be stale yet). The response should include:
+Claude should answer from its existing context (NOT by calling aimfp_status — its context shouldn't be stale yet). The response should include:
 - Current milestone and its progress
 - Active task
 - Overall completion path progress
@@ -471,14 +471,14 @@ Claude should answer from its existing context (NOT by calling aifp_status — i
 **Database state:**
 ```bash
 # Multiple tasks should exist with various statuses
-sqlite3 .aifp-project/project.db "SELECT name, status FROM tasks;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM tasks;"
 
 # Multiple files and functions tracked
-sqlite3 .aifp-project/project.db "SELECT COUNT(*) FROM files;"
-sqlite3 .aifp-project/project.db "SELECT COUNT(*) FROM functions;"
+sqlite3 .aimfp-project/project.db "SELECT COUNT(*) FROM files;"
+sqlite3 .aimfp-project/project.db "SELECT COUNT(*) FROM functions;"
 
 # Milestones progressing
-sqlite3 .aifp-project/project.db "SELECT name, status FROM milestones;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM milestones;"
 ```
 
 ---
@@ -540,7 +540,7 @@ Claude writes tests in `tests/` directory:
 
 ### What Happens
 
-When all milestones are complete, the flow is: `aifp_status` -> `project_completion_check`. Claude should:
+When all milestones are complete, the flow is: `aimfp_status` -> `project_completion_check`. Claude should:
 
 1. Detect that all milestones are complete
 2. Run the completion check
@@ -559,18 +559,18 @@ I think we're done. Can you check if the project is complete?
 
 ```bash
 # All milestones should be complete
-sqlite3 .aifp-project/project.db "SELECT name, status FROM milestones;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM milestones;"
 # Expected: all 'complete'
 
 # All tasks should be complete
-sqlite3 .aifp-project/project.db "SELECT name, status FROM tasks WHERE status != 'complete';"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM tasks WHERE status != 'complete';"
 # Expected: 0 rows
 
 # Completion path stages should reflect progress
-sqlite3 .aifp-project/project.db "SELECT name, status FROM completion_path;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM completion_path;"
 
 # Notes should have a rich history
-sqlite3 .aifp-project/project.db "SELECT COUNT(*) FROM notes;"
+sqlite3 .aimfp-project/project.db "SELECT COUNT(*) FROM notes;"
 ```
 
 ---
@@ -585,14 +585,14 @@ End the session.
 
 ### What Should Happen
 
-Claude calls `aifp_end` which:
+Claude calls `aimfp_end` which:
 1. Audits the session (verifies DB state matches filesystem)
 2. Logs a session summary
 3. Confirms it's safe to close
 
 ### Verification
 
-- [ ] Claude called `aifp_end` (check tool calls)
+- [ ] Claude called `aimfp_end` (check tool calls)
 - [ ] Claude provided a session summary
 - [ ] No errors or warnings about untracked files
 
@@ -605,7 +605,7 @@ After completing all acts, verify the overall result:
 ### Project Structure
 
 ```
-~/aifp-test-project/
+~/aimfp-test-project/
 ├── src/
 │   ├── [conversion_file]_id_N.py      # Core conversion functions
 │   ├── [validation_file]_id_N.py      # Input validation (maybe)
@@ -614,7 +614,7 @@ After completing all acts, verify the overall result:
 ├── tests/
 │   ├── test_[something].py            # Test files
 │   └── ...
-├── .aifp-project/
+├── .aimfp-project/
 │   ├── project.db                      # Full project state
 │   ├── user_preferences.db             # Default preferences
 │   └── ProjectBlueprint.md             # Fully populated blueprint
@@ -641,35 +641,35 @@ Notes:
 ```bash
 # Full audit
 echo "=== Project ==="
-sqlite3 .aifp-project/project.db "SELECT name, status FROM project;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM project;"
 
 echo "=== Themes ==="
-sqlite3 .aifp-project/project.db "SELECT name, purpose FROM themes;"
+sqlite3 .aimfp-project/project.db "SELECT name, purpose FROM themes;"
 
 echo "=== Flows ==="
-sqlite3 .aifp-project/project.db "SELECT name FROM flows;"
+sqlite3 .aimfp-project/project.db "SELECT name FROM flows;"
 
 echo "=== Completion Path ==="
-sqlite3 .aifp-project/project.db "SELECT name, status FROM completion_path;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM completion_path;"
 
 echo "=== Milestones ==="
-sqlite3 .aifp-project/project.db "SELECT name, status FROM milestones;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM milestones;"
 
 echo "=== Tasks ==="
-sqlite3 .aifp-project/project.db "SELECT name, status FROM tasks;"
+sqlite3 .aimfp-project/project.db "SELECT name, status FROM tasks;"
 
 echo "=== Files ==="
-sqlite3 .aifp-project/project.db "SELECT name, path, status FROM files;"
+sqlite3 .aimfp-project/project.db "SELECT name, path, status FROM files;"
 
 echo "=== Functions ==="
-sqlite3 .aifp-project/project.db "SELECT name, purity_level FROM functions;"
+sqlite3 .aimfp-project/project.db "SELECT name, purity_level FROM functions;"
 
 echo "=== Notes ==="
-sqlite3 .aifp-project/project.db "SELECT COUNT(*) as total_notes FROM notes;"
-sqlite3 .aifp-project/project.db "SELECT note_type, COUNT(*) FROM notes GROUP BY note_type;"
+sqlite3 .aimfp-project/project.db "SELECT COUNT(*) as total_notes FROM notes;"
+sqlite3 .aimfp-project/project.db "SELECT note_type, COUNT(*) FROM notes GROUP BY note_type;"
 
 echo "=== Infrastructure ==="
-sqlite3 .aifp-project/project.db "SELECT type, value FROM infrastructure;"
+sqlite3 .aimfp-project/project.db "SELECT type, value FROM infrastructure;"
 ```
 
 Expected results:
@@ -686,7 +686,7 @@ Expected results:
 
 ### Blueprint Quality
 
-Open `.aifp-project/ProjectBlueprint.md` and verify:
+Open `.aimfp-project/ProjectBlueprint.md` and verify:
 - [ ] No `[BRACKET]` placeholders remain
 - [ ] Project Overview accurately describes the temperature converter
 - [ ] Technical Blueprint shows Python 3.11+ and FP paradigm
@@ -698,7 +698,7 @@ Open `.aifp-project/ProjectBlueprint.md` and verify:
 
 ## Troubleshooting
 
-### Claude does not call aifp_run first
+### Claude does not call aimfp_run first
 
 The system prompt must be properly loaded. Verify:
 - **Claude Desktop**: Check Custom Instructions contains the full system prompt
@@ -722,7 +722,7 @@ The reserve-finalize flow should happen automatically as part of `project_file_w
 
 Run the manual verification:
 ```bash
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | PYTHONPATH=/path/to/AIFP/src python3 -m aifp
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | PYTHONPATH=/path/to/AIMFP/src python3 -m aimfp
 ```
 
 You should receive a JSON response with server capabilities. Then test:
@@ -738,13 +738,13 @@ You should receive a JSON response with server capabilities. Then test:
 The complete directive flow for this test, in order:
 
 ```
-1. aifp_run(is_new_session=true)
-2. aifp_status  ──  detects no .aifp-project/
-3. aifp_init    ──  creates DBs, blueprint template
+1. aimfp_run(is_new_session=true)
+2. aimfp_status  ──  detects no .aimfp-project/
+3. aimfp_init    ──  creates DBs, blueprint template
 4. project_discovery  ──  interactive: blueprint, themes, flows, completion path, milestones
-5. aifp_status  ──  detects discovery complete, progression needed
+5. aimfp_status  ──  detects discovery complete, progression needed
 6. project_progression  ──  opens first milestone, creates first task
-7. aifp_status  ──  has incomplete items
+7. aimfp_status  ──  has incomplete items
 8. project_file_write  ──  reserve -> write FP code -> finalize -> update DB
 9. project_task_complete  ──  task done
 10. (repeat 6-9 for each task/milestone)
@@ -752,7 +752,7 @@ The complete directive flow for this test, in order:
 12. (repeat 6-11 for each milestone)
 13. project_completion_check  ──  all milestones done
 14. project_archive  ──  (optional) archive completed project
-15. aifp_end  ──  session audit and close
+15. aimfp_end  ──  session audit and close
 ```
 
-This is the happy path. Real sessions may include loops, status checks, and user-driven detours — all of which should route through `aifp_status` as the central hub.
+This is the happy path. Real sessions may include loops, status checks, and user-driven detours — all of which should route through `aimfp_status` as the central hub.

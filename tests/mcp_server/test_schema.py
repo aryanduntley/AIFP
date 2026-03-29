@@ -1,12 +1,12 @@
 """
-Tests for aifp.mcp_server.schema
+Tests for aimfp.mcp_server.schema
 
 Verifies JSON Schema generation from helper parameter definitions.
 """
 
 import json
 
-from aifp.mcp_server.schema import (
+from aimfp.mcp_server.schema import (
     PARAM_TYPE_MAP,
     map_param_type,
     param_to_schema_property,

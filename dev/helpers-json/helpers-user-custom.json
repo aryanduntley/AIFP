@@ -449,7 +449,7 @@
           "description": "Get active directives for status report"
         },
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "check_user_directive_status",
           "sequence_order": 16,
           "is_required": false,
@@ -880,7 +880,7 @@
         }
       ],
       "implementation_notes": [
-        "Requires project to be initialized first (.aifp-project/ must exist)",
+        "Requires project to be initialized first (.aimfp-project/ must exist)",
         "Loads user_directives.sql schema and executes it to create all 11 tables",
         "Returns success with table count on completion",
         "Idempotent guard: returns error if DB already exists (will not overwrite)",

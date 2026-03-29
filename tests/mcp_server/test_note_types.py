@@ -16,8 +16,8 @@ import sqlite3
 import tempfile
 import shutil
 
-from aifp.helpers.project._common import VALID_NOTE_TYPES as PROJECT_NOTE_TYPES
-from aifp.helpers.user_directives._common import VALID_NOTE_TYPES as UD_NOTE_TYPES
+from aimfp.helpers.project._common import VALID_NOTE_TYPES as PROJECT_NOTE_TYPES
+from aimfp.helpers.user_directives._common import VALID_NOTE_TYPES as UD_NOTE_TYPES
 
 
 # ============================================================================
@@ -54,7 +54,7 @@ def test_ud_valid_note_types_includes_obsolete():
 
 def _create_project_db():
     """Create a fresh project.db in temp dir for testing."""
-    from aifp.helpers.orchestrators.migration import _get_schema_path
+    from aimfp.helpers.orchestrators.migration import _get_schema_path
     tmp_dir = tempfile.mkdtemp()
     db_path = os.path.join(tmp_dir, "project.db")
     conn = sqlite3.connect(db_path)
@@ -132,7 +132,7 @@ def test_sql_rejects_invalid_note_type():
 
 def _create_ud_db():
     """Create a fresh user_directives.db in temp dir for testing."""
-    from aifp.helpers.orchestrators.migration import _get_schema_path
+    from aimfp.helpers.orchestrators.migration import _get_schema_path
     tmp_dir = tempfile.mkdtemp()
     db_path = os.path.join(tmp_dir, "user_directives.db")
     conn = sqlite3.connect(db_path)
@@ -266,14 +266,14 @@ def test_ud_schema_version_is_1_2():
 
 
 def test_core_schema_version_is_2_2():
-    from aifp.helpers.orchestrators._common import get_core_db_path
-    from aifp.helpers.orchestrators.migration import _get_db_version
+    from aimfp.helpers.orchestrators._common import get_core_db_path
+    from aimfp.helpers.orchestrators.migration import _get_db_version
     core_path = get_core_db_path()
     assert _get_db_version(core_path) == '2.2'
 
 
 def test_core_has_expected_schema_versions_table():
-    from aifp.helpers.orchestrators._common import get_core_db_path
+    from aimfp.helpers.orchestrators._common import get_core_db_path
     core_path = get_core_db_path()
     conn = sqlite3.connect(core_path)
     conn.row_factory = sqlite3.Row

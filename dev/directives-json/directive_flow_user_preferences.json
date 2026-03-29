@@ -31,7 +31,7 @@
   "flows": [
     {
       "id": 1,
-      "from_directive": "aifp_run",
+      "from_directive": "aimfp_run",
       "to_directive": "user_preferences_sync",
       "flow_type": "conditional",
       "condition_key": "directive_is_customizable",
@@ -50,7 +50,7 @@
     {
       "id": 2,
       "from_directive": "user_preferences_sync",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -61,7 +61,7 @@
     },
     {
       "id": 3,
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "user_preferences_update",
       "flow_type": "conditional",
       "condition_key": "user_requests_preference_change",
@@ -83,7 +83,7 @@
     {
       "id": 4,
       "from_directive": "user_preferences_update",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -126,7 +126,7 @@
     {
       "id": 7,
       "from_directive": "user_preferences_learn",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": "user_declines_learning",
       "condition_value": "true",
@@ -137,7 +137,7 @@
     },
     {
       "id": 8,
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "user_preferences_export",
       "flow_type": "conditional",
       "condition_key": "user_requests_export",
@@ -155,7 +155,7 @@
     {
       "id": 9,
       "from_directive": "user_preferences_export",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -166,7 +166,7 @@
     },
     {
       "id": 10,
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "user_preferences_import",
       "flow_type": "conditional",
       "condition_key": "user_requests_import",
@@ -184,7 +184,7 @@
     {
       "id": 11,
       "from_directive": "user_preferences_import",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -195,7 +195,7 @@
     },
     {
       "id": 12,
-      "from_directive": "aifp_status",
+      "from_directive": "aimfp_status",
       "to_directive": "tracking_toggle",
       "flow_type": "conditional",
       "condition_key": "user_requests_tracking_toggle",
@@ -222,7 +222,7 @@
     {
       "id": 13,
       "from_directive": "tracking_toggle",
-      "to_directive": "aifp_status",
+      "to_directive": "aimfp_status",
       "flow_type": "completion_loop",
       "condition_key": null,
       "condition_value": null,
@@ -241,7 +241,7 @@
       "condition_description": "Any directive can call project_notes_log to record clarifications or reasoning",
       "priority": 50,
       "description": "Log clarifications, reasoning, or directive context to project.db notes table",
-      "note": "project_notes_log is a utility directive called by other directives, not part of main workflow. No loop-back to aifp_status.",
+      "note": "project_notes_log is a utility directive called by other directives, not part of main workflow. No loop-back to aimfp_status.",
       "flow_category": "user_preferences"
     }
   ],
@@ -260,8 +260,8 @@
       "low_50_60": 2
     },
     "entry_points": {
-      "from_aifp_run": 1,
-      "from_aifp_status": 5,
+      "from_aimfp_run": 1,
+      "from_aimfp_status": 5,
       "from_code_writing": 1,
       "from_any_directive": 1
     }
@@ -269,13 +269,13 @@
   "workflow_patterns": {
     "preference_loading": {
       "description": "Load preferences before executing customizable directives",
-      "flow": "aifp_run \u2192 user_preferences_sync \u2192 aifp_status",
+      "flow": "aimfp_run \u2192 user_preferences_sync \u2192 aimfp_status",
       "frequency": "Every time a customizable directive is executed",
       "caching": "Preferences cached for session duration"
     },
     "explicit_update": {
       "description": "User explicitly requests preference change",
-      "flow": "aifp_status \u2192 user_preferences_update \u2192 aifp_status",
+      "flow": "aimfp_status \u2192 user_preferences_update \u2192 aimfp_status",
       "frequency": "Ad-hoc, when user wants to change behavior",
       "examples": [
         "User: 'Always add docstrings to functions'",
@@ -285,7 +285,7 @@
     },
     "learned_update": {
       "description": "AI learns preference from user corrections",
-      "flow": "code_writing \u2192 user_preferences_learn \u2192 [user confirms] \u2192 user_preferences_update \u2192 aifp_status",
+      "flow": "code_writing \u2192 user_preferences_learn \u2192 [user confirms] \u2192 user_preferences_update \u2192 aimfp_status",
       "frequency": "When AI detects correction pattern (opt-in)",
       "requirements": [
         "ai_interaction_log tracking must be enabled",
@@ -295,15 +295,15 @@
     "backup_restore": {
       "description": "Export/import preferences for portability",
       "flows": [
-        "aifp_status \u2192 user_preferences_export \u2192 aifp_status",
-        "aifp_status \u2192 user_preferences_import \u2192 aifp_status"
+        "aimfp_status \u2192 user_preferences_export \u2192 aimfp_status",
+        "aimfp_status \u2192 user_preferences_import \u2192 aimfp_status"
       ],
       "frequency": "Rarely, for backup or sharing across projects",
       "format": "JSON (includes directive_preferences and user_settings)"
     },
     "privacy_control": {
       "description": "User controls tracking features",
-      "flow": "aifp_status \u2192 tracking_toggle \u2192 aifp_status",
+      "flow": "aimfp_status \u2192 tracking_toggle \u2192 aimfp_status",
       "frequency": "Once per project (or when user changes privacy preference)",
       "default": "All tracking OFF by default",
       "granular_features": [

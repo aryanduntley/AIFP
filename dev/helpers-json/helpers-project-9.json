@@ -159,7 +159,7 @@
           "description": "Mark all incomplete items as completed when sidequest completes - batch completes remaining items"
         },
         {
-          "directive_name": "aifp_status",
+          "directive_name": "aimfp_status",
           "execution_context": "get_existing_project_status",
           "sequence_order": 14,
           "is_required": false,
@@ -585,7 +585,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "If not exists, AI should now create language-appropriate state_operations entry point using template at src/aifp/templates/state_db/state_operations.py as reference."
+        "If not exists, AI should now create language-appropriate state_operations entry point using template at src/aimfp/templates/state_db/state_operations.py as reference."
       ],
       "target_database": "project",
       "used_by_directives": [

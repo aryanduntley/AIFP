@@ -41,7 +41,7 @@ jobs:
 
     environment:
       name: release
-      url: https://pypi.org/project/aifp/${{ github.ref_name }}
+      url: https://pypi.org/project/aimfp/${{ github.ref_name }}
 
     steps:
       - name: Retrieve release distributions
