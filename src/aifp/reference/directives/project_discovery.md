@@ -69,7 +69,7 @@ Before starting the discovery conversation, assess what exists:
 
 **Action**: Collaborative blueprint population with user.
 
-This is a **conversation**, not a form fill. AI should ask open-ended questions and refine based on user responses.
+This is a **deep conversation**, not a form fill. AI should ask open-ended questions, think through logic gaps, and surface hidden connections. Shallow discovery creates compounding problems during implementation.
 
 **Steps**:
 1. Review current ProjectBlueprint.md (template or partially filled from init Phase 2)
@@ -78,10 +78,18 @@ This is a **conversation**, not a form fill. AI should ask open-ended questions 
    - What are the goals? (specific, achievable outcomes)
    - What is in scope vs out of scope?
    - Any constraints? (timeline, technology, compatibility)
-3. Fill out blueprint sections based on user responses
-4. Update ProjectBlueprint.md via `project_blueprint_update` helper
+3. **Second pass** — After the user describes the project, THINK through what they said:
+   - What components will this need that the user didn't mention?
+   - What data flows between parts? What edge cases exist?
+   - What future extensibility concerns should be raised now?
+   - What connections or dependencies might the user have missed?
+   Present findings with concrete choices — don't just list concerns, offer options:
+   "I see two approaches for X: (A) ... or (B) ... — which fits better?"
+   Assume the user will miss some details. Assume you will miss some on first pass.
+4. Fill out blueprint sections based on user responses
+5. Update ProjectBlueprint.md via `project_blueprint_update` helper
 
-**Key principle**: Ask, don't assume. The user knows their project better than AI.
+**Key principle**: Ask, don't assume. The user knows their project better than AI — but AI should actively help them think through what they haven't considered yet.
 
 ---
 

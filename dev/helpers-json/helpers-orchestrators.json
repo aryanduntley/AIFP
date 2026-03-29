@@ -22,7 +22,9 @@
         "DB-FIRST LOOKUP POLICY: Throughout this session, use get_function_by_name, get_type_by_name, get_file_by_name, get_functions_by_file to research existing code BEFORE reading source files. The project DB is a queryable index of all tracked files, functions, and types — use it as your first stop for lookups. Only read source files when the DB doesn't answer your question or you need implementation details beyond signatures.",
         "FLOWS & THEMES: Before starting work on any task, check get_all_flows() and get_all_themes() for relevant workflow descriptions. Flows describe the intended architecture and user-facing behavior your implementation should match.",
         "If data.migration.pending is non-empty, inform user and call migrate_databases(project_root) to upgrade project databases to current schema versions",
-        "If data.deferred_notes is non-empty, review deferred work items and consider whether any should be addressed in the current session"
+        "If data.deferred_notes is non-empty, review deferred work items and consider whether any should be addressed in the current session",
+        "NOTES REVIEW: Before starting any task or user request, search_notes(search_string=<relevant keywords>, exclude_note_types=['completed','obsolete']) for prior decisions, deferred work, or warnings. Empty = proceed. Hits = review before coding. When a reviewed note is already handled, update_note(id, note_type='completed' or 'obsolete') to keep notes clean.",
+        "TRACKING REMINDER: After ANY code change (even small fixes, param tweaks, refactors), review whether the change is database-worthy: file modified? function added/changed? parameters or return types altered? If YES — track immediately. Do not skip, do not ask, do not defer. 'Small' does not mean 'untracked.'"
       ],
       "implementation_notes": [
         "Returns: If is_new_session=true → bundles {status, user_settings, fp_directive_index, all_directive_names[], infrastructure_data, guidance, watchdog: {started, start_error, status, reminders[], notice}}",

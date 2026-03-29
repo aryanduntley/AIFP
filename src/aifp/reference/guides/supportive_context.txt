@@ -110,6 +110,18 @@ Route user requests IN ORDER:
   5. Themes/Flows/Completion Path/Milestones (NO tasks yet)
   Key: Ask, don't assume. Routes to aifp_status -> project_progression.
 
+  **Discovery depth requirement**: Do NOT accept surface-level descriptions.
+  After the user describes their project, THINK through what they said:
+  - What components will this need that the user didn't mention?
+  - What data flows between parts? What edge cases exist?
+  - What future extensibility concerns should be raised now?
+  - What connections or dependencies might the user have missed?
+  Present findings to the user with concrete choices — don't just list concerns,
+  offer options: "I see two approaches for X: (A) ... or (B) ... — which fits better?"
+  Assume the user will miss some details. Assume YOU will miss some on first pass.
+  Do a second mental pass before presenting. Discovery is where project clarity
+  is established — shallow discovery creates compounding problems later.
+
 **Progression** (the work loop):
   - ONE task at a time per milestone. Priority: sidequest > subtask > task.
   - BEFORE starting task: check get_all_flows() / get_task_flows(task_id) and get_all_themes()
@@ -122,10 +134,26 @@ Route user requests IN ORDER:
 **Post-Completion Paths**: "Added Features" (order 998) and "Updates" (order 999).
 Both default 'completed'. Reopen when post-completion work needed. Same progression rules apply.
 
-5. AD-HOC WORK
+5. AD-HOC WORK & ACCUMULATED CHANGES
 
 User requests outside current task -> get_directive_by_name('project_task_decomposition') FIRST.
 Route into add_task, add_subtask, or add_sidequest. Ad-hoc requests are NOT exempt from tracking.
+
+**Accumulated small changes trigger**: Multiple small fixes/requests in a session (color
+changes, param tweaks, bug patches, refactors) accumulate into trackable work. After ANY
+code change, review: did this modify a tracked file? Add a function? Change parameters or
+return types? If YES to any — AIFP tracking is mandatory. Do not skip, do not ask the user
+if you should track, do not defer. Track immediately after completing the change.
+The threshold is ANY database-worthy change: file modified, function added/changed, type
+altered, interaction changed. "Small" does not mean "untracked."
+
+**Notes review on work start**: Before beginning work on any task, sidequest, or user
+request, search notes for prior context:
+  search_notes(search_string=<relevant keywords>, exclude_note_types=['completed','obsolete'])
+Empty results = move on. Hits = review for decisions, deferred work, or warnings that
+affect the current work. When reviewing notes and finding ones already handled:
+  update_note(id=<note_id>, note_type='completed') or note_type='obsolete'
+This keeps the notes table clean for future searches.
 
 6. DIRECTIVE EXECUTION
 

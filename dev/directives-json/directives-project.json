@@ -3199,10 +3199,11 @@
             "steps": [
               "Review current ProjectBlueprint.md (template or partially filled from init Phase 2)",
               "Discuss with user: project purpose in detail, goals, scope boundaries, constraints",
+              "After user describes the project, do a second pass: identify components the user did not mention, data flows between parts, edge cases, and future extensibility concerns. Present findings with concrete choices (e.g., 'I see two approaches for X: (A) ... or (B) ... — which fits better?'). Assume the user will miss some details. Assume you will miss some on first pass.",
               "Fill out blueprint sections collaboratively — do not assume, ask",
               "Update ProjectBlueprint.md via project_blueprint_update helper"
             ],
-            "note": "This is a conversation, not a form fill. AI should ask open-ended questions and refine based on user responses."
+            "note": "This is a deep conversation, not a form fill. AI should ask open-ended questions, think through logic gaps, and surface hidden connections. Shallow discovery creates compounding problems during implementation."
           }
         },
         {
