@@ -590,9 +590,12 @@ def aimfp_run(is_new_session: bool = False) -> Result:
         # Cache project root for helper functions
         set_project_root(project_root)
 
-        # Watchdog: read persisted reminders first, then kill previous and start fresh
-        watchdog_read = _read_reminders(project_root)
+        # Watchdog: start subprocess first (skip reconciliation — we run it here),
+        # then run reconciliation synchronously to eliminate race condition,
+        # then read reminders (now includes reconciliation results).
         watchdog_start = _start_watchdog(project_root)
+        _run_reconciliation_sync(project_root)
+        watchdog_read = _read_reminders(project_root)
         watchdog_data = {
             'started': watchdog_start.get('started', False),
             'start_error': watchdog_start.get('error'),
@@ -712,7 +715,7 @@ def _start_watchdog(project_root: str) -> Dict[str, Any]:
     try:
         os.makedirs(watchdog_dir, exist_ok=True)
         subprocess.Popen(
-            [sys.executable, '-m', 'aimfp.watchdog', project_root],
+            [sys.executable, '-m', 'aimfp.watchdog', project_root, '--skip-reconciliation'],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -723,6 +726,22 @@ def _start_watchdog(project_root: str) -> Dict[str, Any]:
             'error': f"Watchdog failed to start: {str(e)}. "
                      "Verify the watchdog module is installed (aimfp.watchdog package).",
         }
+
+
+def _run_reconciliation_sync(project_root: str) -> None:
+    """
+    Effect: Run watchdog reconciliation synchronously.
+
+    Called from aimfp_run before reading reminders so that startup
+    reconciliation results are immediately available — eliminates
+    the race condition where the async subprocess writes reminders
+    after aimfp_run has already read the file.
+    """
+    try:
+        from ...watchdog.reconciliation import run_startup_reconciliation
+        run_startup_reconciliation(project_root)
+    except Exception:
+        pass  # Non-critical — subprocess fallback will catch issues
 
 
 def _read_reminders(project_root: str) -> Dict[str, Any]:

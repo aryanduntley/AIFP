@@ -8,13 +8,11 @@ from project.db and user_preferences.db, then monitors the source
 directory for changes.
 """
 
-import json
 import os
 import signal
 import sys
 import time
 
-from ..database.connection import _effect_query_one, _effect_query_all
 from ..wrappers.file_ops import _effect_write_text, _effect_ensure_dir
 from .config import (
     get_watchdog_dir,
@@ -25,66 +23,13 @@ from .config import (
     build_exclusion_sets,
     get_function_pattern,
 )
-from .reminders import _effect_append_reminders
 from .watcher import _effect_start_watching
-from .analyzers import (
-    _effect_get_all_finalized_file_paths,
-    _effect_get_all_known_file_paths,
-    reconcile_deleted_files,
-    reconcile_unregistered_files,
+from .reconciliation import (
+    _read_infrastructure_value,
+    _read_user_exclusions,
+    run_startup_reconciliation,
 )
 from ..wrappers.filesystem_observer import _effect_stop_observer
-
-
-def _read_infrastructure_value(project_db_path: str, infra_type: str) -> str:
-    """Effect: Read a single value from the infrastructure table."""
-    row = _effect_query_one(
-        project_db_path,
-        "SELECT value FROM infrastructure WHERE type = ?",
-        (infra_type,),
-    )
-    return row['value'] if row and row.get('value') else ''
-
-
-def _read_user_exclusions(prefs_db_path: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    """
-    Effect: Read user exclusion settings from user_preferences.db.
-
-    Returns (excluded_dirs, excluded_extensions) as tuples of strings.
-    """
-    user_dirs: tuple[str, ...] = ()
-    user_exts: tuple[str, ...] = ()
-
-    if not os.path.isfile(prefs_db_path):
-        return (user_dirs, user_exts)
-
-    row = _effect_query_one(
-        prefs_db_path,
-        "SELECT setting_value FROM user_settings WHERE setting_key = ?",
-        ('watchdog_excluded_dirs',),
-    )
-    if row and row.get('setting_value'):
-        try:
-            parsed = json.loads(row['setting_value'])
-            if isinstance(parsed, list):
-                user_dirs = tuple(str(d) for d in parsed)
-        except json.JSONDecodeError:
-            pass
-
-    row = _effect_query_one(
-        prefs_db_path,
-        "SELECT setting_value FROM user_settings WHERE setting_key = ?",
-        ('watchdog_excluded_extensions',),
-    )
-    if row and row.get('setting_value'):
-        try:
-            parsed = json.loads(row['setting_value'])
-            if isinstance(parsed, list):
-                user_exts = tuple(str(e) for e in parsed)
-        except json.JSONDecodeError:
-            pass
-
-    return (user_dirs, user_exts)
 
 
 def main() -> None:
@@ -136,21 +81,9 @@ def main() -> None:
     # AI explicitly calls clear_watchdog() after handling them.
     reminders_path = get_reminders_path(project_root)
 
-    # Reconciliation scan: detect files deleted between sessions
-    finalized_files = _effect_get_all_finalized_file_paths(project_db_path)
-    if finalized_files:
-        deletion_reminders = reconcile_deleted_files(finalized_files, project_root)
-        if deletion_reminders:
-            _effect_append_reminders(reminders_path, deletion_reminders)
-
-    # Reconciliation scan: detect unregistered files on disk
-    all_db_paths = _effect_get_all_known_file_paths(project_db_path)
-    unregistered_reminders = reconcile_unregistered_files(
-        source_directory, project_root, all_db_paths,
-        excluded_dirs, excluded_extensions,
-    )
-    if unregistered_reminders:
-        _effect_append_reminders(reminders_path, unregistered_reminders)
+    # Reconciliation scan: skip if aimfp_run already ran it synchronously
+    if '--skip-reconciliation' not in sys.argv:
+        run_startup_reconciliation(project_root)
 
     # Start observer
     observer = _effect_start_watching(
