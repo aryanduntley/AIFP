@@ -68,6 +68,7 @@ def make_iso_timestamp() -> str:
 def _effect_process_file_event(
     event: FileEvent,
     source_dir: str,
+    project_root: str,
     project_db_path: str,
     reminders_path: str,
     function_pattern: Optional[Pattern[str]],
@@ -80,7 +81,7 @@ def _effect_process_file_event(
     3. Run function diff if applicable
     4. Write reminders
     """
-    relative_path = get_relative_path(event.src_path, source_dir)
+    relative_path = get_relative_path(event.src_path, project_root)
 
     # Check if file is reserved (mid-reserve-finalize flow) — skip
     if _effect_is_file_reserved(project_db_path, relative_path):
@@ -133,11 +134,12 @@ def _effect_process_file_event(
 def _effect_process_delete_event(
     event: FileEvent,
     source_dir: str,
+    project_root: str,
     project_db_path: str,
     reminders_path: str,
 ) -> None:
     """Effect: Process a file deletion event."""
-    relative_path = get_relative_path(event.src_path, source_dir)
+    relative_path = get_relative_path(event.src_path, project_root)
     db_file_row = _effect_get_file_by_path(project_db_path, relative_path)
     is_registered = db_file_row is not None
 
@@ -152,6 +154,7 @@ def _effect_process_delete_event(
 
 def _effect_create_event_callback(
     source_dir: str,
+    project_root: str,
     project_db_path: str,
     reminders_path: str,
     function_pattern: Optional[Pattern[str]],
@@ -181,12 +184,13 @@ def _effect_create_event_callback(
         # Route by event type
         if event.event_type in (EVENT_MODIFIED, EVENT_CREATED):
             _effect_process_file_event(
-                event, source_dir, project_db_path,
+                event, source_dir, project_root, project_db_path,
                 reminders_path, function_pattern,
             )
         elif event.event_type == EVENT_DELETED:
             _effect_process_delete_event(
-                event, source_dir, project_db_path, reminders_path,
+                event, source_dir, project_root,
+                project_db_path, reminders_path,
             )
         elif event.event_type == EVENT_MOVED:
             # Treat as delete + create
@@ -197,7 +201,8 @@ def _effect_create_event_callback(
                     is_directory=event.is_directory,
                     timestamp=event.timestamp,
                 ),
-                source_dir, project_db_path, reminders_path,
+                source_dir, project_root,
+                project_db_path, reminders_path,
             )
             if event.dest_path is not None:
                 _effect_process_file_event(
@@ -207,7 +212,7 @@ def _effect_create_event_callback(
                         is_directory=event.is_directory,
                         timestamp=event.timestamp,
                     ),
-                    source_dir, project_db_path,
+                    source_dir, project_root, project_db_path,
                     reminders_path, function_pattern,
                 )
 
@@ -216,6 +221,7 @@ def _effect_create_event_callback(
 
 def _effect_start_watching(
     source_dir: str,
+    project_root: str,
     project_db_path: str,
     reminders_path: str,
     function_pattern: Optional[Pattern[str]],
@@ -229,7 +235,7 @@ def _effect_start_watching(
     stopping it via _effect_stop_observer.
     """
     on_event, _ = _effect_create_event_callback(
-        source_dir, project_db_path, reminders_path,
+        source_dir, project_root, project_db_path, reminders_path,
         function_pattern, excluded_dirs, excluded_extensions,
     )
     return _effect_create_observer(source_dir, on_event, recursive=True)

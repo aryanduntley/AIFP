@@ -263,7 +263,7 @@ def _effect_get_all_finalized_file_paths(
 
 def reconcile_deleted_files(
     finalized_files: Tuple[Dict[str, Any], ...],
-    source_dir: str,
+    project_root: str,
 ) -> Tuple[Dict[str, str], ...]:
     """
     Pure: Check all finalized file paths against disk.
@@ -273,7 +273,8 @@ def reconcile_deleted_files(
 
     Args:
         finalized_files: Tuples of {id, path} from the files table
-        source_dir: Absolute path to the project source directory
+        project_root: Absolute path to the project root directory
+            (DB paths are stored relative to project_root)
 
     Returns:
         Tuple of reminder dicts for missing files
@@ -285,7 +286,7 @@ def reconcile_deleted_files(
         relative_path = file_row.get('path', '')
         if not relative_path:
             continue
-        absolute_path = os.path.join(source_dir, relative_path)
+        absolute_path = os.path.join(project_root, relative_path)
         if not os.path.isfile(absolute_path):
             reminders.append(create_reminder(
                 REMINDER_FILE_DELETED,

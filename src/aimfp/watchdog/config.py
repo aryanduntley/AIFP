@@ -178,6 +178,10 @@ def should_exclude(
     if basename.endswith('~') or basename.startswith('.#'):
         return True
 
+    # Atomic write temp files (e.g. file.ts.tmp.322162.1774839388035)
+    if '.tmp.' in basename:
+        return True
+
     _, ext = os.path.splitext(file_path)
     if ext.lower() in excluded_extensions:
         return True

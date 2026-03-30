@@ -134,13 +134,14 @@ def main() -> None:
     # Reconciliation scan: detect files deleted between sessions
     finalized_files = _effect_get_all_finalized_file_paths(project_db_path)
     if finalized_files:
-        deletion_reminders = reconcile_deleted_files(finalized_files, source_directory)
+        deletion_reminders = reconcile_deleted_files(finalized_files, project_root)
         if deletion_reminders:
             _effect_append_reminders(reminders_path, deletion_reminders)
 
     # Start observer
     observer = _effect_start_watching(
         source_dir=source_directory,
+        project_root=project_root,
         project_db_path=project_db_path,
         reminders_path=reminders_path,
         function_pattern=function_pattern,
