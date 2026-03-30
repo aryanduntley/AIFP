@@ -25,7 +25,8 @@
         "If data.deferred_notes is non-empty, review deferred work items and consider whether any should be addressed in the current session",
         "NOTES REVIEW: Before starting any task or user request, search_notes(search_string=<relevant keywords>, exclude_note_types=['completed','obsolete']) for prior decisions, deferred work, or warnings. Empty = proceed. Hits = review before coding. When a reviewed note is already handled, update_note(id, note_type='completed' or 'obsolete') to keep notes clean.",
         "TRACKING REMINDER: After ANY code change (even small fixes, param tweaks, refactors), review whether the change is database-worthy: file modified? function added/changed? parameters or return types altered? If YES — track immediately. Do not skip, do not ask, do not defer. 'Small' does not mean 'untracked.'",
-        "MODULES: Review modules_summary[] for code boundary awareness. Each module has name, path, purpose, and file_count. When modifying files, respect module boundaries — use get_module_for_file() to check membership and get_module_dependencies() to understand cross-module impacts."
+        "MODULES: Review modules_summary[] for code boundary awareness. Each module has name, path, purpose, and file_count. When modifying files, respect module boundaries — use get_module_for_file() to check membership and get_module_dependencies() to understand cross-module impacts.",
+        "WATCHDOG REMINDERS: If watchdog.reminders is non-empty, review and handle each finding (deleted files, unregistered files, missing functions). Once all reminders have been addressed, call clear_watchdog() to acknowledge and clear them. Reminders persist until cleared — do not ignore them."
       ],
       "implementation_notes": [
         "Returns: If is_new_session=true → bundles {status, user_settings, fp_directive_index, all_directive_names[], modules_summary[], infrastructure_data, guidance, watchdog: {started, start_error, status, reminders[], notice}}",
@@ -641,11 +642,25 @@
           "description": "aimfp_end directive calls aimfp_end helper to gather session audit data — AI interprets returned data and performs compliance checks, identifies gaps, generates summary"
         }
       ]
+    },
+    {
+      "name": "clear_watchdog",
+      "file_path": "helpers/orchestrators/entry_points.py",
+      "parameters": [],
+      "purpose": "Clear watchdog reminders after they have been reviewed and handled. Reminders persist in .aimfp-project/watchdog/reminders.json until this is called. Call after addressing all watchdog findings (file deletions, unregistered files, etc.).",
+      "error_handling": "Returns error if project root not established",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Watchdog reminders cleared. Resume normal workflow."
+      ],
+      "target_database": "no_db",
+      "used_by_directives": []
     }
   ],
   "metadata": {
     "file": "helpers-orchestrators.json",
-    "count": 13,
+    "count": 14,
     "status": "updated 2026-01-31 - moved get_supportive_context to helpers-index.json (not an orchestrator)",
     "last_updated": "2026-01-31",
     "changes": [

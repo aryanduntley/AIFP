@@ -249,3 +249,50 @@ def _effect_update_file_timestamp(
         "UPDATE files SET updated_at = ? WHERE id = ?",
         (new_timestamp, file_id),
     )
+
+
+def _effect_get_all_finalized_file_paths(
+    project_db_path: str,
+) -> Tuple[Dict[str, Any], ...]:
+    """Effect: Get all finalized (non-reserved) files with their paths."""
+    return _effect_query_all(
+        project_db_path,
+        "SELECT id, path FROM files WHERE is_reserved = 0",
+    )
+
+
+def reconcile_deleted_files(
+    finalized_files: Tuple[Dict[str, Any], ...],
+    source_dir: str,
+) -> Tuple[Dict[str, str], ...]:
+    """
+    Pure: Check all finalized file paths against disk.
+
+    Returns deletion reminders for files registered in DB but missing from disk.
+    Called at watchdog startup to catch files deleted between sessions.
+
+    Args:
+        finalized_files: Tuples of {id, path} from the files table
+        source_dir: Absolute path to the project source directory
+
+    Returns:
+        Tuple of reminder dicts for missing files
+    """
+    import os
+
+    reminders = []
+    for file_row in finalized_files:
+        relative_path = file_row.get('path', '')
+        if not relative_path:
+            continue
+        absolute_path = os.path.join(source_dir, relative_path)
+        if not os.path.isfile(absolute_path):
+            reminders.append(create_reminder(
+                REMINDER_FILE_DELETED,
+                SEVERITY_WARNING,
+                relative_path,
+                f"DB-registered file no longer exists on disk. "
+                f"Detected during startup reconciliation — file was likely "
+                f"deleted outside AIMFP tracking. Consider updating database records.",
+            ))
+    return tuple(reminders)

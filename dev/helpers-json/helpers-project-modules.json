@@ -345,6 +345,48 @@
           "description": "Search for modules during file_write module gate"
         }
       ]
+    },
+    {
+      "name": "add_files_to_module",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "links", "type": "array", "required": true, "description": "List of [file_id, module_id] tuples to assign"}
+      ],
+      "purpose": "Batch assign multiple files to modules. More efficient than multiple add_file_to_module calls. Skips duplicates silently, fails fast on missing entities.",
+      "error_handling": "Returns error on empty list or missing file/module IDs. Skips existing assignments with skipped_count.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Files assigned to modules. Proceed with function/type finalization and interaction tracking.",
+        "If any files import external libraries that the module wraps: verify the module's external_dependencies field includes them."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "batch_module_assignment_after_finalize",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "After finalizing multiple files, batch assign them to their modules"
+        }
+      ]
+    },
+    {
+      "name": "remove_files_from_module",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "links", "type": "array", "required": true, "description": "List of [file_id, module_id] tuples to remove"}
+      ],
+      "purpose": "Batch remove multiple files from modules. More efficient than multiple remove_file_from_module calls. Skips non-existent entries, reports modules left empty.",
+      "error_handling": "Returns error on empty list or missing module IDs. Reports emptied modules in empty_modules field.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If empty_modules is non-empty: consider deleting empty modules via delete_module or reassigning files."
+      ],
+      "target_database": "project",
+      "used_by_directives": []
     }
   ]
 }

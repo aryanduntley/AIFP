@@ -22,6 +22,8 @@ Helpers in this file:
 - delete_module: Delete module (cascade removes module_files entries)
 - add_file_to_module: Assign a file to a module
 - remove_file_from_module: Remove a file from a module
+- add_files_to_module: Batch assign multiple files to modules
+- remove_files_from_module: Batch remove multiple files from modules
 - get_module_files: Get all files assigned to a module
 - get_module_functions: Get all functions in module files
 - get_module_types: Get all types in module files
@@ -195,6 +197,18 @@ class UnassignedFilesResult:
     """Result of unassigned files query."""
     success: bool
     files: Tuple[FileInModuleRecord, ...] = ()
+    error: Optional[str] = None
+    return_statements: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ModuleFilesBatchResult:
+    """Result of batch add/remove file-to-module operations."""
+    success: bool
+    added_count: int = 0
+    removed_count: int = 0
+    skipped_count: int = 0
+    empty_modules: Tuple[str, ...] = ()
     error: Optional[str] = None
     return_statements: Tuple[str, ...] = ()
 
@@ -477,6 +491,15 @@ def _count_module_files_effect(conn: sqlite3.Connection, module_id: int) -> int:
         (module_id,),
     )
     return cursor.fetchone()["cnt"]
+
+
+def _check_module_file_exists(conn: sqlite3.Connection, module_id: int, file_id: int) -> bool:
+    """Effect: Check if a module_files junction entry already exists."""
+    cursor = conn.execute(
+        "SELECT 1 FROM module_files WHERE module_id = ? AND file_id = ?",
+        (module_id, file_id),
+    )
+    return cursor.fetchone() is not None
 
 
 # ============================================================================
@@ -1038,6 +1061,152 @@ def search_modules(search_string: str) -> ModulesQueryResult:
 
     except Exception as e:
         return ModulesQueryResult(success=False, error=f"Search failed: {str(e)}")
+
+    finally:
+        conn.close()
+
+
+def add_files_to_module(
+    links: List[Tuple[int, int]],
+) -> ModuleFilesBatchResult:
+    """
+    Assign multiple files to modules in batch (module_files junction).
+
+    More efficient than multiple single add_file_to_module calls.
+    Skips duplicates silently. Fails fast on missing entities.
+
+    Args:
+        links: List of (file_id, module_id) tuples to create
+
+    Returns:
+        ModuleFilesBatchResult with added/skipped counts
+    """
+    if not links:
+        return ModuleFilesBatchResult(
+            success=False,
+            error="Links list cannot be empty",
+        )
+
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        added = 0
+        skipped = 0
+
+        for file_id, module_id in links:
+            if not _check_file_exists(conn, file_id):
+                return ModuleFilesBatchResult(
+                    success=False,
+                    error=f"File with ID {file_id} not found",
+                )
+
+            if not _check_entity_exists(conn, "modules", module_id):
+                return ModuleFilesBatchResult(
+                    success=False,
+                    error=f"Module with ID {module_id} not found",
+                )
+
+            if _check_module_file_exists(conn, module_id, file_id):
+                skipped += 1
+                continue
+
+            _add_file_to_module_effect(conn, module_id, file_id)
+            added += 1
+
+        return ModuleFilesBatchResult(
+            success=True,
+            added_count=added,
+            skipped_count=skipped,
+            return_statements=get_return_statements("add_files_to_module"),
+        )
+
+    except Exception as e:
+        return ModuleFilesBatchResult(
+            success=False,
+            error=f"Batch assign failed: {str(e)}",
+        )
+
+    finally:
+        conn.close()
+
+
+def remove_files_from_module(
+    links: List[Tuple[int, int]],
+) -> ModuleFilesBatchResult:
+    """
+    Remove multiple files from modules in batch (module_files junction).
+
+    More efficient than multiple single remove_file_from_module calls.
+    Skips entries that don't exist. Reports modules left empty.
+
+    Args:
+        links: List of (file_id, module_id) tuples to remove
+
+    Returns:
+        ModuleFilesBatchResult with removed/skipped counts and empty_modules warnings
+    """
+    if not links:
+        return ModuleFilesBatchResult(
+            success=False,
+            error="Links list cannot be empty",
+        )
+
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        removed = 0
+        skipped = 0
+        affected_module_ids: set = set()
+
+        for file_id, module_id in links:
+            if not _check_entity_exists(conn, "modules", module_id):
+                return ModuleFilesBatchResult(
+                    success=False,
+                    error=f"Module with ID {module_id} not found",
+                )
+
+            if not _check_module_file_exists(conn, module_id, file_id):
+                skipped += 1
+                continue
+
+            _remove_file_from_module_effect(conn, module_id, file_id)
+            removed += 1
+            affected_module_ids.add(module_id)
+
+        # Check for emptied modules
+        empty_modules: list = []
+        for mid in affected_module_ids:
+            remaining = _count_module_files_effect(conn, mid)
+            if remaining == 0:
+                module_row = conn.execute(
+                    "SELECT name FROM modules WHERE id = ?", (mid,)
+                ).fetchone()
+                if module_row:
+                    empty_modules.append(
+                        f"Module '{module_row['name']}' (id={mid}) now has 0 files"
+                    )
+
+        stmts = get_return_statements("remove_files_from_module")
+        if empty_modules:
+            stmts = tuple(empty_modules) + (
+                "Consider deleting empty modules via delete_module or reassigning files.",
+            ) + stmts
+
+        return ModuleFilesBatchResult(
+            success=True,
+            removed_count=removed,
+            skipped_count=skipped,
+            empty_modules=tuple(empty_modules),
+            return_statements=stmts,
+        )
+
+    except Exception as e:
+        return ModuleFilesBatchResult(
+            success=False,
+            error=f"Batch remove failed: {str(e)}",
+        )
 
     finally:
         conn.close()

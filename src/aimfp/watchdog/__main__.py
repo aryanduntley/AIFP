@@ -25,8 +25,9 @@ from .config import (
     build_exclusion_sets,
     get_function_pattern,
 )
-from .reminders import _effect_clear_reminders
+from .reminders import _effect_append_reminders
 from .watcher import _effect_start_watching
+from .analyzers import _effect_get_all_finalized_file_paths, reconcile_deleted_files
 from ..wrappers.filesystem_observer import _effect_stop_observer
 
 
@@ -126,9 +127,16 @@ def main() -> None:
     pid_path = get_pid_path(project_root)
     _effect_write_text(pid_path, str(os.getpid()))
 
-    # Clear reminders (fresh start)
+    # Reminders file — do NOT clear on startup; reminders persist until
+    # AI explicitly calls clear_watchdog() after handling them.
     reminders_path = get_reminders_path(project_root)
-    _effect_clear_reminders(reminders_path)
+
+    # Reconciliation scan: detect files deleted between sessions
+    finalized_files = _effect_get_all_finalized_file_paths(project_db_path)
+    if finalized_files:
+        deletion_reminders = reconcile_deleted_files(finalized_files, source_directory)
+        if deletion_reminders:
+            _effect_append_reminders(reminders_path, deletion_reminders)
 
     # Start observer
     observer = _effect_start_watching(

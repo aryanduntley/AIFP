@@ -549,7 +549,7 @@ def aimfp_run(is_new_session: bool = False) -> Result:
                     return_statements=get_return_statements("aimfp_run"),
                 )
 
-            watchdog_data = _read_and_clear_reminders(project_root)
+            watchdog_data = _read_reminders(project_root)
             reminders = watchdog_data.get('reminders', ())
 
             if not reminders:
@@ -564,8 +564,8 @@ def aimfp_run(is_new_session: bool = False) -> Result:
                 data={
                     'watchdog': watchdog_data,
                     'notice': (
-                        'These watchdog reminders have been cleared and will not be shown again. '
-                        'Review and handle any actionable items now.'
+                        'Watchdog reminders found. Review and handle actionable items, '
+                        'then call clear_watchdog() to acknowledge and clear them.'
                     ),
                 },
                 return_statements=get_return_statements("aimfp_run"),
@@ -590,9 +590,9 @@ def aimfp_run(is_new_session: bool = False) -> Result:
         # Cache project root for helper functions
         set_project_root(project_root)
 
-        # Watchdog: kill previous, start fresh, read any accumulated reminders
+        # Watchdog: read persisted reminders first, then kill previous and start fresh
+        watchdog_read = _read_reminders(project_root)
         watchdog_start = _start_watchdog(project_root)
-        watchdog_read = _read_and_clear_reminders(project_root)
         watchdog_data = {
             'started': watchdog_start.get('started', False),
             'start_error': watchdog_start.get('error'),
@@ -677,8 +677,9 @@ def _start_watchdog(project_root: str) -> Dict[str, Any]:
     """
     Effect: Start watchdog subprocess for the project.
 
-    Kills any existing watchdog process, clears old reminders,
-    then starts a new watchdog subprocess.
+    Kills any existing watchdog process, then starts a new watchdog
+    subprocess. Does NOT clear reminders — that is handled by
+    _read_and_clear_reminders after reading, ensuring persistence.
 
     Returns:
         dict with {started: bool, error: str or None}
@@ -687,12 +688,10 @@ def _start_watchdog(project_root: str) -> Dict[str, Any]:
     import subprocess
     import sys
 
-    from ...watchdog.config import get_watchdog_dir, get_pid_path, get_reminders_path
-    from ...watchdog.reminders import _effect_clear_reminders
+    from ...watchdog.config import get_watchdog_dir, get_pid_path
 
     watchdog_dir = get_watchdog_dir(project_root)
     pid_path = get_pid_path(project_root)
-    reminders_path = get_reminders_path(project_root)
 
     # Kill existing watchdog if running
     if os.path.isfile(pid_path):
@@ -707,10 +706,9 @@ def _start_watchdog(project_root: str) -> Dict[str, Any]:
         except OSError:
             pass
 
-    # Clear old reminders
-    _effect_clear_reminders(reminders_path)
-
     # Start new watchdog subprocess (inherits parent lifecycle)
+    # Note: reminders are NOT cleared here — _read_and_clear_reminders handles that
+    # after reading, so previous-session findings persist until consumed.
     try:
         os.makedirs(watchdog_dir, exist_ok=True)
         subprocess.Popen(
@@ -727,9 +725,13 @@ def _start_watchdog(project_root: str) -> Dict[str, Any]:
         }
 
 
-def _read_and_clear_reminders(project_root: str) -> Dict[str, Any]:
+def _read_reminders(project_root: str) -> Dict[str, Any]:
     """
-    Effect: Read watchdog reminders and clear the file.
+    Effect: Read watchdog reminders WITHOUT clearing them.
+
+    Reminders persist until explicitly cleared via clear_watchdog().
+    This ensures findings survive across sessions even if the AI
+    doesn't process them immediately.
 
     Returns:
         dict with {
@@ -739,7 +741,7 @@ def _read_and_clear_reminders(project_root: str) -> Dict[str, Any]:
         }
     """
     from ...watchdog.config import get_reminders_path, get_pid_path
-    from ...watchdog.reminders import _effect_read_reminders, _effect_clear_reminders
+    from ...watchdog.reminders import _effect_read_reminders
 
     pid_path = get_pid_path(project_root)
     reminders_path = get_reminders_path(project_root)
@@ -765,8 +767,6 @@ def _read_and_clear_reminders(project_root: str) -> Dict[str, Any]:
         }
 
     reminders = _effect_read_reminders(reminders_path)
-    if reminders:
-        _effect_clear_reminders(reminders_path)
     return {
         'status': 'ok',
         'reminders': reminders,
@@ -1007,3 +1007,45 @@ def _stop_watchdog(aimfp_dir: str) -> Dict[str, Any]:
     _effect_clear_reminders(reminders_file)
 
     return {'stopped': stopped, 'final_reminders': final_reminders}
+
+
+def clear_watchdog() -> Result:
+    """
+    Clear watchdog reminders after they have been reviewed and handled.
+
+    Reminders persist in .aimfp-project/watchdog/reminders.json until
+    this function is called. Call after reviewing and addressing all
+    watchdog findings (file deletions, unregistered files, etc.).
+
+    Returns:
+        Result with data={cleared: bool, count: int}
+    """
+    from ...watchdog.config import get_reminders_path
+    from ...watchdog.reminders import _effect_read_reminders, _effect_clear_reminders
+
+    try:
+        project_root = get_cached_project_root()
+    except RuntimeError:
+        return Result(
+            success=False,
+            data={'cleared': False, 'count': 0},
+            error="Project root not established. Call aimfp_run first.",
+        )
+
+    reminders_path = get_reminders_path(project_root)
+
+    if not os.path.isfile(reminders_path):
+        return Result(
+            success=True,
+            data={'cleared': True, 'count': 0},
+        )
+
+    existing = _effect_read_reminders(reminders_path)
+    count = len(existing)
+    _effect_clear_reminders(reminders_path)
+
+    return Result(
+        success=True,
+        data={'cleared': True, 'count': count},
+        return_statements=get_return_statements("clear_watchdog"),
+    )

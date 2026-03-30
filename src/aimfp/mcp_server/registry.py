@@ -4,7 +4,7 @@ AIMFP MCP Server - Tool Registry
 Static dict mapping tool names to (module_path, function_name) tuples.
 Uses importlib for lazy loading — modules are only imported on first call.
 
-219 is_tool=true helpers registered. Generated from aimfp_core.db.
+222 is_tool=true helpers registered. Generated from aimfp_core.db.
 
 Why static, not DB-driven:
 - Predictable tool list, no runtime DB dependency for tool listing
@@ -85,6 +85,7 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     # ── Orchestrators ────────────────────────────────────────────────────
     # helpers/orchestrators/entry_points.py (4 tools)
     "aimfp_end": ("aimfp.helpers.orchestrators.entry_points", "aimfp_end"),
+    "clear_watchdog": ("aimfp.helpers.orchestrators.entry_points", "clear_watchdog"),
     "aimfp_init": ("aimfp.helpers.orchestrators.entry_points", "aimfp_init"),
     "aimfp_run": ("aimfp.helpers.orchestrators.entry_points", "aimfp_run"),
     "aimfp_status": ("aimfp.helpers.orchestrators.entry_points", "aimfp_status"),
@@ -251,7 +252,7 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "swap_completion_paths_order": ("aimfp.helpers.project.themes_flows_2", "swap_completion_paths_order"),
 
     # ── Project: Modules ─────────────────────────────────────────────────
-    # helpers/project/modules.py (15 tools)
+    # helpers/project/modules.py (17 tools)
     "add_module": ("aimfp.helpers.project.modules", "add_module"),
     "get_module_by_name": ("aimfp.helpers.project.modules", "get_module_by_name"),
     "get_module_by_path": ("aimfp.helpers.project.modules", "get_module_by_path"),
@@ -260,6 +261,8 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "delete_module": ("aimfp.helpers.project.modules", "delete_module"),
     "add_file_to_module": ("aimfp.helpers.project.modules", "add_file_to_module"),
     "remove_file_from_module": ("aimfp.helpers.project.modules", "remove_file_from_module"),
+    "add_files_to_module": ("aimfp.helpers.project.modules", "add_files_to_module"),
+    "remove_files_from_module": ("aimfp.helpers.project.modules", "remove_files_from_module"),
     "get_module_files": ("aimfp.helpers.project.modules", "get_module_files"),
     "get_module_functions": ("aimfp.helpers.project.modules", "get_module_functions"),
     "get_module_types": ("aimfp.helpers.project.modules", "get_module_types"),
