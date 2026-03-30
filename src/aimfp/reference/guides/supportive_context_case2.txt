@@ -1,0 +1,24 @@
+AIMFP Supportive Context — Use Case 2 (Custom Directive Automation)
+Load via: get_supportive_context(variant='case2')
+
+1. USE CASE 2 OVERVIEW
+
+  Custom directive automation: 9 user_directive_* directives.
+  Pipeline: parse → validate → implement → approve → activate → monitor → update → deactivate → status.
+  Detection: automation BEHAVIOR signals ("when X do Y") vs software BUILD signals ("a web server").
+  Implementation phase uses standard Case 1 development (file tracking, tasks, milestones).
+
+2. USE CASE 2 WORKFLOW
+
+  project_discovery (Case 2) → conversational onboarding
+  user_directive_parse → user_directive_validate → status='in_progress'
+  user_directive_implement (uses standard WORK LOOP from core context)
+  user_directive_approve → user_directive_activate → status='active'
+  user_directive_monitor | user_directive_update (changes trigger full re-pipeline)
+
+3. PREFERENCES REFERENCE
+
+  Atomic key-value overrides per directive: add_directive_preference(directive_name, key, value).
+  Tracking features ALL OFF by default. Don't mention tracking to regular users.
+
+END CASE 2 CONTEXT

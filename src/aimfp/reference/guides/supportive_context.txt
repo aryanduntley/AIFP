@@ -1,241 +1,113 @@
-AIMFP SUPPORTIVE CONTEXT
+AIMFP Supportive Context — Core Reference (get_supportive_context tool)
 
-Supplements the system prompt. Loaded on session start via aimfp_run(is_new_session=true).
-Reload anytime via get_supportive_context() if context feels stale or compressed.
+  1. Modular — domain logic in reusable modules
+  2. Functional Procedural — pure functions, immutability, no OOP (NON-NEGOTIABLE)
+  3. Directive-Driven — workflows loaded from DB, not memory
+  4. Database-Driven — DB is source of truth
+Four databases: aimfp_core.db (read-only directives/helpers), project.db (files/functions/tasks), user_preferences.db (settings), user_directives.db (Case 2 only).
 
-What AIMFP is in three principles:
-  1. Functional Procedural — all code must be FP-compliant (NON-NEGOTIABLE)
-  2. Directive-Driven — workflows loaded from DB tell you WHEN and WHAT
-  3. Database-Driven — DB is source of truth, not your memory
-Four databases: aimfp_core.db (read-only directives/helpers), project.db (files/functions/tasks), user_preferences.db (settings), user_directives.db (Case 2 automation only).
+1. FULL WORKFLOW (directive names in context — use get_directive_by_name() for steps)
 
-1. FULL WORKFLOW EXAMPLE (reference — rely on directives for definitive steps)
+  user: "help me create a calculator"
 
-Example: user says "help me create a calculator"
+  SESSION START
+    1. aimfp_run(is_new_session=true) → full bundle (status, settings, supportive context, watchdog)
+       .aimfp-project/ missing → offer aimfp_init or restore from backup
+       .aimfp-project/ exists → read status → present next actions
+       project_continue_on_start=true → auto-continue; otherwise → await user direction
+    2. From bundle: cache project status, settings, supportive context
+    3. Need directive details? → get_directive_by_name(name)
+    4. Need directive routing? → get_flows_from_directive(name)
 
-PHASE: SESSION START
-  1. has context? no -> aimfp_run(is_new_session=true) -> full bundle
-     has context? yes -> aimfp_run(is_new_session=false) -> lightweight guidance
-  2. from bundle: cache directive names, settings, project status, supportive context
-  3. need directive details? -> get_directive_by_name(directive_name, project_root)
-  4. need directive routing? -> get_flows_from_directive(directive_name)
+  INITIALIZATION (new project only — get_supportive_context(variant='init') for detail)
+    5. aimfp_init(project_root) → creates dirs, DBs, blueprint template, .git if missing
+    6. AI detects language/tools, prompts user → create_project() → update infrastructure
+    7. project_discovery → blueprint, themes, flows, completion path, milestones (NO tasks)
+       Pre-existing FP code? → project_catalog first
+    8. Routes to aimfp_status → project_progression
 
-PHASE: INITIALIZATION (status shows .aimfp-project/ missing)
-  5. route: aimfp_status -> aimfp_init
-  6. call aimfp_init(project_root) -> creates dirs, DBs, blueprint template, .git if missing
-  7. AI detects language/tools, prompts user for name/purpose/goals
-     -> create_project(name, purpose, goals, status, version)
-     -> update_source_directory, update infrastructure entries, populate ProjectBlueprint.md
-  8. route: aimfp_init -> project_discovery
-  9. discovery: git_init, blueprint refinement, themes, flows, completion path, milestones (NO tasks)
-     -> add_note(note_type='evolution', directive_name='project_discovery')
-  10. route: project_discovery -> aimfp_status -> project_progression
+  WORK LOOP (project_progression state machine)
+    9. get_all_completion_paths → activate first open path
+    10. get_milestones_by_completion_path → activate first open milestone
+    11. Create ONE task: add_task(milestone_id, name, flow_ids, priority)
+        Create items: add_project_entry(table='items', data={reference_table:'tasks', ...})
+    12. Work on items (get_supportive_context(variant='coding') for file loop detail):
+        a. reserve_file → search_modules for overlap → write FP code → finalize_file
+        b. reserve functions → finalize functions (purpose, parameters, returns populated)
+        c. add_file_to_flow, add_file_to_module (if domain logic), add_interactions, add_types_functions
+        d. Item done → update_project_entry(table='items', id, data={status:'completed'})
+    13. All items done → project_task_complete → update_task(status='completed')
+    14. More tasks? → create next (goto 11). No → project_milestone_complete
+    15. More milestones? → activate next (goto 10). No → project_completion_check → done
+        Alternative: update_project_state(project_root, action, target_type, target_id, data)
 
-PHASE: WORK LOOP (project_progression state machine)
-  11. get_all_completion_paths -> activate first open path
-  12. get_milestones_by_completion_path -> activate first open milestone
-  13. create ONE task: add_task(milestone_id, name, flow_ids, priority)
-      create items: add_project_entry(table='items', data={reference_table:'tasks', ...})
-  14. work on items:
-      a. reserve_file -> write code -> finalize_file
-      b. reserve functions -> write FP code -> finalize functions
-      c. add_file_to_flow, add_file_to_module (if domain logic), add_interactions, add_types_functions
-      d. item done -> update_project_entry(table='items', id, data={status:'completed'})
-  15. all items done -> update_task(id, status='completed')
-  16. more tasks? -> create next (goto 13). No -> update_milestone(id, status='completed')
-  17. more milestones? -> activate next (goto 12). No -> update_completion_path(id, status='completed')
-  18. more paths? -> activate next (goto 11). No -> project_completion_check -> done
+  MID-WORK CHANGES
+    16. Scope/goals change → update blueprint → add_note(note_type='evolution')
+    17. Unexpected work → add_sidequest(paused_task_id, flow_ids, name, priority='critical')
+    18. Related sub-work → add_subtask(name, parent_task_id, priority='high')
 
-  Alternative: update_project_state(project_root, action, target_type, target_id, data) for milestone, task or path changes
+  USER PREFERENCE CHANGES
+    19. Directive behavior change → user_preferences_update → add_directive_preference()
+    20. Project-wide setting → add_user_setting / update_user_setting → add_note
 
-PHASE: MID-WORK CHANGES
-  19. scope/goals change -> update blueprint -> add_note(note_type='evolution')
-  20. unexpected work -> add_sidequest(paused_task_id, flow_ids, name, priority='critical')
-  21. related sub-work -> add_subtask(name, parent_task_id, priority='high')
+  SESSION MANAGEMENT
+    aimfp_run(is_new_session=false) → watchdog alerts only (at work checkpoints)
+    aimfp_status() → fresh state. Call when you can't recall milestone + active task.
+    get_supportive_context(variant) → reload reference material on demand.
+    Task completion gate: get_task_context(task_id) → verify every finalized file has tracked functions.
+    aimfp_end → audit, stop watchdog, log summary.
 
-PHASE: USER PREFERENCE CHANGES
-  22. directive behavior change -> get_directive_by_name('user_preferences_update')
-      -> add_directive_preference(directive_name, key, value) -> add_note(note_type='decision')
-  23. project-wide setting -> add_user_setting / update_user_setting -> add_note
-  24. custom helper extension -> set_custom_return_statement(helper_name, statement) -> add_note
+2. USER REQUEST ROUTING
 
-PHASE: USE CASE 2 (if detected during discovery)
-  25. project_discovery (Case 2) -> conversational onboarding
-  26. user_directive_parse -> user_directive_validate -> status='in_progress'
-  27. user_directive_implement (uses WORK LOOP above)
-  28. user_directive_approve -> user_directive_activate -> status='active'
-  29. user_directive_monitor | user_directive_update (changes trigger full re-pipeline)
+  Route IN ORDER:
+  1. Matches existing task/sidequest/subtask → continue progression
+  2. NEW ad-hoc work → project_task_decomposition → create task/sidequest FIRST
+  3. Needs a directive workflow → get_directive_by_name(name) FIRST → follow steps
+  4. Needs code research → get_file_by_name / get_function_by_name / get_interactions_by_function FIRST
+  5. Status/continue/resume → answer from context, call aimfp_status() only if stale
 
-2. SESSION MANAGEMENT
+3. AD-HOC WORK & ACCUMULATED CHANGES
 
-**Startup** (no context):
-  aimfp_run(is_new_session=true) -> full bundle (status, settings, directives, supportive context, guidance)
-  .aimfp-project/ missing -> check backup -> offer restore or aimfp_init
-  .aimfp-project/ exists -> read blueprint -> present status + next actions
-  project_continue_on_start=true -> auto-continue; otherwise -> await user direction
+  User requests outside current task → project_task_decomposition FIRST.
+  Multiple small fixes/requests accumulate into trackable work. After ANY code change:
+  did this modify a tracked file? Add a function? Change params/returns/types?
+  If YES → AIMFP tracking mandatory immediately. "Small" ≠ "untracked."
 
-**Continuation** (during session):
-  aimfp_run(is_new_session=false) -> watchdog alerts only (at work checkpoints)
-  Returns empty when nothing to report. Return_statements on checkpoint helpers remind you.
+4. NOTES REVIEW ON WORK START
 
-**Mid-session refresh** (AI-initiated):
-  aimfp_status() -> fresh state. get_supportive_context() -> reload this reference.
-  Staleness check: can't recall current milestone + active task? -> call aimfp_status().
+  Before beginning any task/sidequest/user request:
+    search_notes(search_string=<keywords>, exclude_note_types=['completed','obsolete'])
+  Empty = move on. Hits = review for decisions, deferred work, warnings.
+  Handled notes → update_note(note_type='completed' or 'obsolete')
 
-**Task completion gate**:
-  get_task_context(task_id) -> verify every finalized file has tracked functions.
-  Zero functions on code file = incomplete. Deferred work: create follow-up task + add_note.
+5. DIRECTIVE EXECUTION
 
-**Session End**: aimfp_end -> audit, stop watchdog, log summary.
+  ALWAYS load before executing: get_directive_by_name(name).
+  Pattern: trunk (main analysis) → branches (conditional) → fallback.
+  Deep context: get_directive_content(name). Directive flows ≠ project flows.
 
-**DB policy**: helpers FIRST -> orchestrators -> directives -> direct SQL (last resort, reads only).
-Exception: user_directives.db allows free SQL.
+6. FP DIRECTIVES & STATE DATABASE
 
-3. USER REQUEST ROUTING
+  66 FP directives in 18 categories. Find with get_fp_directive_index() or search_directives(type='fp', keyword='...').
+  Key categories: purity, immutability, error_handling, composition, side_effects, anti_oop, type_system, testing.
+  State database: auto-created via create_state_database. Replaces mutable globals (set_var, get_var, delete_var, increment_var).
 
-Route user requests IN ORDER:
-1. Matches existing task/sidequest/subtask -> continue progression
-2. NEW ad-hoc work -> get_directive_by_name('project_task_decomposition') -> create task/sidequest FIRST
-3. Needs a directive workflow -> get_directive_by_name(name) FIRST -> follow steps
-4. Needs code research -> get_file_by_name / get_function_by_name / get_interactions_by_function FIRST
-5. Status/continue/resume -> answer from context, call aimfp_status() only if stale
+7. GIT & EVOLUTION NOTES
 
-4. PROJECT DISCOVERY & PROGRESSION
+  Branch naming: aimfp-{user}-{number}. Git directives: git_init, git_detect_external_changes, git_create_branch, git_detect_conflicts, git_merge_branch, git_sync_state.
+  Any change to blueprint/paths/themes/flows/milestones MUST have add_note(note_type='evolution').
 
-**Discovery** (after init, before coding):
-  1. Assess state (pre-existing code? blueprint status?)
-  2. If pre-existing FP code: delegate to project_catalog first
-  3. Blueprint: discuss purpose, goals, scope, constraints with user
-  4. Infrastructure: confirm detected values, create state database
-  5. Themes/Flows/Completion Path/Milestones (NO tasks yet)
-  Key: Ask, don't assume. Routes to aimfp_status -> project_progression.
+8. EDGE CASES & RECOVERY
 
-  **Discovery depth requirement**: Do NOT accept surface-level descriptions.
-  After the user describes their project, THINK through what they said:
-  - What components will this need that the user didn't mention?
-  - What data flows between parts? What edge cases exist?
-  - What future extensibility concerns should be raised now?
-  - What connections or dependencies might the user have missed?
-  Present findings to the user with concrete choices — don't just list concerns,
-  offer options: "I see two approaches for X: (A) ... or (B) ... — which fits better?"
-  Assume the user will miss some details. Assume YOU will miss some on first pass.
-  Do a second mental pass before presenting. Discovery is where project clarity
-  is established — shallow discovery creates compounding problems later.
+  Lost context? aimfp_status() → fresh state. get_supportive_context() → reload reference.
+  search_directives(keyword="...") → find the right directive. aimfp_run(is_new_session=true) → full reload.
+  Non-FP projects: STOP and REJECT. AIMFP is FP-only.
+  DB policy: helpers FIRST → orchestrators → directives → direct SQL (last resort, reads only). Exception: user_directives.db.
 
-**Progression** (the work loop):
-  - ONE task at a time per milestone. Priority: sidequest > subtask > task.
-  - BEFORE starting task: check get_all_flows() / get_task_flows(task_id) and get_all_themes()
-  - DURING task: DB-first for ALL code questions (get_file_by_name, get_function_by_name,
-    get_interactions_by_function, then source files ONLY for implementation details)
-  - For fuzzy lookups: search_functions(search_string), search_types(search_string)
-  - Task complete -> check milestone -> create next task or next milestone
-  - Tasks created incrementally, NOT all at once
+9. ADDITIONAL CONTEXT (auto-provided, reload on demand via get_supportive_context(variant=X))
 
-**Post-Completion Paths**: "Added Features" (order 998) and "Updates" (order 999).
-Both default 'completed'. Reopen when post-completion work needed. Same progression rules apply.
-
-5. AD-HOC WORK & ACCUMULATED CHANGES
-
-User requests outside current task -> get_directive_by_name('project_task_decomposition') FIRST.
-Route into add_task, add_subtask, or add_sidequest. Ad-hoc requests are NOT exempt from tracking.
-
-**Accumulated small changes trigger**: Multiple small fixes/requests in a session (color
-changes, param tweaks, bug patches, refactors) accumulate into trackable work. After ANY
-code change, review: did this modify a tracked file? Add a function? Change parameters or
-return types? If YES to any — AIMFP tracking is mandatory. Do not skip, do not ask the user
-if you should track, do not defer. Track immediately after completing the change.
-The threshold is ANY database-worthy change: file modified, function added/changed, type
-altered, interaction changed. "Small" does not mean "untracked."
-
-**Notes review on work start**: Before beginning work on any task, sidequest, or user
-request, search notes for prior context:
-  search_notes(search_string=<relevant keywords>, exclude_note_types=['completed','obsolete'])
-Empty results = move on. Hits = review for decisions, deferred work, or warnings that
-affect the current work. When reviewing notes and finding ones already handled:
-  update_note(id=<note_id>, note_type='completed') or note_type='obsolete'
-This keeps the notes table clean for future searches.
-
-6. DIRECTIVE EXECUTION
-
-ALWAYS load directives before executing: get_directive_by_name(name).
-Do NOT execute from memory — directives evolve and the database is the source of truth.
-
-Execution order: load directive -> user preferences auto-loaded (if customizable) -> execute steps -> return.
-Pattern: trunk (main analysis) -> branches (conditional paths) -> fallback (default if no branch matches).
-
-Deep context: get_directive_content(name) for full MD docs (edge cases, examples, cross-directive relationships).
-Directive flows: get_flows_from_directive(name) for "what directive comes next" navigation.
-Note: "Directive flows" (navigation) are separate from "project flows" (architecture in project.db).
-
-7. FILE CODING LOOP
-
-reserve file -> reserve functions+types (PUBLIC only) -> write FP code with _id_XX names
--> finalize file -> assign to flow(s) -> assign to module (if domain logic: add_file_to_module) -> finalize functions+types -> add interactions -> add types_functions
-
-Batch helpers: reserve_files, finalize_files, add_file_flows, add_interactions, add_types_functions.
-Skip ID naming for: __init__.py, .db, pyproject.toml, setup.py, conftest.py.
-Private functions (_underscore): do NOT reserve or track.
-
-INTERACTIONS: after finalizing functions, add_interaction for every cross-function dependency.
-Types: 'call', 'chain', 'borrow', 'compose', 'pipe'.
-
-TYPES_FUNCTIONS auto-inference: scan params/returns for tracked types.
-Roles: 'factory' (returns only), 'transformer' (in+out same type), 'validator' (params->bool/Result),
-'accessor'/'operator' (params only), 'pattern_matcher', 'combinator'.
-
-FIELD POPULATION: finalize rejects null purpose/parameters/returns (functions) and null description (types).
-Populate at reserve time or pass to finalize — either works, but finalize enforces completeness.
-
-8. FP REFERENCE & STATE DATABASE
-
-66 FP directives in 18 categories. Find them: get_fp_directive_index() or search_directives(type='fp', keyword='...').
-Key categories: purity, immutability, error_handling, composition, side_effects, anti_oop, type_system, testing.
-
-State database: auto-created at <source-dir>/.state/runtime.db via create_state_database.
-Replaces mutable globals. Operations: set_var, get_var, delete_var, increment_var.
-See fp_state_elimination.md for patterns.
-
-9. DRY PRINCIPLE & MODULAR REUSE
-
-**Modular reuse (fp_modular_reuse)**: Functions are puzzle pieces — self-contained, reusable, organized by domain.
-Domain logic (payments, users, pricing) goes in domain modules, NOT in feature files (pages, routes, handlers).
-Feature files are thin orchestrators: import domain functions, compose them, done. No embedded business logic.
-External libraries/services MUST be wrapped in modules — never import them directly from orchestrator code.
-
-**Module tracking**: Modules tracked in project.db (`modules` + `module_files` junction).
-  search_modules → add_module → add_file_to_module (after finalize_file). See project_module_check directive.
-  Signals: external dependency, cross-file reuse, domain vocabulary, change impact >1 file.
-
-**Pre-write checklist (MANDATORY)**:
-1. Search existing modules + functions (search_modules, get_function_by_name, get_file_by_name)
-2. Found → import and compose. Not found but reusable → create in domain module (NOT optional)
-3. Similar but not identical → parameterize from shared core. One-off → inline is acceptable.
-4. After writing → verify orchestrators remain thin (imports + composition only)
-5. After finalize_file → add_file_to_module if domain logic. Orchestrators skip module assignment.
-
-**DRY extraction scopes**: Global (src/aimfp/_common.py) > Category (helpers/{category}/_common.py) > File-local.
-Don't extract when: variations would require many parameters, or extraction would create god functions.
-
-10. USE CASE 2 / PREFERENCES / GIT / NOTES
-
-**Use Case 2** (custom directive automation): 9 user_directive_* directives.
-Pipeline: parse -> validate -> implement -> approve -> activate -> monitor -> update -> deactivate -> status.
-Detection: automation BEHAVIOR signals ("when X do Y") vs software BUILD signals ("a web server").
-
-**Preferences**: Atomic key-value overrides per directive. add_directive_preference(directive_name, key, value).
-Tracking features ALL OFF by default. Don't mention tracking to regular users.
-
-**Git**: Branch naming: aimfp-{user}-{number}. Directives: git_init, git_detect_external_changes,
-git_create_branch, git_detect_conflicts, git_merge_branch.
-
-**Evolution Notes**: Any change to blueprint/paths/themes/flows/milestones MUST have
-add_note(note_type='evolution'). Blueprint notes: directive_name='project_blueprint_update'.
-
-11. EDGE CASES & RECOVERY
-
-Lost context? aimfp_status() -> fresh state. get_supportive_context() -> reload this reference.
-search_directives(keyword="...") -> find the right directive. aimfp_run(is_new_session=true) -> full reload.
-Non-FP projects: STOP and REJECT. AIMFP is FP-only — do NOT proceed, do NOT attempt to convert existing OOP code.
-If pre-existing codebase is non-FP at init/discovery, inform user immediately and halt. No exceptions.
+  variant='init'    — auto-provided with aimfp_init() return. Discovery depth, initialization, post-completion paths
+  variant='coding'  — auto-provided with aimfp_run(is_new_session=true) for initialized projects. File loop, DRY, interactions, types_functions
+  variant='case2'   — auto-provided with aimfp_run(is_new_session=true) when Case 2 active. User directive pipeline, preferences
 
 END SUPPORTIVE CONTEXT

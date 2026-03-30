@@ -1,0 +1,56 @@
+AIMFP Supportive Context — Coding & File Tracking
+Load via: get_supportive_context(variant='coding')
+
+1. FILE CODING LOOP (every file)
+
+  reserve file → search_modules for existing overlap → reserve functions+types (PUBLIC only)
+  → write FP code with _id_XX names → finalize file → assign to flow(s)
+  → assign to module (if domain logic: add_file_to_module) → finalize functions+types
+  → add interactions → add types_functions
+
+  Batch helpers: reserve_files, finalize_files, add_file_flows, add_interactions, add_types_functions.
+  Skip ID naming for: __init__.py, .db, pyproject.toml, setup.py, conftest.py.
+  Private functions (_underscore): do NOT reserve or track.
+
+2. DRY PRINCIPLE & MODULAR REUSE
+
+  Functions are puzzle pieces — self-contained, reusable, organized by domain.
+  Domain logic (payments, users, pricing) goes in domain modules, NOT in feature files.
+  Feature files are thin orchestrators: import domain functions, compose them, done.
+  External libraries/services MUST be wrapped in modules — never import directly from orchestrators.
+
+  Pre-write checklist (MANDATORY):
+  1. Search existing modules + functions (search_modules, get_function_by_name, get_file_by_name)
+  2. Found → import and compose. Not found but reusable → create in domain module
+  3. Similar but not identical → parameterize from shared core. One-off → inline is acceptable
+  4. After writing → verify orchestrators remain thin (imports + composition only)
+  5. After finalize_file → add_file_to_module if domain logic. Orchestrators skip module assignment
+
+  If reusable code exists, import and compose — do not rewrite.
+  New logic serving more than one caller MUST go in a domain module.
+  When fixing a bug, centralize the fix in one shared location — never patch across call sites.
+
+  DRY extraction scopes: Global (src/aimfp/_common.py) > Category (helpers/{category}/_common.py) > File-local.
+  Don't extract when: variations require many parameters, or extraction creates god functions.
+
+  Module tracking: modules + module_files junction in project.db.
+  search_modules → add_module → add_file_to_module (after finalize_file).
+  Signals: external dependency, cross-file reuse, domain vocabulary, change impact >1 file.
+
+3. INTERACTIONS
+
+  After finalizing functions, add_interaction for every cross-function dependency.
+  Types: 'call', 'chain', 'borrow', 'compose', 'pipe'.
+
+4. TYPES_FUNCTIONS
+
+  Auto-inference: scan params/returns for tracked types.
+  Roles: 'factory' (returns only), 'transformer' (in+out same type), 'validator' (params→bool/Result),
+  'accessor'/'operator' (params only), 'pattern_matcher', 'combinator'.
+
+5. FIELD POPULATION
+
+  Finalize rejects null purpose/parameters/returns (functions) and null description (types).
+  Populate at reserve time or pass to finalize — either works, but finalize enforces completeness.
+
+END CODING CONTEXT

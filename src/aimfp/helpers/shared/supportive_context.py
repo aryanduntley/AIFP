@@ -1,14 +1,15 @@
 """
 AIMFP Helper Functions - Global Supportive Context
 
-Returns the full supportive context reference document for AI sessions.
-Loaded automatically by aimfp_run(is_new_session=true).
-Call directly to reload detailed reference material when context feels stale.
+Returns supportive context reference documents for AI sessions.
+All variants auto-provided: core + coding by aimfp_run(is_new_session=true),
+case2 by aimfp_run when Case 2 active, init by aimfp_init().
+Also callable on demand to reload stale context.
 
 All functions are pure FP - immutable data, explicit parameters, Result types.
 
 Helpers in this file:
-- get_supportive_context: Read and return supportive_context.txt content
+- get_supportive_context: Read and return supportive context content by variant
 """
 
 from pathlib import Path
@@ -22,48 +23,63 @@ from ..utils import get_return_statements, Result
 # Constants
 # ============================================================================
 
-SUPPORTIVE_CONTEXT_PATH: str = str(
-    Path(__file__).parent.parent.parent / "reference" / "guides" / "supportive_context.txt"
+GUIDES_DIR: str = str(
+    Path(__file__).parent.parent.parent / "reference" / "guides"
 )
+
+VALID_VARIANTS: Tuple[str, ...] = ('core', 'init', 'coding', 'case2')
+
+VARIANT_FILES: dict = {
+    'core': 'supportive_context.txt',
+    'init': 'supportive_context_init.txt',
+    'coding': 'supportive_context_coding.txt',
+    'case2': 'supportive_context_case2.txt',
+}
 
 
 # ============================================================================
 # Public Helper Functions
 # ============================================================================
 
-def get_supportive_context() -> Result:
+def get_supportive_context(variant: str = 'core') -> Result:
     """
-    Read and return the concise supportive context reference document.
+    Read and return a supportive context reference document.
 
-    Contains: FP directive pointers, state database patterns, DRY scope levels,
-    project discovery/progression summary, directive execution overview,
-    reserve-write-finalize flow, Use Case 2 pipeline, user preferences,
-    Git+FP collaboration, evolution notes, edge case recovery, session management.
+    Variants (auto-provided by orchestrators, also callable on demand):
+        'core'   — Full workflow, routing, ad-hoc rules, edge cases (auto: aimfp_run new session)
+        'init'   — Discovery depth, initialization detail, post-completion paths (auto: aimfp_init)
+        'coding' — File coding loop, DRY/modular reuse, interactions, types_functions (auto: aimfp_run if initialized)
+        'case2'  — Use Case 2 pipeline, user directive system, preferences (auto: aimfp_run if Case 2 active)
+
+    Args:
+        variant: Which context to load. Default 'core'.
 
     Returns:
         Result with data={
-            content: str (full text of supportive_context.txt),
-            token_estimate: int (approximate token count, ~1500-2000),
+            content: str (full text of the variant file),
+            variant: str (which variant was loaded),
+            token_estimate: int (approximate token count),
             source: str (file path)
         }
 
     On error:
-        Result with error message if file not found or unreadable.
-
-    Example:
-        >>> result = get_supportive_context()
-        >>> if result.success:
-        ...     print(result.data['token_estimate'])
-        1800
+        Result with error message if variant invalid or file not found.
     """
+    if variant not in VALID_VARIANTS:
+        return Result(
+            success=False,
+            error=f"Invalid variant '{variant}'. Valid: {VALID_VARIANTS}",
+        )
+
     try:
-        context_path = Path(SUPPORTIVE_CONTEXT_PATH)
+        filename = VARIANT_FILES[variant]
+        context_path = Path(GUIDES_DIR) / filename
 
         if not context_path.is_file():
             return Result(
                 success=False,
                 error=f"Supportive context file not found: {context_path}. "
-                      "Expected at src/aimfp/reference/guides/supportive_context.txt",
+                      f"Expected at src/aimfp/reference/guides/{filename}",
             )
 
         content = context_path.read_text(encoding="utf-8")
@@ -75,6 +91,7 @@ def get_supportive_context() -> Result:
             success=True,
             data={
                 'content': content,
+                'variant': variant,
                 'token_estimate': token_estimate,
                 'source': str(context_path),
             },

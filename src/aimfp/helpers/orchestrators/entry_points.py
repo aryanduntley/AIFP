@@ -255,6 +255,9 @@ def aimfp_init(project_root: str) -> Result:
             f'{AIMFP_PROJECT_DIR}/{BLUEPRINT_FILENAME}',
         )
 
+        # Auto-bundle init supportive context for discovery phase
+        supportive_context_init = _get_supportive_context_safe('init')
+
         return Result(
             success=True,
             data={
@@ -269,6 +272,7 @@ def aimfp_init(project_root: str) -> Result:
                 'infrastructure_entries': 8,
                 'git_status': git_status,
                 'next_phase': 'AI populates infrastructure and blueprint',
+                'supportive_context_init': supportive_context_init,
             },
             return_statements=get_return_statements("aimfp_init"),
         )
@@ -412,11 +416,13 @@ def aimfp_status(
                 )
 
                 # Recent notes (last 10, metadata only, 7-day window)
+                # Exclude noise types: deletion audit trails, already-handled notes
                 cursor = conn.execute(
                     "SELECT id, note_type, reference_table, reference_id, "
                     "source, directive_name, severity, created_at "
                     "FROM notes "
                     "WHERE created_at >= datetime('now', '-7 days') "
+                    "AND note_type NOT IN ('entry_deletion', 'completed', 'obsolete') "
                     "ORDER BY created_at DESC LIMIT 10"
                 )
                 recent_notes = rows_to_tuple(cursor.fetchall())
@@ -512,10 +518,14 @@ def aimfp_run(is_new_session: bool = False) -> Result:
     Main entry point orchestrator. Called on every AI interaction.
 
     When is_new_session=True, bundles comprehensive startup data including
-    status (with infrastructure, warnings, supportive context), user settings,
-    FP directive index, all directive names, modules summary, and guidance.
+    status (with infrastructure, supportive context, modules summary),
+    user settings, guidance, watchdog, and deferred notes.
 
-    When is_new_session=False, returns lightweight guidance only.
+    FP directive index and all directive names are NOT bundled — available
+    on demand via get_fp_directive_index() and search_directives().
+    Modules summary is included within status (not duplicated at top level).
+
+    When is_new_session=False, returns lightweight watchdog reminders only.
 
     Args:
         is_new_session: True for first interaction / new session / after breaks
@@ -523,12 +533,15 @@ def aimfp_run(is_new_session: bool = False) -> Result:
     Returns:
         If is_new_session=True:
             Result with data={
-                status: dict (from aimfp_status, includes infrastructure + supportive_context),
+                status: dict (from aimfp_status, includes infrastructure,
+                    supportive_context, modules_summary, recent_notes),
                 user_settings: dict,
-                fp_directive_index: dict,
-                all_directive_names: tuple,
-                modules_summary: tuple (name, path, purpose, file_count per module),
-                guidance: dict
+                guidance: dict,
+                watchdog: dict,
+                case_2_context: dict or None,
+                backup: dict,
+                migration: dict,
+                deferred_notes: tuple
             }
 
         If is_new_session=False:
@@ -611,12 +624,8 @@ def aimfp_run(is_new_session: bool = False) -> Result:
         # Bundle: user settings
         user_settings = _get_user_settings_safe(project_root)
 
-        # Bundle: FP directive index
-        fp_directive_index = _get_fp_directive_index_safe()
-
-        # Bundle: all directive names
-        all_directive_names = _get_all_directive_names_safe()
-
+        # Note: fp_directive_index and all_directive_names removed from bundle —
+        # available on demand via get_fp_directive_index() and search_directives()
         # Note: infrastructure already included via aimfp_status() — not duplicated here
         # Note: supportive_context is included via aimfp_status() — not called separately
 
@@ -641,8 +650,17 @@ def aimfp_run(is_new_session: bool = False) -> Result:
                 'routing': status_data.get('case_2_routing'),
             }
 
-        # Modules summary (promoted from status for startup visibility)
-        modules_summary = status_data.get('modules_summary', ())
+        # Note: modules_summary already included via aimfp_status() — not duplicated here
+
+        # Supportive context variants: auto-bundle based on project state
+        # Core variant is already in status via aimfp_status().
+        # Coding variant: always include for initialized projects (coding is imminent).
+        # Case 2 variant: include when Case 2 is active.
+        supportive_context_coding = _get_supportive_context_safe('coding')
+
+        supportive_context_case2 = ''
+        if user_directives_status is not None:
+            supportive_context_case2 = _get_supportive_context_safe('case2')
 
         # Automated backup check: trigger if project inactive beyond threshold
         backup_data = check_and_run_backup()
@@ -659,12 +677,11 @@ def aimfp_run(is_new_session: bool = False) -> Result:
                 'project_root': project_root,
                 'status': status_data,
                 'user_settings': user_settings,
-                'fp_directive_index': fp_directive_index,
-                'all_directive_names': all_directive_names,
                 'guidance': _get_guidance(),
+                'supportive_context_coding': supportive_context_coding,
+                'supportive_context_case2': supportive_context_case2 or None,
                 'watchdog': watchdog_data,
                 'case_2_context': case_2_context,
-                'modules_summary': modules_summary,
                 'backup': backup_data,
                 'migration': migration_data,
                 'deferred_notes': deferred_notes,
@@ -891,11 +908,11 @@ def _get_all_directive_names_safe() -> Tuple[str, ...]:
         return ()
 
 
-def _get_supportive_context_safe() -> str:
+def _get_supportive_context_safe(variant: str = 'core') -> str:
     """Effect: Get supportive context content, returning empty string on failure."""
     try:
         from ..shared.supportive_context import get_supportive_context
-        result = get_supportive_context()
+        result = get_supportive_context(variant=variant)
         if result.success and result.data:
             return result.data.get('content', '')
         return ''

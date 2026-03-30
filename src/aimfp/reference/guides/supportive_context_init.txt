@@ -1,0 +1,40 @@
+AIMFP Supportive Context — Initialization & Discovery
+Load via: get_supportive_context(variant='init')
+
+1. PROJECT DISCOVERY (after init, before coding)
+
+  1. Assess state (pre-existing code? blueprint status?)
+  2. If pre-existing FP code: delegate to project_catalog first
+  3. Blueprint: discuss purpose, goals, scope, constraints with user
+  4. Infrastructure: confirm detected values, create state database
+  5. Themes/Flows/Completion Path/Milestones (NO tasks yet)
+  Key: Ask, don't assume. Routes to aimfp_status → project_progression.
+
+2. DISCOVERY DEPTH REQUIREMENT
+
+  Do NOT accept surface-level descriptions.
+  After the user describes their project, THINK through what they said:
+  - What components will this need that the user didn't mention?
+  - What data flows between parts? What edge cases exist?
+  - What future extensibility concerns should be raised now?
+  - What connections or dependencies might the user have missed?
+  Present findings with concrete choices — don't just list concerns,
+  offer options: "I see two approaches for X: (A) ... or (B) ... — which fits better?"
+  Assume the user will miss details. Assume YOU will miss some on first pass.
+  Do a second mental pass before presenting. Discovery is where project clarity
+  is established — shallow discovery creates compounding problems later.
+
+3. POST-COMPLETION PATHS
+
+  "Added Features" (order 998) and "Updates" (order 999).
+  Both default 'completed'. Reopen when post-completion work needed.
+  Same progression rules apply.
+
+4. USER PREFERENCE CHANGES (during or after init)
+
+  Directive behavior change → get_directive_by_name('user_preferences_update')
+    → add_directive_preference(directive_name, key, value) → add_note(note_type='decision')
+  Project-wide setting → add_user_setting / update_user_setting → add_note
+  Custom helper extension → set_custom_return_statement(helper_name, statement) → add_note
+
+END INITIALIZATION CONTEXT
