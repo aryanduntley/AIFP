@@ -250,6 +250,24 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "reorder_all_completion_paths": ("aimfp.helpers.project.themes_flows_2", "reorder_all_completion_paths"),
     "swap_completion_paths_order": ("aimfp.helpers.project.themes_flows_2", "swap_completion_paths_order"),
 
+    # ── Project: Modules ─────────────────────────────────────────────────
+    # helpers/project/modules.py (15 tools)
+    "add_module": ("aimfp.helpers.project.modules", "add_module"),
+    "get_module_by_name": ("aimfp.helpers.project.modules", "get_module_by_name"),
+    "get_module_by_path": ("aimfp.helpers.project.modules", "get_module_by_path"),
+    "get_all_modules": ("aimfp.helpers.project.modules", "get_all_modules"),
+    "update_module": ("aimfp.helpers.project.modules", "update_module"),
+    "delete_module": ("aimfp.helpers.project.modules", "delete_module"),
+    "add_file_to_module": ("aimfp.helpers.project.modules", "add_file_to_module"),
+    "remove_file_from_module": ("aimfp.helpers.project.modules", "remove_file_from_module"),
+    "get_module_files": ("aimfp.helpers.project.modules", "get_module_files"),
+    "get_module_functions": ("aimfp.helpers.project.modules", "get_module_functions"),
+    "get_module_types": ("aimfp.helpers.project.modules", "get_module_types"),
+    "get_module_dependencies": ("aimfp.helpers.project.modules", "get_module_dependencies"),
+    "get_module_for_file": ("aimfp.helpers.project.modules", "get_module_for_file"),
+    "get_unassigned_files": ("aimfp.helpers.project.modules", "get_unassigned_files"),
+    "search_modules": ("aimfp.helpers.project.modules", "search_modules"),
+
     # ── Project: Types ───────────────────────────────────────────────────
     # helpers/project/types_1.py (8 tools)
     "delete_type": ("aimfp.helpers.project.types_1", "delete_type"),

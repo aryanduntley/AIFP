@@ -1,6 +1,13 @@
 -- project.db Schema
 -- Version: 1.7
 -- Purpose: Track project-specific data, including files, functions, themes, flows, and completion paths
+-- Changelog v1.9:
+--   - Added modules table for reusable code boundary tracking
+--   - Added module_files junction table for explicit file-to-module assignment
+--   - Modules are folder-based: path guides organization, module_files is authoritative membership
+--   - external_dependencies JSON field tracks wrapped libraries/services
+--   - Added FTS5 index (modules_fts) for ranked search across name/purpose/description
+--   - Added update trigger and indexes for modules table
 -- Changelog v1.6:
 --   - Added send_with_directive BOOLEAN field to notes table
 --   - When TRUE and directive_name set, note is included in directive retrieval
@@ -271,6 +278,35 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 
 -- ===============================================================
+-- Modules Table: Reusable code boundaries (domain logic units)
+-- ===============================================================
+-- Modules are folder-based: a module IS a directory containing related files.
+-- File membership tracked explicitly via module_files junction table (DB is source of truth).
+-- modules.path guides where files should go; module_files is the authoritative assignment.
+-- Functions/types inherit module membership through their file_id.
+-- Cross-module dependencies derived from existing interactions table.
+
+CREATE TABLE IF NOT EXISTS modules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,                  -- e.g., 'wallet_connection', 'validation', 'cart_management'
+    path TEXT NOT NULL UNIQUE,                  -- Directory path relative to source root (e.g., 'src/wallet_connection/')
+    description TEXT,                           -- What this module does
+    purpose TEXT,                               -- Domain concern this module owns (one sentence)
+    external_dependencies JSON,                 -- Libraries/services this module wraps (e.g., '["walletconnect", "stripe"]')
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Module-Files Junction: Explicit file-to-module assignment (same pattern as file_flows)
+CREATE TABLE IF NOT EXISTS module_files (
+    module_id INTEGER NOT NULL,
+    file_id INTEGER NOT NULL,
+    PRIMARY KEY (module_id, file_id),
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
+);
+
+-- ===============================================================
 -- Git Integration Tables (Multi-User Collaboration)
 -- ===============================================================
 -- Note: Current Git state (branch, hash) is queried from Git directly via commands.
@@ -422,6 +458,13 @@ BEGIN
     UPDATE notes SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
+CREATE TRIGGER IF NOT EXISTS update_modules_timestamp
+AFTER UPDATE ON modules
+FOR EACH ROW
+BEGIN
+    UPDATE modules SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
 -- Triggers for items table cleanup (polymorphic orphan prevention)
 CREATE TRIGGER IF NOT EXISTS delete_task_items
 AFTER DELETE ON tasks
@@ -445,6 +488,9 @@ BEGIN
 END;
 
 -- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_modules_path ON modules(path);
+CREATE INDEX IF NOT EXISTS idx_modules_name ON modules(name);
+CREATE INDEX IF NOT EXISTS idx_module_files_file ON module_files(file_id);
 CREATE INDEX IF NOT EXISTS idx_files_path ON files(path);
 CREATE INDEX IF NOT EXISTS idx_functions_file_id ON functions(file_id);
 CREATE INDEX IF NOT EXISTS idx_completion_path_order ON completion_path(order_index);
@@ -522,6 +568,28 @@ CREATE TRIGGER IF NOT EXISTS types_fts_update AFTER UPDATE OF name, description 
     INSERT INTO types_fts(rowid, name, description) VALUES (new.id, new.name, COALESCE(new.description, ''));
 END;
 
+-- Modules FTS (search by name, purpose, description)
+CREATE VIRTUAL TABLE IF NOT EXISTS modules_fts USING fts5(
+    name,
+    purpose,
+    description,
+    content='modules',
+    content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS modules_fts_insert AFTER INSERT ON modules BEGIN
+    INSERT INTO modules_fts(rowid, name, purpose, description) VALUES (new.id, new.name, COALESCE(new.purpose, ''), COALESCE(new.description, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS modules_fts_delete AFTER DELETE ON modules BEGIN
+    INSERT INTO modules_fts(modules_fts, rowid, name, purpose, description) VALUES('delete', old.id, old.name, COALESCE(old.purpose, ''), COALESCE(old.description, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS modules_fts_update AFTER UPDATE OF name, purpose, description ON modules BEGIN
+    INSERT INTO modules_fts(modules_fts, rowid, name, purpose, description) VALUES('delete', old.id, old.name, COALESCE(old.purpose, ''), COALESCE(old.description, ''));
+    INSERT INTO modules_fts(rowid, name, purpose, description) VALUES (new.id, new.name, COALESCE(new.purpose, ''), COALESCE(new.description, ''));
+END;
+
 -- ===============================================================
 -- Schema Version Tracking
 -- ===============================================================
@@ -532,4 +600,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.8');
+INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.9');

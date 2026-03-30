@@ -2284,6 +2284,64 @@
     "confidence_threshold": 0.7
   },
   {
+    "name": "project_module_check",
+    "type": "project",
+    "level": 3,
+    "parent_directive": "project_file_write",
+    "category": {
+      "name": "modularity",
+      "description": "Module boundary enforcement and reusable code organization"
+    },
+    "description": "Evaluates whether code being written should be organized as a module (reusable code boundary). Detects module candidates via four signals: external dependency wrapping, cross-file reuse, domain vocabulary, and change impact. Searches existing modules before creating new ones. Enforces that external libraries are never imported directly from orchestrator code.",
+    "md_file_path": "directives/project_module_check.md",
+    "workflow": {
+      "trunk": "evaluate_module_candidacy",
+      "branches": [
+        {
+          "if": "module_candidate_detected",
+          "then": "search_and_assign_module",
+          "details": {
+            "steps": [
+              "1. search_modules(search_string) with domain keywords",
+              "2. get_all_modules() for full overview",
+              "3. If match found: file goes under existing module path",
+              "4. If no match: create new module"
+            ]
+          }
+        },
+        {
+          "if": "new_module_needed",
+          "then": "create_module",
+          "details": {
+            "steps": [
+              "1. Determine module name (domain concept, not implementation detail)",
+              "2. Determine module path (directory under source root)",
+              "3. add_module(name, path, description, purpose, external_dependencies)",
+              "4. Create directory if needed",
+              "5. File goes under new module path"
+            ]
+          }
+        },
+        {
+          "if": "not_module_candidate",
+          "then": "proceed_with_write",
+          "details": "File is an orchestrator or truly one-off code. Orchestrators must ONLY import from modules."
+        }
+      ],
+      "fallback": "apply_change_impact_test"
+    },
+    "intent_keywords": [
+      "module",
+      "modularity",
+      "reusable",
+      "external dependency",
+      "wrapper",
+      "abstraction",
+      "domain logic"
+    ],
+    "confidence_threshold": 0.8
+  },
+  {
     "name": "project_file_delete",
     "type": "project",
     "level": 3,

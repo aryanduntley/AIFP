@@ -62,6 +62,15 @@ The `project_reserve_finalize` directive manages the reservation and finalizatio
    - **Condition**: Reservation failed or unclear
    - **Action**: Request clarification on entity details
 
+### Module Assignment Check (after reserving a file)
+
+After reserving a file, check if its path falls under an existing module:
+1. Call `get_module_for_file(file_id)` — returns the module if the file's path is under a module directory
+2. If file is NOT in any module and the directory represents a new domain concern → create the module via `add_module()` BEFORE writing code
+3. If file IS in a module → no action needed, membership is automatic via path
+
+This ensures new domain directories get proper module tracking from the start.
+
 ### Error Handling
 - **On reservation failure**: Check for naming collisions, suggest alternative names
 - **On finalization failure**: Verify entity exists, check is_reserved flag

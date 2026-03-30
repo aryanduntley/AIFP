@@ -150,6 +150,7 @@
       "return_statements": [
         "BLOCKED: Do NOT proceed until all public functions AND all exported types in this file are reserved and finalized. Functions via reserve_function/finalize_function WITH complete fields (purpose, parameters, returns). Types via reserve_type/finalize_type WITH complete fields (definition_json, description). A finalized file with 0 tracked functions or untracked types is incomplete (unless data-only or config-only).",
         "BLOCKED: Link this file to its flow(s) via add_file_to_flow(file_id, flow_id) or add_file_flows([(file_id, flow_id), ...]). A finalized file with 0 flow assignments is architecturally disconnected. Use get_all_flows() or get_task_flows(task_id) to identify the correct flow(s).",
+        "MODULE CHECK: If this file contains domain logic or wraps external dependencies, assign it to a module via add_file_to_module(file_id, module_id). Use get_module_for_file(file_id) to check if already assigned, search_modules() to find the right module, or add_module() to create one. Orchestrator files (pages, handlers, commands) do NOT need module assignment.",
         "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
         "After file write operations: route to git_sync_state directive to update last_known_git_hash",
         "Call aimfp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."
@@ -209,6 +210,7 @@
       "return_statements": [
         "BLOCKED: Do NOT proceed until all public functions AND all exported types in ALL finalized files are reserved and finalized. Functions via reserve_functions/finalize_functions WITH complete fields (purpose, parameters, returns). Types via reserve_types/finalize_types WITH complete fields (definition_json, description). Finalized files with 0 tracked functions or untracked types are incomplete (unless data-only or config-only).",
         "BLOCKED: Link ALL finalized files to their flow(s) via add_file_to_flow(file_id, flow_id) or add_file_flows([(file_id, flow_id), ...]). Finalized files with 0 flow assignments are architecturally disconnected. Use get_all_flows() or get_task_flows(task_id) to identify the correct flow(s).",
+        "MODULE CHECK: For each finalized file containing domain logic or external dependency wrappers, assign to a module via add_file_to_module(file_id, module_id). Use search_modules() to find the right module or add_module() to create one. Orchestrator files (pages, handlers, commands) do NOT need module assignment.",
         "If called during project_reserve_finalize: follow project_update_db directive to sync reserved IDs with database.",
         "After file write operations: route to git_sync_state directive to update last_known_git_hash",
         "Call aimfp_run(is_new_session=false) — returns watchdog info about external file changes detected since your last check."

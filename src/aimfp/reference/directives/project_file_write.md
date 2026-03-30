@@ -281,6 +281,29 @@ if count_result.success:
 
 ---
 
+## Module Gate (MANDATORY before writing)
+
+**BEFORE writing any code**, determine if this file belongs in a module. Call `project_module_check` to evaluate.
+
+### Module Candidate Signals (any YES = module)
+
+1. **External Dependency** — Is this code importing an external library/service? → MUST wrap in module. Never import libraries directly from orchestrator code.
+2. **Cross-File Reuse** — Does this logic exist or could exist in multiple files? → Module.
+3. **Domain Vocabulary** — Does the code have its own concepts (wallets, transactions, cart items)? → Module.
+4. **Change Impact** — If internals changed, would >1 file break? → Definitely module.
+
+### Module Gate Steps
+
+1. `search_modules(domain_keywords)` — check if existing module covers this domain
+2. `get_module_for_file(file_id)` — check if file path already falls under a module
+3. If match found → write file under existing module path
+4. If no match and candidate → `add_module(name, path, description, purpose, external_dependencies)`
+5. If NOT a candidate (orchestrator, config, one-off) → proceed with write. Orchestrators must ONLY import from modules, never embed domain logic.
+
+See `project_module_check` directive for full evaluation workflow and cross-software-type examples.
+
+---
+
 ## Examples
 
 ### Example 1: Writing a Pure Function with User Preferences

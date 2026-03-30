@@ -200,6 +200,28 @@
     },
     {
       "from_directive": "project_file_write",
+      "to_directive": "project_module_check",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "Evaluate module candidacy before writing code",
+      "priority": 100,
+      "description": "Determine if code belongs in a module — check signals, search existing modules, create if needed",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "project_module_check",
+      "to_directive": "project_reserve_finalize",
+      "flow_type": "canonical",
+      "condition_key": null,
+      "condition_value": null,
+      "condition_description": "After module check, proceed to reserve entities",
+      "priority": 100,
+      "description": "Module assignment resolved — proceed with file/function reservation",
+      "flow_category": "project"
+    },
+    {
+      "from_directive": "project_file_write",
       "to_directive": "project_reserve_finalize",
       "flow_type": "canonical",
       "condition_key": null,

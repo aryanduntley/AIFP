@@ -1,0 +1,350 @@
+{
+  "helpers": [
+    {
+      "name": "add_module",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "name", "type": "string", "required": true, "description": "Module name (e.g., 'wallet_connection', 'validation')"},
+        {"name": "path", "type": "string", "required": true, "description": "Directory path relative to source root (e.g., 'src/wallet_connection/')"},
+        {"name": "description", "type": "string", "required": false, "description": "What this module does"},
+        {"name": "purpose", "type": "string", "required": false, "description": "Domain concern this module owns (one sentence)"},
+        {"name": "external_dependencies", "type": "array", "required": false, "description": "Libraries/services this module wraps (e.g., ['walletconnect', 'stripe'])"}
+      ],
+      "purpose": "Create a new module (reusable code boundary). A module maps to a directory. Files are assigned explicitly via add_file_to_module. Use external_dependencies to record wrapped libraries.",
+      "error_handling": "Returns error on duplicate name or path",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Module created. Now write files under this module's path and assign them via add_file_to_module(file_id, module_id) after finalize_file.",
+        "If this module wraps external libraries: all project code should import from this module, never from the library directly."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_module_check",
+          "execution_context": "create_new_module",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Create module entry when AI determines code should be organized as a reusable module"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "module_gate_create",
+          "sequence_order": 5,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Create module if file_write determines new domain logic needs module organization"
+        }
+      ]
+    },
+    {
+      "name": "get_module_by_name",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "name", "type": "string", "required": true, "description": "Module name to look up"}
+      ],
+      "purpose": "Get module by name. Returns module record with path, purpose, and external_dependencies.",
+      "error_handling": "Returns None if not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_module_check",
+          "execution_context": "lookup_existing_module",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Check if a module already exists before creating a new one"
+        }
+      ]
+    },
+    {
+      "name": "get_module_by_path",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "path", "type": "string", "required": true, "description": "Directory path to look up"}
+      ],
+      "purpose": "Get module by directory path.",
+      "error_handling": "Returns None if not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_all_modules",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [],
+      "purpose": "Get all modules in the project. Returns list of all module records sorted by name.",
+      "error_handling": "Returns empty tuple if no modules exist",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Review modules list to determine if new code fits an existing module before creating a new one.",
+        "If modules list is empty and project has domain logic: consider whether modules should be created via project_module_check."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_module_check",
+          "execution_context": "list_all_modules",
+          "sequence_order": 1,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Review all existing modules to determine if new code fits an existing module"
+        },
+        {
+          "directive_name": "aimfp_status",
+          "execution_context": "show_module_overview",
+          "sequence_order": 8,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Include module count and list in project status overview"
+        }
+      ]
+    },
+    {
+      "name": "update_module",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "module_id", "type": "integer", "required": true, "description": "Module ID to update"},
+        {"name": "name", "type": "string", "required": false, "description": "New name"},
+        {"name": "path", "type": "string", "required": false, "description": "New path"},
+        {"name": "description", "type": "string", "required": false, "description": "New description"},
+        {"name": "purpose", "type": "string", "required": false, "description": "New purpose"},
+        {"name": "external_dependencies", "type": "array", "required": false, "description": "New dependencies list"}
+      ],
+      "purpose": "Update module metadata. Only non-None fields are updated.",
+      "error_handling": "Returns error if module not found or integrity violation",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "delete_module",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "module_id", "type": "integer", "required": true, "description": "Module ID to delete"}
+      ],
+      "purpose": "Delete a module. CASCADE removes module_files junction entries. Files themselves are NOT deleted.",
+      "error_handling": "Returns error if module not found. Creates audit note on deletion.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "add_file_to_module",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "file_id", "type": "integer", "required": true, "description": "File ID to assign"},
+        {"name": "module_id", "type": "integer", "required": true, "description": "Module ID to assign to"}
+      ],
+      "purpose": "Assign a file to a module. Creates module_files junction entry. Same pattern as add_file_to_flow.",
+      "error_handling": "Returns error if file or module not found, or if already assigned",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "File assigned to module. Proceed with function/type finalization and interaction tracking as normal.",
+        "If this file imports external libraries that the module wraps: verify the module's external_dependencies field includes them."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "module_assignment_after_finalize",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "After finalizing a file, assign it to its module"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "module_assignment",
+          "sequence_order": 6,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Assign written file to its module after finalization"
+        }
+      ]
+    },
+    {
+      "name": "remove_file_from_module",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "file_id", "type": "integer", "required": true, "description": "File ID to remove"},
+        {"name": "module_id", "type": "integer", "required": true, "description": "Module ID to remove from"}
+      ],
+      "purpose": "Remove a file from a module. Deletes module_files junction entry. File itself is not deleted.",
+      "error_handling": "Returns error on failure",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_module_files",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "module_id", "type": "integer", "required": true, "description": "Module ID"}
+      ],
+      "purpose": "Get all files assigned to a module via module_files junction table.",
+      "error_handling": "Returns error if module not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_module_check",
+          "execution_context": "inspect_module_contents",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Inspect what files already exist in a module before adding new ones"
+        }
+      ]
+    },
+    {
+      "name": "get_module_functions",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "module_id", "type": "integer", "required": true, "description": "Module ID"}
+      ],
+      "purpose": "Get all functions in module files. Joins through module_files junction to files to functions.",
+      "error_handling": "Returns error if module not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_module_types",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "module_id", "type": "integer", "required": true, "description": "Module ID"}
+      ],
+      "purpose": "Get all types in module files. Joins through module_files junction to files to types.",
+      "error_handling": "Returns error if module not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_module_dependencies",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "module_id", "type": "integer", "required": true, "description": "Module ID"}
+      ],
+      "purpose": "Get cross-module dependencies. Finds interactions where a function in this module calls a function in a different module via module_files junction. Returns aggregated counts per target module.",
+      "error_handling": "Returns error if module not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [],
+      "target_database": "project",
+      "used_by_directives": []
+    },
+    {
+      "name": "get_module_for_file",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "file_id", "type": "integer", "required": true, "description": "File ID to look up"}
+      ],
+      "purpose": "Find which module a file belongs to. Reverse lookup via module_files junction table.",
+      "error_handling": "Returns None if file is not in any module. Returns error if file not found.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If module is None: this file is not assigned to any module. Evaluate whether it should be via project_module_check — domain logic files should always belong to a module.",
+        "If module found: file is tracked. Proceed with normal workflow."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "check_file_module_membership",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Check if file being written belongs to a module for proper organization"
+        },
+        {
+          "directive_name": "project_reserve_finalize",
+          "execution_context": "module_assignment_check",
+          "sequence_order": 2,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "After reserving a file, check if it should be assigned to a module"
+        }
+      ]
+    },
+    {
+      "name": "get_unassigned_files",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [],
+      "purpose": "Find files not assigned to any module. Useful for identifying tracking gaps — domain logic files that should belong to a module but haven't been assigned.",
+      "error_handling": "Returns empty tuple if all files are assigned",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Review unassigned files: orchestrators (pages, handlers, commands, configs) are expected to be unassigned. Domain logic files should be assigned to modules via add_file_to_module."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "aimfp_status",
+          "execution_context": "module_gap_check",
+          "sequence_order": 9,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Report files not assigned to any module as potential tracking gaps"
+        }
+      ]
+    },
+    {
+      "name": "search_modules",
+      "file_path": "helpers/project/modules.py",
+      "parameters": [
+        {"name": "search_string", "type": "string", "required": true, "description": "Search term"}
+      ],
+      "purpose": "Search modules by name, purpose, or description. Uses FTS5 ranked search with LIKE fallback.",
+      "error_handling": "Returns error if search string empty",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If matches found: review module purpose and external_dependencies to determine if your code belongs in an existing module rather than creating a new one.",
+        "If no matches: consider whether a new module is needed via project_module_check."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_module_check",
+          "execution_context": "search_existing_modules",
+          "sequence_order": 2,
+          "is_required": true,
+          "parameters_mapping": {},
+          "description": "Search for existing modules that might already cover the domain logic being written"
+        },
+        {
+          "directive_name": "project_file_write",
+          "execution_context": "module_gate_search",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Search for modules during file_write module gate"
+        }
+      ]
+    }
+  ]
+}

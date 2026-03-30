@@ -1,4 +1,4 @@
-# AIMFP: AI Functional Procedural Programming
+# AIMFP: AI Modular Functional Procedural Programming
 
 [![PyPI](https://img.shields.io/pypi/v/aimfp)](https://pypi.org/project/aimfp/)
 
@@ -30,7 +30,7 @@
 
 ## What is AIMFP?
 
-**AIMFP (AI Functional Procedural)** is a programming paradigm that combines:
+**AIMFP (AI Modular Functional Procedural)** is a programming paradigm that combines:
 
 - **Pure functional programming** principles (referential transparency, immutability, composability)
 - **Procedural execution** patterns (explicit sequencing, no hidden state)

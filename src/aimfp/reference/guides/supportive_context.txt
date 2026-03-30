@@ -39,7 +39,7 @@ PHASE: WORK LOOP (project_progression state machine)
   14. work on items:
       a. reserve_file -> write code -> finalize_file
       b. reserve functions -> write FP code -> finalize functions
-      c. add_file_to_flow, add_interactions, add_types_functions
+      c. add_file_to_flow, add_file_to_module (if domain logic), add_interactions, add_types_functions
       d. item done -> update_project_entry(table='items', id, data={status:'completed'})
   15. all items done -> update_task(id, status='completed')
   16. more tasks? -> create next (goto 13). No -> update_milestone(id, status='completed')
@@ -170,7 +170,7 @@ Note: "Directive flows" (navigation) are separate from "project flows" (architec
 7. FILE CODING LOOP
 
 reserve file -> reserve functions+types (PUBLIC only) -> write FP code with _id_XX names
--> finalize file -> assign to flow(s) -> finalize functions+types -> add interactions -> add types_functions
+-> finalize file -> assign to flow(s) -> assign to module (if domain logic: add_file_to_module) -> finalize functions+types -> add interactions -> add types_functions
 
 Batch helpers: reserve_files, finalize_files, add_file_flows, add_interactions, add_types_functions.
 Skip ID naming for: __init__.py, .db, pyproject.toml, setup.py, conftest.py.
@@ -200,14 +200,18 @@ See fp_state_elimination.md for patterns.
 **Modular reuse (fp_modular_reuse)**: Functions are puzzle pieces — self-contained, reusable, organized by domain.
 Domain logic (payments, users, pricing) goes in domain modules, NOT in feature files (pages, routes, handlers).
 Feature files are thin orchestrators: import domain functions, compose them, done. No embedded business logic.
+External libraries/services MUST be wrapped in modules — never import them directly from orchestrator code.
 
-**Pre-write modularity checklist (MANDATORY before writing any function)**:
-1. Search existing domain modules for functions that overlap with what you're about to write (DB first: get_function_by_name, get_file_by_name)
-2. If found → import and compose. Do NOT rewrite existing logic.
-3. If not found but reusable (could serve >1 caller) → create in domain module, import into feature file. This is NOT optional.
-4. If similar logic exists but not identical → parameterize or compose from shared primitives. "Similar but not identical" is NOT a reason to duplicate — it's a signal to extract a shared core.
-5. If truly one-off and file-local → inline is acceptable.
-6. After writing → verify feature files remain thin orchestrators (composition + imports only, no embedded domain logic).
+**Module tracking**: Modules tracked in project.db (`modules` + `module_files` junction).
+  search_modules → add_module → add_file_to_module (after finalize_file). See project_module_check directive.
+  Signals: external dependency, cross-file reuse, domain vocabulary, change impact >1 file.
+
+**Pre-write checklist (MANDATORY)**:
+1. Search existing modules + functions (search_modules, get_function_by_name, get_file_by_name)
+2. Found → import and compose. Not found but reusable → create in domain module (NOT optional)
+3. Similar but not identical → parameterize from shared core. One-off → inline is acceptable.
+4. After writing → verify orchestrators remain thin (imports + composition only)
+5. After finalize_file → add_file_to_module if domain logic. Orchestrators skip module assignment.
 
 **DRY extraction scopes**: Global (src/aimfp/_common.py) > Category (helpers/{category}/_common.py) > File-local.
 Don't extract when: variations would require many parameters, or extraction would create god functions.

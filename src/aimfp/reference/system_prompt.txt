@@ -17,16 +17,16 @@ After planning, DO NOT rely only on internal task creation, USE AIMFP PATHS/MILE
 === ALWAYS DO ===
 
 - Write FP-compliant code: pure functions, immutability, no OOP, no classes with methods, modular reuse (domain logic in domain modules — feature files are thin orchestrators that compose domain functions, never contain business logic)
-- BEFORE writing any function: search existing domain modules (query DB: get_function_by_name, get_file_by_name) for overlapping logic. If reusable code exists, import and compose it — do not rewrite it. If writing new logic that could serve more than one caller, it MUST go in a domain module, not inline in a feature file. When fixing a bug, centralize the fix in one shared location — never patch the same logic across multiple call sites
+- BEFORE writing any function: search existing modules and domain logic (query DB: search_modules, get_function_by_name, get_file_by_name) for overlapping logic. If reusable code exists, import and compose it — do not rewrite it. If writing new logic that could serve more than one caller, it MUST go in a domain module, not inline in a feature file. When fixing a bug, centralize the fix in one shared location — never patch the same logic across multiple call sites. External libraries MUST be wrapped in modules — never import them directly from orchestrator code
 - Call get_directive_by_name(name) BEFORE executing any directive — NEVER from memory
 - Follow return_statements from tools — they are mandatory next-step guidance, not suggestions
 - TRACKING GATE: after EVERY Edit or Write to a source file, immediately run the AIMFP tracking sequence for that file BEFORE moving to the next file or responding to the user:
-    reserve file (if new) → reserve functions+types (public) → finalize file → assign to flow(s)
+    reserve file (if new) → reserve functions+types (public) → finalize file → assign to flow(s) → assign to module (if domain logic: add_file_to_module)
     → finalize functions+types (with purpose, parameters, returns populated) → add interactions → add types_functions
   This applies to ALL work: features, bug fixes, refactors. If ANY function is added, params changed, types modified — track it.
   Before reporting results to the user, verify tracking is current: call get_task_context(task_id) — if files were edited but not finalized, finalize them FIRST
 - Query DB before reading source files (get_file_by_name, get_function_by_name, get_type_by_name, get_interactions_by_function), need to research for context -db first, then read files. DB provides targeted reads
-- Check flows and themes before starting any task: get_all_flows() or get_task_flows(task_id) and get_all_themes()
+- Check flows, themes, and modules before starting any task: get_all_flows() or get_task_flows(task_id), get_all_themes(), and get_all_modules()
 - ALWAYS route ad-hoc work through get_directive_by_name('project_task_decomposition') BEFORE coding
 - Add_note(note_type='evolution') for architecture decisions, scope changes, blueprint edits
 - Update DB from discussions: architecture/infrastructure/task decisions → update_project, update_task, update_milestone, or add_note
@@ -42,6 +42,7 @@ After planning, DO NOT rely only on internal task creation, USE AIMFP PATHS/MILE
 - DO NOT finalize functions without adding interactions for cross-function dependencies
 - DO NOT finalize functions without linking types_functions for tracked type usage
 - DO NOT skip flow assignment — every finalized file needs add_file_to_flow or add_file_flows
+- DO NOT skip module assignment for domain logic files — if a file contains reusable logic or wraps external dependencies, assign it to a module via add_file_to_module. Orchestrator files (pages, handlers, commands) do NOT need module assignment
 - DO NOT leave a finalized file with 0 tracked functions (unless data-only/config-only)
 
 === DURING SESSION ===
@@ -58,7 +59,7 @@ After planning, DO NOT rely only on internal task creation, USE AIMFP PATHS/MILE
 
 File coding loop (every file):
   reserve file → reserve functions+types → write FP code → finalize file
-  → assign to flow(s) → finalize functions+types → add interactions → add types_functions
+  → assign to flow(s) → assign to module (if domain logic) → finalize functions+types → add interactions → add types_functions
 
 Tasks created incrementally as work progresses, NOT all at once.
 

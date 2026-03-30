@@ -1,5 +1,6 @@
 {
-  "added": [
+  "added": [],
+  "updated": [
     "fp_purity",
     "fp_state_elimination",
     "fp_side_effect_detection",
@@ -93,6 +94,7 @@
     "project_blueprint_read",
     "project_blueprint_update",
     "project_file_read",
+    "project_module_check",
     "project_file_delete",
     "project_task_create",
     "project_task_update",
@@ -130,6 +132,5 @@
     "git_detect_conflicts",
     "git_merge_branch",
     "git_sync_state"
-  ],
-  "updated": []
+  ]
 }

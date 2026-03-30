@@ -113,7 +113,7 @@ VALID_BRANCH_STATUSES: Final[frozenset[str]] = frozenset([
 # Reference tables for notes (where notes can point)
 VALID_REFERENCE_TABLES: Final[frozenset[str]] = frozenset([
     'tasks', 'subtasks', 'sidequests', 'files', 'functions',
-    'types', 'themes', 'flows', 'milestones'
+    'types', 'themes', 'flows', 'milestones', 'modules'
 ])
 
 

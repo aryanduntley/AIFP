@@ -61,6 +61,7 @@ class DeletionDependencies:
     functions: Tuple[str, ...] = ()  # Function names
     types: Tuple[str, ...] = ()  # Type names
     file_flows: Tuple[str, ...] = ()  # Flow names
+    module_files: Tuple[str, ...] = ()  # Module names (auto-cleared, not blocking)
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,7 @@ class DeleteResult:
     error: Optional[str] = None
     dependencies: Optional[DeletionDependencies] = None
     cleared_file_flows: Tuple[str, ...] = ()  # Flow names auto-cleared during deletion
+    cleared_module_files: Tuple[str, ...] = ()  # Module names auto-cleared during deletion
     return_statements: Tuple[str, ...] = ()  # AI guidance for next steps
 
 
@@ -340,10 +342,23 @@ def _get_deletion_dependencies(
     )
     file_flows = tuple(row["name"] for row in cursor.fetchall())
 
+    # Check module_files
+    cursor = conn.execute(
+        """
+        SELECT m.name
+        FROM module_files mf
+        JOIN modules m ON mf.module_id = m.id
+        WHERE mf.file_id = ?
+        """,
+        (file_id,)
+    )
+    module_files = tuple(row["name"] for row in cursor.fetchall())
+
     return DeletionDependencies(
         functions=functions,
         types=types,
-        file_flows=file_flows
+        file_flows=file_flows,
+        module_files=module_files,
     )
 
 
@@ -356,6 +371,18 @@ def _clear_file_flows_effect(conn: sqlite3.Connection, file_id: int) -> None:
         file_id: File ID to clear flows for
     """
     conn.execute("DELETE FROM file_flows WHERE file_id = ?", (file_id,))
+    conn.commit()
+
+
+def _clear_module_files_effect(conn: sqlite3.Connection, file_id: int) -> None:
+    """
+    Effect: Remove all module_files entries for a file.
+
+    Args:
+        conn: Database connection
+        file_id: File ID to clear module assignments for
+    """
+    conn.execute("DELETE FROM module_files WHERE file_id = ?", (file_id,))
     conn.commit()
 
 
@@ -680,6 +707,12 @@ def delete_file(
             cleared_flows = deps.file_flows
             _clear_file_flows_effect(conn, file_id)
 
+        # Auto-clear module_files when functions/types are clean
+        cleared_modules: Tuple[str, ...] = ()
+        if deps.module_files:
+            cleared_modules = deps.module_files
+            _clear_module_files_effect(conn, file_id)
+
         # Proceed with deletion
         _create_deletion_note(
             conn,
@@ -700,11 +733,17 @@ def delete_file(
             return_statements = return_statements + (
                 f"Auto-cleared file_flows entries: [{flow_list}]. Verify these flows still have adequate file coverage.",
             )
+        if cleared_modules:
+            module_list = ", ".join(cleared_modules)
+            return_statements = return_statements + (
+                f"Auto-cleared module_files entries: [{module_list}]. Verify these modules still have adequate file coverage via get_module_files.",
+            )
 
         return DeleteResult(
             success=True,
             deleted_file_id=file_id,
             cleared_file_flows=cleared_flows,
+            cleared_module_files=cleared_modules,
             return_statements=return_statements
         )
 

@@ -36,6 +36,15 @@ AI consults this when making decisions about where to place functions and how to
 - **Pre-write search is MANDATORY**: Before writing any function, search existing domain modules for overlapping logic. If reusable code exists, import it — do not rewrite it
 - If a function could serve more than one caller, it MUST go in a domain module. This is a hard gate, not a suggestion
 
+**Database-Enforced Modularity (AIMFP modules system)**:
+- Modules are tracked in `project.db` via the `modules` table
+- A module IS a directory — all files under it belong to the module
+- Use `search_modules()`, `get_all_modules()` to find existing modules before writing code
+- Use `add_module()` to create new modules when domain logic needs its own boundary
+- **External dependency rule**: Libraries/services MUST be wrapped in modules. Record wrapped libraries in `external_dependencies` field. Never import a library directly from orchestrator code (pages, handlers, commands)
+- **Change impact test**: If changing implementation internals would break >1 file, it MUST be a module
+- See `project_module_check` directive for the full evaluation workflow
+
 ---
 
 ## When to Apply
@@ -435,14 +444,24 @@ def complete_order(order_id: str, user_id: str) -> Result[OrderConfirmation, str
 Query `get_helpers_for_directive()` to discover this directive's available helpers.
 See system prompt for usage.
 
+**Module-specific helpers**:
+- `add_module(name, path, description, purpose, external_dependencies)` — create module entry
+- `search_modules(search_string)` — find existing modules by name/purpose/description
+- `get_all_modules()` — list all project modules
+- `get_module_for_file(file_id)` — reverse lookup: which module owns this file?
+- `get_module_files(module_id)` — list files in a module
+- `get_module_functions(module_id)` — list functions in a module
+- `get_module_dependencies(module_id)` — cross-module dependency graph
+
 ---
 
 ## Database Operations
 
 **Project Database** (project.db):
+- **`modules`**: Module definitions — name, path, purpose, external_dependencies. File membership derived from path prefix
 - **`files`**: File metadata shows domain module vs feature file organization
 - **`functions`**: Function metadata reveals reuse patterns across files
-- **`interactions`**: Cross-function dependencies show composition patterns
+- **`interactions`**: Cross-function dependencies show composition patterns (also used for cross-module dependency analysis)
 - **`file_flows`**: Flow assignments reflect domain organization
 
 **Tracking** (Optional - Disabled by Default):
