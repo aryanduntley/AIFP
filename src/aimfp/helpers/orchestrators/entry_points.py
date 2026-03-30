@@ -343,7 +343,8 @@ def aimfp_status(
             work_hierarchy: dict (from get_project_status),
             user_directives_status: str or None,
             recent_notes: tuple,
-            git_state: tuple
+            git_state: tuple,
+            modules_summary: tuple (name, path, purpose, file_count per module)
         }
 
     If not initialized:
@@ -389,6 +390,7 @@ def aimfp_status(
         user_directives_status = None
         recent_notes = ()
         git_state = ()
+        modules_summary = ()
 
         project_db_path = get_project_db_path(project_root)
         if database_exists(project_db_path):
@@ -424,6 +426,16 @@ def aimfp_status(
                     "SELECT * FROM work_branches ORDER BY id DESC"
                 )
                 git_state = rows_to_tuple(cursor.fetchall())
+
+                # Modules summary (name, path, purpose, file count)
+                cursor = conn.execute(
+                    "SELECT m.id, m.name, m.path, m.purpose, "
+                    "COUNT(mf.file_id) AS file_count "
+                    "FROM modules m "
+                    "LEFT JOIN module_files mf ON mf.module_id = m.id "
+                    "GROUP BY m.id ORDER BY m.name"
+                )
+                modules_summary = rows_to_tuple(cursor.fetchall())
 
             finally:
                 conn.close()
@@ -477,6 +489,7 @@ def aimfp_status(
                 'get_notes_comprehensive(note_id=X) for any note that may be useful.'
             ),
             'git_state': git_state,
+            'modules_summary': modules_summary,
             'supportive_context': supportive_context,
         }
 
@@ -500,7 +513,7 @@ def aimfp_run(is_new_session: bool = False) -> Result:
 
     When is_new_session=True, bundles comprehensive startup data including
     status (with infrastructure, warnings, supportive context), user settings,
-    FP directive index, all directive names, and guidance.
+    FP directive index, all directive names, modules summary, and guidance.
 
     When is_new_session=False, returns lightweight guidance only.
 
@@ -514,6 +527,7 @@ def aimfp_run(is_new_session: bool = False) -> Result:
                 user_settings: dict,
                 fp_directive_index: dict,
                 all_directive_names: tuple,
+                modules_summary: tuple (name, path, purpose, file_count per module),
                 guidance: dict
             }
 
@@ -624,6 +638,9 @@ def aimfp_run(is_new_session: bool = False) -> Result:
                 'routing': status_data.get('case_2_routing'),
             }
 
+        # Modules summary (promoted from status for startup visibility)
+        modules_summary = status_data.get('modules_summary', ())
+
         # Automated backup check: trigger if project inactive beyond threshold
         backup_data = check_and_run_backup()
 
@@ -644,6 +661,7 @@ def aimfp_run(is_new_session: bool = False) -> Result:
                 'guidance': _get_guidance(),
                 'watchdog': watchdog_data,
                 'case_2_context': case_2_context,
+                'modules_summary': modules_summary,
                 'backup': backup_data,
                 'migration': migration_data,
                 'deferred_notes': deferred_notes,

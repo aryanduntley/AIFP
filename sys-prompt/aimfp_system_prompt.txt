@@ -6,7 +6,7 @@ These rules are NON-NEGOTIABLE. Violating any creates tracking gaps and invisibl
 
 - CALL aimfp_run(is_new_session=true) as your FIRST ACTION every session no matter how user begins thier initial request; do this first
 - Do NOT explore files, read code, or respond to the user before calling aimfp_run
-- aimfp_run returns everything: project status, settings, directives, supportive context, guidance — this single call replaces multi-round file exploration
+- aimfp_run returns everything: project status, settings, directives, modules summary, supportive context, guidance — this single call replaces multi-round file exploration
 - .aimfp-project/ missing → offer aimfp_init or restore from backup
 
 === IMPORTANT ===

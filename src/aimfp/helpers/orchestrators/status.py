@@ -376,6 +376,7 @@ def _get_work_counts(conn: sqlite3.Connection) -> Dict[str, int]:
         'incomplete_subtasks': "SELECT COUNT(*) as cnt FROM subtasks WHERE status != 'completed'",
         'incomplete_sidequests': "SELECT COUNT(*) as cnt FROM sidequests WHERE status != 'completed'",
         'blocked_items': "SELECT COUNT(*) as cnt FROM tasks WHERE status = 'blocked'",
+        'modules': "SELECT COUNT(*) as cnt FROM modules",
     }
     for key, sql in count_queries.items():
         cursor = conn.execute(sql)
@@ -536,6 +537,7 @@ def get_task_context(
             flows: tuple,
             files: tuple,
             functions: tuple,
+            modules: tuple (distinct modules owning the task's files),
             interactions: tuple (if requested),
             notes: tuple (if requested)
         }
@@ -600,6 +602,9 @@ def get_task_context(
             # Step 5: Get functions for those files
             functions = _get_functions_for_files(conn, file_ids)
 
+            # Step 6: Get module membership for files
+            modules = _get_modules_for_files(conn, file_ids)
+
             data = {
                 'task_item': task_item,
                 'task_type': task_type,
@@ -607,14 +612,15 @@ def get_task_context(
                 'flows': flows,
                 'files': files,
                 'functions': functions,
+                'modules': modules,
             }
 
-            # Step 6 (optional): Interactions
+            # Step 7 (optional): Interactions
             if include_interactions:
                 func_ids = tuple(f.get('id') for f in functions if f.get('id'))
                 data['interactions'] = _get_interactions_for_functions(conn, func_ids)
 
-            # Step 7 (optional): Note history
+            # Step 8 (optional): Note history
             if include_history:
                 data['notes'] = _get_notes_for_task(conn, task_type, task_id)
 
@@ -729,6 +735,24 @@ def _get_functions_for_files(
     placeholders = ','.join('?' for _ in file_ids)
     cursor = conn.execute(
         f"SELECT * FROM functions WHERE file_id IN ({placeholders})", file_ids
+    )
+    return rows_to_tuple(cursor.fetchall())
+
+
+def _get_modules_for_files(
+    conn: sqlite3.Connection,
+    file_ids: Tuple[int, ...],
+) -> Tuple[Dict[str, Any], ...]:
+    """Effect: Get distinct modules that own the given files via module_files."""
+    if not file_ids:
+        return ()
+    placeholders = ','.join('?' for _ in file_ids)
+    cursor = conn.execute(
+        f"SELECT DISTINCT m.id, m.name, m.path, m.purpose "
+        f"FROM modules m "
+        f"JOIN module_files mf ON mf.module_id = m.id "
+        f"WHERE mf.file_id IN ({placeholders})",
+        file_ids
     )
     return rows_to_tuple(cursor.fetchall())
 
