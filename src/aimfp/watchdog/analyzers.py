@@ -261,6 +261,70 @@ def _effect_get_all_finalized_file_paths(
     )
 
 
+def _effect_get_all_known_file_paths(
+    project_db_path: str,
+) -> frozenset[str]:
+    """Effect: Get all file paths from DB (both reserved and finalized)."""
+    rows = _effect_query_all(
+        project_db_path,
+        "SELECT path FROM files",
+    )
+    return frozenset(row.get('path', '') for row in rows if row.get('path'))
+
+
+def reconcile_unregistered_files(
+    source_directory: str,
+    project_root: str,
+    db_file_paths: frozenset[str],
+    excluded_dirs: frozenset[str],
+    excluded_extensions: frozenset[str],
+) -> Tuple[Dict[str, str], ...]:
+    """
+    Check source directory for files not registered in DB.
+
+    Walks the source directory, applies exclusion rules, and returns
+    reminders for files that exist on disk but aren't tracked in the database.
+    Called at watchdog startup to catch files created outside AIMFP tracking.
+
+    Args:
+        source_directory: Absolute path to the source directory to walk
+        project_root: Absolute path to the project root directory
+            (DB paths are stored relative to project_root)
+        db_file_paths: All known file paths from the database (reserved + finalized)
+        excluded_dirs: Directory names to skip during walk
+        excluded_extensions: File extensions to skip
+
+    Returns:
+        Tuple of reminder dicts for unregistered files
+    """
+    import os
+    from .config import should_exclude
+
+    reminders = []
+    for dirpath, dirnames, filenames in os.walk(source_directory):
+        # Prune excluded directories in-place to prevent descent
+        dirnames[:] = [d for d in dirnames if d not in excluded_dirs]
+
+        for filename in filenames:
+            absolute_path = os.path.join(dirpath, filename)
+            relative_path = os.path.relpath(absolute_path, project_root)
+
+            if should_exclude(relative_path, excluded_dirs, excluded_extensions):
+                continue
+
+            if relative_path not in db_file_paths:
+                reminders.append(create_reminder(
+                    REMINDER_NEW_FILE,
+                    SEVERITY_INFO,
+                    relative_path,
+                    "File exists on disk but not registered in database. "
+                    "Detected during startup reconciliation — file was likely "
+                    "created outside AIMFP tracking. Consider registering "
+                    "via reserve_file.",
+                ))
+    return tuple(reminders)
+
+
 def reconcile_deleted_files(
     finalized_files: Tuple[Dict[str, Any], ...],
     project_root: str,

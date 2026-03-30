@@ -27,7 +27,12 @@ from .config import (
 )
 from .reminders import _effect_append_reminders
 from .watcher import _effect_start_watching
-from .analyzers import _effect_get_all_finalized_file_paths, reconcile_deleted_files
+from .analyzers import (
+    _effect_get_all_finalized_file_paths,
+    _effect_get_all_known_file_paths,
+    reconcile_deleted_files,
+    reconcile_unregistered_files,
+)
 from ..wrappers.filesystem_observer import _effect_stop_observer
 
 
@@ -137,6 +142,15 @@ def main() -> None:
         deletion_reminders = reconcile_deleted_files(finalized_files, project_root)
         if deletion_reminders:
             _effect_append_reminders(reminders_path, deletion_reminders)
+
+    # Reconciliation scan: detect unregistered files on disk
+    all_db_paths = _effect_get_all_known_file_paths(project_db_path)
+    unregistered_reminders = reconcile_unregistered_files(
+        source_directory, project_root, all_db_paths,
+        excluded_dirs, excluded_extensions,
+    )
+    if unregistered_reminders:
+        _effect_append_reminders(reminders_path, unregistered_reminders)
 
     # Start observer
     observer = _effect_start_watching(
