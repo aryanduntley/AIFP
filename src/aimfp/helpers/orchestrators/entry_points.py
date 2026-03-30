@@ -752,6 +752,10 @@ def _read_reminders(project_root: str) -> Dict[str, Any]:
     This ensures findings survive across sessions even if the AI
     doesn't process them immediately.
 
+    Always reads reminders.json if it exists, regardless of PID file
+    status. The PID check only affects the status field — reconciliation
+    may have written results before the subprocess creates its PID file.
+
     Returns:
         dict with {
             status: 'ok' | 'not_running' | 'no_reminders_file',
@@ -765,27 +769,39 @@ def _read_reminders(project_root: str) -> Dict[str, Any]:
     pid_path = get_pid_path(project_root)
     reminders_path = get_reminders_path(project_root)
 
-    # Check if watchdog is running (PID file exists)
-    if not os.path.isfile(pid_path):
+    is_running = os.path.isfile(pid_path)
+
+    # Always read reminders if the file exists — reconciliation writes
+    # results synchronously before the subprocess creates its PID file,
+    # so gating on PID would drop those results.
+    if not os.path.isfile(reminders_path):
+        status = 'not_running' if not is_running else 'no_reminders_file'
+        notice = (
+            "Watchdog process is not running. File change monitoring is inactive. "
+            "Call aimfp_run(is_new_session=true) to restart, or verify the "
+            "watchdog module is installed."
+        ) if not is_running else (
+            "Watchdog PID file exists but reminders file is missing. "
+            "Watchdog may have failed to initialize. Check "
+            ".aimfp-project/watchdog/ directory."
+        )
+        return {
+            'status': status,
+            'reminders': (),
+            'notice': notice,
+        }
+
+    reminders = _effect_read_reminders(reminders_path)
+
+    if not is_running:
         return {
             'status': 'not_running',
-            'reminders': (),
+            'reminders': reminders,
             'notice': "Watchdog process is not running. File change monitoring is inactive. "
                       "Call aimfp_run(is_new_session=true) to restart, or verify the "
                       "watchdog module is installed.",
         }
 
-    # Check if reminders file exists
-    if not os.path.isfile(reminders_path):
-        return {
-            'status': 'no_reminders_file',
-            'reminders': (),
-            'notice': "Watchdog PID file exists but reminders file is missing. "
-                      "Watchdog may have failed to initialize. Check "
-                      ".aimfp-project/watchdog/ directory.",
-        }
-
-    reminders = _effect_read_reminders(reminders_path)
     return {
         'status': 'ok',
         'reminders': reminders,
