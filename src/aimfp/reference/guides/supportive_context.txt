@@ -110,4 +110,8 @@ Four databases: aimfp_core.db (read-only directives/helpers), project.db (files/
   variant='coding'  — auto-provided with aimfp_run(is_new_session=true) for initialized projects. File loop, DRY, interactions, types_functions
   variant='case2'   — auto-provided with aimfp_run(is_new_session=true) when Case 2 active. User directive pipeline, preferences
 
+10. USER SETTINGS
+
+  User preferences system: set_custom_return_statement (attach guidance to any helper — fires on every call), add_directive_preference (key-value prefs loaded with get_directive_by_name), add_user_setting (project-wide config), add_user_directive_note (AI interaction notes in user_directives.db). Use custom return statements for session-boundary behaviors, directive preferences for workflow customization, and user settings for project-wide flags/config.
+
 END SUPPORTIVE CONTEXT
