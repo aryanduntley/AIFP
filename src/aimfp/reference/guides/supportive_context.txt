@@ -30,12 +30,12 @@ Four databases: aimfp_core.db (read-only directives/helpers), project.db (files/
     9. get_all_completion_paths → activate first open path
     10. get_milestones_by_completion_path → activate first open milestone
     11. Create ONE task: add_task(milestone_id, name, flow_ids, priority)
-        Create items: add_project_entry(table='items', data={reference_table:'tasks', ...})
+        Create items: add_item(reference_table='tasks', reference_id=<task_id>, name, description) or batch via add_items(reference_table='tasks', reference_id=<task_id>, items=[{name, description}, ...])
     12. Work on items (get_supportive_context(variant='coding') for file loop detail):
         a. reserve_file → search_modules for overlap → write FP code → finalize_file
         b. reserve functions → finalize functions (purpose, parameters, returns populated)
         c. add_file_to_flow, add_file_to_module (if domain logic), add_interactions, add_types_functions
-        d. Item done → update_project_entry(table='items', id, data={status:'completed'})
+        d. Item done → update_item(id=<item_id>, status='completed') or batch via update_items(ids=[...], data={status:'completed'})
     13. All items done → project_task_complete → update_task(status='completed')
     14. More tasks? → create next (goto 11). No → project_milestone_complete
     15. More milestones? → activate next (goto 10). No → project_completion_check → done

@@ -348,7 +348,7 @@
       "is_sub_helper": false,
       "return_statements": [
         "BEFORE STARTING WORK: Check get_all_flows() and get_all_themes() for relevant workflow descriptions. Flows describe the intended architecture and user-facing behavior your implementation should match. Themes identify which area of the project this work belongs to. Consulting these BEFORE coding prevents architectural mismatches.",
-        "Create items for this task: add_project_entry(table='items', data={reference_table:'tasks', reference_id:<task_id>, name:<name>, description:<desc>})",
+        "Create items for this task: add_item(reference_table='tasks', reference_id=<task_id>, name=<name>, description=<desc>) or batch via add_items(reference_table='tasks', reference_id=<task_id>, items=[{name:<name>, description:<desc>}, ...])",
         "DB-FIRST LOOKUP: When working on this task, use get_function_by_name, get_type_by_name, get_file_by_name, get_functions_by_file to understand existing code BEFORE reading source files. The DB is the index; source files are the full text."
       ],
       "target_database": "project",

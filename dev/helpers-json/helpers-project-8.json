@@ -45,7 +45,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Create items for this subtask: add_project_entry(table='items', data={reference_table:'subtasks', reference_id:<subtask_id>, name:<name>, description:<desc>})"
+        "Create items for this subtask: add_item(reference_table='subtasks', reference_id=<subtask_id>, name=<name>, description=<desc>) or batch via add_items(reference_table='subtasks', reference_id=<subtask_id>, items=[{name:<name>, description:<desc>}, ...])"
       ],
       "target_database": "project",
       "used_by_directives": [
@@ -470,7 +470,7 @@
       "is_tool": true,
       "is_sub_helper": false,
       "return_statements": [
-        "Create items for this sidequest: add_project_entry(table='items', data={reference_table:'sidequests', reference_id:<sidequest_id>, name:<name>, description:<desc>})"
+        "Create items for this sidequest: add_item(reference_table='sidequests', reference_id=<sidequest_id>, name=<name>, description=<desc>) or batch via add_items(reference_table='sidequests', reference_id=<sidequest_id>, items=[{name:<name>, description:<desc>}, ...])"
       ],
       "target_database": "project",
       "used_by_directives": [

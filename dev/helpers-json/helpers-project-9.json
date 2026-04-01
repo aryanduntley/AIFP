@@ -169,6 +169,288 @@
       ]
     },
     {
+      "name": "add_item",
+      "file_path": "helpers/project/items_notes.py",
+      "parameters": [
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'tasks', 'subtasks', or 'sidequests'"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "ID of the parent task, subtask, or sidequest"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Item name"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Item description"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": "pending",
+          "description": "'pending', 'in_progress', 'completed' (default: pending)"
+        }
+      ],
+      "purpose": "Create a single work item under a task, subtask, or sidequest. Items are the smallest trackable units of work.",
+      "error_handling": "Return error if parent record not found or parent status is 'completed'",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Item created. Begin working on items: reserve_file → search_modules for overlap → write FP code → finalize_file → reserve/finalize functions+types → add_file_to_flow → add_file_to_module (if domain logic) → add_interactions → add_types_functions.",
+        "Item done → update_item(id=<item_id>, status='completed'). All items done → check get_incomplete_items(for_table, for_id) before completing parent."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_item_create",
+          "execution_context": "create_item_record",
+          "sequence_order": 3,
+          "is_required": true,
+          "parameters_mapping": {
+            "reference_table": "workflow.parent_type",
+            "reference_id": "workflow.parent_id",
+            "name": "workflow.item_name",
+            "description": "workflow.item_description"
+          },
+          "description": "Create item record after validating parent exists and checking for duplicates"
+        },
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Create items for tasks during decomposition if item-level granularity is identified"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, id: new_id}",
+        "SQL: INSERT INTO items (reference_table, reference_id, name, description, status) VALUES (?, ?, ?, ?, ?) RETURNING id",
+        "Validate reference_table is one of 'tasks', 'subtasks', 'sidequests'",
+        "Validate parent record exists and is not completed before inserting"
+      ]
+    },
+    {
+      "name": "add_items",
+      "file_path": "helpers/project/items_notes.py",
+      "parameters": [
+        {
+          "name": "reference_table",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "'tasks', 'subtasks', or 'sidequests'"
+        },
+        {
+          "name": "reference_id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "ID of the parent task, subtask, or sidequest"
+        },
+        {
+          "name": "items",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of {name: string, description?: string} objects"
+        }
+      ],
+      "purpose": "Batch-create multiple work items under a single parent in one call. All items created with status 'pending'.",
+      "error_handling": "Return error if parent record not found or parent status is 'completed'. Atomic — if any item fails validation, none are inserted.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Items created. Begin working on items: reserve_file → search_modules for overlap → write FP code → finalize_file → reserve/finalize functions+types → add_file_to_flow → add_file_to_module (if domain logic) → add_interactions → add_types_functions.",
+        "Item done → update_item(id=<item_id>, status='completed'). All items done → check get_incomplete_items(for_table, for_id) before completing parent."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_item_create",
+          "execution_context": "create_item_record",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {
+            "reference_table": "workflow.parent_type",
+            "reference_id": "workflow.parent_id",
+            "items": "workflow.item_list"
+          },
+          "description": "Batch-create items when multiple items identified during decomposition"
+        },
+        {
+          "directive_name": "project_task_decomposition",
+          "execution_context": "decompose_request",
+          "sequence_order": 4,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch-create items for tasks during decomposition when multiple items are identified at once"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, ids: [new_id_1, new_id_2, ...], count: N}",
+        "SQL: INSERT INTO items (reference_table, reference_id, name, description, status) VALUES (?, ?, ?, ?, 'pending') for each item in array",
+        "Validate reference_table is one of 'tasks', 'subtasks', 'sidequests'",
+        "Validate parent record exists and is not completed before inserting",
+        "Use transaction — all items inserted atomically (all succeed or all fail)",
+        "Validate each item has a non-empty 'name' field"
+      ]
+    },
+    {
+      "name": "update_item",
+      "file_path": "helpers/project/items_notes.py",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "default": null,
+          "description": "Item ID"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New name (NULL = don't update)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "'pending', 'in_progress', 'completed' (NULL = don't update)"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "New description (NULL = don't update)"
+        }
+      ],
+      "purpose": "Update a single item's status, name, or description. Primary use: marking items in_progress or completed as work progresses.",
+      "error_handling": "Return error if item ID not found",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If status='completed': check get_incomplete_items(for_table=<reference_table>, for_id=<reference_id>) — if empty, all items done → complete the parent via update_task/update_subtask/update_sidequest(status='completed').",
+        "If status='in_progress': proceed with coding work for this item."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "mark_complete_and_items",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update individual item status during task completion workflow"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "mark_complete_and_items",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update individual item status during subtask completion workflow"
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "mark_complete_and_log",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Update individual item status during sidequest completion workflow"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, id: id}",
+        "SQL: UPDATE items SET <fields> WHERE id=?",
+        "Only updates fields that are non-null — partial updates supported",
+        "Sets updated_at = CURRENT_TIMESTAMP on every update"
+      ]
+    },
+    {
+      "name": "update_items",
+      "file_path": "helpers/project/items_notes.py",
+      "parameters": [
+        {
+          "name": "ids",
+          "type": "array",
+          "required": true,
+          "default": null,
+          "description": "Array of item IDs to update"
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "required": true,
+          "default": null,
+          "description": "Field-value pairs to apply to all items (e.g., {status: 'completed'})"
+        }
+      ],
+      "purpose": "Batch-update multiple items with the same field values. Primary use: marking multiple items completed at once when parent completes.",
+      "error_handling": "Return error if any ID not found. Atomic — all updates succeed or none apply.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "If status='completed' for all: check get_incomplete_items(for_table=<reference_table>, for_id=<reference_id>) — if empty, all items done → complete the parent via update_task/update_subtask/update_sidequest(status='completed')."
+      ],
+      "target_database": "project",
+      "used_by_directives": [
+        {
+          "directive_name": "project_task_complete",
+          "execution_context": "mark_complete_and_items",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch-complete remaining items when task is marked completed"
+        },
+        {
+          "directive_name": "project_subtask_complete",
+          "execution_context": "mark_complete_and_items",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch-complete remaining items when subtask is marked completed"
+        },
+        {
+          "directive_name": "project_sidequest_complete",
+          "execution_context": "mark_complete_and_log",
+          "sequence_order": 3,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "Batch-complete remaining items when sidequest is marked completed"
+        }
+      ],
+      "implementation_notes": [
+        "Returns {success: true, updated_count: N}",
+        "SQL: UPDATE items SET <fields> WHERE id IN (?, ?, ...) within a transaction",
+        "Only updates fields present in data object — partial updates supported",
+        "Validate all IDs exist before applying updates",
+        "Sets updated_at = CURRENT_TIMESTAMP on every update",
+        "Use transaction — all updates applied atomically"
+      ]
+    },
+    {
       "name": "delete_item",
       "file_path": "helpers/project/items_notes.py",
       "parameters": [
@@ -611,13 +893,13 @@
   ],
   "metadata": {
     "file": "helpers-project-9.json",
-    "count": 11,
-    "range": "helpers 103-113 of 113",
-    "description": "Item and note management operations, state database creation",
+    "count": 15,
+    "range": "helpers 103-117 of 117",
+    "description": "Item CRUD, note management operations, state database creation",
     "first_helper": "get_items_for_task",
     "last_helper": "create_state_database",
     "status": "return_statements complete",
-    "last_updated": "2026-01-31",
-    "notes": "Added create_state_database helper for FP-compliant state management"
+    "last_updated": "2026-03-31",
+    "notes": "Added add_item, add_items, update_item, update_items helpers for dedicated item management"
   }
 }
