@@ -13,6 +13,10 @@ Helpers in this file:
 - get_items_for_subtask: Get items for subtask with optional status filter
 - get_items_for_sidequest: Get items for sidequest with optional status filter
 - get_incomplete_items: Get incomplete items for any parent type
+- add_item: Create a single work item under a task, subtask, or sidequest
+- add_items: Batch-create multiple work items in one call
+- update_item: Update a single item's status, name, or description
+- update_items: Batch-update multiple items with the same field values
 - delete_item: Delete item with status validation (only pending)
 - add_note: Add note to project database
 - get_notes_comprehensive: Advanced note search with filters
@@ -286,6 +290,147 @@ def _delete_item(conn: sqlite3.Connection, item_id: int) -> None:
     """
     conn.execute("DELETE FROM items WHERE id = ?", (item_id,))
     conn.commit()
+
+
+def _insert_item(
+    conn: sqlite3.Connection,
+    reference_table: str,
+    reference_id: int,
+    name: str,
+    description: Optional[str],
+    status: str
+) -> int:
+    """
+    Effect: Insert item into database.
+
+    Args:
+        conn: Database connection
+        reference_table: Parent table name
+        reference_id: Parent ID
+        name: Item name
+        description: Optional item description
+        status: Item status
+
+    Returns:
+        New item ID
+    """
+    cursor = conn.execute(
+        "INSERT INTO items (reference_table, reference_id, name, description, status) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (reference_table, reference_id, name, description, status)
+    )
+    conn.commit()
+    return cursor.lastrowid
+
+
+def _insert_items_batch(
+    conn: sqlite3.Connection,
+    reference_table: str,
+    reference_id: int,
+    items: List[dict]
+) -> Tuple[int, ...]:
+    """
+    Effect: Insert multiple items atomically.
+
+    Args:
+        conn: Database connection
+        reference_table: Parent table name
+        reference_id: Parent ID
+        items: List of {name, description?} dicts
+
+    Returns:
+        Tuple of new item IDs
+    """
+    ids = []
+    for item in items:
+        cursor = conn.execute(
+            "INSERT INTO items (reference_table, reference_id, name, description, status) "
+            "VALUES (?, ?, ?, ?, 'pending')",
+            (reference_table, reference_id, item["name"], item.get("description"))
+        )
+        ids.append(cursor.lastrowid)
+    conn.commit()
+    return tuple(ids)
+
+
+def _update_item_fields(
+    conn: sqlite3.Connection,
+    item_id: int,
+    name: Optional[str],
+    status: Optional[str],
+    description: Optional[str]
+) -> None:
+    """
+    Effect: Update item fields (only non-None values).
+
+    Args:
+        conn: Database connection
+        item_id: Item ID
+        name: New name (None = don't update)
+        status: New status (None = don't update)
+        description: New description (None = don't update)
+    """
+    fields = []
+    values = []
+
+    if name is not None:
+        fields.append("name = ?")
+        values.append(name)
+
+    if status is not None:
+        fields.append("status = ?")
+        values.append(status)
+
+    if description is not None:
+        fields.append("description = ?")
+        values.append(description)
+
+    if not fields:
+        return
+
+    fields.append("updated_at = CURRENT_TIMESTAMP")
+    values.append(item_id)
+
+    query = f"UPDATE items SET {', '.join(fields)} WHERE id = ?"
+    conn.execute(query, values)
+    conn.commit()
+
+
+def _batch_update_items(
+    conn: sqlite3.Connection,
+    ids: List[int],
+    data: dict
+) -> int:
+    """
+    Effect: Batch-update items with same field values.
+
+    Args:
+        conn: Database connection
+        ids: Item IDs to update
+        data: Field-value pairs to apply
+
+    Returns:
+        Number of rows updated
+    """
+    fields = []
+    values = []
+
+    for key, value in data.items():
+        if key in ("name", "status", "description"):
+            fields.append(f"{key} = ?")
+            values.append(value)
+
+    if not fields:
+        return 0
+
+    fields.append("updated_at = CURRENT_TIMESTAMP")
+    placeholders = ",".join("?" for _ in ids)
+    values.extend(ids)
+
+    query = f"UPDATE items SET {', '.join(fields)} WHERE id IN ({placeholders})"
+    conn.execute(query, values)
+    conn.commit()
+    return len(ids)
 
 
 # ============================================================================
@@ -837,6 +982,326 @@ def delete_item(
     except Exception as e:
         conn.close()
         return DeleteResult(
+            success=False,
+            error=f"Database error: {str(e)}"
+        )
+
+
+def add_item(
+    reference_table: str,
+    reference_id: int,
+    name: str,
+    description: Optional[str] = None,
+    status: str = "pending"
+) -> AddResult:
+    """
+    Create a single work item under a task, subtask, or sidequest.
+
+    Args:
+        reference_table: 'tasks', 'subtasks', or 'sidequests'
+        reference_id: ID of the parent task, subtask, or sidequest
+        name: Item name
+        description: Optional item description
+        status: 'pending', 'in_progress', 'completed' (default: pending)
+
+    Returns:
+        AddResult with new item ID on success
+    """
+    # Normalize and validate reference_table
+    normalized_table = _normalize_table_name(reference_table)
+    valid_tables = {'tasks', 'subtasks', 'sidequests'}
+    if normalized_table not in valid_tables:
+        return AddResult(
+            success=False,
+            error=f"Invalid reference_table: {reference_table}. Must be one of: {', '.join(valid_tables)}"
+        )
+
+    # Validate status
+    if not _validate_item_status(status):
+        return AddResult(
+            success=False,
+            error=f"Invalid status: {status}. Must be one of: {', '.join(VALID_ITEM_STATUSES)}"
+        )
+
+    # Validate name
+    if not name or not name.strip():
+        return AddResult(
+            success=False,
+            error="Item name cannot be empty"
+        )
+
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        # Check parent exists
+        if not _check_entity_exists(conn, normalized_table, reference_id):
+            conn.close()
+            return AddResult(
+                success=False,
+                error=f"Parent {normalized_table} ID {reference_id} not found"
+            )
+
+        # Check parent is not completed
+        cursor = conn.execute(
+            f"SELECT status FROM {normalized_table} WHERE id = ?",
+            (reference_id,)
+        )
+        row = cursor.fetchone()
+        if row['status'] == 'completed':
+            conn.close()
+            return AddResult(
+                success=False,
+                error=f"Cannot add item: parent {normalized_table} ID {reference_id} is already completed"
+            )
+
+        # Insert item
+        item_id = _insert_item(conn, normalized_table, reference_id, name.strip(), description, status)
+        conn.close()
+
+        return_stmts = get_return_statements("add_item")
+
+        return AddResult(
+            success=True,
+            id=item_id,
+            return_statements=return_stmts
+        )
+
+    except Exception as e:
+        conn.close()
+        return AddResult(
+            success=False,
+            error=f"Database error: {str(e)}"
+        )
+
+
+def add_items(
+    reference_table: str,
+    reference_id: int,
+    items: List[dict]
+) -> AddResult:
+    """
+    Batch-create multiple work items under a single parent.
+    All items created with status 'pending'. Atomic — all or none.
+
+    Args:
+        reference_table: 'tasks', 'subtasks', or 'sidequests'
+        reference_id: ID of the parent task, subtask, or sidequest
+        items: List of {name: str, description?: str} dicts
+
+    Returns:
+        AddResult with count on success (id field holds count of inserted items)
+    """
+    # Normalize and validate reference_table
+    normalized_table = _normalize_table_name(reference_table)
+    valid_tables = {'tasks', 'subtasks', 'sidequests'}
+    if normalized_table not in valid_tables:
+        return AddResult(
+            success=False,
+            error=f"Invalid reference_table: {reference_table}. Must be one of: {', '.join(valid_tables)}"
+        )
+
+    # Validate items list
+    if not items:
+        return AddResult(
+            success=False,
+            error="Items list cannot be empty"
+        )
+
+    # Validate each item has a non-empty name
+    for i, item in enumerate(items):
+        if not isinstance(item, dict):
+            return AddResult(
+                success=False,
+                error=f"Item at index {i} must be a dict with 'name' key"
+            )
+        item_name = item.get("name", "")
+        if not item_name or not str(item_name).strip():
+            return AddResult(
+                success=False,
+                error=f"Item at index {i} has empty name"
+            )
+
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        # Check parent exists
+        if not _check_entity_exists(conn, normalized_table, reference_id):
+            conn.close()
+            return AddResult(
+                success=False,
+                error=f"Parent {normalized_table} ID {reference_id} not found"
+            )
+
+        # Check parent is not completed
+        cursor = conn.execute(
+            f"SELECT status FROM {normalized_table} WHERE id = ?",
+            (reference_id,)
+        )
+        row = cursor.fetchone()
+        if row['status'] == 'completed':
+            conn.close()
+            return AddResult(
+                success=False,
+                error=f"Cannot add items: parent {normalized_table} ID {reference_id} is already completed"
+            )
+
+        # Batch insert (atomic)
+        ids = _insert_items_batch(conn, normalized_table, reference_id, items)
+        conn.close()
+
+        return_stmts = get_return_statements("add_items")
+
+        return AddResult(
+            success=True,
+            id=len(ids),
+            return_statements=return_stmts
+        )
+
+    except Exception as e:
+        conn.close()
+        return AddResult(
+            success=False,
+            error=f"Database error: {str(e)}"
+        )
+
+
+def update_item(
+    id: int,
+    name: Optional[str] = None,
+    status: Optional[str] = None,
+    description: Optional[str] = None
+) -> UpdateResult:
+    """
+    Update a single item's status, name, or description.
+
+    Args:
+        id: Item ID
+        name: New name (None = don't update)
+        status: 'pending', 'in_progress', 'completed' (None = don't update)
+        description: New description (None = don't update)
+
+    Returns:
+        UpdateResult with success status
+    """
+    # Validate status if provided
+    if status is not None and not _validate_item_status(status):
+        return UpdateResult(
+            success=False,
+            error=f"Invalid status: {status}. Must be one of: {', '.join(VALID_ITEM_STATUSES)}"
+        )
+
+    # Check at least one field to update
+    if name is None and status is None and description is None:
+        return UpdateResult(
+            success=False,
+            error="No fields to update — provide at least one of: name, status, description"
+        )
+
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        # Check item exists
+        if not _check_entity_exists(conn, "items", id):
+            conn.close()
+            return UpdateResult(
+                success=False,
+                error=f"Item ID {id} not found"
+            )
+
+        # Update item
+        _update_item_fields(conn, id, name, status, description)
+        conn.close()
+
+        return_stmts = get_return_statements("update_item")
+
+        return UpdateResult(
+            success=True,
+            return_statements=return_stmts
+        )
+
+    except Exception as e:
+        conn.close()
+        return UpdateResult(
+            success=False,
+            error=f"Database error: {str(e)}"
+        )
+
+
+def update_items(
+    ids: List[int],
+    data: dict
+) -> UpdateResult:
+    """
+    Batch-update multiple items with the same field values.
+    Atomic — all updates succeed or none apply.
+
+    Args:
+        ids: List of item IDs to update
+        data: Field-value pairs to apply (e.g., {status: 'completed'})
+
+    Returns:
+        UpdateResult with success status
+    """
+    # Validate ids
+    if not ids:
+        return UpdateResult(
+            success=False,
+            error="IDs list cannot be empty"
+        )
+
+    # Validate data
+    if not data:
+        return UpdateResult(
+            success=False,
+            error="Data dict cannot be empty"
+        )
+
+    # Validate status if in data
+    if "status" in data and not _validate_item_status(data["status"]):
+        return UpdateResult(
+            success=False,
+            error=f"Invalid status: {data['status']}. Must be one of: {', '.join(VALID_ITEM_STATUSES)}"
+        )
+
+    # Validate only known fields
+    valid_fields = {"name", "status", "description"}
+    unknown = set(data.keys()) - valid_fields
+    if unknown:
+        return UpdateResult(
+            success=False,
+            error=f"Unknown fields: {', '.join(unknown)}. Allowed: {', '.join(valid_fields)}"
+        )
+
+    project_root = get_cached_project_root()
+    conn = _open_project_connection(project_root)
+
+    try:
+        # Validate all IDs exist
+        for item_id in ids:
+            if not _check_entity_exists(conn, "items", item_id):
+                conn.close()
+                return UpdateResult(
+                    success=False,
+                    error=f"Item ID {item_id} not found"
+                )
+
+        # Batch update (atomic)
+        _batch_update_items(conn, ids, data)
+        conn.close()
+
+        return_stmts = get_return_statements("update_items")
+
+        return UpdateResult(
+            success=True,
+            return_statements=return_stmts
+        )
+
+    except Exception as e:
+        conn.close()
+        return UpdateResult(
             success=False,
             error=f"Database error: {str(e)}"
         )

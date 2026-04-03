@@ -4,7 +4,7 @@ AIMFP MCP Server - Tool Registry
 Static dict mapping tool names to (module_path, function_name) tuples.
 Uses importlib for lazy loading — modules are only imported on first call.
 
-222 is_tool=true helpers registered. Generated from aimfp_core.db.
+226 is_tool=true helpers registered. Generated from aimfp_core.db.
 
 Why static, not DB-driven:
 - Predictable tool list, no runtime DB dependency for tool listing
@@ -149,7 +149,9 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_interactions_by_file": ("aimfp.helpers.project.interactions", "get_interactions_by_file"),
 
     # ── Project: Items & Notes ───────────────────────────────────────────
-    # helpers/project/items_notes.py (9 tools)
+    # helpers/project/items_notes.py (13 tools)
+    "add_item": ("aimfp.helpers.project.items_notes", "add_item"),
+    "add_items": ("aimfp.helpers.project.items_notes", "add_items"),
     "add_note": ("aimfp.helpers.project.items_notes", "add_note"),
     "delete_item": ("aimfp.helpers.project.items_notes", "delete_item"),
     "get_incomplete_items": ("aimfp.helpers.project.items_notes", "get_incomplete_items"),
@@ -158,6 +160,8 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_items_for_task": ("aimfp.helpers.project.items_notes", "get_items_for_task"),
     "get_notes_comprehensive": ("aimfp.helpers.project.items_notes", "get_notes_comprehensive"),
     "search_notes": ("aimfp.helpers.project.items_notes", "search_notes"),
+    "update_item": ("aimfp.helpers.project.items_notes", "update_item"),
+    "update_items": ("aimfp.helpers.project.items_notes", "update_items"),
     "update_note": ("aimfp.helpers.project.items_notes", "update_note"),
     "delete_note": ("aimfp.helpers.project.items_notes", "delete_note"),
 
