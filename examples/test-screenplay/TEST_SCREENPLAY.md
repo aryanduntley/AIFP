@@ -11,31 +11,40 @@
 ## Prerequisites
 
 - Python 3.11+
-- Claude Desktop (MCPB bundle) or Claude Code (stdio transport)
+- Claude Code (plugin — recommended — or stdio transport)
 - An empty folder to use as the test project directory
 
 ---
 
 ## Setup
 
-### Option A: Claude Desktop (MCPB Bundle)
+### Option A: Claude Code Plugin (Recommended)
 
-1. Install the MCPB bundle:
-   - Open Claude Desktop
-   - File > Install Extension > select `aimfp.mcpb`
-   - Or: drag `aimfp.mcpb` onto the Claude Desktop window
+1. Add the marketplace and install the plugin (from any Claude Code session):
+   ```
+   /plugin marketplace add aryanduntley/aimfp
+   /plugin install aimfp@aimfp
+   ```
+   The plugin bundles the MCP server, slash commands, the `aimfp-mode` setup
+   skill, and session hooks. No `pip install` and no `claude mcp add`.
 
-2. Add the system prompt:
-   - Open Claude Desktop Settings > Custom Instructions
-   - Paste the full contents of `sys-prompt/aimfp_system_prompt.txt`
-   - Save
-
-3. Create an empty test project folder:
+2. Create an empty test project folder and open Claude Code there:
    ```bash
    mkdir ~/aimfp-test-project
+   cd ~/aimfp-test-project
+   claude
    ```
 
-4. Open Claude Desktop and start a new conversation.
+3. Install the AIMFP system prompt (required — it is AIMFP's behavioral
+   backbone, loaded every turn). Ask the AI:
+   ```
+   Add the AIMFP system prompt
+   ```
+   The AI calls the `get_system_prompt` tool and writes it to `CLAUDE.md`
+   (AIMFP content first; existing content preserved). The `aimfp-mode` skill +
+   SessionStart hook exist to make the AI do exactly this on first run — they
+   are setup helpers, not a replacement for the system prompt. The AI will then
+   offer to also set up the tool-permission allowlist.
 
 ### Option B: Claude Code (stdio)
 
@@ -91,8 +100,8 @@
 ### Verify MCP Connection
 
 Before starting, confirm the server is connected:
-- **Claude Desktop**: Check that AIMFP tools appear in the tools list (hammer icon)
-- **Claude Code**: Run `/mcp` and verify the aimfp server shows as connected
+- **Plugin (Option A)**: Run `/plugin` and verify `aimfp` is installed and enabled, then `/mcp` to confirm the aimfp server is connected
+- **Claude Code stdio (Option B)**: Run `/mcp` and verify the aimfp server shows as connected
 
 If the server is not connected, check your configuration and try again before proceeding.
 
@@ -700,9 +709,14 @@ Open `.aimfp-project/ProjectBlueprint.md` and verify:
 
 ### Claude does not call aimfp_run first
 
-The system prompt must be properly loaded. Verify:
-- **Claude Desktop**: Check Custom Instructions contains the full system prompt
-- **Claude Code**: Check `CLAUDE.md` exists in the project root and contains the system prompt
+The AIMFP system prompt must be installed in the project — it is the behavioral
+backbone, required for every install method. Verify:
+- **All installs**: `CLAUDE.md` exists in the project root and contains the
+  AIMFP system prompt. If missing, ask the AI to "Add the AIMFP system prompt"
+  (plugin: the `aimfp-mode` skill/hook should have prompted this; it calls
+  `get_system_prompt`) or generate it manually with `python3 -m aimfp --system-prompt`.
+- **Plugin (Option A)**: also run `/plugin` and confirm `aimfp` is enabled so
+  the setup skill/hook actually fired.
 
 ### Claude does not detect the project directory
 

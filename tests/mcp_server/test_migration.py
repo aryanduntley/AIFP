@@ -13,6 +13,7 @@ Verifies:
 """
 
 import os
+import re
 import sqlite3
 import tempfile
 import shutil
@@ -23,7 +24,37 @@ from aimfp.helpers.orchestrators.migration import (
     _get_schema_path,
     migrate_databases,
 )
+from aimfp.helpers.orchestrators._common import get_core_db_path
 from aimfp.database.connection import set_project_root, clear_project_root_cache
+
+
+# ============================================================================
+# Authoritative version source
+# ============================================================================
+#
+# The migration system's source of truth for "what version should this DB be"
+# is aimfp_core.db.expected_schema_versions — migrate_databases() reads it to
+# decide the target version. Tests assert against THAT, not hardcoded literals,
+# so a schema bump never silently breaks (or requires editing) these tests.
+
+_SCHEMA_VERSION_RE = (
+    r"INSERT OR REPLACE INTO schema_version \(id, version\) VALUES \(1, '[^']+'\)"
+)
+
+
+def _expected_version(db_name: str) -> str:
+    """Authoritative target version for db_name, from aimfp_core.db (same
+    source migrate_databases uses)."""
+    conn = sqlite3.connect(get_core_db_path())
+    try:
+        row = conn.execute(
+            "SELECT expected_version FROM expected_schema_versions WHERE db_name=?",
+            (db_name,),
+        ).fetchone()
+        assert row is not None, f"no expected_schema_versions row for {db_name}"
+        return row[0]
+    finally:
+        conn.close()
 
 
 # ============================================================================
@@ -46,11 +77,15 @@ def _create_old_project_db(aimfp_dir, version="1.6"):
     schema_path = _get_schema_path("project.sql")
     with open(schema_path, 'r') as f:
         schema_sql = f.read()
-    # Replace new version with old version
-    schema_sql = schema_sql.replace(
-        "INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '1.8')",
-        f"INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '{version}')"
+    # Downgrade the schema's declared version to the requested old version.
+    # Match whatever version the schema currently declares (don't hardcode it)
+    # so this fixture keeps working across schema bumps.
+    schema_sql, n = re.subn(
+        _SCHEMA_VERSION_RE,
+        f"INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, '{version}')",
+        schema_sql,
     )
+    assert n == 1, f"expected exactly 1 schema_version insert in project.sql, found {n}"
     # Remove the new note types to simulate old schema
     schema_sql = schema_sql.replace(
         "'summary',         -- Manual summaries (distinct from auto_summary which is automated)\n"
@@ -127,7 +162,7 @@ def test_check_pending_detects_old_version():
 
         result = _check_pending_migrations(tmp, ".aimfp-project")
         assert result['checked'] is True
-        # project.db should be pending (1.6 -> 1.7)
+        # project.db (created at old 1.6) should be pending vs current schema
         pending_names = [p['db_name'] for p in result['pending']]
         assert 'project' in pending_names
         # user_preferences should be up_to_date (1.2 == 1.2)
@@ -157,7 +192,7 @@ def test_check_pending_all_current():
     tmp = tempfile.mkdtemp()
     try:
         aimfp_dir = _setup_project(tmp)
-        # Create project.db at current version (1.7)
+        # Create project.db straight from the schema (already at current version)
         db_path = os.path.join(aimfp_dir, "project.db")
         conn = sqlite3.connect(db_path)
         schema_path = _get_schema_path("project.sql")
@@ -217,7 +252,7 @@ def test_migrate_databases_upgrades_project():
         migrated = result.data['migrated'][0]
         assert migrated['db_name'] == 'project'
         assert migrated['old_version'] == '1.6'
-        assert migrated['new_version'] == '1.8'
+        assert migrated['new_version'] == _expected_version('project')
         assert migrated['backup_temp_path'] is not None
         assert migrated['new_db_temp_path'] is not None
         assert os.path.isfile(migrated['backup_temp_path'])
@@ -271,7 +306,7 @@ def test_migrate_databases_preserves_data():
         # Check version is new
         cursor = new_conn.execute("SELECT version FROM schema_version")
         row = cursor.fetchone()
-        assert row['version'] == "1.8"
+        assert row['version'] == _expected_version('project')
 
         new_conn.close()
 

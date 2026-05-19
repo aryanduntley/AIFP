@@ -1,0 +1,16 @@
+{
+  "name": "aimfp",
+  "owner": {
+    "name": "Aryan Duntley",
+    "url": "https://github.com/aryanduntley"
+  },
+  "description": "AIMFP — AI Modular Functional Procedural: database-driven FP enforcement and cross-session project management for AI-assisted development.",
+  "plugins": [
+    {
+      "name": "aimfp",
+      "source": "./",
+      "description": "MCP server + slash commands, skill, and hooks for FP enforcement and project lifecycle management over a bundled SQLite engine.",
+      "category": "development"
+    }
+  ]
+}

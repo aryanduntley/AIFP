@@ -6,7 +6,7 @@ Files updated:
   - pyproject.toml          (version = "X.Y.Z")
   - src/aimfp/__init__.py    (__version__ = "X.Y.Z")
   - src/aimfp/mcp_server/server.py  (SERVER_VERSION: Final[str] = "X.Y.Z")
-  - manifest.json           ("version": "X.Y.Z")
+  - .claude-plugin/plugin.json  ("version": "X.Y.Z")
 
 After bumping, runs: rm -rf build dist src/*.egg-info && python3 -m build --no-isolation
 """
@@ -35,11 +35,6 @@ VERSION_FILES = {
         "pattern": r'^(SERVER_VERSION:\s*Final\[str\]\s*=\s*")[^"]+(")',
         "replace": r'\g<1>{version}\2',
     },
-    "manifest.json": {
-        "path": ROOT / "manifest.json",
-        "pattern": r'^(\s*"version"\s*:\s*")[^"]+(")',
-        "replace": r'\g<1>{version}\2',
-    },
     ".claude-plugin/plugin.json": {
         "path": ROOT / ".claude-plugin" / "plugin.json",
         "pattern": r'^(\s*"version"\s*:\s*")[^"]+(")',
@@ -53,12 +48,16 @@ VERSION_RE = re.compile(r'^\d+\.\d+\.\d+$')
 def extract_current(name: str, info: dict) -> str | None:
     text = info["path"].read_text()
     m = re.search(info["pattern"], text, re.MULTILINE)
-    if m:
-        full_match = m.group(0)
-        # Extract just the version string between quotes
-        v = re.search(r'"([^"]+)"', full_match)
-        return v.group(1) if v else None
-    return None
+    if not m:
+        return None
+    # Every pattern is structured as (prefix")<version>("): group 1 is the
+    # prefix ending at the opening quote, group 2 is the closing quote, and
+    # the version is whatever sits between them. (Searching for the first
+    # "..." in the match instead would return the JSON `"version"` KEY, not
+    # its value — that was the false "out of sync" bug.)
+    full_match = m.group(0)
+    prefix, suffix = m.group(1), m.group(2)
+    return full_match[len(prefix):len(full_match) - len(suffix)]
 
 
 def update_file(info: dict, new_version: str) -> bool:

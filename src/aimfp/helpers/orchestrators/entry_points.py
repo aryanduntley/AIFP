@@ -609,13 +609,7 @@ def aimfp_run(is_new_session: bool = False) -> Result:
         watchdog_start = _start_watchdog(project_root)
         _run_reconciliation_sync(project_root)
         watchdog_read = _read_reminders(project_root)
-        watchdog_data = {
-            'started': watchdog_start.get('started', False),
-            'start_error': watchdog_start.get('error'),
-            'status': watchdog_read.get('status', 'unknown'),
-            'reminders': watchdog_read.get('reminders', ()),
-            'notice': watchdog_read.get('notice'),
-        }
+        watchdog_data = _reconcile_watchdog_status(watchdog_start, watchdog_read)
 
         # Bundle: status
         status_result = aimfp_status(type="summary")
@@ -693,6 +687,69 @@ def aimfp_run(is_new_session: bool = False) -> Result:
         return Result(success=False, error=f"aimfp_run failed: {str(e)}")
 
 
+def _reconcile_watchdog_status(
+    watchdog_start: Dict[str, Any],
+    watchdog_read: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Pure: Merge the watchdog start result and reminder-read result into one
+    coherent status the AI can act on.
+
+    `_start_watchdog` knows whether the subprocess launched; `_read_reminders`
+    only knows whether the PID file exists yet. Right after a fresh start the
+    PID file usually is not there, so `_read_reminders` reports 'not_running'
+    with a "restart it" notice. Emitting that next to started:true is
+    self-contradictory and makes the AI either alarm the user or loop calling
+    aimfp_run to "restart" the watchdog on every new session.
+
+    Collapses to exactly one coherent state:
+        - 'ok'       : running and healthy
+        - 'starting' : just launched, PID not yet registered (no restart!)
+        - 'failed'   : launch failed / subprocess exited (real error surfaced)
+        - otherwise  : pass the read status/notice through unchanged
+
+    Returns the watchdog_data dict for the session bundle.
+    """
+    started_ok = (
+        watchdog_start.get('started') is True
+        and not watchdog_start.get('error')
+    )
+    raw_status = watchdog_read.get('status', 'unknown')
+
+    if not started_ok:
+        wd_status = 'failed'
+        wd_notice = (
+            watchdog_start.get('error')
+            or "Watchdog did not start; file change monitoring is inactive."
+        )
+    elif raw_status == 'ok':
+        wd_status = 'ok'
+        wd_notice = None
+    elif raw_status in ('not_running', 'no_reminders_file'):
+        # Just launched this call but the subprocess has not registered its
+        # PID yet. It is initializing, not down. Do NOT tell the AI to
+        # restart it (that causes restart loops on a fresh session).
+        wd_status = 'starting'
+        wd_notice = (
+            "Watchdog was just started and is still initializing (PID not "
+            "yet registered). This is expected at the start of a new "
+            "session — file monitoring will be active momentarily. No "
+            "action needed; do not restart it."
+        )
+    else:
+        wd_status = raw_status
+        wd_notice = watchdog_read.get('notice')
+
+    return {
+        'started': watchdog_start.get('started', False),
+        'confirmed': watchdog_start.get('confirmed', False),
+        'start_error': watchdog_start.get('error'),
+        'status': wd_status,
+        'reminders': watchdog_read.get('reminders', ()),
+        'notice': wd_notice,
+    }
+
+
 def _start_watchdog(project_root: str) -> Dict[str, Any]:
     """
     Effect: Start watchdog subprocess for the project.
@@ -702,11 +759,17 @@ def _start_watchdog(project_root: str) -> Dict[str, Any]:
     _read_and_clear_reminders after reading, ensuring persistence.
 
     Returns:
-        dict with {started: bool, error: str or None}
+        dict with {started: bool, confirmed: bool, error: str or None}
+        - started:   the subprocess was launched (Popen succeeded)
+        - confirmed: the subprocess wrote its PID file (genuinely running)
+                     within the wait window
+        - error:     populated only on a real failure (launch failed, or the
+                     subprocess exited during initialization)
     """
     import signal
     import subprocess
     import sys
+    import time
 
     from ...watchdog.config import get_watchdog_dir, get_pid_path
 
@@ -731,18 +794,48 @@ def _start_watchdog(project_root: str) -> Dict[str, Any]:
     # after reading, so previous-session findings persist until consumed.
     try:
         os.makedirs(watchdog_dir, exist_ok=True)
-        subprocess.Popen(
+        proc = subprocess.Popen(
             [sys.executable, '-m', 'aimfp.watchdog', project_root, '--skip-reconciliation'],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        return {'started': True, 'error': None}
     except (OSError, subprocess.SubprocessError) as e:
         return {
             'started': False,
+            'confirmed': False,
             'error': f"Watchdog failed to start: {str(e)}. "
                      "Verify the watchdog module is installed (aimfp.watchdog package).",
         }
+
+    # Popen returns immediately, but the subprocess still has to boot the
+    # interpreter, import its modules, and read project.db/user_preferences.db
+    # before it writes its PID file. Callers that check the PID right away
+    # would see a false 'not_running'. Wait (bounded) for the PID to appear,
+    # and also catch an early exit (e.g. source_directory not configured) so
+    # we report a real failure instead of a contradictory
+    # "started but not running".
+    deadline = time.monotonic() + 3.0
+    while time.monotonic() < deadline:
+        if os.path.isfile(pid_path):
+            return {'started': True, 'confirmed': True, 'error': None}
+        exit_code = proc.poll()
+        if exit_code is not None:
+            return {
+                'started': False,
+                'confirmed': False,
+                'error': (
+                    f"Watchdog subprocess exited during initialization "
+                    f"(exit code {exit_code}) before it began monitoring. "
+                    "Common causes: source_directory not set in the project's "
+                    "infrastructure table, or the aimfp.watchdog module is not "
+                    "installed."
+                ),
+            }
+        time.sleep(0.05)
+
+    # Still alive but slow to register its PID (heavily loaded machine). It is
+    # starting, not failed — callers must not instruct the AI to restart it.
+    return {'started': True, 'confirmed': False, 'error': None}
 
 
 def _run_reconciliation_sync(project_root: str) -> None:

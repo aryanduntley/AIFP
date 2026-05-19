@@ -1,11 +1,14 @@
 """
 Tests for aimfp.mcp_server.registry
 
-Verifies all 225 registry entries are valid: modules importable,
-functions exist, helper functions work correctly.
+Verifies every registry entry is valid (modules importable, functions exist,
+helpers work) and that the Claude Code allowlist shipped in
+documentation/settings.local.json stays in sync with TOOL_REGISTRY.
 """
 
 import importlib
+import json
+from pathlib import Path
 
 import pytest
 
@@ -21,8 +24,11 @@ from aimfp.mcp_server.registry import (
 # Registry Structure Tests
 # ============================================================================
 
-def test_registry_has_228_entries():
-    assert len(TOOL_REGISTRY) == 228
+def test_registry_has_sane_entry_count():
+    """Loose floor, not an exact count — a hardcoded exact number is the
+    brittleness that let the registry and allowlist drift apart. Catches
+    accidental mass-deletion without breaking every time a tool is added."""
+    assert len(TOOL_REGISTRY) >= 250
 
 
 def test_registry_values_are_tuples():
@@ -177,3 +183,65 @@ def test_registry_covers_git():
     git_tools = {"create_user_branch", "detect_conflicts_before_merge"}
     for tool in git_tools:
         assert tool in TOOL_REGISTRY, f"Missing git tool: {tool}"
+
+
+# ============================================================================
+# Claude Code Allowlist Sync
+# ============================================================================
+#
+# documentation/settings.local.json is the pre-built Claude Code allowlist
+# users copy into their project's .claude/ folder to pre-approve every AIMFP
+# tool. TOOL_REGISTRY is the single source of truth; the allowlist must mirror
+# it exactly. When it doesn't, users get a permission prompt for every tool
+# missing from the file. This test turns "forgot to update the allowlist" into
+# a failing test instead of a silent prompt-storm for every user.
+#
+# To fix a failure, regenerate the file from the registry:
+#
+#   python3 -c "import json; from aimfp.mcp_server.registry import \
+#   TOOL_REGISTRY as R; json.dump({'permissions': {'allow': \
+#   sorted(f'mcp__aimfp__{n}' for n in R)}, 'enableAllProjectMcpServers': \
+#   True, 'enabledMcpjsonServers': ['aimfp']}, \
+#   open('documentation/settings.local.json','w'), indent=2)"
+
+ALLOWLIST_PATH = Path(__file__).parents[2] / "documentation" / "settings.local.json"
+_TOOL_PREFIX = "mcp__aimfp__"
+
+
+def _load_allowlist_tool_names() -> set[str]:
+    data = json.loads(ALLOWLIST_PATH.read_text())
+    allow = data["permissions"]["allow"]
+    return {entry[len(_TOOL_PREFIX):] for entry in allow if entry.startswith(_TOOL_PREFIX)}
+
+
+def test_allowlist_file_exists_and_is_valid_json():
+    assert ALLOWLIST_PATH.is_file(), f"Missing allowlist: {ALLOWLIST_PATH}"
+    data = json.loads(ALLOWLIST_PATH.read_text())
+    assert "permissions" in data and "allow" in data["permissions"]
+    assert data.get("enableAllProjectMcpServers") is True
+    assert data.get("enabledMcpjsonServers") == ["aimfp"]
+
+
+def test_allowlist_has_no_duplicate_entries():
+    """Duplicates inflate the count and obscure drift — keep entries unique."""
+    allow = json.loads(ALLOWLIST_PATH.read_text())["permissions"]["allow"]
+    seen = set()
+    dupes = sorted({e for e in allow if e in seen or seen.add(e)})
+    assert not dupes, f"{len(dupes)} duplicate allowlist entries:\n" + "\n".join(dupes)
+
+
+def test_allowlist_matches_registry_exactly():
+    """The allowlist must mirror TOOL_REGISTRY 1:1 — no missing tools (users
+    would get a prompt for each), no stale tools (point to nothing)."""
+    registry = set(TOOL_REGISTRY)
+    allowlist = _load_allowlist_tool_names()
+
+    missing = sorted(registry - allowlist)
+    stale = sorted(allowlist - registry)
+
+    assert not missing and not stale, (
+        "documentation/settings.local.json is out of sync with TOOL_REGISTRY. "
+        "Regenerate it (see module note above).\n"
+        f"  Registered but missing from allowlist ({len(missing)}): {missing}\n"
+        f"  In allowlist but not registered ({len(stale)}): {stale}"
+    )

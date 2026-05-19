@@ -418,7 +418,27 @@ Directives follow a **trunk → branches → fallback** pattern:
 
 ### Installation
 
-#### Method 1: pip install (Recommended)
+AIMFP installs three ways. **On Claude Code, use the plugin (Method 1)** — it bundles everything in two commands. pip/manual are for other MCP clients or advanced setups.
+
+#### Method 1: Claude Code Plugin (Recommended for Claude Code)
+
+```
+/plugin marketplace add aryanduntley/aimfp
+/plugin install aimfp@aimfp
+```
+
+That's it — no `pip install`, no `claude mcp add`, no config files. The plugin bundles:
+
+- the **MCP server**, run from the plugin's own bundled source (`${CLAUDE_PLUGIN_ROOT}/src`)
+- **slash commands**: `/aimfp:run`, `/aimfp:status`, `/aimfp:init`, `/aimfp:end`
+- a tiny **`aimfp-mode` setup skill** + a **SessionStart hook** — these are setup-only: they prompt the AI to install the system prompt (via the `get_system_prompt` tool) and start a session. They are deliberately *not* a copy of the behavioral rules (that would duplicate the system prompt into every session). Your **first move** after install is still to ask the AI to add the AIMFP system prompt — see [Add the System Prompt](#add-the-system-prompt-your-first-move) below; for the plugin the AI does it for you, nothing to download or paste.
+- **session hooks** for write-tracking nudges and an end-of-session audit guard
+
+Updates: `/plugin marketplace update aimfp`. No Anthropic account, approval, or central registry is involved — the marketplace is just this public GitHub repo.
+
+> Tool pre-approval still applies to the plugin's MCP tools — see [Pre-Approve All AIMFP Tools](#claude-code-pre-approve-all-aimfp-tools-optional) below.
+
+#### Method 2: pip install
 
 ```bash
 pip install aimfp
@@ -426,7 +446,7 @@ pip install aimfp
 
 This installs the MCP server and makes the `aimfp` command available. AIMFP requires only one external dependency (`watchdog` for filesystem monitoring) — the JSON-RPC server itself is pure Python stdlib.
 
-#### Method 2: Manual Install (GitHub Download)
+#### Method 3: Manual Install (GitHub Download)
 
 1. **Download** the repository (zip download or `git clone`)
 2. **Locate** the `src/aimfp/` folder — this is the complete MCP server package
@@ -438,24 +458,33 @@ This installs the MCP server and makes the `aimfp` command available. AIMFP requ
 
 The only runtime dependency (`watchdog`) is installed automatically. The `aimfp/` folder contains everything else the server needs: helper functions, directives, database schemas, and the pre-populated `aimfp_core.db`.
 
-### Add the System Prompt to Your AI Client
+### Add the System Prompt (Your First Move)
 
-**This step is required.** The system prompt is what tells the AI to use AIMFP tools proactively. Without it, the MCP server is just a collection of passive tools that never get called.
+**Do this before anything else.** The system prompt is AIMFP's record-keeping backbone — it's what tells the AI to call `aimfp_run()` first and run the project through AIMFP. Without it the MCP tools are just passive functions that never get called; the AI won't even know to start `init` or discovery.
 
-Print the system prompt to your terminal, then copy-paste it into your AI client:
+**Recommended — works for every install method, including the plugin (nothing to download or paste).** Just ask the AI:
+
+```
+Add the AIMFP system prompt
+```
+
+The AI calls the `get_system_prompt` tool, which returns the prompt plus placement guidance, and writes it for you:
+
+- It goes in `CLAUDE.md` at your project root (Claude Code) or **Settings → Custom Instructions** (Claude Desktop).
+- **AIMFP content is placed first** — it's the project's backbone and must be the highest-priority instruction.
+- If you already have an extensive `CLAUDE.md` / instructions file, the AI will **not** blindly prepend — it reviews it with you and discusses consolidating/optimizing first. Existing content is never discarded.
+- Once it's in place, the AI offers to also set up the tool-permission allowlist — a one-time step that skips per-tool approval prompts. It only pre-approves AIMFP's own CRUD tools, which operate strictly inside `.aimfp-project/`: no network, no credentials, nothing outside your current project.
+
+**Manual alternative** (other MCP clients, or if you'd rather paste it yourself) — print it and paste it into your client's system-prompt / custom-instructions field:
 
 ```bash
 python3 -m aimfp --system-prompt
 ```
 
-The system prompt is shipped with the package — no separate file or download needed. This works for all install methods (pip, venv, manual).
-
-**Where to paste it** (depends on your AI client):
-
-| AI Client | Where to Add System Prompt |
-|-----------|---------------------------|
+| AI Client | Where the system prompt goes |
+|-----------|------------------------------|
+| **Claude Code** | `CLAUDE.md` in your project root |
 | **Claude Desktop** | Settings → Custom Instructions |
-| **Claude Code** | Add to `CLAUDE.md` in your project root |
 | **Other MCP clients** | System prompt / custom instructions field |
 
 ### Configure Your AI Client
@@ -478,7 +507,7 @@ Edit `claude_desktop_config.json`:
 }
 ```
 
-If you used **Method 2 (manual install)**, add the parent directory of your `aimfp/` folder to `PYTHONPATH` so Python can find it:
+If you used **Method 3 (manual install)**, add the parent directory of your `aimfp/` folder to `PYTHONPATH` so Python can find it:
 
 ```json
 {
@@ -550,19 +579,21 @@ claude mcp add --transport stdio --scope project --env PYTHONPATH=/path/to/paren
 
 #### Claude Code: Pre-Approve All AIMFP Tools (Optional)
 
-Claude Code prompts you to approve each new MCP tool the first time it's called. With 228 tools, this means 228 approval prompts. To skip this, copy the pre-built permissions file into your project's `.claude/` folder:
+**What these tools actually do:** AIMFP operates entirely inside the project you point it at. It never reads, writes, or reaches anything outside that project directory — and within it, all of its own state lives in a single `.aimfp-project/` folder. The bulk of the 250+ tools are plain CRUD operations against the local SQLite database at `.aimfp-project/project.db` (tracking tasks, milestones, modules, and project state) plus read-only lookups of the bundled project directives. There are no network calls, no credentials, no access to your wider filesystem.
 
-```bash
-# Create the .claude/ folder in your project root if it doesn't exist
-mkdir -p /path/to/your/project/.claude
+Claude Code's design prompts you to approve each MCP tool the first time it's called. With 250+ tools that's one one-time prompt per tool — tedious, but every prompt is just Claude Code confirming a local database or directive call. To skip the prompts, drop a Claude Code *allowlist* file (`.claude/settings.local.json`) into your project. This is a static Claude Code settings file that simply tells Claude Code "these tool names are pre-approved" — it is not downloaded or executed by AIMFP.
 
-# Copy the permissions file
-cp documentation/settings.local.json /path/to/your/project/.claude/
+**Just ask the AI to set it up:**
+
+```
+"Set up AIMFP permissions for Claude Code"
 ```
 
-This places a `settings.local.json` in your project's `.claude/` folder that pre-allows every AIMFP tool. Claude Code will read it automatically — no approval prompts needed.
+The AI calls the `get_claude_permissions` tool, which returns the complete, current allowlist (generated live from the tool registry, so it can never be out of date or incomplete). The AI then writes — or, if you already have a `.claude/settings.local.json`, **merges into** — that file. Merging preserves every non-AIMFP permission and any other settings you already have; only the AIMFP entries are refreshed. AIMFP itself never writes the file (it never touches anything outside the project) — the AI does, with its normal file-write confirmation. The first call to `get_claude_permissions` is the one prompt you approve to eliminate all the rest.
 
-> **Note**: The file also includes `enableAllProjectMcpServers` and `enabledMcpjsonServers` settings so the AIMFP server starts automatically if you have a `.mcp.json` in the project.
+The two MCP-autostart keys (`enableAllProjectMcpServers` and `enabledMcpjsonServers`) are included automatically so the AIMFP server starts itself when you have a `.mcp.json` in the project.
+
+> **Note**: A pre-built copy of this allowlist also ships at [`documentation/settings.local.json`](documentation/settings.local.json) if you'd rather review it directly or copy it in by hand (`cp documentation/settings.local.json /path/to/your/project/.claude/`). The `get_claude_permissions` tool is the recommended path since it's always in sync with the installed version.
 
 #### Other MCP Clients
 

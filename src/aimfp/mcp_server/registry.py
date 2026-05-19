@@ -4,7 +4,7 @@ AIMFP MCP Server - Tool Registry
 Static dict mapping tool names to (module_path, function_name) tuples.
 Uses importlib for lazy loading — modules are only imported on first call.
 
-226 is_tool=true helpers registered. Generated from aimfp_core.db.
+253 is_tool=true helpers registered. Generated from aimfp_core.db.
 
 Why static, not DB-driven:
 - Predictable tool list, no runtime DB dependency for tool listing
@@ -296,6 +296,9 @@ TOOL_REGISTRY: Final[Dict[str, Tuple[str, str]]] = {
     "get_databases": ("aimfp.helpers.shared.database_info", "get_databases"),
     # helpers/shared/supportive_context.py (1 tool)
     "get_supportive_context": ("aimfp.helpers.shared.supportive_context", "get_supportive_context"),
+    # helpers/shared/claude_setup.py (2 tools)
+    "get_claude_permissions": ("aimfp.helpers.shared.claude_setup", "get_claude_permissions"),
+    "get_system_prompt": ("aimfp.helpers.shared.claude_setup", "get_system_prompt"),
 
     # ── User Directives ──────────────────────────────────────────────────
     # helpers/user_directives/crud.py (8 tools)

@@ -67,16 +67,92 @@
           "description": "aimfp_run bundles core + coding supportive context on is_new_session=true (+ case2 if active). aimfp_init bundles init variant."
         }
       ]
+    },
+    {
+      "name": "get_claude_permissions",
+      "file_path": "helpers/shared/claude_setup.py",
+      "parameters": [
+        {
+          "name": "existing_settings",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "Current text of the project's .claude/settings.local.json if it already exists (read it and pass it in). When given, the result is a merge that preserves all non-AIMFP permissions and other top-level settings. Omit/empty for a fresh file."
+        }
+      ],
+      "purpose": "Returns the Claude Code allowlist (.claude/settings.local.json contents) that pre-approves every AIMFP MCP tool, so the user is not prompted once per tool on first use. Allowlist is derived live from the tool registry so it can never drift. Does NOT write any file — returns ready-to-write JSON + target path; the AI writes/merges it, keeping AIMFP's 'never write outside .aimfp-project/' guarantee intact. Call when the user asks to set up AIMFP permissions or skip approval prompts.",
+      "error_handling": "Never fails hard. Malformed existing_settings degrades to a fresh file plus a 'warning' field in the result.",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Write data.settings_json verbatim to <project_root>/.claude/settings.local.json (create the .claude/ folder if missing). This is the only file involved; AIMFP never touches anything outside the project."
+      ],
+      "implementation_notes": [
+        "Allow list derived live from aimfp.mcp_server.registry.TOOL_REGISTRY — single source of truth, zero drift",
+        "Merge preserves non-mcp__aimfp__ permissions.allow entries, permissions.deny/ask, and all other top-level keys (hooks, etc.)",
+        "Ensures enableAllProjectMcpServers=true and 'aimfp' in enabledMcpjsonServers without dropping other configured MCP servers",
+        "Returns: {target_path, settings, settings_json, aimfp_tool_count, added, removed_stale, preserved_other_permissions, merged, instructions, warning?}",
+        "No database access — derives the list in memory; the AI performs the file write"
+      ],
+      "target_database": "no_db",
+      "used_by_directives": [
+        {
+          "directive_name": "aimfp_help",
+          "execution_context": "setup_claude_permissions",
+          "sequence_order": 15,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "When the user asks how to set up AIMFP permissions or skip per-tool approval prompts, return the .claude/settings.local.json allowlist for the AI to write/merge"
+        }
+      ]
+    },
+    {
+      "name": "get_system_prompt",
+      "file_path": "helpers/shared/claude_setup.py",
+      "parameters": [
+        {
+          "name": "existing_content",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "Current text of the target instructions file (e.g. CLAUDE.md) if it already exists — read it and pass it in so the placement guidance can account for size/consolidation. Omit/empty if there is no existing file."
+        }
+      ],
+      "purpose": "Returns the AIMFP system prompt (AIMFP's record-keeping backbone) plus where and how to place it. The user's FIRST move — especially for plugin installs where nothing was downloaded — is to ask the AI to add the AIMFP system prompt; the AI calls this and writes the file. Does NOT write anything: returns the prompt text + target path + placement policy; the AI does the write, keeping AIMFP's 'never write outside .aimfp-project/' guarantee. AIMFP content is always placed FIRST; if the existing instructions file is extensive the AI must review/consolidate with the user instead of blindly prepending.",
+      "error_handling": "Never fails hard. Returns an error only if the bundled system_prompt.txt is missing (incomplete install).",
+      "is_tool": true,
+      "is_sub_helper": false,
+      "return_statements": [
+        "Place data.content following data.instructions: AIMFP content goes FIRST and existing instructions are never discarded. The system prompt is the project's record-keeping backbone — it must be loaded before init/discovery have any meaning.",
+        "After the system prompt is in place, ask the user whether they also want the AIMFP permissions allowlist set up (call get_claude_permissions). Reassure them: it only pre-approves AIMFP's own CRUD tools, which operate strictly inside the project's .aimfp-project/ folder for project tracking — no network, no credentials, and no access to their machine or anything outside the current project. Without it, Claude Code prompts once per tool on first use."
+      ],
+      "implementation_notes": [
+        "Reads the bundled src/aimfp/reference/system_prompt.txt (same file the MCP server serves via the initialize handshake and `python3 -m aimfp --system-prompt`)",
+        "Returns: {content, target_path (CLAUDE.md; Desktop = Custom Instructions), placement: 'prepend', existing_is_extensive, instructions, source}",
+        "Placement policy: no file -> create; small existing -> prepend (never overwrite); extensive existing -> review + consolidate with user, AIMFP content still first",
+        "No database access — pure file read; the AI performs the file write"
+      ],
+      "target_database": "no_db",
+      "used_by_directives": [
+        {
+          "directive_name": "aimfp_help",
+          "execution_context": "provide_system_prompt",
+          "sequence_order": 16,
+          "is_required": false,
+          "parameters_mapping": {},
+          "description": "When the user asks the AI to add/install the AIMFP system prompt, return the prompt text + placement guidance for the AI to write (then offer permissions setup via the return statements)"
+        }
+      ]
     }
   ],
   "metadata": {
     "file": "helpers-index.json",
-    "count": 2,
-    "status": "updated 2026-03-30 - get_supportive_context now supports variant parameter (core/init/coding/case2)",
-    "mapped_helpers": 2,
+    "count": 4,
+    "status": "updated 2026-05-18 - added get_system_prompt (system prompt bootstrap; pairs with get_claude_permissions)",
+    "mapped_helpers": 4,
     "unmapped_helpers": 0,
     "note": "Global cross-database and system-level helpers. Not orchestrators — utility functions available to all categories.",
-    "total_mappings": 3,
-    "last_updated": "2026-03-30"
+    "total_mappings": 5,
+    "last_updated": "2026-05-18"
   }
 }

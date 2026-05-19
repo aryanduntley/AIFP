@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'AIMFP plugin active. The AIMFP MCP server provides 220 tools for FP-compliant development and project management. Call aimfp_run() as your first action on every interaction. See the aimfp-mode skill for full behavioral rules.'",
+            "command": "echo 'AIMFP plugin active (~250 MCP tools, approximate/subject to change). First move: ensure the AIMFP system prompt is installed in this project — if it is missing, call get_system_prompt and place it. Then call aimfp_run(is_new_session=true) to begin. AIMFP behavioral rules come from the installed system prompt and supportive context, not from this message or the aimfp-mode skill.'",
             "statusMessage": "Loading AIMFP context..."
           }
         ]

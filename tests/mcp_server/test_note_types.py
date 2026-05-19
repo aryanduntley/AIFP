@@ -12,12 +12,49 @@ Verifies:
 """
 
 import os
+import re
 import sqlite3
 import tempfile
 import shutil
 
 from aimfp.helpers.project._common import VALID_NOTE_TYPES as PROJECT_NOTE_TYPES
 from aimfp.helpers.user_directives._common import VALID_NOTE_TYPES as UD_NOTE_TYPES
+
+
+# ============================================================================
+# Authoritative version sources
+# ============================================================================
+#
+# Two independent sources of truth that MUST agree:
+#   - the version a schema .sql file declares (what a fresh DB actually gets)
+#   - aimfp_core.db.expected_schema_versions (what the migration system targets)
+# Asserting these against each other (not against frozen literals) is what
+# catches a schema bump that forgot to update the core DB, or vice versa.
+
+def _schema_file_version(schema_name: str) -> str:
+    from aimfp.helpers.orchestrators.migration import _get_schema_path
+    sql = open(_get_schema_path(schema_name)).read()
+    m = re.search(
+        r"INSERT OR REPLACE INTO schema_version \(id, version\) VALUES \(1, '([^']+)'\)",
+        sql,
+    )
+    assert m, f"no schema_version insert found in {schema_name}"
+    return m.group(1)
+
+
+def _core_expected_versions() -> dict:
+    from aimfp.helpers.orchestrators._common import get_core_db_path
+    conn = sqlite3.connect(get_core_db_path())
+    conn.row_factory = sqlite3.Row
+    try:
+        return {
+            r['db_name']: r['expected_version']
+            for r in conn.execute(
+                "SELECT db_name, expected_version FROM expected_schema_versions"
+            )
+        }
+    finally:
+        conn.close()
 
 
 # ============================================================================
@@ -245,21 +282,28 @@ def test_filter_deferred_only():
 # Schema Version Tests
 # ============================================================================
 
-def test_project_schema_version_is_1_8():
+def test_project_schema_version_matches_core_expected():
+    """A freshly created project.db must report the version the migration
+    system expects (aimfp_core.db.expected_schema_versions) — derived, not
+    hardcoded, so a schema bump can't silently desync the two."""
     conn, db_path, tmp_dir = _create_project_db()
     try:
-        cursor = conn.execute("SELECT version FROM schema_version")
-        assert cursor.fetchone()['version'] == '1.8'
+        actual = conn.execute("SELECT version FROM schema_version").fetchone()['version']
+        assert actual == _schema_file_version("project.sql")
+        assert actual == _core_expected_versions()['project']
     finally:
         conn.close()
         shutil.rmtree(tmp_dir)
 
 
-def test_ud_schema_version_is_1_2():
+def test_ud_schema_version_matches_core_expected():
+    """Freshly created user_directives.db must match the migration system's
+    expected version (derived, not hardcoded)."""
     conn, db_path, tmp_dir = _create_ud_db()
     try:
-        cursor = conn.execute("SELECT version FROM schema_version")
-        assert cursor.fetchone()['version'] == '1.2'
+        actual = conn.execute("SELECT version FROM schema_version").fetchone()['version']
+        assert actual == _schema_file_version("user_directives.sql")
+        assert actual == _core_expected_versions()['user_directives']
     finally:
         conn.close()
         shutil.rmtree(tmp_dir)
@@ -282,6 +326,10 @@ def test_core_has_expected_schema_versions_table():
     )
     rows = {row['db_name']: row['expected_version'] for row in cursor.fetchall()}
     conn.close()
-    assert rows['project'] == '1.8'
-    assert rows['user_preferences'] == '1.2'
-    assert rows['user_directives'] == '1.2'
+    # The three managed DBs must be present, and each expected_version must
+    # agree with the version its schema .sql file actually produces. That
+    # cross-check (not frozen literals) is what catches a schema/core-DB desync.
+    assert set(rows) == {'project', 'user_preferences', 'user_directives'}
+    assert rows['project'] == _schema_file_version("project.sql")
+    assert rows['user_preferences'] == _schema_file_version("user_preferences.sql")
+    assert rows['user_directives'] == _schema_file_version("user_directives.sql")

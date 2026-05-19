@@ -25,6 +25,7 @@ All functions are pure FP - immutable data, explicit parameters, Result types.
 Database operations isolated as effects with clear naming conventions.
 """
 
+import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List

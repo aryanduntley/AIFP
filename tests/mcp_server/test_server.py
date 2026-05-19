@@ -81,7 +81,7 @@ def test_build_tool_dict():
 def test_load_and_cache_tools_populates_cache():
     _effect_load_and_cache_tools()
     from aimfp.mcp_server import server
-    assert len(server._cached_tool_dicts) == 228
+    assert len(server._cached_tool_dicts) == len(TOOL_REGISTRY)
 
 
 def test_cached_tools_are_dicts():
@@ -149,12 +149,12 @@ def test_handle_initialize_response_format():
 # Handler Tests — tools/list
 # ============================================================================
 
-def test_handle_list_tools_returns_220():
+def test_handle_list_tools_returns_all_registered_tools():
     _effect_load_and_cache_tools()
     resp = handle_list_tools(2)
     assert resp["jsonrpc"] == "2.0"
     assert resp["id"] == 2
-    assert len(resp["result"]["tools"]) == 228
+    assert len(resp["result"]["tools"]) == len(TOOL_REGISTRY)
 
 
 # ============================================================================
@@ -279,7 +279,7 @@ class TestBuildToolAnnotations:
 
     def test_title_for_aimfp_run(self):
         ann = build_tool_annotations("aimfp_run")
-        assert ann["title"] == "Aifp Run"
+        assert ann["title"] == "Aimfp Run"
 
     # -- Read-only tools (prefix-based) --
 
